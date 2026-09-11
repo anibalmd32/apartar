@@ -1,0 +1,190 @@
+# Apartar — stack base (REQ-INF-001).
+#
+# Siete servicios, tres volúmenes nombrados y una sola red `apartar`.
+# En esta iteración NO hay Traefik, TLS ni dominio (REQ-INF-001 RB-0):
+# la red `traefik_proxy`, las etiquetas y `docker-compose.prod.yml` llegan
+# con T-087 (REQ-INF-002, diferido).
+#
+# Este archivo no publica puertos al host: eso vive en
+# docker-compose.override.yml, que es el que convierte el stack en el
+# entorno de desarrollo de http://localhost:8080 (RB-2 y RB-3).
+
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 768m
+    environment:
+      CONTAINER_ROLE: app
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks:
+      - apartar
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Los estáticos del build. T-087 los hornea en una imagen propia;
+      # mientras tanto nginx lee el public/ del proyecto.
+      - ./public:/var/www/html/public:ro
+      - app_storage:/var/www/html/storage/app:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - apartar
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    mem_limit: 1g
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:-apartar}"
+      MYSQL_USER: "${DB_USERNAME:-apartar}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - apartar
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    mem_limit: 256m
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    networks:
+      - apartar
+
+  # REQ-INF-003: un solo servicio con worker y scheduler (RB-8). El orden de
+  # --queue es estricto y es la prioridad de RB-2: high > default > exports >
+  # telemetry. El entrypoint arranca `schedule:work` junto a este comando.
+  queue:
+    build:
+      context: .
+      target: runtime
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      CONTAINER_ROLE: queue
+    env_file:
+      - .env
+    command:
+      - php
+      - artisan
+      - queue:work
+      - redis
+      - --queue=high,default,exports,telemetry
+      - --tries=3
+      - --max-time=3600
+    volumes:
+      - app_storage:/var/www/html/storage/app
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - apartar
+
+  # REQ-INF-005: WebSocket aislado. Escucha en 8080 dentro de la red; el
+  # navegador entra por el 8081 que publica el override.
+  reverb:
+    build:
+      context: .
+      target: runtime
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      CONTAINER_ROLE: reverb
+    env_file:
+      - .env
+    command:
+      - php
+      - artisan
+      - reverb:start
+      - --host=0.0.0.0
+      - --port=8080
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8080) ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - apartar
+
+  # Solo desarrollo: Vite con HMR (REQ-INF-004 RB-7). El archivo de
+  # producción de T-087 no lo define (REQ-INF-001 SP-7).
+  node:
+    image: node:22-alpine
+    restart: unless-stopped
+    mem_limit: 1g
+    working_dir: /app
+    # `npm ci` y no `npm install`: el contenedor nunca reescribe
+    # package-lock.json, que se genera en el host (Node 26) y debe seguir
+    # siendo válido para el Node 22 de aquí.
+    command: ["sh", "-c", "npm ci && npm run dev -- --host 0.0.0.0"]
+    volumes:
+      - .:/app
+      # node_modules propio: los binarios nativos de Linux no pueden pisar los
+      # del host. Volumen anónimo a propósito, para no sumar un cuarto
+      # volumen nombrado a los tres de REQ-INF-001.
+      - /app/node_modules
+    networks:
+      - apartar
+
+volumes:
+  mysql_data:
+  redis_data:
+  # REQ-INF-001 RB-4: comprobantes, imágenes y exportaciones. Perderlo pierde
+  # evidencia (REQ-PAY-002); el runbook exige backup antes de cualquier
+  # operación destructiva (SP-5).
+  app_storage:
+
+networks:
+  apartar:
+    driver: bridge

@@ -109,4 +109,23 @@ return [
         'table' => 'failed_jobs',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Colas priorizadas (REQ-INF-003 RB-1 y RB-2)
+    |--------------------------------------------------------------------------
+    |
+    | Orden estricto de prioridad: mientras haya trabajos en `high`, el worker
+    | no toca `default`. Esta lista es la fuente de verdad del nombre y del
+    | orden; el comando del servicio `queue` en docker-compose.yml repite la
+    | misma secuencia y un test comprueba que no se separen.
+    |
+    | high      FetchExchangeRate, ProcessSubscriptionDunning
+    | default   notificaciones, imágenes, expiración y detección de mora
+    | exports   GenerateExport, PurgeExpiredExports
+    | telemetry procesado y purga de telemetría, recálculo de consumo
+    |
+    */
+
+    'priorities' => explode(',', (string) env('QUEUE_PRIORITIES', 'high,default,exports,telemetry')),
+
 ];

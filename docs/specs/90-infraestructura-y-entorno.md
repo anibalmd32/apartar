@@ -207,7 +207,8 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
 **Reglas de negocio y precondiciones**
 - RB-1 Drivers en todos los entornos: `cache=redis`, `session=redis`, `queue=redis`, `broadcast=reverb`, `filesystem=local` (privado). **No** se usa el driver `database` para colas ni el `file` para caché, ni en local (evita divergencias de comportamiento).
 - RB-2 `APP_TIMEZONE=America/Caracas`, `APP_LOCALE=es`, `APP_FALLBACK_LOCALE=es`. Toda fecha se persiste en UTC y se presenta en la zona local (`REQ-LAY-007` SP-6).
-- RB-3 Entornos: `local` (`apartar.localhost`, `APP_DEBUG=true`, Vite HMR) y `production` (`apartar.store`, `APP_DEBUG=false`, `optimize` aplicado). Sin staging (`ASU-INF-03`).
+- RB-3 Entornos: `local` (`http://localhost:8080`, `APP_DEBUG=true`, Vite HMR, **sin Traefik** — `REQ-INF-001` RB-0) y `production` (`apartar.store`, `APP_DEBUG=false`, `optimize` aplicado). Sin staging (`ASU-INF-03`).
+- RB-3b El host local es `localhost` y **no** `apartar.localhost`: al ser las URL públicas por ruta (`/c/{slug}`, `/{org-slug}`, decisión `Q4`) no hace falta DNS comodín ni proxy en desarrollo. `ASU-INF-03` y `REQ-INF-002` RB-6 conservan el nombre de dominio porque describen el escenario **diferido** con Traefik.
 - RB-4 En `production` es obligatorio: `APP_DEBUG=false`, `APP_KEY` presente, `SESSION_SECURE_COOKIE=true`, `SESSION_SAME_SITE=lax`. Un arranque con `APP_DEBUG=true` en producción se **bloquea** en el `entrypoint`.
 - RB-5 Variables obligatorias documentadas en `.env.example`, agrupadas por dominio (app, BD, Redis, Reverb, VAPID, OAuth Google, tasa de cambio, correo, superadmin).
 - RB-6 `config:cache`, `route:cache`, `view:cache` y `event:cache` se aplican en producción vía `optimize`; en local no se cachea la configuración (evita el clásico "cambié el `.env` y no toma efecto").

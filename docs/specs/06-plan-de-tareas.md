@@ -54,10 +54,18 @@ Crear el proyecto con el starter kit `react` (Inertia 2 + React 19 + TS + Vite +
 **Nota:** `docker-compose.prod.yml` **no** se crea aquí (diferido a T-087).
 Sobre `REQ-INF-003`: aquí se crean el servicio `queue` con las **cuatro colas priorizadas**, `RunsInTenantContext` (en T-006) y el `routes/console.php` vacío. Las **catorce entradas del schedule se añaden en la tarea de cada job**, no todas de golpe: la entrada de `layaways:expire` entra con T-047, la de `notifications:dispatch-reminders` con T-083, y así. Cierra al final de H8, cuando las catorce existen.
 
+**Hallazgos de `T-001` que se resuelven aquí:** el `Dockerfile` debe habilitar `pdo_mysql`, `bcmath` (`REQ-FX-004` RB-5 usa `bcmul`), `exif` y `gd` (medialibrary), `zip` (excel), `intl`, `pcntl` (señales de `queue:work`), `opcache` y la extensión `redis`. Se **elimina** `laravel/sail` (no está en [05 §3.2](05-design-tecnico.md) y su stack Docker queda sustituido por el nuestro). Se publica `config/broadcasting.php` y se fijan las variables `REVERB_*` y `VITE_REVERB_*`: `T-001` no lo hizo porque escriben en `.env`, y el `.env` es alcance de esta tarea.
+
 **T-003 · Calidad y CI** · `AB` · 3 pts · *Requisitos: `REQ-QAX-001`, `REQ-QAX-002`, `REQ-QAX-003`, `REQ-QAX-004`, `REQ-QAX-007`*
 `pint.json`, `phpstan.neon` (Larastan nivel 6), `eslint.config.js` con `max-lines: 200` como **error**, `tsconfig.json` estricto con `noUncheckedIndexedAccess`, `vitest.config.ts`, `phpunit.xml` contra MySQL, `.github/workflows/ci.yml` con los **tres jobs** (`backend`, `frontend`, `tenancy`), plantilla de PR con el campo "requisitos que cierra".
 **Hecho cuando:** `make check` pasa en un proyecto vacío; los tres jobs existen sin `continue-on-error`; `declare(strict_types=1)` verificado; `CreatesNeighbourOrganization` existe y el umbral de cobertura del dominio está configurado (`REQ-QAX-003`); la plantilla de PR recuerda PHPDoc y TSDoc (`REQ-QAX-007`).
 Sobre `REQ-QAX-003` y `REQ-QAX-007`: son **normativos y transversales**, no funcionalidad. Aquí se instala su infraestructura (umbrales, helpers, reglas de lint, plantilla de PR) y **se cumplen en cada tarea posterior**: ninguna tarea de Fase B cierra sin tests, y ninguna clase se acepta sin PHPDoc.
+
+**Hallazgos de `T-001` que se resuelven aquí:**
+- **`resources/js/components/ui/` llega ocupado por shadcn/Radix**, y [05 §3.1](05-design-tecnico.md) reserva ese directorio para los envoltorios de daisyUI (`REQ-QAX-001` RB-5). Decisión: los primitivos heredados se **mueven** a `resources/js/components/vendor/` con sus imports actualizados, dejando `components/ui/` libre. No se reescriben las páginas de autenticación aquí: siguen funcionando desde `vendor/`, y `T-010`/`T-012` las migran a daisyUI al adaptarlas, tras lo cual `vendor/` se encoge hasta poder borrarse. Mover es barato; reescribir ahora no aporta nada y arriesga el andamiaje que `REQ-BOF-001` reutiliza.
+- `phpunit/phpunit` está en `^12.5` porque Pest 4 (la última rama compatible con PHP 8.3) lo exige. `phpunit.xml` se escribe para PHPUnit 12.
+- Se **reemplazan** `.github/workflows/lint.yml` y `tests.yml` del starter kit por el único `ci.yml` con los tres jobs.
+- Las seis migraciones publicadas por paquetes no llevan `declare(strict_types=1)`. El gate de `REQ-QAX-001` **excluye `database/migrations` de terceros**: no son código nuestro y republicarlas las revertiría.
 
 ### Tenancy
 

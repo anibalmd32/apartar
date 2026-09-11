@@ -1,0 +1,50 @@
+# Apartar — desarrollo local (REQ-INF-001 RB-0, REQ-INF-004 RB-3).
+#
+# Docker Compose lo aplica solo por encima de docker-compose.yml. Aquí viven
+# las dos cosas que el archivo base deja fuera a propósito:
+#
+#   1. Los puertos publicados al host. En producción `nginx` y `reverb` se
+#      publican por Traefik y `mysql`/`redis` no se publican en absoluto
+#      (RB-2 y RB-3); T-087 traerá ese archivo.
+#   2. El código montado desde el host, para que un cambio se vea sin
+#      reconstruir la imagen.
+#
+# La aplicación queda en http://localhost:8080, sin TLS y sin DNS comodín:
+# las URL públicas son por ruta (/c/{slug}), no por subdominio.
+
+services:
+  app:
+    volumes:
+      - .:/var/www/html
+      # El volumen nombrado gana al bind mount: los comprobantes viven en
+      # app_storage, no en el árbol del host (REQ-INF-001 RB-4).
+      - app_storage:/var/www/html/storage/app
+
+  nginx:
+    ports:
+      - "8080:80"
+
+  mysql:
+    # Puerto no estándar para no chocar con un MySQL instalado en el host.
+    ports:
+      - "3307:3306"
+
+  redis:
+    ports:
+      - "6380:6379"
+
+  queue:
+    volumes:
+      - .:/var/www/html
+      - app_storage:/var/www/html/storage/app
+
+  reverb:
+    ports:
+      - "8081:8080"
+    volumes:
+      - .:/var/www/html
+      - app_storage:/var/www/html/storage/app
+
+  node:
+    ports:
+      - "5173:5173"
