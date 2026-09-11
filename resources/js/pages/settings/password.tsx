@@ -4,12 +4,12 @@ import SettingsLayout from '@/layouts/settings/layout';
 import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import { type FormEventHandler, useRef } from 'react';
 
 import HeadingSmall from '@/components/heading-small';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/vendor/button';
+import { Input } from '@/components/vendor/input';
+import { Label } from '@/components/vendor/label';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

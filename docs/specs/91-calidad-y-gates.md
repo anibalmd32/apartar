@@ -163,7 +163,7 @@
 
 **Contratos de datos**
 - `.github/workflows/ci.yml` con servicios MySQL 8 y Redis 7.
-- Jobs: `backend` (Pint, Larastan, Pest con cobertura) y `frontend` (ESLint, `tsc --noEmit`, Vitest, `vite build`).
+- Jobs: `backend` (Pint, Larastan, Pest con cobertura), `frontend` (ESLint, `tsc --noEmit`, Vitest, `vite build`) y `tenancy` (`tenancy:audit` + suite de aislamiento, RB-4b).
 
 **Reglas de negocio y precondiciones**
 - RB-1 CI se ejecuta en cada `push` a `main` y en cada PR hacia `main`.
@@ -177,8 +177,8 @@
 - RB-8 Duración objetivo por debajo de 10 minutos; si se supera de forma sostenida, se paraleliza la suite en lugar de recortar comprobaciones.
 
 **Happy path**
-1. Se abre un PR; los dos jobs arrancan en paralelo.
-2. Backend y frontend pasan en 6 minutos.
+1. Se abre un PR; los tres jobs arrancan en paralelo.
+2. `backend`, `frontend` y `tenancy` pasan en 6 minutos.
 3. El PR queda listo para revisión humana.
 
 **Sad paths y edge cases**

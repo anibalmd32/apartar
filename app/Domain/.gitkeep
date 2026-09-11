@@ -1,0 +1,6 @@
+Reservado por 05 §8. El dominio puro (Money, ScheduleGenerator, FifoAllocator,
+LayawayStateMachine…) nace con la tarea de cada módulo, a partir de T-017.
+
+Existe desde T-003 porque el umbral de cobertura de REQ-QAX-003 RB-1 se mide
+sobre este directorio y sobre app/Actions: un umbral configurado contra una
+ruta inexistente pasaría en verde sobre la nada.

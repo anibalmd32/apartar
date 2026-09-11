@@ -49,6 +49,11 @@ RUN apk add --no-cache \
         zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
+    # pcov y no xdebug: el umbral de cobertura del dominio (REQ-QAX-003 RB-1)
+    # se mide en cada ejecución de la suite y pcov cuesta un orden de magnitud
+    # menos. Queda desactivado salvo que `pest --coverage` lo encienda.
+    && pecl install pcov \
+    && docker-php-ext-enable pcov \
     && apk del .build-deps \
     && rm -rf /tmp/pear
 
@@ -111,6 +116,12 @@ FROM base AS runtime
 COPY . .
 COPY --from=vendor /var/www/html/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
+
+# Las recetas de calidad viven como scripts de composer (decisión de T-003) y
+# `make check` las ejecuta dentro de este contenedor. Sin el binario, el
+# Makefile tendría que repetir cada comando y habría dos definiciones de la
+# misma comprobación. T-087 decide si la imagen de producción lo conserva.
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint \

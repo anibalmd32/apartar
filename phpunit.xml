@@ -3,6 +3,10 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         failOnEmptyTestSuite="true"
+         cacheDirectory=".phpunit.cache"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -10,24 +14,77 @@
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+            <!-- El aislamiento multi-tenant tiene su propio job de CI
+                 (REQ-QAX-004 RB-4b): su fallo tiene que ser inequívoco y no
+                 quedar sepultado entre cientos de tests de negocio. -->
+            <exclude>tests/Feature/Tenancy</exclude>
+        </testsuite>
+        <testsuite name="Tenancy">
+            <directory>tests/Feature/Tenancy</directory>
         </testsuite>
     </testsuites>
+
+    <!--
+        REQ-QAX-003 RB-1: el umbral de cobertura es del dominio, no global.
+        Medir todo premiaría tests de relleno en las capas triviales; medir
+        solo app/Domain y app/Actions obliga a cubrir donde está el dinero.
+    -->
     <source>
         <include>
-            <directory>app</directory>
+            <directory>app/Domain</directory>
+            <directory>app/Actions</directory>
         </include>
     </source>
+
+    <!--
+        Cada variable va dos veces, y las dos hacen falta.
+
+        Dentro del contenedor, docker-compose inyecta el `.env` como variables
+        de entorno reales: sin `force="true"` PHPUnit las respetaría y la suite
+        correría contra la base de datos de desarrollo. Y como el repositorio
+        de entorno de Laravel consulta `$_SERVER` **antes** que `$_ENV`, ahí
+        siguen estando los valores del contenedor aunque `putenv` ya lleve los
+        de prueba; el `<server>` es el que gana esa carrera.
+
+        El síntoma cuando falta uno de los dos no es un error claro: es la
+        suite pasando contra el entorno equivocado.
+    -->
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <server name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <server name="BCRYPT_ROUNDS" value="4"/>
+
+        <!-- REQ-QAX-003 RB-8: MySQL real. El sistema depende de FULLTEXT, de
+             lockForUpdate y de índices UNIQUE compuestos que SQLite no
+             reproduce; probar sobre SQLite sería probar otro sistema.
+             DB_HOST y DB_PORT los pone el entorno: `mysql:3306` dentro del
+             compose, `127.0.0.1:3306` en el servicio de CI. -->
+        <env name="DB_CONNECTION" value="mysql" force="true"/>
+        <server name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="apartar_testing" force="true"/>
+        <server name="DB_DATABASE" value="apartar_testing"/>
+
+        <!-- REQ-QAX-003 SP-2: la zona se fija aquí para que ningún cálculo de
+             vencimiento dependa de la del entorno que ejecute la suite. -->
+        <env name="APP_TIMEZONE" value="America/Caracas" force="true"/>
+        <server name="APP_TIMEZONE" value="America/Caracas"/>
+        <env name="APP_LOCALE" value="es" force="true"/>
+        <server name="APP_LOCALE" value="es"/>
+        <env name="APP_FALLBACK_LOCALE" value="es" force="true"/>
+        <server name="APP_FALLBACK_LOCALE" value="es"/>
+
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <server name="CACHE_STORE" value="array"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <server name="SESSION_DRIVER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <server name="BROADCAST_CONNECTION" value="null"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <server name="MAIL_MAILER" value="array"/>
     </php>
 </phpunit>

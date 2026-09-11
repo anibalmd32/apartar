@@ -67,6 +67,9 @@ services:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
     volumes:
       - mysql_data:/var/lib/mysql
+      # Crea `apartar_testing` en la primera inicialización del volumen
+      # (REQ-QAX-003 RB-8).
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_ROOT_PASSWORD:-root}"]
       interval: 10s

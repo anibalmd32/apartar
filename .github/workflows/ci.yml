@@ -1,0 +1,224 @@
+# Apartar — integración continua (REQ-QAX-004).
+#
+# Tres jobs en paralelo y los tres tienen que pasar para poder mezclar (RB-2).
+# Ningún paso lleva `continue-on-error` (RB-5): un fallo bloquea la mezcla.
+# El pipeline no despliega (RB-6), solo verifica.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '22'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # RB-3: dependencias con caché → pint --test → phpstan → migrate → pest con
+  # el umbral de cobertura del dominio.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: apartar_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, exif, gd, intl, pcntl, pdo_mysql, redis, zip
+          # pcov y no xdebug: la cobertura del umbral de RB-3 se mide una vez
+          # por job y pcov es un orden de magnitud más rápido.
+          coverage: pcov
+
+      # SP-2: la clave depende del lockfile, así que una caché corrupta se
+      # invalida sola al cambiar las dependencias.
+      - name: Caché de Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Preparar entorno
+        run: cp .env.ci .env
+
+      - name: Pint
+        run: composer run lint
+
+      - name: PHPStan nivel 6
+        run: composer run analyse
+
+      # SP-1: el servicio ya declara healthcheck; esto cubre la ventana entre
+      # "mysqld responde" y "acepta la conexión de la aplicación".
+      - name: Esperar a MySQL
+        run: |
+          for attempt in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MySQL disponible tras $attempt intento(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL no respondió" >&2
+          exit 1
+
+      - name: Migrar
+        run: php artisan migrate --force
+
+      - name: Pest con umbral de cobertura del dominio
+        run: composer run test:coverage
+
+  # ---------------------------------------------------------------------------
+  # RB-4: dependencias con caché → eslint → tsc --noEmit → vitest → vite build.
+  # El build de producción entra aquí a propósito (SP-4).
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Comprobación de tipos
+        run: npm run types
+
+      - name: Vitest
+        run: npm run test
+
+      - name: Build de producción
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # RB-4b: job propio y separado de `backend` para que un fallo de aislamiento
+  # sea inequívoco en el informe y no quede sepultado entre cientos de tests de
+  # negocio. Es el único job cuyo fallo no admite discusión ni excepción.
+  #
+  # ESTADO: incompleto a propósito. Hoy corre la mitad estática de
+  # REQ-QAX-008 (invariantes del esquema). `php artisan tenancy:audit` y las
+  # cuatro suites de fuga cruzada llegan con T-007, que necesita TenantContext
+  # (T-005) y las primeras tablas del tenant (T-004). `failOnEmptyTestSuite`
+  # en phpunit.xml impide que este job pueda volverse verde sobre nada.
+  # ---------------------------------------------------------------------------
+  tenancy:
+    name: tenancy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: apartar_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, exif, gd, intl, pcntl, pdo_mysql, redis, zip
+          coverage: none
+
+      - name: Caché de Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Preparar entorno
+        run: cp .env.ci .env
+
+      - name: Esperar a MySQL
+        run: |
+          for attempt in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MySQL disponible tras $attempt intento(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL no respondió" >&2
+          exit 1
+
+      - name: Migrar
+        run: php artisan migrate --force
+
+      - name: Suite de aislamiento
+        run: composer run tenancy

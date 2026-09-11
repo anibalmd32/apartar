@@ -71,10 +71,10 @@ function environmentVariablesUsedInConfig(): array
         $found = [...$found, ...$matches[1]];
     }
 
-    $found = array_unique($found);
+    $found = array_values(array_unique($found));
     sort($found);
 
-    return array_values($found);
+    return $found;
 }
 
 /**

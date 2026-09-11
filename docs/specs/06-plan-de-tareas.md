@@ -66,6 +66,8 @@ Sobre `REQ-QAX-003` y `REQ-QAX-007`: son **normativos y transversales**, no func
 - `phpunit/phpunit` está en `^12.5` porque Pest 4 (la última rama compatible con PHP 8.3) lo exige. `phpunit.xml` se escribe para PHPUnit 12.
 - Se **reemplazan** `.github/workflows/lint.yml` y `tests.yml` del starter kit por el único `ci.yml` con los tres jobs.
 - Las seis migraciones publicadas por paquetes no llevan `declare(strict_types=1)`. El gate de `REQ-QAX-001` **excluye `database/migrations` de terceros**: no son código nuestro y republicarlas las revertiría.
+- **`make` no está instalado en el host de desarrollo (Windows).** Decisión: las recetas se escriben **una sola vez** como scripts de `composer` y de `npm` (`composer lint`/`analyse`/`test`, `npm run lint`/`types`/`test`), que es lo que [91 §REQ-QAX-002](91-calidad-y-gates.md) ya daba por supuesto al citar `composer analyse`. El `Makefile` de §9.4 queda como **alias de una línea** sobre esos scripts, y CI invoca los scripts, no `make`. Así `make` es una comodidad opcional y nadie queda bloqueado por no tenerlo; y sobre todo, no hay dos definiciones de la misma receta divergiendo.
+- **Sin baseline de PHPStan.** `REQ-QAX-002` SP-5 solo lo admite para una dependencia sin tipos, con fecha y motivo. El código es todavía pequeño: lo que no tipe hoy queda tipado, no archivado.
 
 ### Tenancy
 

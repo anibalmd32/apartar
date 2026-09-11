@@ -1,0 +1,6 @@
+Reservado por 05 §8. Las Actions transaccionales (REQ-QAX-001 RB-2) nacen con
+la tarea de cada módulo.
+
+Existe desde T-003 porque el umbral de cobertura de REQ-QAX-003 RB-1 se mide
+sobre este directorio y sobre app/Domain: un umbral configurado contra una
+ruta inexistente pasaría en verde sobre la nada.

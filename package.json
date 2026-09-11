@@ -2,12 +2,17 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "dev": "vite",
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
-        "dev": "vite",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "types": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
-        "lint": "eslint . --fix"
+        "check": "npm run lint && npm run types && npm run test && npm run build"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",

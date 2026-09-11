@@ -1,4 +1,4 @@
-import { SidebarInset } from '@/components/ui/sidebar';
+import { SidebarInset } from '@/components/vendor/sidebar';
 import * as React from 'react';
 
 interface AppContentProps extends React.ComponentProps<'div'> {

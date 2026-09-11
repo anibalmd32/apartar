@@ -1,0 +1,55 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    # Pest expone `->not`, `->and` y los proxies de orden superior por
+    # __get; sin esta extensión cada `->not` es una propiedad inexistente.
+    - vendor/pestphp/pest/extension.neon
+
+parameters:
+    # REQ-QAX-001 RB-6: nivel 6 obligatorio, con 8 como objetivo declarado
+    # (ASU-QAX-03). Subirlo es una tarea propia, no un ajuste al vuelo.
+    level: 6
+
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+
+    # REQ-QAX-002 SP-5 y la decisión de T-003: **sin baseline**. Un baseline
+    # solo se admite para una dependencia de terceros sin tipos, con fecha y
+    # motivo escritos. Lo que no tipa, se tipa.
+
+    # Las seis migraciones publicadas por paquetes no son código nuestro:
+    # republicarlas revertiría cualquier cambio (decisión de T-003).
+    excludePaths:
+        analyseAndScan:
+            - database/migrations/*_create_media_table.php
+            - database/migrations/*_activity_log_table.php
+            - database/migrations/*_push_subscriptions_table.php
+            - database/migrations/*_increase_push_subscriptions_endpoint_length.php
+
+    # Pest define los tests como closures sueltas; sin esto, cada `it()` del
+    # proyecto aparece como código no alcanzable.
+    bootstrapFiles:
+        - vendor/autoload.php
+
+    checkModelProperties: true
+    checkOctaneCompatibility: false
+    reportUnmatchedIgnoredErrors: true
+
+    # `->not`, `->and` y los proxies de orden superior de Pest se resuelven
+    # por __get. La extensión de Pest declara `Pest\Expectation`; las
+    # expectativas encadenadas llegan como `Pest\Mixins\Expectation`.
+    universalObjectCratesClasses:
+        - Pest\Mixins\Expectation
+
+    ignoreErrors:
+        # 2026-09-11 · spatie/laravel-medialibrary-pro es un paquete de pago
+        # que no está en 05 §3.2. Su config publicada referencia la clase del
+        # modelo de subidas temporales, que solo existe con el paquete Pro
+        # instalado. La clave queda inerte y no se usa en ninguna parte.
+        -
+            message: '#Class Spatie\\MediaLibraryPro\\Models\\TemporaryUpload not found\.#'
+            path: config/media-library.php
+            count: 1

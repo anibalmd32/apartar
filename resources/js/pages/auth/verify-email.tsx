@@ -1,10 +1,10 @@
 // Components
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { type FormEventHandler } from 'react';
 
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/vendor/button';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function VerifyEmail({ status }: { status?: string }) {
