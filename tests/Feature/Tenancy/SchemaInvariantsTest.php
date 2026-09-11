@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Organization;
 use Tests\Concerns\CreatesNeighbourOrganization;
 
 /**
@@ -12,10 +13,12 @@ use Tests\Concerns\CreatesNeighbourOrganization;
  * quien la completa**: `tenancy:audit`, `CrossTenantAccessTest`,
  * `BroadcastChannelIsolationTest`, `JobTenantContextTest` y
  * `AccountBoundaryTest`, que necesitan `TenantContext` (T-005) y las primeras
- * tablas del tenant (T-004).
+ * tablas del tenant.
  *
- * Lo que sí se puede comprobar ya son los invariantes del esquema que no
- * dependen de que exista ninguna tabla nuestra.
+ * Lo que sí se puede comprobar ya: los invariantes del esquema, y —desde que
+ * `T-004` adelantó `Organization`— que `CreatesNeighbourOrganization` siembra
+ * una organización vecina de verdad, que es la precondición de todo test de
+ * fuga cruzada (`REQ-QAX-003` RB-10).
  */
 
 /**
@@ -38,42 +41,25 @@ it('no declara ninguna columna FLOAT o DOUBLE en las migraciones', function (): 
 });
 
 /**
- * `REQ-QAX-003` RB-10: el helper que obliga a sembrar una organización vecina
- * tiene que existir y anunciarse, aunque su cuerpo llegue con T-005.
+ * `REQ-QAX-003` RB-10: el helper está en el caso base de toda la suite, no
+ * suelto para que cada test decida importarlo. Su comportamiento se ejercita
+ * en `NeighbourOrganizationTest`; lo que se comprueba aquí es que sigue
+ * aplicado donde tiene que estarlo.
  */
-it('expone el helper que siembra la organización vecina', function (): void {
-    $reflection = new ReflectionClass(CreatesNeighbourOrganization::class);
-
-    $methods = array_map(
-        fn (ReflectionMethod $method): string => $method->getName(),
-        $reflection->getMethods(),
-    );
-
-    expect($reflection->isTrait())->toBeTrue();
-    expect($methods)->toEqualCanonicalizing(['createNeighbourOrganization', 'hasNeighbourOrganization']);
+it('aplica el helper de la organización vecina en el caso base', function (): void {
+    expect(class_uses_recursive(Tests\TestCase::class))
+        ->toContain(CreatesNeighbourOrganization::class);
 });
 
 /**
- * Mientras `Organization` no exista, el helper falla con un mensaje que dice
- * qué falta. Lo que no puede hacer es devolver un escenario de un solo tenant
- * y dejar que un test de aislamiento se declare verde sobre él.
+ * `organizations.slug` es `UNIQUE` global: es una de las tres excepciones
+ * declaradas a la regla de unicidad por organización, y aquí es trivial porque
+ * `organizations` no es una tabla del tenant. `T-005` la añade a
+ * `GlobalUniqueExceptions` con su motivo.
  */
-it('falla de forma explícita mientras Organization no exista', function (): void {
-    $harness = new class
-    {
-        use CreatesNeighbourOrganization;
+it('mantiene el slug de la organización único en toda la plataforma', function (): void {
+    $organization = Organization::factory()->create();
 
-        public function attempt(): object
-        {
-            return $this->createNeighbourOrganization();
-        }
-    };
-
-    if (class_exists('App\\Models\\Organization')) {
-        expect($harness->attempt())->toBeObject();
-
-        return;
-    }
-
-    expect(fn () => $harness->attempt())->toThrow(RuntimeException::class, 'T-005');
+    expect(fn () => Organization::factory()->create(['slug' => $organization->slug]))
+        ->toThrow(Illuminate\Database\UniqueConstraintViolationException::class);
 });

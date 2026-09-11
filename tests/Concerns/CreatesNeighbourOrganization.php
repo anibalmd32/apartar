@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Concerns;
 
-use RuntimeException;
+use App\Models\Organization;
 
 /**
  * Siembra una organización "vecina" junto a la del escenario bajo prueba.
@@ -15,63 +15,53 @@ use RuntimeException;
  * base, un `where` olvidado pasa desapercibido porque todo lo que devuelve la
  * query resulta ser, por casualidad, del tenant correcto.
  *
- * El estado de este helper es deliberadamente parcial: `T-003` instala el
- * contrato y `T-005` (`TenantContext`) más `T-007` (gate de aislamiento) lo
- * completan, cuando existan el modelo `Organization` y su factory. Hasta
- * entonces cualquier uso falla con un mensaje explícito en lugar de devolver
- * un escenario de un solo tenant en silencio.
+ * **Lo que falta:** fijar el tenant activo y ejecutar un bloque dentro de la
+ * vecina exigen `TenantContext` (`T-005`); los tests de fuga cruzada que
+ * consumen este helper son `T-007`. Lo que ya funciona —crear la vecina con
+ * datos equivalentes y comprobar que el escenario tiene dos— es lo que esta
+ * versión entrega.
  */
 trait CreatesNeighbourOrganization
 {
     /**
-     * Clase del modelo de organización. No se referencia por `::class` a
-     * propósito: todavía no existe y el análisis estático debe seguir limpio.
+     * Organización vecina del escenario, creada una sola vez por test.
      */
-    private const ORGANIZATION_MODEL = 'App\\Models\\Organization';
+    private ?Organization $neighbour = null;
 
     /**
-     * Crea una organización vecina con datos equivalentes a los del escenario.
+     * Crea (o devuelve) la organización vecina del escenario.
+     *
+     * Llamarlo dos veces en el mismo test devuelve la misma: el escenario
+     * necesita *una* vecina, no una por aserción.
      *
      * @param  array<string, mixed>  $attributes  atributos que sobrescriben los de la factory
-     * @return object la organización vecina recién creada
-     *
-     * @throws RuntimeException mientras el modelo `Organization` no exista (T-005)
      */
-    protected function createNeighbourOrganization(array $attributes = []): object
+    protected function neighbourOrganization(array $attributes = []): Organization
     {
-        $model = self::ORGANIZATION_MODEL;
-
-        if (! class_exists($model)) {
-            throw new RuntimeException(
-                'CreatesNeighbourOrganization necesita el modelo Organization, que llega con T-005. '
-                .'Hasta entonces ningún test puede declarar que cubre el aislamiento entre organizaciones.'
-            );
-        }
-
-        /** @var object $organization */
-        $organization = $model::factory()->create($attributes);
-
-        return $organization;
+        return $this->neighbour ??= Organization::factory()->create($attributes);
     }
 
     /**
-     * Indica si el escenario ya tiene más de una organización sembrada.
+     * Crea una organización vecina adicional, siempre nueva.
      *
-     * Pensado para que los tests de aislamiento afirmen su propia
-     * precondición: un test de fuga cruzada con un solo tenant no prueba nada.
+     * Para los escenarios que necesitan comprobar que el aislamiento aguanta
+     * con más de dos tenants.
      *
-     * @throws RuntimeException mientras el modelo `Organization` no exista (T-005)
+     * @param  array<string, mixed>  $attributes  atributos que sobrescriben los de la factory
+     */
+    protected function createNeighbourOrganization(array $attributes = []): Organization
+    {
+        return Organization::factory()->create($attributes);
+    }
+
+    /**
+     * Indica si el escenario tiene ya más de una organización sembrada.
+     *
+     * Pensado para que un test de aislamiento afirme su propia precondición:
+     * un test de fuga cruzada con un solo tenant no prueba nada, y pasa.
      */
     protected function hasNeighbourOrganization(): bool
     {
-        $model = self::ORGANIZATION_MODEL;
-
-        if (! class_exists($model)) {
-            throw new RuntimeException(
-                'CreatesNeighbourOrganization necesita el modelo Organization, que llega con T-005.'
-            );
-        }
-
-        return $model::query()->count() > 1;
+        return Organization::query()->withoutGlobalScopes()->count() > 1;
     }
 }

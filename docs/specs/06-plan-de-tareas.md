@@ -75,6 +75,8 @@ Sobre `REQ-QAX-003` y `REQ-QAX-007`: son **normativos y transversales**, no func
 Las 6 tablas de [05 §4 bloque 1](05-design-tecnico.md): `platform_users`, `plans`, `organizations`, `exchange_rates`, `accounts`, `platform_settings`.
 **Hecho cuando:** `migrate:fresh` corre; ningún `FLOAT`/`DOUBLE` en el esquema.
 
+**Ajuste sobre el plan original:** el modelo `Organization` y su factory se crean **aquí**, no en `T-008`. `Organization` **es** el tenant, no está sujeta a él, así que no necesita `BelongsToOrganization` y no hay dependencia circular con `T-005`. Adelantarla desbloquea el cuerpo real de `CreatesNeighbourOrganization` en `T-007` en lugar de dejar el gate de aislamiento a medias hasta `T-008`. `User` y `PaymentAccount` siguen en `T-008` porque sí llevan el trait.
+
 **T-005 · `TenantContext` + `BelongsToOrganization`** · `AB` · 3 pts · *Requisitos: `REQ-ORG-002`*
 Los dos primeros colaboradores de [05 §5](05-design-tecnico.md) con su firma exacta, `TenantResolver`, `MissingTenantContextException`, `TenantAlreadySetException`, `GlobalUniqueExceptions` con las tres excepciones y las dos tablas exentas.
 **Hecho cuando:** el trait filtra al leer y rellena al crear (test con un modelo de prueba); cambiar de tenant en la misma petición lanza excepción; `forget()` limpia.
