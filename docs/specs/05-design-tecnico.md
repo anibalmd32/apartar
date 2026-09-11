@@ -91,6 +91,8 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 36 tablas de proyecto. El orden es **obligatorio**: cada bloque depende de los anteriores. Convenciones: todo importe es `BIGINT` de centavos (`*_cents`); toda tasa `DECIMAL(18,8)`; `TIMESTAMP` en UTC; enums de dominio como `VARCHAR`; `id` es `BIGINT UNSIGNED`.
 
+> **Los importes son `BIGINT` con signo, nunca `UNSIGNED`.** La resta de dos `BIGINT UNSIGNED` en MySQL no da negativo: desborda a un número enorme. Con dinero eso es un balance corrupto en lugar de un error visible. Las cantidades que no son dinero (`max_*`, `position`, `stock`) sí van `UNSIGNED`.
+
 ### Bloque 0 — Framework (Laravel las genera)
 `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `sessions`, `password_reset_tokens`.
 
@@ -234,7 +236,7 @@ final class TenantContext
 /**
  * Aísla un modelo por organización: global scope al leer, relleno al crear.
  *
- * Usado por los 24 modelos del tenant. Quitar el scope exige
+ * Usado por todos los modelos del tenant. Quitar el scope exige
  * withoutTenantScope() explícito, permitido solo en app/Queries/Platform,
  * app/Actions/Platform y comandos de mantenimiento.
  */

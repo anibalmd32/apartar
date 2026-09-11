@@ -88,8 +88,13 @@ it('acompaña cada clase de dominio con su test unitario', function (): void {
         return;
     }
 
+    // Se busca en toda la suite y no solo en `tests/Unit`: el dominio puro
+    // se prueba sin framework (`REQ-QAX-003` RB-2), pero piezas como
+    // `BelongsToOrganization` o su global scope solo se pueden ejercitar
+    // contra una base de datos real. Lo que la regla exige es que **cada
+    // clase tenga su test dedicado**, no en qué suite vive.
     $tests = [];
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('tests/Unit')));
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('tests')));
 
     /** @var SplFileInfo $file */
     foreach ($iterator as $file) {

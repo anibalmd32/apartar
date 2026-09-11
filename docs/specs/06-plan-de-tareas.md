@@ -19,6 +19,7 @@ Convenciones del plan:
 - **Toda tarea de Fase B cierra con sus tests en verde.** Una tarea sin tests no está hecha.
 - **Toda tarea que crea una consulta del tenant añade su caso a `tests/Feature/Tenancy`** (`REQ-QAX-008` RB-2). No es opcional ni se deja para el final.
 - El estimado es en **puntos relativos** (1 = media jornada, 2 = jornada, 3 = dos jornadas, 5 = una semana corta). Sirve para ordenar, no para prometer fechas.
+- **Un test que ejercite métodos de instancia del caso base se escribe como clase PHPUnit, no con la sintaxis de Pest.** PHPStan no resuelve el `$this` de las closures de Pest, y nivel 6 lo rechaza. Descubierto en `T-004`; aplica a todo test que use helpers como `CreatesNeighbourOrganization`.
 
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
@@ -80,6 +81,8 @@ Las 6 tablas de [05 §4 bloque 1](05-design-tecnico.md): `platform_users`, `plan
 **T-005 · `TenantContext` + `BelongsToOrganization`** · `AB` · 3 pts · *Requisitos: `REQ-ORG-002`*
 Los dos primeros colaboradores de [05 §5](05-design-tecnico.md) con su firma exacta, `TenantResolver`, `MissingTenantContextException`, `TenantAlreadySetException`, `GlobalUniqueExceptions` con las tres excepciones y las dos tablas exentas.
 **Hecho cuando:** el trait filtra al leer y rellena al crear (test con un modelo de prueba); cambiar de tenant en la misma petición lanza excepción; `forget()` limpia.
+
+**Pendientes que `T-004` dejó para aquí:** completar `CreatesNeighbourOrganization` con `actingAsOrganization()` y `withinOrganization(Organization, Closure)` —hoy el helper crea dos tenants pero no puede situarse en uno— y eliminar el `withoutGlobalScopes()` defensivo de `hasNeighbourOrganization()`, redundante porque `organizations` nunca llevará global scope.
 
 **T-006 · Middlewares de resolución de tenant** · `AB` · 2 pts · *Requisitos: `REQ-ORG-002`*
 `ResolveTenant` (desde sesión), `ResolveCatalogTenant` (desde slug), `ResolvePortalTenant` (desde ficha), `RunsInTenantContext` para jobs.

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tenancy;
 
+use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -108,5 +110,73 @@ final class NeighbourOrganizationTest extends TestCase
 
         $this->assertSoftDeleted($organization);
         $this->assertSame(1, Organization::withTrashed()->count());
+    }
+
+    /**
+     * `T-005` completa el helper: además de sembrar la vecina, ya puede
+     * situarse en una organización, que es lo que hace el middleware de
+     * resolución en una petición real.
+     */
+    public function test_acting_as_an_organization_sets_the_tenant(): void
+    {
+        $organization = Organization::factory()->create();
+
+        $this->actingAsOrganization($organization);
+
+        $this->assertTrue(app(TenantContext::class)->organization()->is($organization));
+    }
+
+    public function test_acting_as_another_organization_replaces_the_previous_one(): void
+    {
+        $this->actingAsOrganization(Organization::factory()->create());
+
+        $second = $this->neighbourOrganization();
+        $this->actingAsOrganization($second);
+
+        $this->assertSame((int) $second->getKey(), app(TenantContext::class)->organizationId());
+    }
+
+    public function test_within_an_organization_restores_the_previous_tenant(): void
+    {
+        $own = Organization::factory()->create();
+        $neighbour = $this->neighbourOrganization();
+
+        $this->actingAsOrganization($own);
+
+        $seen = $this->withinOrganization(
+            $neighbour,
+            fn (): int => app(TenantContext::class)->organizationId(),
+        );
+
+        $this->assertSame((int) $neighbour->getKey(), $seen);
+        $this->assertSame((int) $own->getKey(), app(TenantContext::class)->organizationId());
+    }
+
+    public function test_within_an_organization_restores_the_tenant_even_when_it_throws(): void
+    {
+        $own = Organization::factory()->create();
+        $this->actingAsOrganization($own);
+
+        try {
+            $this->withinOrganization($this->neighbourOrganization(), function (): never {
+                throw new RuntimeException('fallo dentro de la vecina');
+            });
+        } catch (RuntimeException) {
+            // Lo que se comprueba es el estado que deja, no el fallo.
+        }
+
+        $this->assertSame((int) $own->getKey(), app(TenantContext::class)->organizationId());
+    }
+
+    /**
+     * Lo que ve un job que se olvidó de fijar su tenant (`REQ-ORG-002` SP-3).
+     */
+    public function test_without_organization_empties_the_context(): void
+    {
+        $this->actingAsOrganization(Organization::factory()->create());
+
+        $this->withoutOrganization();
+
+        $this->assertFalse(app(TenantContext::class)->hasOrganization());
     }
 }

@@ -196,7 +196,7 @@ final readonly class RegisterOrganizationData
 - Superficie esperada: `app/Domain/Tenancy/TenantContext.php`, `app/Domain/Tenancy/BelongsToOrganization.php`, `app/Domain/Tenancy/TenantResolver.php`, `app/Http/Middleware/ResolveTenant.php`, `app/Http/Middleware/ResolveCatalogTenant.php`, `app/Jobs/Concerns/RunsInTenantContext.php`.
 - Tipos esperados: `TenantContext`, `BelongsToOrganization`, `TenantResolver`, `MissingTenantContextException`, `CrossTenantRelationException`.
 - Anti-`SHALLOW`: `BelongsToOrganization::bootBelongsToOrganization()` (global scope + relleno al crear + macro de exclusión) y `TenantResolver::resolve()` (las cuatro vías de RB-4) superan 4 líneas junto a sus tipos.
-- Tests: el global scope filtra en los 18 modelos del tenant (test parametrizado); crear rellena `organization_id`; binding ajeno da `404`; job sin tenant falla; `withoutTenantScope` solo aparece en las rutas permitidas (test de arquitectura por búsqueda); relación cruzada rechazada; el tenant se limpia entre jobs.
+- Tests: el global scope filtra en **todos** los modelos del tenant (test parametrizado sobre el listado real, no sobre una cifra fija); crear rellena `organization_id`; binding ajeno da `404`; job sin tenant falla; `withoutTenantScope` solo aparece en las rutas permitidas (test de arquitectura por búsqueda); relación cruzada rechazada; el tenant se limpia entre jobs.
 
 ---
 
