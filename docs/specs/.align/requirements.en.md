@@ -1,13 +1,18 @@
 # Apartar — Requirements (alignment mirror)
 
-> **GENERATED ARTIFACT — DO NOT EDIT BY HAND.**
+> **DERIVED ARTIFACT — DO NOT EDIT BY HAND.**
 > Source of truth: the Spanish modules in `docs/specs/`. Correct the module first, then propagate here.
-> Purpose: `indexion spec align` matches specification vocabulary against code identifiers. The Spanish
-> modules would produce false `DRIFTED` results against an English codebase, so the tooling consumes
-> this mirror only. See `REQ-QAX-005` in `docs/specs/91-calidad-y-gates.md`.
 >
-> Each item lists normative `shall` statements plus the **expected identifiers** that must appear in the
-> implementation. **118 requirements**, IDs identical to the Spanish modules (1:1 traceability).
+> **Purpose: naming contract.** This file is the single place where the **expected identifiers** of all
+> 118 requirements are gathered in English. Consult it before naming a class, enum, field or TS type:
+> if the spec says `PaymentApplier`, the class is called `PaymentApplier`. It also serves as compact
+> context for AI-assisted implementation. See `REQ-QAX-005` in `docs/specs/91-calidad-y-gates.md`.
+>
+> It originally fed `indexion spec align`; that tool was discarded, so the sync obligation is now
+> **reduced**: update this file when a *public identifier* changes, not when prose changes.
+>
+> Each item lists normative `shall` statements plus the expected identifiers.
+> **118 requirements**, IDs identical to the Spanish modules (1:1 traceability).
 >
 > Product shape: multi-tenant SaaS. A business (`Organization`) publishes shareable catalogs with a
 > layaway (installment reservation) system and collects from its own customers. Monetized by subscription
@@ -202,7 +207,7 @@ The system shall let each organization choose its rate source among BCV, paralle
 the provider from configuration behind an interface, shall keep a manual rate in the organization's own
 settings, and shall always convert subscription invoices with the platform's source rather than the
 organization's.
-Expected identifiers: `ExchangeRateProvider`, `PyDolarVeProvider`, `ManualRateProvider`, `ExchangeRateService`, `UpdateExchangeRateSettingsAction`.
+Expected identifiers: `ExchangeRateProvider`, `DolarApiProvider`, `ManualRateProvider`, `ExchangeRateService`, `UpdateExchangeRateSettingsAction`.
 
 #### 5.4: REQ-FX-004 — Dual currency projection and display toggle
 The system shall project every amount in both currencies, shall support two display modes consistently

@@ -1,4 +1,4 @@
-# Módulo 91 — Estándares, pruebas y gates de conformidad SDD (`QAX`)
+# Módulo 91 — Estándares, pruebas y definición de hecho (`QAX`)
 
 > Padre: [02-spec-consolidada.md](02-spec-consolidada.md) · Asunciones aplicadas: `ASU-QAX-01` … `ASU-QAX-07`
 > Requisitos: `REQ-QAX-001` … `REQ-QAX-008`
@@ -6,6 +6,8 @@
 > Este módulo es **normativo para todos los demás**: define qué significa "hecho" en este proyecto.
 >
 > **Efecto del pivote:** entra `REQ-QAX-008`, el **gate de aislamiento multi-tenant**. Es el único gate del proyecto que no admite excepciones ni deuda técnica: una fuga entre organizaciones no es un bug, es el fin del producto.
+>
+> **`indexion` descartado.** `REQ-QAX-005` y `REQ-QAX-006` se reescribieron: la conformidad se verifica con Pest, Vitest, PHPStan, `tenancy:audit` y revisión de PR. Detalle en [02-spec-consolidada.md §8](02-spec-consolidada.md).
 
 ---
 
@@ -201,99 +203,94 @@
 
 ---
 
-### REQ-QAX-005 · Espejo de requisitos en inglés para `spec align`
+### REQ-QAX-005 · Glosario canónico de identificadores en inglés
 
 **Historia de usuario**
-> Como equipo, queremos una spec legible para el negocio en español y a la vez utilizable por las herramientas de conformidad, para no tener que elegir entre las dos cosas.
+> Como equipo, queremos un único lugar donde estén todos los nombres de clases, tipos y campos que la spec exige, para que nadie invente un nombre distinto al implementar y para poder dar contexto compacto a una herramienta asistida por IA.
+
+> **Reencuadre.** Este requisito nació para alimentar `indexion spec align`. Descartada la herramienta, el espejo pierde a su consumidor automático pero conserva un valor real: es el único artefacto que reúne, en inglés y en un solo archivo, los **identificadores esperados de los 118 requisitos**. Se degrada de "artefacto de tooling que hay que mantener sincronizado" a **contrato de nombres del equipo**.
 
 **Contratos de datos**
-- `docs/specs/.align/requirements.en.md`: **artefacto derivado**, en inglés, con la jerarquía `### Requirement N:` / `#### N.M:` que espera `indexion spec draft`.
-- Los módulos en español son la fuente; el espejo se regenera a partir de ellos.
+- `docs/specs/.align/requirements.en.md`: artefacto derivado, en inglés, una entrada por requisito con sus sentencias normativas y su lista literal de identificadores esperados.
+- Los módulos en español son la fuente.
 
 **Reglas de negocio y precondiciones**
-- RB-1 Motivo (`ASU-QAX-05`): `spec align` compara el vocabulario de la spec con los identificadores del código. Una spec en español contra código en inglés produce `DRIFTED` falsos, así que las herramientas consumen **solo** el espejo en inglés.
-- RB-2 El espejo contiene, por requisito: su ID, un título en inglés, sentencias normativas con `shall`, y la **lista literal de identificadores esperados** (clases, enums, métodos, campos, tipos TS). Esa lista es lo que hace posible el matching de vocabulario.
-- RB-3 El espejo es **derivado y no editable a mano**: su cabecera lo declara y toda corrección se hace en el módulo en español y luego se propaga.
-- RB-4 Además se genera `.kiro/specs/apartar/requirements.md` como copia para las herramientas SDD que esperan esa ruta (`ASU-QAX-06`), igualmente marcada como generada.
-- RB-5 La fuente de verdad es siempre `docs/specs/` (`ASU-QAX-06`); los artefactos derivados nunca la contradicen.
-- RB-6 Cada requisito del espejo mantiene el **mismo ID** que en español: la trazabilidad entre ambos es 1:1, sin requisitos huérfanos en ninguna dirección.
-- RB-7 La prosa explicativa, los happy paths y los sad paths **no** se traducen íntegros: el espejo es un artefacto de vocabulario, no una segunda spec que haya que mantener al día en paralelo.
+- RB-1 Es un **contrato de nombres**: si la spec dice `PaymentApplier`, la clase se llama `PaymentApplier`. El espejo es el sitio donde ese vocabulario está reunido y consultable de un vistazo.
+- RB-2 Contiene, por requisito: su ID, un título en inglés, sentencias normativas con `shall` y la lista de identificadores esperados.
+- RB-3 Sigue siendo **derivado**: la fuente de verdad es `docs/specs/` y toda corrección se hace primero en el módulo en español.
+- RB-4 **Obligación de sincronía reducida**: se actualiza cuando cambia un **identificador público** (una clase, un enum, un campo, un tipo TS), no cuando cambia la prosa, un happy path o un sad path. Mantener dos narrativas en paralelo sin una herramienta que lo aproveche sería trabajo perdido.
+- RB-5 La trazabilidad de IDs sigue siendo **1:1** con los módulos, y eso sí se verifica: es lo que permite comprobar que no falta ni sobra ningún requisito.
+- RB-6 Se elimina la copia en `.kiro/specs/`: existía solo para herramientas SDD que ya no se usan.
+- RB-7 La prosa explicativa no se traduce. El espejo es vocabulario, no una segunda spec.
 
 **Happy path**
-1. Se aprueba un cambio en `22-comprobantes-y-conciliacion.md`.
-2. Se actualiza la entrada correspondiente del espejo con los identificadores nuevos.
-3. `indexion spec align diff` compara el espejo con `app/` y no reporta drift.
+1. Al implementar `REQ-PAY-005` se consulta su entrada del espejo y se toman los nombres exactos: `PaymentApplier`, `FifoAllocator`, `AllocationPlan`.
+2. Durante la implementación se decide renombrar `AllocationPlan` a algo más claro.
+3. Se corrige el módulo en español y se propaga al espejo en el mismo PR.
 
 **Sad paths y edge cases**
-- SP-1 Módulo en español actualizado sin propagar al espejo → drift falso o cobertura falsa; la revisión de PR exige actualizar ambos cuando cambian identificadores.
-- SP-2 Identificador del código renombrado sin actualizar el espejo → `DRIFTED` legítimo; se corrige el espejo (o el código, si el nombre de la spec era el correcto).
-- SP-3 Requisito nuevo ausente del espejo → aparecería como no cubierto; el conteo de IDs entre módulos y espejo debe coincidir (comprobación de RB-6).
-- SP-4 Edición manual del espejo divergiendo de la fuente → prohibido por RB-3; se detecta en revisión.
-- SP-5 Traducción que **invierte** la intención (el patrón que el skill `indexion-sdd` advierte: la spec dice "decodificar" y el requisito dice "devolver error") → revisión semántica obligatoria del espejo, porque `spec align` no detecta inversiones de intención: el vocabulario coincide aunque el significado sea el opuesto.
+- SP-1 Identificador renombrado en el código sin actualizar la spec ni el espejo → se detecta en revisión al comparar con la sección *Tipos esperados* del requisito.
+- SP-2 Requisito nuevo ausente del espejo → el conteo de IDs deja de coincidir (RB-5).
+- SP-3 Cambio de prosa sin tocar identificadores → **no** exige actualizar el espejo (RB-4).
+- SP-4 Duda sobre qué nombre usar → el espejo es la referencia; si es ambiguo, se corrige el módulo.
 
 **Fuera de alcance inmediato**
-- Generación automática del espejo desde los módulos en español.
+- Generación automática del espejo.
 - Spec íntegramente en inglés.
-- Traducción de la prosa completa.
+- Verificación automatizada de que los identificadores del código coinciden con el espejo.
 
 **Gate de validación**
-- Superficie esperada: `docs/specs/.align/requirements.en.md`, `.kiro/specs/apartar/requirements.md`.
-- Tipos esperados: una entrada por cada uno de los 118 IDs; jerarquía `### Requirement N:` / `#### N.M:`.
+- Superficie esperada: `docs/specs/.align/requirements.en.md`.
+- Tipos esperados: una entrada por cada uno de los 118 IDs.
 - Anti-`SHALLOW`: no aplica (artefacto documental).
-- Tests: el conteo de IDs del espejo coincide con el de los módulos; ningún ID huérfano en ninguna dirección; la cabecera declara el artefacto como generado; revisión semántica manual registrada en el PR.
+- Tests: el conteo de IDs del espejo coincide con el de los módulos y no hay huérfanos en ninguna dirección (comprobable con dos `grep` y un `diff`, sin herramientas externas).
 
 ---
 
-### REQ-QAX-006 · Gates de conformidad y política de drift
+### REQ-QAX-006 · Definición de hecho y política de revisión
 
 **Historia de usuario**
-> Como equipo, queremos una comprobación objetiva de que el código implementa la spec, para no confiar solo en la impresión de que "ya está hecho".
+> Como equipo, queremos un criterio objetivo y ejecutable de cuándo un requisito está terminado, para no confiar en la impresión de que ya está hecho.
+
+> **Reencuadre.** Este requisito describía la cadena de comandos de `indexion`. Descartada la herramienta, se reescribe como la política de aceptación que sí es ejecutable: las cuatro líneas del *Gate de validación* de cada requisito, verificadas con Pest, Vitest, PHPStan y `tenancy:audit`.
 
 **Contratos de datos**
-- Herramienta `indexion` (**no instalada** en el entorno actual, `ASU-QAX-04`).
-- Reportes en `.indexion/sdd-reports/apartar/`.
-- Fases A (tipos) y B (lógica) según [02-spec-consolidada.md](02-spec-consolidada.md) §8.
+- La sección *Gate de validación* de cada uno de los 118 requisitos.
+- Los tres jobs de CI de `REQ-QAX-004`: `backend`, `frontend`, `tenancy`.
+- Fases A y B según [02-spec-consolidada.md](02-spec-consolidada.md) §8.2.
 
 **Reglas de negocio y precondiciones**
-- RB-1 Cadena de trazabilidad de un salto por comando (nunca comparar la spec fuente directamente contra el código):
-  1. prompt fundacional ↔ espejo de requisitos;
-  2. espejo ↔ documento de diseño;
-  3. espejo ↔ `app/`.
-- RB-2 **Fase A** (tipos y estructuras: enums, VOs, DTOs, migraciones, interfaces, firmas de `Action`, tipos TS, andamiaje de tests) → gate `--fail-on drifted`; `SHALLOW` **tolerado**.
-- RB-3 **Fase B** (lógica: cuerpos de `Action`, `Domain`, jobs, componentes, tests reales) → gate `--fail-on any`; `SHALLOW` **debe ser 0**.
-- RB-4 Regla anti-`SHALLOW`: la resolución exige funciones no triviales (**> 4 líneas**) **en el mismo archivo** que el tipo emparejado. Mover la lógica a otro archivo **no** resuelve el `SHALLOW`, porque la detección es por archivo. Cada módulo de esta spec declara, en su sección *Gate de validación*, qué funciones cumplen ese rol.
-- RB-5 Tratamiento por clasificación:
-  - `DRIFTED` → añadir el vocabulario de la spec a los PHPDoc/TSDoc de las declaraciones públicas, o corregir el nombre;
-  - `SPEC_ONLY` → el requisito no está implementado: implementarlo o marcarlo explícitamente como fuera de alcance en la spec;
-  - `SHALLOW` → añadir lógica no trivial junto al tipo (RB-4).
-- RB-6 **Estado actual**: `indexion` no está instalado (verificado en el entorno). Hasta que lo esté, los gates se auditan **cualitativamente** contra los criterios declarados en cada módulo, y la instalación es la primera tarea del PASO 4.
-- RB-7 Los gates se ejecutan por módulo tras completar cada uno, no solo al final: un módulo con drift no se considera terminado.
-- RB-8 Cuando `indexion` esté disponible, el gate de fase B se añade a CI (`REQ-QAX-004`) como job adicional.
-- RB-9 Límite conocido y documentado: `spec align` mide **vocabulario**, no semántica. Un requisito que invierte la intención de la spec usando las mismas palabras pasa como `MATCHED`. Por eso la revisión semántica humana sigue siendo obligatoria y no es sustituible por el gate.
+- RB-1 Un requisito está **hecho** cuando sus cuatro líneas se cumplen: la *superficie esperada* existe, los *tipos esperados* existen con su nombre exacto, su función **anti-`SHALLOW`** tiene lógica real y sus *tests* pasan.
+- RB-2 **Fase A** cierra con `phpstan` y `tsc` limpios, migraciones corriendo y los tipos completos. `Anti-SHALLOW` está **tolerado**: los métodos aún están vacíos y eso es correcto en esta fase.
+- RB-3 **Fase B** cierra cuando los tests del requisito pasan y su `Anti-SHALLOW` está resuelto. Un módulo con tipos y métodos vacíos **no cuenta como entregado**, y ese es el fallo que esta regla existe para prevenir.
+- RB-4 La etiqueta `Anti-SHALLOW` se conserva aunque la herramienta que la acuñó ya no esté: nombra un modo de fallo real, y renombrarla en 118 secciones no aportaría nada.
+- RB-5 Se verifica en **revisión de PR** contra la sección del requisito, no por un comando de conformidad documental. Se acepta explícitamente la pérdida: no hay métrica automática de *drift* entre spec y código.
+- RB-6 Lo que **sí** es automático son los tres jobs de CI (`REQ-QAX-004`), y en particular `tenancy` (`REQ-QAX-008`), que nunca dependió de `indexion`.
+- RB-7 Cada PR declara en su descripción **qué requisitos cierra**, por ID. Es el sustituto ligero de la trazabilidad automatizada, y es suficiente a esta escala.
+- RB-8 Un requisito que se decide no implementar se mueve a *Fuera de alcance inmediato* en su módulo, con fecha y motivo. Nunca se deja a medias sin declararlo.
 
 **Happy path**
-1. Se completa la fase A del módulo `FX`; el gate `--fail-on drifted` sale con código 0 (con `SHALLOW` presente y tolerado).
-2. Se completa la fase B; se añaden los métodos con lógica y `--fail-on any` sale con código 0.
-3. El módulo se marca como terminado en el índice.
+1. Se termina la Fase B de `REQ-PAY-005`.
+2. El PR declara "cierra REQ-PAY-005, REQ-PAY-007" y sus tests incluyen los casos listados en ambos gates.
+3. La revisión comprueba las cuatro líneas de cada uno y los tres jobs de CI pasan.
 
 **Sad paths y edge cases**
-- SP-1 `indexion` no instalado → los gates no son ejecutables; se registra en el PR que la verificación fue cualitativa (RB-6).
-- SP-2 `SHALLOW` que no se resuelve moviendo la lógica → se resuelve **añadiendo** lógica al archivo del tipo (RB-4); es el error más común.
-- SP-3 `DRIFTED` masivo por spec en español → no debería ocurrir: los gates consumen el espejo en inglés (`REQ-QAX-005`).
-- SP-4 `SPEC_ONLY` de un requisito deliberadamente no implementado → se mueve a "Fuera de alcance inmediato" en su módulo, con fecha y motivo, en lugar de silenciar el gate.
-- SP-5 Umbral de 0.3 produciendo ruido en un módulo concreto → se ajusta el umbral **documentando** el motivo por módulo, nunca de forma global y silenciosa.
-- SP-6 Gate verde con una implementación que invierte la intención → RB-9; solo la revisión humana y las pruebas de comportamiento lo detectan.
+- SP-1 PR que declara cerrar un requisito con los métodos vacíos → rechazado por RB-3.
+- SP-2 PR sin declarar requisitos → se pide la lista antes de revisar (RB-7).
+- SP-3 Requisito cuyos tests pasan pero cuya *superficie esperada* está en otros archivos → se acepta si la ubicación es mejor, **corrigiendo la spec en el mismo PR**; la spec no puede quedar mintiendo.
+- SP-4 Deriva entre spec y código detectada tarde → consecuencia asumida de RB-5; la mitigación es RB-7 y la revisión disciplinada.
+- SP-5 Requisito que resulta inviable como está especificado → se corrige el requisito, no se implementa otra cosa en silencio.
 
 **Fuera de alcance inmediato**
-- Gate de conformidad automatizado en CI (hasta que `indexion` esté instalado).
-- Umbrales por módulo afinados empíricamente.
-- Publicación de los reportes de drift.
+- Métrica automática de *drift* entre spec y código.
+- `indexion` y cualquier herramienta de alineación documental.
+- Trazabilidad automatizada requisito ↔ commit.
 
 **Gate de validación**
-- Superficie esperada: `.indexion/sdd-reports/apartar/` (tras la instalación), `docs/specs/.align/requirements.en.md`, la sección *Gate de validación* de los 19 módulos.
-- Tipos esperados: los tres comandos de la cadena de RB-1 documentados y ejecutables.
-- Anti-`SHALLOW`: no aplica (requisito de proceso); es el requisito que **define** la regla para todos los demás.
-- Tests: `indexion --version` disponible (tarea de instalación); los tres comandos de la cadena documentados con sus rutas exactas; cada módulo declara su superficie, sus tipos y su función anti-`SHALLOW` (verificación documental: 118 requisitos con las cuatro líneas del gate).
+- Superficie esperada: la sección *Gate de validación* de los 118 requisitos; `.github/workflows/ci.yml`; plantilla de PR con el campo "requisitos que cierra".
+- Tipos esperados: no aplica (requisito de proceso).
+- Anti-`SHALLOW`: no aplica; **es el requisito que define la regla** para todos los demás.
+- Tests: los tres jobs de CI existen y pasan; la plantilla de PR incluye el campo de requisitos; los 118 requisitos tienen sus cuatro líneas de gate (verificable con `grep`).
 
 ---
 
@@ -378,7 +375,7 @@
 - RB-5 La lista blanca de las tres excepciones vive en el código, con un comentario que explica **por qué** cada una es global. Añadir una cuarta exige modificar esta spec.
 - RB-6 **Verificación de la frontera cuenta ↔ organización**, que es la parte más sutil del modelo: ningún `Resource`, respuesta JSON o exportación del backoffice expone `account_id` (`REQ-ACC-007` RB-5), y ninguna consulta del backoffice devuelve actividad de sus clientes en otras organizaciones (`REQ-ACC-007` RB-4, `REQ-BOF-041` RB-9).
 - RB-7 El gate corre en CI como **job propio** (`REQ-QAX-004`), separado del resto, para que su fallo sea inequívoco en el informe y no quede sepultado entre otros.
-- RB-8 Es independiente de `indexion`: son tests de Pest y un comando de Artisan, así que funciona desde el primer día aunque los gates de conformidad documental aún no sean ejecutables (`REQ-QAX-006` RB-6).
+- RB-8 No depende de ninguna herramienta externa: son tests de Pest y un comando de Artisan. Es la razón por la que descartar `indexion` no lo afecta y por la que es el único gate que puede exigirse desde el primer commit.
 
 **Happy path**
 1. Un desarrollador añade un endpoint de backoffice y olvida que el binding debe estar filtrado.

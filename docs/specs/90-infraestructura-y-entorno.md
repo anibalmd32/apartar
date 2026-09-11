@@ -4,6 +4,8 @@
 > Requisitos: `REQ-INF-001` … `REQ-INF-006`
 >
 > **Efecto del pivote:** la topología no cambia — una sola instalación sirve a todas las organizaciones, que es justo la ventaja de haber elegido tenancy por fila (`D-1`). Lo que sí cambia es la operación: las colas y el scheduler ahora recorren N organizaciones sin fugas de tenant (`REQ-INF-003` RB-1b) y respetando la zona horaria de cada una (RB-5).
+>
+> ⚠️ **Alcance de esta iteración: solo entorno local.** No hay dominio comprado ni servidor, así que `REQ-INF-002` (Traefik, dominios y TLS) y la parte de producción de `REQ-INF-006` quedan **diferidas**: se conservan especificadas para no perder el trabajo, pero no se implementan todavía. El entorno local **no usa Traefik**: publica puertos directamente, y eso es posible porque las URL de catálogo son por ruta (`/c/{slug}`) y no por subdominio — la decisión `Q4` es la que hace trivial el desarrollo local. Detalle en [05-design-tecnico.md](05-design-tecnico.md) §9.
 
 ## Contratos compartidos del módulo
 
@@ -32,9 +34,10 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
 - Volúmenes nombrados: `mysql_data`, `redis_data`, `app_storage`.
 
 **Reglas de negocio y precondiciones**
+- RB-0 **El entorno local es el objetivo de esta iteración y no usa Traefik.** `nginx` publica `8080:80`, `reverb` `8080` interno como `8081:8080`, `vite` `5173`, y `mysql`/`redis` publican sus puertos al host para poder inspeccionarlos con un cliente. La aplicación vive en `http://localhost:8080`, sin TLS y sin DNS comodín. Esto es posible porque las URL públicas son **por ruta** (`/c/{slug}`, `/{org-slug}`) y no por subdominio: la decisión `Q4` es la que elimina la necesidad de un proxy en desarrollo. La red `traefik_proxy` y las etiquetas solo existen en `docker-compose.prod.yml`, que queda diferido (`REQ-INF-002`).
 - RB-1 Servicios aislados según la tabla de contratos (`ASU-INF-02`): un contenedor por responsabilidad.
-- RB-2 `mysql` y `redis` **no** publican puertos al host en producción y viven solo en la red `internal` (sin acceso a internet).
-- RB-3 `nginx` y `reverb` son los únicos servicios en `traefik_proxy`; nada más se expone.
+- RB-2 `mysql` y `redis` publican puertos al host **solo en local**; en producción no los publican y viven solo en la red `internal`.
+- RB-3 En producción, `nginx` y `reverb` son los únicos servicios en `traefik_proxy`; en local no hay `traefik_proxy` en absoluto.
 - RB-4 `app_storage` es un volumen nombrado y persistente compartido por `app`, `queue` y `nginx`: contiene los comprobantes (`REQ-PAY-002`), las imágenes y los archivos de exportación. **Perderlo pierde evidencia**, y así se documenta.
 - RB-5 `healthcheck` obligatorio en `mysql`, `redis` y `app`; `depends_on` con `condition: service_healthy` para que las migraciones no arranquen antes de la BD.
 - RB-6 Todos los servicios llevan `restart: unless-stopped` y límites de memoria declarados.
@@ -69,7 +72,9 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
 
 ---
 
-### REQ-INF-002 · Integración con Traefik, dominios y TLS
+### REQ-INF-002 · Integración con Traefik, dominios y TLS · 🕓 DIFERIDO
+
+> **Diferido a una iteración posterior.** No hay dominio ni servidor todavía. El requisito se conserva íntegro porque sigue siendo la topología objetivo, pero **no entra en el plan de tareas** ([06-plan-de-tareas.md](06-plan-de-tareas.md)). El entorno local publica puertos directamente sin Traefik (`REQ-INF-001` RB-0).
 
 **Historia de usuario**
 > Como responsable del despliegue, quiero que Traefik publique el sitio con HTTPS automático a partir de etiquetas, para no gestionar certificados a mano.

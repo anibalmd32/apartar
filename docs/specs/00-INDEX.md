@@ -1,7 +1,7 @@
 # Apartar — Índice de Especificaciones (SDD)
 
 > Fuente de verdad de la especificación funcional y técnica de **Apartar**: plataforma SaaS multi-tenant donde un negocio publica catálogos compartibles con sistema de apartado y cobra en cuotas a sus propios clientes.
-> Metodología: **Spec-Driven Development (SDD)** con gates cuantitativos.
+> Metodología: **Spec-Driven Development (SDD)**. Los gates se verifican con Pest, Vitest, PHPStan y `tenancy:audit` ([02 §8](02-spec-consolidada.md)); `indexion` fue descartado.
 > Regla de oro: **ningún código de implementación se escribe antes de que el módulo de spec correspondiente esté aprobado.**
 
 ## Estado del flujo
@@ -13,8 +13,9 @@
 | PASO 1-bis | **Pivote a SaaS** — [03-pivote-saas-impacto.md](03-pivote-saas-impacto.md) | ✅ Aprobado (7 decisiones + capa de cuentas) | 2026-09-10 |
 | PASO 2 | Especificación consolidada — [02-spec-consolidada.md](02-spec-consolidada.md) + 19 módulos | ✅ **Compilada (118 requisitos)** | 2026-09-10 |
 | PASO 2b | Espejo de alineación — [.align/requirements.en.md](.align/requirements.en.md) | ✅ Generado | 2026-09-10 |
-| PASO 3 | Diseño técnico (`design.md`: migraciones, firmas finales, árbol de archivos) | ⏳ Siguiente | — |
-| PASO 4 | Tasks + instalación de `indexion` + gates de conformidad | 🔒 Bloqueado por PASO 3 | — |
+| PASO 3 | Diseño técnico — [05-design-tecnico.md](05-design-tecnico.md) | ✅ **Listo** (migraciones, colaboradores, rutas, hitos) | 2026-09-10 |
+| PASO 4 | Plan de tareas — [06-plan-de-tareas.md](06-plan-de-tareas.md) | ✅ **Listo** (87 tareas, 10 hitos) | 2026-09-10 |
+| PASO 5 | **Implementación** — empezar por `T-001` | ⏳ Siguiente | — |
 
 ## Mapa de módulos
 
@@ -41,7 +42,7 @@ Orden de lectura recomendado: fundamentos → cliente final → negocio → plat
 | [42-telemetria.md](42-telemetria.md) | Telemetría, privacidad y analítica | `REQ-TLM-001…005` | 5 |
 | [51-backoffice-de-plataforma.md](51-backoffice-de-plataforma.md) | Backoffice de plataforma | `REQ-PLT-001…006` | 6 |
 | [90-infraestructura-y-entorno.md](90-infraestructura-y-entorno.md) | Docker, Traefik, colas, Reverb | `REQ-INF-001…006` | 6 |
-| [91-calidad-y-gates.md](91-calidad-y-gates.md) | Estándares, pruebas y gates SDD | `REQ-QAX-001…008` | 8 |
+| [91-calidad-y-gates.md](91-calidad-y-gates.md) | Estándares, pruebas y definición de hecho | `REQ-QAX-001…008` | 8 |
 | | | **Total** | **118** |
 
 ## Cómo leer un módulo
@@ -79,11 +80,11 @@ Cada requisito sigue la misma plantilla de ocho secciones:
 | `TLM` | Telemetría y analítica |
 | `PLT` | Backoffice de plataforma |
 | `INF` | Infraestructura, Docker, Traefik, colas |
-| `QAX` | Calidad, testing y gates de conformidad |
+| `QAX` | Calidad, testing y definición de hecho |
 
 **IDs retirados.** `REQ-CAT-001` (listado público global), `REQ-CAT-020` (sección pública de catálogos) y `REQ-BOF-002` (seeder de superadmin) fueron **eliminados** por el pivote. `REQ-BOF-003`, `REQ-BOF-004` y `REQ-BOF-006` fueron **trasladados** a `REQ-ORG-004`, `REQ-ORG-005` y `REQ-ORG-006`. Ninguno de los seis IDs se reutiliza: quedan como huecos permanentes.
 
-**Idioma.** Narrativa en español; **toda** entidad, campo, tipo, enum, ruta, clase y función en inglés. El artefacto que consumen las herramientas es el espejo [.align/requirements.en.md](.align/requirements.en.md) (`REQ-QAX-005`).
+**Idioma.** Narrativa en español; **toda** entidad, campo, tipo, enum, ruta, clase y función en inglés. El espejo [.align/requirements.en.md](.align/requirements.en.md) reúne los identificadores esperados de los 118 requisitos y funciona como **contrato de nombres** del equipo (`REQ-QAX-005`).
 
 ## Invariantes del sistema
 
@@ -121,9 +122,14 @@ Las reglas que ninguna implementación puede violar, con su requisito de origen.
 | El `PlatformAdmin` accede a datos personales solo con grant de soporte auditado y visible | `REQ-PLT-005` |
 | `platform_users` y `users` nunca se cruzan | `REQ-ORG-003`, `REQ-PLT-001` |
 
-## Pendientes conocidos
+## Estado de los pendientes
 
-- **`indexion` no está instalado** en el entorno (verificado). Los gates documentales se auditan cualitativamente hasta que se instale — `REQ-QAX-006` RB-6. El gate de aislamiento (`REQ-QAX-008`) **no depende de `indexion`** y es ejecutable desde el primer día.
-- **Proveedor de tasa de cambio**: se asumió pyDolarVenezuela + tasa manual de respaldo. Confirmar el endpoint que la operación considera oficial — `REQ-FX-003`.
-- **Red de Traefik en producción**: se asumió una instancia externa compartida en `traefik_proxy`. Confirmar el nombre real — `REQ-INF-002`.
-- **Decisión reversible marcada en la spec**: visibilidad del suscriptor frente al negocio (`REQ-ACC-007` RB-1 y RB-7). Hoy está cerrada: el negocio ve nombre público, no contacto.
+Los tres que estaban abiertos quedaron resueltos:
+
+| Pendiente | Resolución |
+|---|---|
+| `indexion` | **Descartado.** Los gates pasan a Pest + Vitest + PHPStan + `tenancy:audit` + revisión de PR ([02 §8](02-spec-consolidada.md)). `REQ-QAX-005` y `REQ-QAX-006` reescritos |
+| Red de Traefik en producción | **Diferido.** Sin dominio ni servidor todavía. Esta iteración es **solo local** sin proxy ni TLS; `REQ-INF-002` marcado como diferido y sacado del plan de tareas |
+| Proveedor de tasa de cambio | **DolarApi** (`ve.dolarapi.com/v1/dolares`, fuente BCV). Una petición trae oficial y paralelo; contrato completo en [05 §6](05-design-tecnico.md) |
+
+Queda una **decisión reversible** marcada en la spec: la visibilidad del suscriptor frente al negocio (`REQ-ACC-007` RB-1 y RB-7). Hoy está cerrada — el negocio ve nombre público, no contacto.

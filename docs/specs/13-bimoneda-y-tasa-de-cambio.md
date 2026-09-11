@@ -18,11 +18,15 @@ enum RateSource: string { case Bcv = 'bcv'; case Parallel = 'parallel'; case Man
 final readonly class RateSnapshot
 {
     public function __construct(
-        public string $rate,              // decimal en string: nunca float
+        public string $rate,                    // decimal en string: nunca float
         public RateSource $source,
+        /** Cuándo la publicó la fuente (BCV). Es la antigüedad que le importa al negocio. */
+        public CarbonImmutable $publishedAt,
+        /** Cuándo la leímos nosotros. Solo sirve para diagnosticar la ingesta. */
         public CarbonImmutable $fetchedAt,
     ) {}
 
+    /** Obsolescencia medida sobre publishedAt, no sobre fetchedAt. */
     public function isStale(int $maxAgeHours = 24): bool { /* … */ }
 }
 
@@ -123,15 +127,16 @@ final readonly class Money
 > Como operador, quiero que la tasa se actualice sola y quede registrada, para poder justificar ante un cliente con qué tasa se le procesó un pago.
 
 **Contratos de datos**
-- Entidad `ExchangeRate` (`exchange_rates`), **tabla de plataforma**: `source`, `rate DECIMAL(18,8)`, `fetched_at`, `INDEX(source, fetched_at)`. Sin `organization_id`.
-- Job `FetchExchangeRate` (cola `high`), programado cada 30 minutos, **una sola ejecución para toda la plataforma**.
+- Entidad `ExchangeRate` (`exchange_rates`), **tabla de plataforma**: `source`, `rate DECIMAL(18,8)`, `published_at`, `fetched_at`, `INDEX(source, published_at)`. Sin `organization_id`.
+- Job `FetchExchangeRate` (cola `high`), programado cada 30 minutos, **una sola ejecución para toda la plataforma**, con **una sola petición** a `GET https://ve.dolarapi.com/v1/dolares` que trae oficial y paralelo a la vez.
 - `ExchangeRateService::current(?Organization $organization = null): RateSnapshot|null` — resuelve la fuente configurada por esa organización (`REQ-FX-003`) y devuelve la tasa vigente de esa fuente.
 
 **Reglas de negocio y precondiciones**
 - RB-0 La ingesta es **de plataforma y única** (`D-6`): un job cada 30 minutos consulta las fuentes disponibles (`bcv` y `parallel`) y las persiste, con independencia de cuántas organizaciones existan. Escalar a 10.000 negocios no multiplica las llamadas a la API externa.
 - RB-1 El job se ejecuta cada **30 minutos**; Redis cachea la tasa vigente **por fuente** (`rate:{source}`) con TTL **35 minutos** (ligeramente mayor que el intervalo, para que un fallo aislado no vacíe la caché).
 - RB-2 La tabla `exchange_rates` es un **histórico inmutable**: solo `INSERT`. Nunca se actualiza ni se borra una fila.
-- RB-3 Si la tasa obtenida es idéntica a la última persistida de la misma `source`, **no** se inserta una fila nueva; solo se refresca la caché (evita crecimiento inútil de la tabla).
+- RB-3 Si la tasa obtenida es idéntica a la última persistida de la misma `source` **y su `published_at` no cambió**, **no** se inserta una fila nueva; solo se refresca la caché (evita crecimiento inútil de la tabla).
+- RB-3b Se persisten **dos marcas de tiempo**: `published_at` (la `fechaActualizacion` que declara la fuente) y `fetched_at` (cuándo la leímos). La obsolescencia que se muestra al usuario y la que dispara alertas se mide sobre `published_at`: al cliente le importa cuándo el BCV publicó la tasa, no cuándo nuestro job corrió.
 - RB-4 `ExchangeRateService::current()` lee la caché de la fuente pedida; si está vacía, lee la última fila de esa `source`; si tampoco existe, devuelve `null`.
 - RB-5 El frontend **nunca** llama a la API externa: recibe `RateView` en las page props y la refresca contra un endpoint interno (`GET /api/tasa?source=`) cada 5 minutos con `@tanstack/react-query` (`ASU-FX-03`).
 - RB-6 El endpoint interno es público, cacheado por 60 s y sin datos sensibles. Recibe la fuente como parámetro y **no** revela qué organización usa cuál: la fuente ya es pública en el catálogo por su sello.
@@ -168,7 +173,7 @@ final readonly class Money
 > Como negocio, quiero elegir si mis precios se proyectan con la tasa del BCV, con la paralela o con una tasa mía, para vender con el criterio con el que yo trabajo.
 
 **Contratos de datos**
-- `ExchangeRateProvider` (interfaz), `PyDolarVeProvider`, `ManualRateProvider`.
+- `ExchangeRateProvider` (interfaz), `DolarApiProvider`, `ManualRateProvider`.
 - Config `config/services.php → exchange_rate.driver`, `.url`, `.timeout`.
 - Ajustes **por organización**: `organization_settings.exchange_rate_source`, `organization_settings.exchange_rate_manual`.
 - Ruta `PUT /backoffice/ajustes/tasa` (solo `owner`, `REQ-ORG-003`).
@@ -203,9 +208,9 @@ final readonly class Money
 - Fuentes de tasa propias de cada organización (una API distinta por negocio).
 
 **Gate de validación**
-- Superficie esperada: `app/Domain/Exchange/ExchangeRateProvider.php`, `app/Domain/Exchange/PyDolarVeProvider.php`, `app/Domain/Exchange/ManualRateProvider.php`, `app/Domain/Exchange/ExchangeRateService.php`, `app/Providers/ExchangeServiceProvider.php`, `app/Actions/Settings/UpdateExchangeRateSettingsAction.php`.
-- Tipos esperados: `ExchangeRateProvider`, `PyDolarVeProvider`, `ManualRateProvider`, `RateSource`.
-- Anti-`SHALLOW`: `PyDolarVeProvider::fetch()` (petición, parseo, validación, mapeo) y `ExchangeRateService::current()` (resolución de la fuente de la organización, caché, fallback) superan 4 líneas en sus archivos.
+- Superficie esperada: `app/Domain/Exchange/ExchangeRateProvider.php`, `app/Domain/Exchange/DolarApiProvider.php`, `app/Domain/Exchange/ManualRateProvider.php`, `app/Domain/Exchange/ExchangeRateService.php`, `app/Providers/ExchangeServiceProvider.php`, `app/Actions/Settings/UpdateExchangeRateSettingsAction.php`.
+- Tipos esperados: `ExchangeRateProvider`, `DolarApiProvider`, `ManualRateProvider`, `RateSource`.
+- Anti-`SHALLOW`: `DolarApiProvider::fetch()` (petición, parseo, validación, mapeo) y `ExchangeRateService::current()` (resolución de la fuente de la organización, caché, fallback) superan 4 líneas en sus archivos.
 - Tests: dos organizaciones con fuentes distintas proyectan importes distintos para el mismo producto (test explícito de RB-1); la ingesta no se multiplica por organización (assert de una sola llamada HTTP con N organizaciones); `manual` no inserta en `exchange_rates`; `member` recibe `403`; la factura de suscripción usa la fuente de plataforma y no la del negocio; cambio de fuente no recalcula pagos.
 
 ---

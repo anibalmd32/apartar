@@ -260,7 +260,7 @@ app/
 │   │                     SubscriptionStatus, PlanFeature
 │   ├── Account/          Account (VO de contexto), CatalogSubscriptionPolicy, FeedQuery
 │   ├── Money/            Money, Currency, MoneyFormatter
-│   ├── Exchange/         ExchangeRateProvider, PyDolarVeProvider, ManualRateProvider,
+│   ├── Exchange/         ExchangeRateProvider, DolarApiProvider, ManualRateProvider,
 │   │                     ExchangeRateService, RateSnapshot, RateSource
 │   ├── Layaway/          LayawayStatus, InstallmentStatus, ScheduleGenerator,
 │   │                     AmortizationSchedule, LayawayStateMachine, LayawayBalanceRecalculator
@@ -436,34 +436,47 @@ export type PlanFeature =
 
 ---
 
-## 8. Gates de conformidad (SDD)
+## 8. Definición de "hecho" y gates
 
-El espejo [.align/requirements.en.md](.align/requirements.en.md) es el único artefacto que consumen las herramientas. Cadena de trazabilidad, un salto por comando:
+> **Cambio de esta versión:** `indexion` queda **descartado**. Los gates dejan de ser una comprobación de vocabulario por herramienta y pasan a ser **criterios de aceptación verificables con Pest, Vitest, PHPStan y un comando de Artisan propio**. Se pierde la métrica automática de *drift* documental; se gana que **todos los gates son ejecutables desde el primer día** en lugar de depender de instalar algo.
 
-```bash
-# 1. Fidelidad: prompt fundacional + pivote ↔ requisitos
-indexion spec align diff docs/specs/.align/requirements.en.md docs/promts/00-first-promt.md \
-  --format markdown --threshold 0.3
+### 8.1 Qué significa "hecho" para un requisito
 
-# 2. Cobertura de diseño: requisitos ↔ design
-indexion spec align diff docs/specs/.align/requirements.en.md docs/specs/design.md \
-  --format markdown --threshold 0.3
+Las cuatro líneas de la sección *Gate de validación* de cada uno de los 118 requisitos son su definición de hecho, y se leen así:
 
-# 3. Cobertura de implementación: requisitos ↔ código
-indexion spec align diff docs/specs/.align/requirements.en.md app/ --format markdown --threshold 0.3
-indexion spec align status docs/specs/.align/requirements.en.md app/ --threshold 0.3 --fail-on any
-```
+| Línea | Qué exige |
+|---|---|
+| **Superficie esperada** | Los archivos declarados existen y contienen lo que el requisito describe. Es la lista de entregables. |
+| **Tipos esperados** | Las clases, enums, VOs, excepciones y tipos TS existen con ese nombre exacto. Es el contrato de nombres. |
+| **Anti-`SHALLOW`** | **Existe lógica real, no solo tipos.** Nombra el método concreto que debe tener el cuerpo no trivial. Un requisito con los tipos creados y los métodos vacíos **no está hecho**. |
+| **Tests** | Los casos listados pasan. Es la prueba de que la lógica hace lo que dice. |
 
-| Fase | Contenido | Gate | `SHALLOW` |
-|---|---|---|---|
-| **A — Types & Structures** | enums, VOs, DTOs, migraciones, interfaces, firmas de `Action`, tipos TS, andamiaje de tests | `--fail-on drifted` | tolerado |
-| **B — Logic** | cuerpos de `Action`, `Domain`, jobs, componentes, tests reales | `--fail-on any` | **debe ser 0** |
+La etiqueta `Anti-SHALLOW` se conserva —aunque ya no exista la herramienta que la inventó— porque nombra un fallo real y frecuente: dar por terminado un módulo que solo tiene el andamiaje. Ahora se verifica en revisión y por los tests que la acompañan, no por un comando.
 
-**Regla anti-`SHALLOW`:** un requisito que solo empareja con un archivo de tipos se marca `SHALLOW`. La resolución exige funciones no triviales (**> 4 líneas**) **en el mismo archivo que el tipo**; mover la lógica a otro archivo no lo resuelve, porque la detección es por archivo.
+### 8.2 Fases de implementación
 
-**Gate adicional de esta versión (`REQ-QAX-008`):** aislamiento multi-tenant verificado por test de fuga cruzada **en cada endpoint**. Es el gate que no puede fallar nunca.
+| Fase | Contenido | Criterio de cierre |
+|---|---|---|
+| **A — Tipos y estructuras** | enums, VOs, DTOs, migraciones, interfaces, firmas de `Action`, tipos TS, andamiaje de tests | `phpstan` y `tsc` limpios; las migraciones corren; *Tipos esperados* completos. `Anti-SHALLOW` **tolerado**: los métodos aún están vacíos. |
+| **B — Lógica** | cuerpos de `Action`, dominio, jobs, componentes, tests reales | Todos los *Tests* del requisito pasan y su `Anti-SHALLOW` está resuelto. |
 
-**Estado de la herramienta:** `indexion` no está instalado en el entorno (verificado). `REQ-QAX-006` cubre su instalación; hasta entonces los gates se auditan cualitativamente.
+Esta división sigue siendo la que ordena el plan de tareas ([06-plan-de-tareas.md](06-plan-de-tareas.md)): primero el esqueleto tipado de un módulo completo, después su lógica.
+
+### 8.3 Gates automáticos que sí existen
+
+Los tres jobs de CI de `REQ-QAX-004`:
+
+| Job | Verifica |
+|---|---|
+| `backend` | Pint, PHPStan nivel 6, Pest con umbral de cobertura del dominio |
+| `frontend` | ESLint (incluida la regla de 200 líneas), `tsc --noEmit`, Vitest, `vite build` |
+| `tenancy` | `php artisan tenancy:audit` + la suite `tests/Feature/Tenancy` |
+
+**El gate que no puede fallar nunca es `tenancy`** (`REQ-QAX-008`): aislamiento multi-tenant verificado por test de fuga cruzada en cada endpoint, más auditoría estática del esquema. **No dependía de `indexion`**, así que la decisión de descartarlo no lo afecta en absoluto.
+
+### 8.4 Qué pasa con el espejo en inglés
+
+[.align/requirements.en.md](.align/requirements.en.md) se creó para alimentar `spec align`. Sin esa herramienta pierde a su único consumidor automático, pero **conserva un valor real**: es el único lugar donde están, en un solo archivo y en inglés, los **identificadores esperados de los 118 requisitos**. Sirve como contrato de nombres para el equipo y como contexto compacto para trabajo asistido por IA. `REQ-QAX-005` se reencuadra en consecuencia: deja de ser un artefacto que hay que mantener sincronizado por obligación y pasa a actualizarse **solo cuando cambia un identificador público**.
 
 ---
 
