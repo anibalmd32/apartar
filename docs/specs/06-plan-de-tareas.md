@@ -90,10 +90,17 @@ Los dos primeros colaboradores de [05 §5](05-design-tecnico.md) con su firma ex
 `ResolveTenant` (desde sesión), `ResolveCatalogTenant` (desde slug), `ResolvePortalTenant` (desde ficha), `RunsInTenantContext` para jobs.
 **Hecho cuando:** las cuatro vías de `REQ-ORG-002` RB-4 resuelven; un job sin tenant que toca una tabla del tenant **falla**; el tenant se limpia entre jobs.
 
+**Alcance real tras la reordenación:** solo se escriben `ResolveTenant` (sesión) y `RunsInTenantContext`, más la guarda de la superficie de plataforma. `ResolveCatalogTenant` necesita `Catalog` (H2) y `ResolvePortalTenant` necesita `Customer` y `PortalContext` (H3): son adaptadores finos y se escriben **con su hito**, no antes, para no dejar código muerto imposible de enrutar. Las cuatro vías de RB-4 ya están cubiertas lógicamente por `TenantResolver` y el enum `TenantSurface` de `T-005`; lo que falta es el cableado a rutas que aún no existen. `REQ-ORG-002` **no se marca cerrado** hasta que los dos middlewares restantes estén enrutados.
+
 **T-007 · `tenancy:audit` + suite de aislamiento** · `AB` · 3 pts · *Requisitos: `REQ-QAX-008`*
 Comando con las 4 comprobaciones estáticas, `CreatesNeighbourOrganization`, y los 4 archivos de `tests/Feature/Tenancy` **con la parametrización derivada de la tabla de rutas** (aunque de momento haya pocas rutas).
 **Hecho cuando:** el comando detecta las 4 clases de violación con casos inyectados; la lista blanca tiene exactamente las 3 excepciones + 2 tablas; `make tenancy` pasa.
 **Por qué aquí y no al final:** si la parametrización se escribe cuando ya hay 80 endpoints, ninguno estará cubierto retroactivamente por costumbre. Escrita ahora, cada endpoint nuevo entra solo.
+
+**Hallazgos de `T-008` que este gate debe recoger:**
+- **El test de arquitectura de `REQ-ORG-002` SP-4 tiene que buscar las dos grafías.** `TenantAwareUserProvider` escribe `withoutGlobalScope(TenantScope::class)` y no `withoutTenantScope()`, porque es genérico sobre el modelo del guard y PHPStan nivel 6 rechaza el scope local sobre un `Builder<Model>`. Buscar solo la grafía corta deja ese archivo fuera del radar.
+- **`app/Auth/TenantAwareUserProvider` es una ruta permitida más**, junto a `app/Queries/Platform`, `app/Actions/Platform` y los comandos de mantenimiento. Su motivo: el login ocurre antes de conocer la organización y `users.email` es único global precisamente para que una búsqueda sin filtro no pueda devolver el usuario de otro negocio.
+- **Comprobación nueva, barata y valiosa:** todo modelo con `BelongsToOrganization` debe tener una factory con `CreatesWithinTenant`. La guarda de creación de `T-005` obliga a ello y hoy depende de que cada tarea se acuerde.
 
 ### Organización y equipo
 
