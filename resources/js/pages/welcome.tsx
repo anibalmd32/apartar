@@ -29,14 +29,11 @@ export default function Welcome() {
                             Ir al backoffice
                         </Link>
                     ) : (
-                        <>
-                            <Link href={route('login')} className="underline underline-offset-4">
-                                Entrar
-                            </Link>
-                            <Link href={route('register')} className="underline underline-offset-4">
-                                Registrar negocio
-                            </Link>
-                        </>
+                        // El alta de organización llega con T-010; hasta
+                        // entonces solo hay entrada para quien ya tiene equipo.
+                        <Link href={route('login')} className="underline underline-offset-4">
+                            Entrar
+                        </Link>
                     )}
                 </nav>
             </main>

@@ -8,16 +8,18 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
+/*
+| El registro público del starter kit se retiró en T-008: creaba un usuario
+| suelto, y con tenancy eso produce un usuario sin organización, que es un
+| estado que no puede existir. El alta de verdad —organización + owner +
+| suscripción Free + ajustes en una sola transacción— es `REQ-ORG-001` y llega
+| con T-010.
+*/
+
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
-
-    Route::post('register', [RegisteredUserController::class, 'store']);
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

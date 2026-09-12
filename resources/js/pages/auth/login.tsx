@@ -91,12 +91,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </Button>
                 </div>
 
-                <div className="text-muted-foreground text-center text-sm">
-                    Don't have an account?{' '}
-                    <TextLink href={route('register')} tabIndex={5}>
-                        Sign up
-                    </TextLink>
-                </div>
+                {/*
+                    El enlace de registro vuelve con T-010, apuntando al alta
+                    de organización. El registro suelto del starter kit se
+                    retiró en T-008: creaba usuarios sin organización, y ese
+                    es un estado que no puede existir.
+                */}
             </form>
 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}

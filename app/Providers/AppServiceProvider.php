@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Auth\TenantAwareUserProvider;
 use App\Domain\Tenancy\TenantContext;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Hashing\Hasher;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +31,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Driver del proveedor de usuarios del guard `web`. El login resuelve
+        // al usuario antes de saber su organización, así que consulta `users`
+        // sin el filtro de tenancy; el resto de `User::query()` sí lo lleva.
+        Auth::provider('tenant-aware', function (Application $app, array $config): TenantAwareUserProvider {
+            /** @var class-string<\Illuminate\Database\Eloquent\Model> $model */
+            $model = $config['model'];
+
+            return new TenantAwareUserProvider($app->make(Hasher::class), $model);
+        });
     }
 }

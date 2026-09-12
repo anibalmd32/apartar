@@ -63,7 +63,10 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            // `tenant-aware` y no `eloquent`: `User` lleva el global scope de
+            // tenancy y el login ocurre antes de que haya organización activa
+            // (REQ-ORG-002 RB-4). Lo registra AppServiceProvider.
+            'driver' => 'tenant-aware',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 

@@ -84,6 +84,8 @@ Los dos primeros colaboradores de [05 §5](05-design-tecnico.md) con su firma ex
 
 **Pendientes que `T-004` dejó para aquí:** completar `CreatesNeighbourOrganization` con `actingAsOrganization()` y `withinOrganization(Organization, Closure)` —hoy el helper crea dos tenants pero no puede situarse en uno— y eliminar el `withoutGlobalScopes()` defensivo de `hasNeighbourOrganization()`, redundante porque `organizations` nunca llevará global scope.
 
+**Reordenación decidida tras `T-005`: `T-008` se adelanta y pasa a ejecutarse antes que `T-006` y `T-007`.** Motivo: las cuatro vías de resolución de `REQ-ORG-002` RB-4 necesitan un modelo del tenant real del que leer el `organization_id` —la del backoffice necesita `User`— y `tenancy:audit` necesita tablas del tenant que auditar. Con solo las seis tablas de plataforma, `T-006` y `T-007` solo podrían escribir andamiaje contra dobles de prueba y quedarían a medias. `T-008` depende únicamente de `T-004` y `T-005`, ambas cerradas, así que el adelanto no arrastra nada. Orden efectivo de H0: `T-001` … `T-005` → **`T-008`** → `T-006` → `T-007` → `T-009` … `T-016`. Las suites de fuga derivadas de la tabla de rutas siguen completándose al final de H0, cuando existan las rutas.
+
 **T-006 · Middlewares de resolución de tenant** · `AB` · 2 pts · *Requisitos: `REQ-ORG-002`*
 `ResolveTenant` (desde sesión), `ResolveCatalogTenant` (desde slug), `ResolvePortalTenant` (desde ficha), `RunsInTenantContext` para jobs.
 **Hecho cuando:** las cuatro vías de `REQ-ORG-002` RB-4 resuelven; un job sin tenant que toca una tabla del tenant **falla**; el tenant se limpia entre jobs.
