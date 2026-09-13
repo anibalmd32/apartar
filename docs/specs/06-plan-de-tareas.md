@@ -135,6 +135,10 @@ Comando con las 4 comprobaciones estáticas, `CreatesNeighbourOrganization`, y l
 **Hecho cuando:** crea org + owner + suscripción Free + ajustes en una transacción; rollback total ante fallo; slug duplicado sugiere variante; slug reservado rechazado; email de equipo duplicado rechazado; rate limit al 6.º registro.
 **Depende de:** T-011 (necesita el plan Free existiendo).
 
+**Reparto con `T-014` decidido:** `T-010` crea el enum `SettingKey` con sus **once claves y sus valores por defecto**, porque `RegisterOrganizationAction` tiene que sembrar los ajustes en la misma transacción y no puede hacerlo contra un array escrito a mano. `T-014` añade lo demás: la clase `Settings` con su caché por organización, las reglas de validación por clave, `UpdateSettingsAction` y la UI.
+
+**Primera superficie visual del proyecto.** `marketing/Register.tsx` es la primera página propia que se escribe, así que fija el patrón: daisyUI envuelto en `resources/js/components/ui/` ([05 §3.1](05-design-tecnico.md)), nunca los primitivos de `components/vendor/`, que son el shadcn heredado en retirada desde `T-003`.
+
 **T-011 · Planes y suscripción Free** · `AB` · 2 pts · *Requisitos: `REQ-SUB-001`, `REQ-SUB-002`*
 `Plan`, `PlanFeature`, `UsageMetric` con sus mapas, `PlanSeeder` con la matriz exacta de la §5 de [03](03-pivote-saas-impacto.md), `Subscription`, `SubscriptionStatus`, `StartFreeSubscriptionAction`, migraciones bloque 2 (parcial: `subscriptions`, `usage_counters`).
 **Hecho cuando:** el seeder crea los 3 planes con los límites exactos; `NULL` = ilimitado; una organización tiene exactamente 1 suscripción; sin plan Free el registro falla.

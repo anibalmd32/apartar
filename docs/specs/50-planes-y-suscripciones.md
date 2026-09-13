@@ -120,6 +120,7 @@ export interface InvoiceRow {
 - RB-5 Free **incluye el sistema de apartado**, con tope de 15 activos: sin apartados la capa gratuita no demostraría el valor del producto.
 - RB-6 `is_public` permite planes ocultos (precios negociados) sin exponerlos en `/precios`.
 - RB-7 Cambiar el precio de un plan **no** altera las suscripciones vigentes hasta su siguiente período: la factura ya emitida es inmutable (`REQ-SUB-006` RB-3).
+- RB-3b **Los precios de Pro y Business están sin decidir.** Ni §5 de [03](03-pivote-saas-impacto.md) ni RB-3 fijan cifra, y `T-011` sembró los tres planes a `0` en lugar de inventarla. No bloquea nada hasta `REQ-SUB-006` (emisión de facturas, H5); fijarlo entonces es un `UPDATE` sobre `plans`, coherente con RB-1, y no altera facturas ya emitidas (RB-7).
 - RB-8 La página de precios es la misma fuente de verdad que el backoffice: se renderiza desde `plans`, sin tabla escrita a mano en el frontend.
 
 **Happy path**
