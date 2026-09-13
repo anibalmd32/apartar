@@ -496,7 +496,8 @@ Los tres jobs de CI de `REQ-QAX-004`:
 | `default_installments_count` | `int` | `4` | `REQ-BOF-020` |
 | `reminder_offsets_days` | `list<int>` | `[-3, 0, 1, 7, 15]` | `REQ-NOT-002` |
 | `overdue_alert_days` | `int` | `30` | `REQ-LAY-009` |
-| `storefront_enabled` | `bool` | `false` | `REQ-ORG-006` |
+
+> **`storefront_enabled` no es un ajuste: es la columna `organizations.storefront_enabled`.** Estuvo duplicada en ambos sitios hasta `T-010`, que lo detectó. Manda la columna, por dos razones: la vitrina pública `/{org-slug}` la consulta en **cada petición anónima** (`REQ-ORG-006` RB-6) y una columna se filtra en la misma consulta que resuelve la organización, sin pasar por la caché de ajustes ni por su respaldo en BD; y encender o apagar la vitrina es **identidad** de la organización, como el logo o el slug, no un parámetro de negocio como la tolerancia de liquidación. `T-014` retira la clave del enum y las filas ya sembradas.
 
 ### 9.2 `platform_settings` (globales, edita `PlatformAdmin`)
 
