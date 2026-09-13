@@ -19,7 +19,15 @@ use Illuminate\Support\Facades\Route;
 | con T-010.
 */
 
-Route::middleware('guest')->group(function () {
+/*
+| El acceso y la recuperación de contraseña ocurren **antes** de conocer la
+| organización, y el cierre de sesión tiene que seguir funcionando cuando ya no
+| se puede resolver: ninguna de estas rutas pertenece a una superficie de
+| REQ-ORG-002 RB-4, y lo declaran. No declarar nada es indistinguible de un
+| olvido, y la suite de REQ-QAX-008 no puede distinguirlos.
+*/
+
+Route::middleware(['guest', 'outside-tenancy'])->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
@@ -38,7 +46,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.store');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'outside-tenancy'])->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

@@ -148,11 +148,13 @@ jobs:
   # sea inequívoco en el informe y no quede sepultado entre cientos de tests de
   # negocio. Es el único job cuyo fallo no admite discusión ni excepción.
   #
-  # ESTADO: incompleto a propósito. Hoy corre la mitad estática de
-  # REQ-QAX-008 (invariantes del esquema). `php artisan tenancy:audit` y las
-  # cuatro suites de fuga cruzada llegan con T-007, que necesita TenantContext
-  # (T-005) y las primeras tablas del tenant (T-004). `failOnEmptyTestSuite`
-  # en phpunit.xml impide que este job pueda volverse verde sobre nada.
+  # Tres pasos y en este orden: `migrate` deja el esquema puesto, `tenancy:audit`
+  # recorre el código con las cinco comprobaciones de REQ-QAX-008 RB-4 y la
+  # suite ejercita la fuga cruzada sobre las rutas registradas. La auditoría va
+  # antes porque es de segundos y su fallo se lee de un vistazo: no tiene
+  # sentido esperar a la suite para enterarse de que un modelo nuevo no lleva el
+  # trait. `failOnEmptyTestSuite` en phpunit.xml impide que este job pueda
+  # volverse verde sobre nada.
   # ---------------------------------------------------------------------------
   tenancy:
     name: tenancy
@@ -220,5 +222,8 @@ jobs:
       - name: Migrar
         run: php artisan migrate --force
 
+      - name: Auditoría estática de aislamiento
+        run: composer run tenancy:audit
+
       - name: Suite de aislamiento
-        run: composer run tenancy
+        run: composer run tenancy:suite

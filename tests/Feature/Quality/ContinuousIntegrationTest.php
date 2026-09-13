@@ -64,10 +64,26 @@ it('corre los tres jobs en paralelo', function (): void {
  */
 it('mantiene tenancy independiente de backend', function (): void {
     expect(workflowJob('tenancy'))
-        ->toContain('composer run tenancy')
+        ->toContain('composer run tenancy:suite')
         ->not->toContain('needs:');
 
     expect(workflowJob('backend'))->not->toContain('--testsuite=Tenancy');
+});
+
+/**
+ * `REQ-QAX-008` RB-4b: el orden de los pasos del job de aislamiento. La
+ * auditoría estática va **antes** que la suite: es de segundos y su fallo se
+ * lee de un vistazo, así que esperar a la suite para enterarse de que un modelo
+ * nuevo no lleva el trait solo alarga el ciclo.
+ */
+it('ejecuta el job tenancy en el orden de RB-4b', function (): void {
+    $tenancy = workflowJob('tenancy');
+
+    $steps = ['artisan migrate', 'composer run tenancy:audit', 'composer run tenancy:suite'];
+    $positions = array_map(fn (string $step): int => (int) strpos($tenancy, $step), $steps);
+
+    expect($positions)->not->toContain(0, 'Falta un paso del job tenancy.');
+    expect($positions)->toBe(array_values(collect($positions)->sort()->all()));
 });
 
 /**

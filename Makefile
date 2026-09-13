@@ -45,5 +45,5 @@ check: ## Pint + PHPStan + Pest + ESLint + tsc + Vitest + build
 	$(APP) composer run check
 	$(NODE) npm run check
 
-tenancy: ## Gate de aislamiento multi-tenant
+tenancy: ## Gate de aislamiento multi-tenant (auditoría estática + suite)
 	$(APP) composer run tenancy

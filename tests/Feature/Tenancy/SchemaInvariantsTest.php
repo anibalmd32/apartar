@@ -6,19 +6,18 @@ use App\Models\Organization;
 use Tests\Concerns\CreatesNeighbourOrganization;
 
 /**
- * Mitad estática del gate de aislamiento (`REQ-QAX-008`).
+ * Invariantes del esquema que sostienen el gate de aislamiento
+ * (`REQ-QAX-008`).
  *
- * Este archivo es lo único que la suite `Tenancy` contiene hoy, y existe para
- * que su job de CI no pase en verde sobre un directorio vacío. **`T-007` es
- * quien la completa**: `tenancy:audit`, `CrossTenantAccessTest`,
- * `BroadcastChannelIsolationTest`, `JobTenantContextTest` y
- * `AccountBoundaryTest`, que necesitan `TenantContext` (T-005) y las primeras
- * tablas del tenant.
+ * Fue el primer archivo de la suite `Tenancy`, escrito para que su job de CI no
+ * pasara en verde sobre un directorio vacío. `T-007` completó el resto:
+ * `tenancy:audit` recorre el código con las cinco comprobaciones de RB-4 y
+ * `CrossTenantAccessTest` deriva la fuga cruzada del router.
  *
- * Lo que sí se puede comprobar ya: los invariantes del esquema, y —desde que
- * `T-004` adelantó `Organization`— que `CreatesNeighbourOrganization` siembra
- * una organización vecina de verdad, que es la precondición de todo test de
- * fuga cruzada (`REQ-QAX-003` RB-10).
+ * Lo que queda aquí es lo que no cabe en ninguno de los dos: reglas del
+ * esquema que se comprueban leyendo las migraciones, y la precondición de todo
+ * test de fuga —que `CreatesNeighbourOrganization` siembre una organización
+ * vecina de verdad (`REQ-QAX-003` RB-10)—.
  */
 
 /**
