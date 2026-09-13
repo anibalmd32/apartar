@@ -8,6 +8,7 @@ use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -229,8 +230,11 @@ final class RoleMatrixTest extends TestCase
             $organization = app(TenantContext::class)->organization();
 
             match ($capability) {
-                OrganizationCapability::Subscription => Gate::authorize('subscription.view'),
-                OrganizationCapability::Billing => Gate::authorize('billing.view-invoices'),
+                // Desde `T-011` la suscripción existe y su policy se descubre
+                // por convención: se autoriza sobre la fila, no sobre un gate
+                // con nombre.
+                OrganizationCapability::Subscription => Gate::authorize('view', Subscription::query()->sole()),
+                OrganizationCapability::Billing => Gate::authorize('viewInvoices', Subscription::query()->sole()),
                 OrganizationCapability::Team => Gate::authorize('viewAny', User::class),
                 OrganizationCapability::Settings => Gate::authorize('viewSettings', $organization),
                 OrganizationCapability::PaymentAccounts => Gate::authorize('managePaymentAccounts', $organization),
@@ -252,17 +256,23 @@ final class RoleMatrixTest extends TestCase
 
     /**
      * Crea a quien pide, con su rol, en una organización que tiene vecina
-     * (`REQ-QAX-003` RB-10).
+     * (`REQ-QAX-003` RB-10) y su suscripción.
+     *
+     * La suscripción hace falta desde `T-011`: las dos áreas de gobierno que
+     * gestiona `SubscriptionPolicy` se autorizan sobre la fila, y toda
+     * organización tiene exactamente una (`REQ-SUB-002` RB-1), así que el
+     * escenario sin ella no existe fuera de un test.
      */
     private function actor(OrganizationRole $role): User
     {
         $organization = Organization::factory()->create();
         $this->neighbourOrganization();
 
-        $actor = $this->withinOrganization(
-            $organization,
-            fn (): User => User::factory()->state(['role' => $role])->create(),
-        );
+        $actor = $this->withinOrganization($organization, function () use ($role): User {
+            Subscription::factory()->create();
+
+            return User::factory()->state(['role' => $role])->create();
+        });
 
         $this->withoutOrganization();
 

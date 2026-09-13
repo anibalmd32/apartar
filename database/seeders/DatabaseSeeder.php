@@ -4,22 +4,24 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * Siembra lo que **cualquier** entorno necesita para funcionar.
+ *
+ * Hoy es solo el catálogo de planes, y no es poco: sin el plan Free no se
+ * puede dar de alta a nadie (`REQ-SUB-002` SP-1), así que una base migrada y
+ * sin sembrar es una base en la que el registro falla. `PlanSeeder` es
+ * idempotente, de modo que volver a ejecutarlo es inofensivo.
+ *
+ * El escenario de desarrollo —dos organizaciones con datos de mentira— es
+ * `DevSeeder` y llega con `T-016`: son cosas distintas y no deben mezclarse,
+ * porque esta sí se ejecuta en producción.
+ */
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $this->call(PlanSeeder::class);
     }
 }
