@@ -153,13 +153,47 @@ it('no usa any en resources/js', function (): void {
 });
 
 /**
- * `REQ-QAX-001` RB-5 y `REQ-QAX-002` RB-5: `components/ui` está reservado para
- * los envoltorios de daisyUI. Los primitivos de shadcn viven en
- * `components/vendor` hasta que T-010/T-012 los retiren.
+ * `REQ-QAX-001` RB-5 y `REQ-QAX-002` RB-5: `components/ui` es de los
+ * envoltorios de daisyUI y de nadie más.
+ *
+ * Hasta `T-010` el directorio estaba vacío y bastaba comprobar eso. Con los
+ * primeros átomos dentro, lo que hay que sostener es la regla de verdad: que
+ * ninguno se apoye en el shadcn heredado de `components/vendor` ni en Radix.
+ * Un envoltorio daisyUI que por dentro monta un primitivo de Radix no es un
+ * envoltorio, es la misma dependencia con otro nombre, y el día que
+ * `vendor/` se borre se lo llevará por delante.
  */
 it('mantiene components/ui libre de primitivos de shadcn', function (): void {
-    $shadcn = glob(resource_path('js/components/ui/*.tsx')) ?: [];
+    $offenders = [];
 
-    expect($shadcn)->toBe([]);
+    foreach (glob(resource_path('js/components/ui/*.tsx')) ?: [] as $atom) {
+        $contents = (string) file_get_contents($atom);
+
+        if (preg_match("#from\s+'[^']*(@radix-ui|components/vendor)#", $contents) === 1) {
+            $offenders[] = basename($atom);
+        }
+    }
+
+    expect($offenders)->toBe([], 'Átomos de daisyUI apoyados en shadcn: '.implode(', ', $offenders));
     expect(is_dir(resource_path('js/components/vendor')))->toBeTrue();
+});
+
+/**
+ * Y la otra mitad de la misma regla: las páginas que escribimos nosotras no
+ * importan de `components/vendor`. Las heredadas del starter kit siguen
+ * haciéndolo y se migran con su tarea (`T-012`); lo que no puede pasar es que
+ * una página nueva nazca atada al directorio que está en retirada.
+ */
+it('escribe las páginas propias sin los primitivos heredados', function (): void {
+    $offenders = [];
+
+    foreach (glob(resource_path('js/pages/marketing/*.tsx')) ?: [] as $page) {
+        // Se miran los `import`, no las menciones: explicar en un comentario
+        // por qué no se usa `components/vendor` no es usarlo.
+        if (preg_match("#from\s+'[^']*components/vendor#", (string) file_get_contents($page)) === 1) {
+            $offenders[] = basename($page);
+        }
+    }
+
+    expect($offenders)->toBe([], 'Páginas propias con primitivos heredados: '.implode(', ', $offenders));
 });
