@@ -20,6 +20,8 @@ Convenciones del plan:
 - **Toda tarea que crea una consulta del tenant añade su caso a `tests/Feature/Tenancy`** (`REQ-QAX-008` RB-2). No es opcional ni se deja para el final.
 - El estimado es en **puntos relativos** (1 = media jornada, 2 = jornada, 3 = dos jornadas, 5 = una semana corta). Sirve para ordenar, no para prometer fechas.
 - **Un test que ejercite métodos de instancia del caso base se escribe como clase PHPUnit, no con la sintaxis de Pest.** PHPStan no resuelve el `$this` de las closures de Pest, y nivel 6 lo rechaza. Descubierto en `T-004`; aplica a todo test que use helpers como `CreatesNeighbourOrganization`.
+- **Toda ruta nueva declara su superficie.** Desde `T-007`, `CrossTenantAccessTest` recorre el router y exige que cada ruta nuestra lleve un middleware que implemente `DeclaresTenantSurface` (con su `TenantSurface`) o `DeclaresNoTenantSurface` (`OutsideTenancy`, alias `outside-tenancy`). Una ruta sin declarar **hace fallar la suite de tenancy**, no se salta. No hay lista de exentas escrita a mano: eso es lo que `REQ-QAX-008` SP-1 prohíbe.
+- **`ResolveTenant` corre antes que `SubstituteBindings`,** fijado con `prependToPriorityList` en `bootstrap/app.php`. Al revés, el binding de un modelo del tenant se resuelve sin organización fijada y la respuesta es `500` en lugar del `404` que exige `REQ-ORG-002` RB-6. Hay un test que fija el orden; si alguien reordena los middlewares, ese test es el que avisa.
 
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
