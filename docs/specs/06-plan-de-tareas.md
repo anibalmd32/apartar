@@ -23,17 +23,17 @@ Convenciones del plan:
 
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
-| H0 · Cimientos | T-001…T-016 | 34 | 16 req. |
+| H0 · Cimientos | T-001…T-016 | 40 | 16 req. |
 | H1 · Aritmética y tasa | T-017…T-023 | 15 | 6 req. |
-| H2 · Catálogo | T-024…T-038 | 38 | 19 req. |
-| H3 · Apartado | T-039…T-053 | 42 | 23 req. |
-| H4 · Cobranza | T-054…T-065 | 34 | 15 req. |
+| H2 · Catálogo | T-024…T-038 | 43 | 19 req. |
+| H3 · Apartado | T-039…T-053 | 41 | 23 req. |
+| H4 · Cobranza | T-054…T-065 | 36 | 15 req. |
 | H5 · Planes | T-066…T-072 | 20 | 8 req. |
 | H6 · Cuentas y feed | T-073…T-078 | 18 | 7 req. |
 | H7 · Comunicación | T-079…T-083 | 17 | 10 req. |
 | H8 · Datos y plataforma | T-084…T-086 | 16 | 11 req. |
 | H9 · Producción | T-087 | 5 | 3 req. |
-| | **87** | **239** | **118** |
+| | **87** | **251** | **118** |
 
 ---
 

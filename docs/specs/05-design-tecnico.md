@@ -237,8 +237,8 @@ final class TenantContext
  * Aísla un modelo por organización: global scope al leer, relleno al crear.
  *
  * Usado por todos los modelos del tenant. Quitar el scope exige
- * withoutTenantScope() explícito, permitido solo en app/Queries/Platform,
- * app/Actions/Platform y comandos de mantenimiento.
+ * la exclusión explícita del scope, permitida solo en la lista cerrada
+ * de REQ-QAX-008 RB-4b.
  */
 trait BelongsToOrganization
 {

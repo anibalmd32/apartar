@@ -182,7 +182,7 @@ final readonly class RegisterOrganizationData
 - SP-1 Petición al backoffice sin tenant resoluble (sesión corrupta) → cierre de sesión y redirección al login, **nunca** consulta sin filtro.
 - SP-2 URL con el `id` de un producto de otra organización → `404`.
 - SP-3 Job encolado sin tenant que toca una tabla del tenant → excepción `MissingTenantContextException` y job fallido; es preferible un job caído a una fuga.
-- SP-4 Consulta de plataforma que necesita ver todo → `withoutTenantScope()` explícito, permitido solo en `app/Actions/Platform` y en comandos; verificado por revisión y por el gate de `REQ-QAX-008`.
+- SP-4 Consulta de plataforma que necesita ver todo → exclusión explícita del scope, permitida solo en la **lista cerrada de `REQ-QAX-008` RB-4b**; verificado por revisión y por ese gate.
 - SP-5 Relación cruzada intentada (asignar a un catálogo un producto de otra organización) → `422` por la validación de RB-7, además del `404` del binding.
 - SP-6 Tenant fijado y luego cambiado a mitad de la petición → `TenantContext::setOrganization()` es idempotente para el mismo valor y lanza excepción si intenta cambiar a otro dentro de la misma petición.
 - SP-7 Cola compartida procesando jobs de dos organizaciones seguidas → el tenant se fija y se limpia por job (`forget()` en el `finally`), sin fuga entre ejecuciones.

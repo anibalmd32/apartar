@@ -364,7 +364,7 @@
   | Canales de broadcast | los tres canales rechazan a quien no pertenece (`REQ-CHT-003` RB-1, `REQ-PAY-004` RB-1) |
   | Jobs | el tenant se fija por elemento y se limpia (`REQ-INF-003` RB-1b) |
   | Archivos firmados | la firma no basta sin pertenencia (`REQ-PAY-002` RB-2) |
-  | Plataforma | `withoutTenantScope()` aparece **solo** en `app/Queries/Platform` y `app/Actions/Platform` |
+  | Plataforma | la exclusión del scope aparece **solo** en las rutas permitidas de RB-4b |
   | Telemetría | el cliente no puede inyectar `organization_id` (`REQ-TLM-001` RB-3) |
   | Feed | solo aparece contenido de catálogos seguidos (`REQ-ACC-003` RB-1) |
 - RB-4 **Auditoría estática** complementaria (`tenancy:audit`), porque los tests solo cubren lo que alguien se acordó de escribir:
@@ -372,6 +372,8 @@
   2. todo índice único de negocio incluye `organization_id`, salvo las **tres excepciones declaradas** (`users.email`, `catalogs.slug`, `layaways.code`), que están en una lista blanca explícita;
   3. `withoutTenantScope()` no aparece fuera de las rutas permitidas;
   4. ninguna migración añade una tabla del tenant sin `organization_id` ni sin su índice.
+- RB-4b **Rutas permitidas para excluir el scope de tenancy**, lista cerrada: `app/Queries/Platform`, `app/Actions/Platform`, `app/Auth/TenantAwareUserProvider` y los comandos de mantenimiento. La de `app/Auth` es la menos obvia y la más necesaria: el login resuelve al usuario **antes** de conocer la organización, y `users.email` es único global (`REQ-ORG-002` RB-3) precisamente para que esa búsqueda sin filtro no pueda devolver el usuario de otro negocio. La comprobación busca **las dos grafías** —`withoutTenantScope()` y `withoutGlobalScope(TenantScope::class)`—, porque el código genérico sobre `Builder<Model>` no puede usar el scope local.
+- RB-4c **Toda factory de un modelo con `BelongsToOrganization` usa `CreatesWithinTenant`.** La guarda de creación del trait lo exige de hecho; sin esta comprobación, depende de que cada tarea se acuerde.
 - RB-5 La lista blanca de las tres excepciones vive en el código, con un comentario que explica **por qué** cada una es global. Añadir una cuarta exige modificar esta spec.
 - RB-6 **Verificación de la frontera cuenta ↔ organización**, que es la parte más sutil del modelo: ningún `Resource`, respuesta JSON o exportación del backoffice expone `account_id` (`REQ-ACC-007` RB-5), y ninguna consulta del backoffice devuelve actividad de sus clientes en otras organizaciones (`REQ-ACC-007` RB-4, `REQ-BOF-041` RB-9).
 - RB-7 El gate corre en CI como **job propio** (`REQ-QAX-004`), separado del resto, para que su fallo sea inequívoco en el informe y no quede sepultado entre otros.
