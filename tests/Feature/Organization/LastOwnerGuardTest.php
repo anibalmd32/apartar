@@ -1,0 +1,216 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Organization;
+
+use App\Domain\Tenancy\CrossTenantRelationException;
+use App\Domain\Tenancy\LastOwnerException;
+use App\Domain\Tenancy\LastOwnerGuard;
+use App\Domain\Tenancy\OrganizationRole;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
+use Tests\TestCase;
+
+/**
+ * La invariante de `REQ-ORG-003` RB-2: toda organización conserva al menos un
+ * `owner` activo.
+ *
+ * Aquí se comprueba el comportamiento con un solo actor; la parte que de
+ * verdad justifica el bloqueo —dos a la vez— vive en
+ * `LastOwnerConcurrencyTest`, que necesita dos conexiones de verdad y no puede
+ * correr dentro de la transacción de `RefreshDatabase`.
+ *
+ * El mecanismo se usará desde `T-013` al degradar un rol y al desactivar a
+ * alguien. Que exista antes que sus dos usos no es adelantarse: la invariante
+ * es una sola, y escribirla dos veces significaría, tarde o temprano,
+ * corregirla en un sitio y no en el otro.
+ */
+final class LastOwnerGuardTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_an_owner_may_step_down_while_another_remains(): void
+    {
+        $this->organizationWithNeighbour();
+
+        $leaving = User::factory()->owner()->create();
+        User::factory()->owner()->create();
+
+        $this->guard()->whileKeepingAnOwner(
+            $leaving,
+            'degradar',
+            fn () => $leaving->update(['role' => OrganizationRole::Member]),
+        );
+
+        $this->assertSame(OrganizationRole::Member, $leaving->refresh()->role);
+        $this->assertSame(1, User::query()->where('role', OrganizationRole::Owner)->count());
+    }
+
+    /**
+     * SP-2 · el último se queda. Y se queda **entero**: la escritura va dentro
+     * de la misma transacción, así que no hay un estado intermedio guardado.
+     */
+    public function test_the_last_owner_cannot_step_down(): void
+    {
+        $this->organizationWithNeighbour();
+
+        $only = User::factory()->owner()->create();
+        User::factory()->create();
+
+        try {
+            $this->guard()->whileKeepingAnOwner(
+                $only,
+                'degradar',
+                fn () => $only->update(['role' => OrganizationRole::Member]),
+            );
+
+            $this->fail('Se esperaba LastOwnerException.');
+        } catch (LastOwnerException $exception) {
+            $this->assertStringContainsString('último owner', $exception->getMessage());
+        }
+
+        $this->assertSame(OrganizationRole::Owner, $only->refresh()->role);
+    }
+
+    /**
+     * Un `owner` desactivado no sostiene la organización: no puede entrar, así
+     * que contarlo dejaría el negocio sin nadie al mando con la comprobación
+     * en verde (`REQ-ORG-005` RB-3).
+     */
+    public function test_a_disabled_owner_does_not_count_as_the_one_that_stays(): void
+    {
+        $this->organizationWithNeighbour();
+
+        $active = User::factory()->owner()->create();
+        User::factory()->owner()->disabled()->create();
+
+        $this->expectException(LastOwnerException::class);
+
+        try {
+            $this->guard()->whileKeepingAnOwner(
+                $active,
+                'desactivar',
+                fn () => $active->update(['disabled_at' => now()]),
+            );
+        } finally {
+            $this->assertNull($active->refresh()->disabled_at);
+        }
+    }
+
+    /**
+     * Operar sobre un `member` no toca la invariante, aunque haya un solo
+     * `owner`: la guarda protege al último dueño, no congela el equipo.
+     */
+    public function test_a_member_may_be_touched_even_with_a_single_owner(): void
+    {
+        $this->organizationWithNeighbour();
+
+        User::factory()->owner()->create();
+        $member = User::factory()->create();
+
+        $result = $this->guard()->whileKeepingAnOwner($member, 'desactivar', fn (): string => 'hecho');
+
+        $this->assertSame('hecho', $result);
+    }
+
+    /**
+     * La lectura sin escritura, para que la interfaz pueda explicar por qué el
+     * botón está apagado en lugar de dejar que la persona se lleve un `422`.
+     */
+    public function test_it_knows_who_is_the_last_active_owner(): void
+    {
+        $this->organizationWithNeighbour();
+
+        $only = User::factory()->owner()->create();
+        $member = User::factory()->create();
+
+        $this->assertTrue($this->guard()->isLastActiveOwner($only));
+        $this->assertFalse($this->guard()->isLastActiveOwner($member));
+
+        User::factory()->owner()->create();
+
+        $this->assertFalse($this->guard()->isLastActiveOwner($only));
+    }
+
+    /**
+     * El sujeto tiene que ser de la organización activa: contar los owners de
+     * la nuestra para decidir sobre alguien del negocio de al lado daría una
+     * respuesta que parece correcta y no lo es.
+     */
+    public function test_it_refuses_a_subject_from_another_organization(): void
+    {
+        $own = $this->organizationWithNeighbour();
+        $neighbour = Organization::query()->whereKeyNot($own->getKey())->firstOrFail();
+
+        User::factory()->owner()->create();
+
+        $foreign = $this->withinOrganization(
+            $neighbour,
+            fn (): User => User::factory()->owner()->create(),
+        );
+
+        $this->actingAsOrganization($own);
+
+        $this->expectException(CrossTenantRelationException::class);
+
+        $this->guard()->whileKeepingAnOwner($foreign, 'degradar', fn (): bool => true);
+    }
+
+    /**
+     * SP-2 · por HTTP la respuesta es `422`, no `403`: quien lo intenta tiene
+     * todos los permisos, lo que no se puede es aceptar el resultado. La ruta
+     * es de prueba; las de equipo llegan con `T-013`.
+     */
+    public function test_the_http_answer_is_422(): void
+    {
+        Route::middleware(['web', 'auth', 'tenant'])->post('__roles/degradarme', function () {
+            /** @var User $user */
+            $user = auth()->user();
+
+            return app(LastOwnerGuard::class)->whileKeepingAnOwner(
+                $user,
+                'degradar',
+                fn () => $user->update(['role' => OrganizationRole::Member]),
+            );
+        });
+
+        $organization = Organization::factory()->create();
+        $this->neighbourOrganization();
+
+        $only = $this->withinOrganization($organization, fn (): User => User::factory()->owner()->create());
+        $this->withoutOrganization();
+
+        $response = $this->actingAs($only)->postJson('/__roles/degradarme');
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('último owner', (string) $response->json('errors.role.0'));
+
+        $this->assertSame(OrganizationRole::Owner, $only->refresh()->role);
+    }
+
+    // -------------------------------------------------------------------
+    // El escenario
+    // -------------------------------------------------------------------
+
+    private function guard(): LastOwnerGuard
+    {
+        return app(LastOwnerGuard::class);
+    }
+
+    /**
+     * Sitúa el escenario en una organización con su vecina sembrada
+     * (`REQ-QAX-003` RB-10) y la devuelve.
+     */
+    private function organizationWithNeighbour(): Organization
+    {
+        $organization = Organization::factory()->create();
+
+        $this->neighbourOrganization();
+        $this->actingAsOrganization($organization);
+
+        return $organization;
+    }
+}

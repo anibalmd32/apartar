@@ -6,9 +6,11 @@ namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
 use App\Domain\Tenancy\TenantContext;
+use App\Policies\SubscriptionPolicy;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -40,5 +42,25 @@ class AppServiceProvider extends ServiceProvider
 
             return new TenantAwareUserProvider($app->make(Hasher::class), $model);
         });
+
+        $this->registerSubscriptionGates();
+    }
+
+    /**
+     * Habilidades de la suscripción y su facturación (`REQ-ORG-003` RB-1).
+     *
+     * `OrganizationPolicy` y `UserPolicy` las descubre Laravel por convención,
+     * desde `App\Models\Organization` y `App\Models\User`. `SubscriptionPolicy`
+     * no puede: `Subscription` llega con `T-011` y no hay modelo del que
+     * partir. Registrar sus habilidades como *gates* con nombre deja la regla
+     * —solo el `owner`— vigente y probada desde hoy, en lugar de esperar al
+     * modelo para empezar a protegerla.
+     */
+    private function registerSubscriptionGates(): void
+    {
+        Gate::define('subscription.view', [SubscriptionPolicy::class, 'view']);
+        Gate::define('subscription.change-plan', [SubscriptionPolicy::class, 'changePlan']);
+        Gate::define('billing.view-invoices', [SubscriptionPolicy::class, 'viewInvoices']);
+        Gate::define('billing.upload-payment-proof', [SubscriptionPolicy::class, 'uploadPaymentProof']);
     }
 }

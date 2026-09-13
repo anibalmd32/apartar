@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tenancy;
 
+use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
@@ -105,8 +106,8 @@ final class TenantFactoriesTest extends TestCase
     {
         $this->withoutOrganization();
 
-        $this->assertSame('member', User::factory()->create()->role);
-        $this->assertSame('owner', User::factory()->owner()->create()->role);
+        $this->assertSame(OrganizationRole::Member, User::factory()->create()->role);
+        $this->assertSame(OrganizationRole::Owner, User::factory()->owner()->create()->role);
     }
 
     /**

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domain\Tenancy\LastOwnerException;
+use App\Http\Middleware\EnsureIsOwner;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\OperatesWithoutTenant;
 use App\Http\Middleware\OutsideTenancy;
@@ -9,6 +11,7 @@ use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 
@@ -42,12 +45,26 @@ return Application::configure(basePath: dirname(__DIR__))
         // pertenece a ninguna superficie. La suite de REQ-QAX-008 exige que
         // toda ruta nuestra diga una cosa o la otra, porque no declarar nada
         // es indistinguible de un olvido.
+        // `owner` cierra un grupo de rutas al dueño (REQ-ORG-003 RB-4). No
+        // sustituye a la policy de cada operación: protege el camino, no el
+        // modelo concreto sobre el que se acaba operando.
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'without-tenant' => OperatesWithoutTenant::class,
             'outside-tenancy' => OutsideTenancy::class,
+            'owner' => EnsureIsOwner::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // REQ-ORG-003 SP-2: quedarse sin el último owner es 422 y no 403. El
+        // intento es legítimo y está bien formado —suele hacerlo el propio
+        // owner, que lo puede todo—; lo que no se puede es aceptarlo. El
+        // cuerpo lleva `errors` para que Inertia lo muestre junto al campo,
+        // como cualquier otra validación.
+        $exceptions->render(function (LastOwnerException $exception): JsonResponse {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['role' => [$exception->getMessage()]],
+            ], LastOwnerException::STATUS);
+        });
     })->create();

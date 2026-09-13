@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Domain\Tenancy\OrganizationRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -26,7 +27,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string $name
  * @property string $email
  * @property string|null $password contraseña; nula mientras la invitación esté pendiente
- * @property string $role `owner` o `member`
+ * @property OrganizationRole $role rol dentro de su organización
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $disabled_at
  * @property bool $must_change_password
@@ -60,11 +61,17 @@ class User extends Authenticatable
     ];
 
     /**
+     * `role` se castea al enum y no se queda en `string` porque es el único
+     * sitio donde vive el rol: leerlo como texto invitaría a comparar contra
+     * literales repartidos por la aplicación, y la matriz de `REQ-ORG-003`
+     * RB-1 dejaría de estar en un solo archivo.
+     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'role' => OrganizationRole::class,
             'email_verified_at' => 'datetime',
             'disabled_at' => 'datetime',
             'invited_at' => 'datetime',

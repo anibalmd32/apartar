@@ -1,0 +1,91 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Policies;
+
+use App\Domain\Tenancy\OrganizationCapability;
+use App\Models\Organization;
+use App\Models\User;
+
+/**
+ * Quién puede gobernar la organización (`REQ-ORG-003` RB-1 y RB-4).
+ *
+ * Tres de las seis áreas de gobierno viven aquí —ajustes, cuentas de cobro y
+ * branding—; el equipo está en `UserPolicy` y la suscripción con su
+ * facturación en `SubscriptionPolicy`.
+ *
+ * Cada método hace **dos** comprobaciones y las dos hacen falta:
+ *
+ *  1. que quien actúa pertenezca a esa organización, porque una policy que
+ *     solo mirara el rol autorizaría al `owner` de un negocio sobre los
+ *     ajustes de otro;
+ *  2. que su rol ejerza la capacidad, que es el reparto de RB-1.
+ *
+ * La primera parece redundante con el aislamiento —el binding de ruta ya
+ * devuelve `404` para un identificador ajeno (`REQ-ORG-002` RB-6)— y lo es
+ * mientras el modelo llegue por la URL. Deja de serlo en cuanto una `Action`
+ * autoriza sobre un modelo que resolvió ella misma, que es la mitad de los
+ * casos.
+ */
+final class OrganizationPolicy
+{
+    /**
+     * Ver la pantalla de ajustes (`REQ-ORG-006`).
+     */
+    public function viewSettings(User $user, Organization $organization): bool
+    {
+        return $this->governs($user, $organization, OrganizationCapability::Settings);
+    }
+
+    /**
+     * Cambiar los ajustes de operación: tasa, plazos, frecuencia de cuotas.
+     */
+    public function updateSettings(User $user, Organization $organization): bool
+    {
+        return $this->governs($user, $organization, OrganizationCapability::Settings);
+    }
+
+    /**
+     * Gestionar las cuentas donde el negocio recibe el dinero
+     * (`REQ-ORG-007`).
+     *
+     * Es la capacidad más sensible del `owner` y por eso no está con la
+     * cobranza: un empleado registra pagos y aprueba comprobantes, pero no
+     * decide a qué cuenta va el dinero.
+     */
+    public function managePaymentAccounts(User $user, Organization $organization): bool
+    {
+        return $this->governs($user, $organization, OrganizationCapability::PaymentAccounts);
+    }
+
+    /**
+     * Cambiar la identidad de la vitrina: nombre, slug, logo y color
+     * (`REQ-ORG-006`).
+     */
+    public function manageBranding(User $user, Organization $organization): bool
+    {
+        return $this->governs($user, $organization, OrganizationCapability::Branding);
+    }
+
+    /**
+     * Operar el día a día del negocio: lo que los dos roles hacen.
+     *
+     * Existe para que las pantallas de operación tengan dónde autorizar la
+     * pertenencia sin volver a decidir el reparto de roles por su cuenta.
+     */
+    public function operate(User $user, Organization $organization): bool
+    {
+        return $this->belongsTo($user, $organization);
+    }
+
+    private function governs(User $user, Organization $organization, OrganizationCapability $capability): bool
+    {
+        return $this->belongsTo($user, $organization) && $user->role->can($capability);
+    }
+
+    private function belongsTo(User $user, Organization $organization): bool
+    {
+        return $user->organization_id === (int) $organization->getKey();
+    }
+}
