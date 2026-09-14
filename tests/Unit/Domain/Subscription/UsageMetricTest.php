@@ -67,3 +67,24 @@ it('nombra la unidad del almacenamiento en MB', function (): void {
     expect(UsageMetric::StorageMb->unit())->toBe('MB');
     expect(UsageMetric::Products->unit())->toBe('unidades');
 });
+
+/**
+ * El nombre que lee una persona, concordado con la cifra de la que se habla.
+ *
+ * Hace falta porque el mensaje de `PlanLimitReachedException` lo lee el dueño
+ * de un negocio (`REQ-SUB-004` RB-5): «tu plan permite 1 users» no es un
+ * mensaje, es el nombre de una columna. El singular importa de verdad, porque
+ * el techo de Free es exactamente uno.
+ */
+it('nombra cada métrica concordando con la cantidad', function (UsageMetric $metric, string $one, string $many): void {
+    expect($metric->label(1))->toBe($one);
+    expect($metric->label(5))->toBe($many);
+    expect($metric->label())->toBe($many);
+})->with([
+    'usuarios' => [UsageMetric::Users, 'usuario', 'usuarios'],
+    'catálogos' => [UsageMetric::Catalogs, 'catálogo publicado', 'catálogos publicados'],
+    'productos' => [UsageMetric::Products, 'producto', 'productos'],
+    'apartados' => [UsageMetric::ActiveLayaways, 'apartado activo', 'apartados activos'],
+    'almacenamiento' => [UsageMetric::StorageMb, 'MB de almacenamiento', 'MB de almacenamiento'],
+    'cuentas de cobro' => [UsageMetric::PaymentAccounts, 'cuenta de cobro', 'cuentas de cobro'],
+]);

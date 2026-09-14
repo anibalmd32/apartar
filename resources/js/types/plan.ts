@@ -42,7 +42,16 @@ export interface UsageState {
     /** null = ilimitado. */
     readonly limit: PlanLimit;
     readonly isAtLimit: boolean;
-    readonly percentage: number;
+    /**
+     * `null` cuando no hay techo contra el que medir.
+     *
+     * Es la misma unión que devuelve `usagePercentage()` en `lib/plan.ts`, y
+     * por el mismo motivo: un `0` pintaría una barra vacía que miente sobre un
+     * plan ilimitado y un `100` una llena que miente al revés. Lo fija el
+     * servidor en `UsageState` (`T-013`); antes el tipo decía `number` y no
+     * tenía a nadie detrás que lo produjera.
+     */
+    readonly percentage: number | null;
 }
 
 export interface PlanState {

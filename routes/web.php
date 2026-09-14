@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Auth\AcceptInvitationController;
 use App\Http\Controllers\Marketing\RegisterController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -35,6 +36,33 @@ Route::middleware(['guest', 'outside-tenancy'])->group(function () {
 
     Route::post('registro', [RegisterController::class, 'store'])
         ->middleware('throttle:registro');
+});
+
+/*
+| Aceptación de una invitación de equipo (`REQ-ORG-004`, [05 §7.6]).
+|
+| **Fuera del modelo de tenancy, igual que el registro y por una razón
+| parecida.** Quien abre este enlace no tiene sesión de la que derivar la
+| organización, ni viene de un catálogo ni de una ficha de cliente: no
+| pertenece a ninguna de las superficies de `REQ-ORG-002` RB-4. La organización
+| sale del propio token —lo lleva en el prefijo— y se fija **dentro** del
+| controlador con `runFor()`, que es lo mismo que hace el registro con la
+| organización recién creada.
+|
+| `guest` porque quien ya tiene una sesión abierta no está aceptando ninguna
+| invitación: `users.email` es único en toda la plataforma (`REQ-ORG-001`
+| RB-3), así que la persona invitada es necesariamente otra cuenta.
+|
+| Sin `throttle` propio: el token es un secreto de 256 bits y adivinarlo no es
+| un ataque que se pare con un contador por IP. Lo que sí se acota es el
+| formulario, que va por `POST` con el token ya resuelto.
+*/
+Route::middleware(['guest', 'outside-tenancy'])->group(function (): void {
+    Route::get('invitacion/{token}', [AcceptInvitationController::class, 'show'])
+        ->name('team.invitation.show');
+
+    Route::post('invitacion/{token}', [AcceptInvitationController::class, 'store'])
+        ->name('team.invitation.store');
 });
 
 require __DIR__.'/backoffice.php';

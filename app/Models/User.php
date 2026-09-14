@@ -32,6 +32,8 @@ use Illuminate\Notifications\Notifiable;
  * @property \Illuminate\Support\Carbon|null $disabled_at
  * @property bool $must_change_password
  * @property \Illuminate\Support\Carbon|null $invited_at
+ * @property string|null $invitation_token_hash huella del enlace vivo; nula si no hay ninguno (`REQ-ORG-004` RB-4)
+ * @property \Illuminate\Support\Carbon|null $invitation_expires_at
  */
 class User extends Authenticatable
 {
@@ -52,12 +54,21 @@ class User extends Authenticatable
         'disabled_at',
         'must_change_password',
         'invited_at',
+        'invitation_token_hash',
+        'invitation_expires_at',
     ];
 
-    /** @var list<string> */
+    /**
+     * La huella del enlace de invitación se oculta junto a la contraseña: es
+     * lo que abre la misma puerta (`REQ-ORG-004` RB-4), y serializar el modelo
+     * a las page props del equipo no tiene por qué llevarla.
+     *
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
+        'invitation_token_hash',
     ];
 
     /**
@@ -75,8 +86,23 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'disabled_at' => 'datetime',
             'invited_at' => 'datetime',
+            'invitation_expires_at' => 'datetime',
             'must_change_password' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Indica si la invitación sigue sin aceptarse (`REQ-ORG-004` RB-3).
+     *
+     * La marca es **no tener contraseña**, no tener `invited_at`: el segundo
+     * se conserva después de aceptar —`TeamMember.invitedAt` lo muestra— y
+     * dejar de contarlo como pendiente es exactamente lo que ocurre al fijar
+     * la contraseña. Con la otra lectura, un miembro que entró hace un año
+     * seguiría figurando como invitación pendiente para siempre.
+     */
+    public function hasPendingInvitation(): bool
+    {
+        return $this->password === null;
     }
 }

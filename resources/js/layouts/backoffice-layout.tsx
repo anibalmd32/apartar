@@ -32,7 +32,10 @@ interface BackofficeLayoutProps {
  * Secciones del menú. Hoy solo está el panel: las demás llegan con sus hitos y
  * se añaden aquí, cada una con el rol que la ejerce.
  */
-const SECTIONS: NavSection[] = [{ label: 'Panel', href: '/backoffice', ownerOnly: false }];
+const SECTIONS: NavSection[] = [
+    { label: 'Panel', href: '/backoffice', ownerOnly: false },
+    { label: 'Equipo', href: '/backoffice/equipo', ownerOnly: true },
+];
 
 export default function BackofficeLayout({ title, description, children }: BackofficeLayoutProps) {
     const { teamMember, status } = usePage<BackofficeSharedData>().props;

@@ -91,4 +91,27 @@ enum UsageMetric: string
     {
         return $this === self::StorageMb ? 'MB' : 'unidades';
     }
+
+    /**
+     * Nombre de la métrica tal como se le dice a una persona, concordado con
+     * la cantidad de la que se habla.
+     *
+     * Hace falta porque el mensaje de `PlanLimitReachedException` lo lee el
+     * dueño de un negocio (`REQ-SUB-004` RB-5), y «tu plan permite 1 users» no
+     * es un mensaje: es el nombre de una columna. El plural va por defecto
+     * porque es la forma en que se habla de un techo —«5 usuarios»— y el
+     * singular solo aparece cuando el techo es exactamente uno, que es
+     * justamente el caso de Free.
+     */
+    public function label(int $count = 2): string
+    {
+        return match ($this) {
+            self::Users => $count === 1 ? 'usuario' : 'usuarios',
+            self::Catalogs => $count === 1 ? 'catálogo publicado' : 'catálogos publicados',
+            self::Products => $count === 1 ? 'producto' : 'productos',
+            self::ActiveLayaways => $count === 1 ? 'apartado activo' : 'apartados activos',
+            self::StorageMb => 'MB de almacenamiento',
+            self::PaymentAccounts => $count === 1 ? 'cuenta de cobro' : 'cuentas de cobro',
+        };
+    }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Domain\Tenancy\OrganizationRole;
+use App\Domain\Tenancy\TeamInvitation;
 use App\Models\User;
 use Database\Factories\Concerns\CreatesWithinTenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -67,13 +68,34 @@ class UserFactory extends Factory
     /**
      * Usuario con la invitación pendiente: existe, pero sin contraseña
      * utilizable, y no puede entrar hasta establecerla (`REQ-ORG-004` RB-3).
+     *
+     * Lleva **su enlace vivo** cuando se le pasa uno. Sin token, una
+     * invitación pendiente es un estado que la aplicación nunca produce —nace
+     * siempre con su enlace emitido—, así que el escenario que lo quiera tiene
+     * que pedirlo: `invited()` a secas sirve para comprobar que la fila cuenta
+     * para el límite, e `invited($invitation)` para recorrer el enlace.
      */
-    public function invited(): static
+    public function invited(?TeamInvitation $invitation = null): static
     {
         return $this->state(fn (): array => [
             'password' => null,
             'email_verified_at' => null,
             'invited_at' => now(),
+            'invitation_token_hash' => $invitation?->tokenHash,
+            'invitation_expires_at' => $invitation?->expiresAt,
+        ]);
+    }
+
+    /**
+     * Invitación cuyo enlace ya caducó (`REQ-ORG-004` SP-3).
+     *
+     * El token sigue en la fila: caducado no es lo mismo que consumido, y la
+     * pantalla de enlace vencido tiene que poder encontrarlo para marcarlo.
+     */
+    public function withExpiredInvitation(TeamInvitation $invitation): static
+    {
+        return $this->invited($invitation)->state(fn (): array => [
+            'invitation_expires_at' => now()->subHour(),
         ]);
     }
 

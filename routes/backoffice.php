@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
+use App\Http\Controllers\Backoffice\TeamController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -66,5 +67,33 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('cambiar-contrasena', [ForcedPasswordChangeController::class, 'update'])
                 ->middleware('during-suspension')
                 ->name('password.change.store');
+
+            /*
+            | Equipo (`REQ-ORG-004`, `REQ-ORG-005`). Del `owner`, por [05 §7.4]
+            | y por `REQ-ORG-003` RB-1: quién entra al negocio es gobierno, no
+            | operación diaria.
+            |
+            | **Ninguna declara `during-suspension`, y es la respuesta
+            | correcta.** Lo que sobrevive a una suspensión es cobrar y aprobar
+            | comprobantes (`REQ-ORG-008` RB-3); ampliar el equipo mientras se
+            | le debe dinero a la plataforma es justo lo contrario de eso.
+            | Reactivar y revocar tampoco pasan, y aquí la omisión no es
+            | descuido sino el lado seguro del fallo cerrado: cuando se
+            | regularice el pago vuelven todas a la vez.
+            |
+            | El `{member}` se resuelve **ya filtrado** por el tenant, así que
+            | el identificador de otra organización da `404` y no `403`
+            | (`REQ-ORG-002` RB-6): no se confirma que exista.
+            */
+            Route::middleware('owner')->group(function (): void {
+                Route::get('equipo', [TeamController::class, 'index'])->name('team.index');
+                Route::post('equipo', [TeamController::class, 'store'])->name('team.store');
+
+                Route::post('equipo/{member}/reenviar', [TeamController::class, 'resend'])->name('team.resend');
+                Route::delete('equipo/{member}', [TeamController::class, 'destroy'])->name('team.destroy');
+
+                Route::post('equipo/{member}/desactivar', [TeamController::class, 'disable'])->name('team.disable');
+                Route::post('equipo/{member}/activar', [TeamController::class, 'enable'])->name('team.enable');
+            });
         });
 });

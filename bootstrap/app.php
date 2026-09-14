@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Subscription\CreationSuspendedException;
+use App\Domain\Subscription\PlanFeatureUnavailableException;
+use App\Domain\Subscription\PlanLimitReachedException;
+use App\Domain\Tenancy\CannotDisableSelfException;
+use App\Domain\Tenancy\InvitationNotPendingException;
 use App\Domain\Tenancy\LastOwnerException;
 use App\Exceptions\ExpiredInertiaSession;
 use App\Http\Middleware\AllowedDuringSuspension;
@@ -81,6 +86,61 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $exception->getMessage(),
                 'errors' => ['role' => [$exception->getMessage()]],
             ], LastOwnerException::STATUS);
+        });
+
+        // REQ-ORG-005 SP-1: autodesactivarse es 422 por lo mismo que lo
+        // anterior. Quien lo intenta es el owner, que lo puede todo; lo que no
+        // se puede es aceptarlo.
+        $exceptions->render(function (CannotDisableSelfException $exception): JsonResponse {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['member' => [$exception->getMessage()]],
+            ], CannotDisableSelfException::STATUS);
+        });
+
+        // REQ-ORG-004 RB-6: revocar o reenviar una invitación que ya se aceptó
+        // llega tarde, no llega mal.
+        $exceptions->render(function (InvitationNotPendingException $exception): JsonResponse {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['member' => [$exception->getMessage()]],
+            ], InvitationNotPendingException::STATUS);
+        });
+
+        // REQ-ORG-004 SP-1 y REQ-SUB-004 RB-5: el 422 del límite **lleva
+        // dentro el plan que lo desbloquea**. Sin ese cuerpo, la pantalla solo
+        // podría decir «no puedes», que deja a quien lo lee donde estaba; con
+        // él enlaza a Suscripción sabiendo qué ofrecer, y sin lógica propia
+        // (RB-1).
+        $exceptions->render(function (PlanLimitReachedException $exception): JsonResponse {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['email' => [$exception->getMessage()]],
+                'limit' => $exception->toArray(),
+                // La pantalla de suscripción llega con su hito; la URL ya es
+                // la definitiva de [05 §7.4], igual que en el aviso de
+                // suspensión de `BackofficeLayout`, para que el enlace esté
+                // completo el día que exista.
+                'upgradeUrl' => '/backoffice/suscripcion',
+            ], PlanLimitReachedException::STATUS);
+        });
+
+        // REQ-SUB-004 SP-3: una función que el plan no incluye es 403 con el
+        // motivo, nunca 404. Ocultar que existe impide entender que basta con
+        // subir de plan.
+        $exceptions->render(function (PlanFeatureUnavailableException $exception): JsonResponse {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'feature' => $exception->toArray(),
+            ], PlanFeatureUnavailableException::STATUS);
+        });
+
+        // REQ-SUB-004 RB-8: suspendida no se crea nada. Es 403 y no 422 porque
+        // no falta sitio, falta estar al día.
+        $exceptions->render(function (CreationSuspendedException $exception): JsonResponse {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], CreationSuspendedException::STATUS);
         });
 
         // REQ-BOF-001 SP-6: la petición de Inertia con la sesión caducada se
