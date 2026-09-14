@@ -157,7 +157,7 @@ final class RoleIsReadFromDatabaseTest extends TestCase
      */
     private function login(User $user): void
     {
-        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+        $this->post(route('login'), ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect();
     }
 

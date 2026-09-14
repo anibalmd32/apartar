@@ -182,7 +182,7 @@ final class CrossTenantAccessTest extends TestCase
     {
         $tenant = array_map(fn (array $pair): string => $this->describe($pair[0]), $this->tenantRoutes());
 
-        $this->assertContains('GET /dashboard', $tenant);
+        $this->assertContains('GET /backoffice', $tenant);
         $this->assertContains('PATCH /settings/profile', $tenant);
 
         $outside = array_map(
@@ -193,7 +193,7 @@ final class CrossTenantAccessTest extends TestCase
             )),
         );
 
-        $this->assertContains('POST /login', $outside);
+        $this->assertContains('POST /backoffice/login', $outside);
         $this->assertContains('GET /', $outside);
     }
 

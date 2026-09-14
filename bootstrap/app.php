@@ -3,7 +3,12 @@
 declare(strict_types=1);
 
 use App\Domain\Tenancy\LastOwnerException;
+use App\Exceptions\ExpiredInertiaSession;
+use App\Http\Middleware\AllowedDuringSuspension;
+use App\Http\Middleware\EnsureAdminIsActive;
 use App\Http\Middleware\EnsureIsOwner;
+use App\Http\Middleware\EnsureOrganizationIsActive;
+use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\OperatesWithoutTenant;
 use App\Http\Middleware\OutsideTenancy;
@@ -48,11 +53,21 @@ return Application::configure(basePath: dirname(__DIR__))
         // `owner` cierra un grupo de rutas al dueño (REQ-ORG-003 RB-4). No
         // sustituye a la policy de cada operación: protege el camino, no el
         // modelo concreto sobre el que se acaba operando.
+        // Los tres de REQ-BOF-001 se aplican en este orden y cada uno da por
+        // hecho lo que resolvió el anterior: `admin-active` mira la persona,
+        // `organization-active` su negocio, `password-changed` lo que le queda
+        // por hacer antes de poder navegar. `during-suspension` no comprueba
+        // nada: declara qué rutas sobreviven a una suspensión, y lo que no se
+        // declara queda bloqueado (REQ-ORG-008 RB-3).
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'without-tenant' => OperatesWithoutTenant::class,
             'outside-tenancy' => OutsideTenancy::class,
             'owner' => EnsureIsOwner::class,
+            'admin-active' => EnsureAdminIsActive::class,
+            'organization-active' => EnsureOrganizationIsActive::class,
+            'password-changed' => EnsurePasswordIsChanged::class,
+            'during-suspension' => AllowedDuringSuspension::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -67,4 +82,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 'errors' => ['role' => [$exception->getMessage()]],
             ], LastOwnerException::STATUS);
         });
+
+        // REQ-BOF-001 SP-6: la petición de Inertia con la sesión caducada se
+        // responde con un 409 que fuerza la recarga al acceso. El porqué está
+        // escrito en la clase.
+        $exceptions->respond(new ExpiredInertiaSession);
     })->create();
