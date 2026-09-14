@@ -22,6 +22,7 @@ Convenciones del plan:
 - **Un test que ejercite métodos de instancia del caso base se escribe como clase PHPUnit, no con la sintaxis de Pest.** PHPStan no resuelve el `$this` de las closures de Pest, y nivel 6 lo rechaza. Descubierto en `T-004`; aplica a todo test que use helpers como `CreatesNeighbourOrganization`.
 - **Toda ruta nueva declara su superficie.** Desde `T-007`, `CrossTenantAccessTest` recorre el router y exige que cada ruta nuestra lleve un middleware que implemente `DeclaresTenantSurface` (con su `TenantSurface`) o `DeclaresNoTenantSurface` (`OutsideTenancy`, alias `outside-tenancy`). Una ruta sin declarar **hace fallar la suite de tenancy**, no se salta. No hay lista de exentas escrita a mano: eso es lo que `REQ-QAX-008` SP-1 prohíbe.
 - **`ResolveTenant` corre antes que `SubstituteBindings`,** fijado con `prependToPriorityList` en `bootstrap/app.php`. Al revés, el binding de un modelo del tenant se resuelve sin organización fijada y la respuesta es `500` en lugar del `404` que exige `REQ-ORG-002` RB-6. Hay un test que fija el orden; si alguien reordena los middlewares, ese test es el que avisa.
+- **Toda ruta del backoffice declara si sobrevive a la suspensión.** Desde `T-012`, `EnsureOrganizationIsActive` pregunta por el marcador `during-suspension` (`AllowedDuringSuspension`) y **falla cerrado**: una ruta que no declara nada queda bloqueada con la organización `suspended`. Es la segunda declaración obligatoria por ruta, junto a la de superficie. Una lista central de excepciones se habría quedado vieja en silencio, que es el lado equivocado en el que equivocarse.
 
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
@@ -179,6 +180,10 @@ Comando con las 4 comprobaciones estáticas, `CreatesNeighbourOrganization`, y l
 **T-013 · Equipo: invitación y desactivación** · `AB` · 3 pts · *Requisitos: `REQ-ORG-004`, `REQ-ORG-005`*
 `InviteTeamMemberAction`, `DisableTeamMemberAction`, `EnableTeamMemberAction`, `AcceptInvitationController`, `TeamInvitationNotification`, páginas de equipo.
 **Hecho cuando:** solo `owner` invita; invitación pendiente cuenta para el límite y revocarla lo libera; token 48 h de un solo uso; último `owner` protegido con concurrencia.
+
+**Adelanto de alcance decidido: `LimitEnforcer` nace aquí, no en `T-067`.** `REQ-ORG-004` RB-2 exige que una invitación pendiente consuma cupo del límite `users`, y `REQ-ORG-005` RB-5 que desactivar lo libere: eso es aplicación de límites, y [05 §5](05-design-tecnico.md) dice que **ninguna Action comprueba límites por su cuenta**. Contar a mano aquí y sustituirlo en H5 dejaría esa invariante rota durante cincuenta tareas, con `T-015` (`max_payment_accounts`) repitiendo el mismo apaño.
+
+Se construye con **la firma definitiva de §5** y soportando las métricas cuyas tablas ya existen (`users`, `payment_accounts`); el contador se mueve **en la misma transacción** que la creación, como exigirá `REQ-SUB-003`. `T-066` añade las cuatro métricas restantes y el job de reconciliación; `T-067` inserta las llamadas en las doce acciones de `REQ-SUB-004` RB-3 y aporta la UI (`LimitBanner`, `UpgradePrompt`, `usePlanLimits`). Ninguno de los dos reescribe lo que se haga aquí.
 
 **T-014 · Ajustes, identidad y vitrina** · `AB` · 3 pts · *Requisitos: `REQ-ORG-006`*
 `SettingKey` reducido a **10** claves (retirando `storefront_enabled`, ver arriba) con sus reglas, migración de `organizations.phone`, `Settings` con caché **por organización**, `UpdateSettingsAction`, `UpdateOrganizationAction`, `OrganizationStorefrontController`, página de ajustes.
