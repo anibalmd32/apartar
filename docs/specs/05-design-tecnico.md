@@ -125,9 +125,13 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 | # | Tabla | Columnas clave | Índices |
 |---|---|---|---|
-| 12 | `users` | `organization_id`, `name`, `email`, `password?`, `role`, `disabled_at?`, `must_change_password`, `invited_at?` | **`UNIQUE(email)` global**, `INDEX(organization_id, role)` |
+| 12 | `users` | `organization_id`, `name`, `email`, `password?`, `role`, `disabled_at?`, `must_change_password`, `invited_at?`, `invitation_token_hash?`, `invitation_expires_at?` | **`UNIQUE(email)` global**, `INDEX(organization_id, role)`, `INDEX(organization_id, invitation_token_hash)` |
 | 13 | `organization_settings` | `organization_id`, `key`, `value JSON`, `updated_by?` | `UNIQUE(organization_id, key)` |
 | 14 | `payment_accounts` | `organization_id`, `method`, `bank?`, `holder_name`, `holder_document`, `identifier`, `instructions?`, `is_active`, `position` | `INDEX(organization_id, is_active)` |
+
+> **Las dos columnas de invitación se añadieron en `T-013`**, porque el enlace de 48 h y de un solo uso de `REQ-ORG-004` RB-4 no se sostiene sin guardar cuál vale y hasta cuándo. Van en `users` y no en una tabla propia: RB-3 crea al invitado como fila de `users` desde el primer instante y RB-4 deja vivo un solo enlace por persona, así que la relación es uno a uno y sin historia. Una tabla `team_invitations` sería una partición vertical de `users` con un `JOIN` obligatorio y ninguna pregunta que respondiera mejor.
+>
+> **El token lleva delante el identificador de su organización** (`7.a8f3…`), y eso es lo que permite resolver el tenant **antes** de consultar `users`, cuyo global scope lanza sin organización fijada. La alternativa era un `UNIQUE(invitation_token_hash)` global —la forma de `layaways.code`— y habría exigido una cuarta entrada en `GlobalUniqueExceptions`, que es una lista cerrada (`REQ-QAX-008` RB-4). Va el identificador y no el `slug` porque el `slug` es editable (`REQ-ORG-006`) y un renombrado no puede romper las invitaciones en vuelo. **Es el patrón para toda credencial que tenga que resolver su tenant antes de poder buscarse**: el identificador en claro delante, el secreto detrás y hasheado.
 
 ### Bloque 4 — Identidad del cliente final
 

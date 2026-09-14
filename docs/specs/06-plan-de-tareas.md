@@ -6,9 +6,9 @@
 
 ## Cómo leer este plan
 
-**87 tareas** agrupadas en **10 hitos** (`H0`…`H9`). Cada tarea declara:
+**88 tareas** agrupadas en **10 hitos** (`H0`…`H9`). Cada tarea declara:
 
-- **ID** `T-NNN`, estable: no se renumera.
+- **ID** `T-NNN`, estable: no se renumera. Una tarea que aparece después de empezar se intercala con sufijo (`T-013b`) en lugar de correr los ochenta y tantos IDs siguientes: los commits, los prompts y las notas ya cerrados los citan por nombre, y renumerar convertiría cada una de esas referencias en una mentira.
 - **Requisitos** que cierra, por ID. Es la trazabilidad que sustituye a `indexion` (`REQ-QAX-006` RB-7): el PR de la tarea declara estos IDs.
 - **Fase** — `A` (tipos y estructuras) o `B` (lógica), según [02 §8.2](02-spec-consolidada.md). `AB` significa que la tarea es tan pequeña que no vale partirla.
 - **Depende de** — tareas que deben estar cerradas antes.
@@ -26,7 +26,7 @@ Convenciones del plan:
 
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
-| H0 · Cimientos | T-001…T-016 | 40 | 16 req. |
+| H0 · Cimientos | T-001…T-016 (+ `T-013b`) | 41 | 16 req. |
 | H1 · Aritmética y tasa | T-017…T-023 | 15 | 6 req. |
 | H2 · Catálogo | T-024…T-038 | 43 | 19 req. |
 | H3 · Apartado | T-039…T-053 | 41 | 23 req. |
@@ -36,7 +36,7 @@ Convenciones del plan:
 | H7 · Comunicación | T-079…T-083 | 17 | 10 req. |
 | H8 · Datos y plataforma | T-084…T-086 | 16 | 11 req. |
 | H9 · Producción | T-087 | 5 | 3 req. |
-| | **87** | **251** | **118** |
+| | **88** | **252** | **118** |
 
 ---
 
@@ -130,6 +130,7 @@ Comando con las 4 comprobaciones estáticas, `CreatesNeighbourOrganization`, y l
 - **`LastOwnerGuard`** aloja el mecanismo de RB-2 y lo comparten sus dos usos de `T-013`: degradar (`REQ-ORG-004`) y desactivar (`REQ-ORG-005`). Bloquea con `SELECT … FOR UPDATE` las filas de los `owner` activos y ejecuta la escritura **dentro** de esa transacción; comprobar en una transacción y escribir en otra deja exactamente el hueco que el bloqueo cierra.
 - **La concurrencia se prueba con dos conexiones y el orden forzado a mano** (`LastOwnerConcurrencyTest`), no con hilos: la conexión rival bloquea **solo su propia fila** para que lo único que pueda esperar sea el conteo. Bloqueando todas las filas, una guarda sin `FOR UPDATE` también acabaría esperando —al escribir— y el test pasaría midiendo el bloqueo equivocado. Ese archivo no usa `RefreshDatabase` —un bloqueo entre conexiones solo es observable sobre filas confirmadas— y barre lo que siembra en `setUp` y en `tearDown`.
 - **`OrganizationStatus` no se tocó.** Su docblock atribuye a `T-009` los métodos `allowsTeamAccess()` y `allowsCustomerAccess()`, pero son la matriz de `REQ-ORG-008` —suspensión y cierre—, no la de `REQ-ORG-003`, y llegan con la tarea que cierre ese requisito.
+- **`REQ-ORG-003` no quedó cerrado aquí, aunque su gate sí.** Falta la vía por la que un dueño cambia un rol en el producto: RB-3 la enuncia y SP-2/SP-4 la suponen. Se detectó al cerrar `T-013` y la recoge **`T-013b`**.
 
 **T-010 · Registro de organización** · `AB` · 3 pts · *Requisitos: `REQ-ORG-001`*
 `RegisterOrganizationAction` (4 creaciones en una transacción), `RegisterOrganizationRequest`, `RegisterController`, página `marketing/Register.tsx`, `ReservedSlugs`, `SlugTakenException`.
@@ -184,6 +185,39 @@ Comando con las 4 comprobaciones estáticas, `CreatesNeighbourOrganization`, y l
 **Adelanto de alcance decidido: `LimitEnforcer` nace aquí, no en `T-067`.** `REQ-ORG-004` RB-2 exige que una invitación pendiente consuma cupo del límite `users`, y `REQ-ORG-005` RB-5 que desactivar lo libere: eso es aplicación de límites, y [05 §5](05-design-tecnico.md) dice que **ninguna Action comprueba límites por su cuenta**. Contar a mano aquí y sustituirlo en H5 dejaría esa invariante rota durante cincuenta tareas, con `T-015` (`max_payment_accounts`) repitiendo el mismo apaño.
 
 Se construye con **la firma definitiva de §5** y soportando las métricas cuyas tablas ya existen (`users`, `payment_accounts`); el contador se mueve **en la misma transacción** que la creación, como exigirá `REQ-SUB-003`. `T-066` añade las cuatro métricas restantes y el job de reconciliación; `T-067` inserta las llamadas en las doce acciones de `REQ-SUB-004` RB-3 y aporta la UI (`LimitBanner`, `UpgradePrompt`, `usePlanLimits`). Ninguno de los dos reescribe lo que se haga aquí.
+
+**Decisiones tomadas al cerrar `T-013`:**
+- **El punto de serialización de `assertCanCreate()` es la fila de `usage_counters`, no las filas que se cuentan.** Es la misma para las dos peticiones rivales, cualesquiera que sean las filas que cada una vaya a crear, y no depende de la forma de ningún índice. De ahí que llamar sin transacción abierta **lance**: un `lockForUpdate()` en *autocommit* no bloquea nada más allá de su propia consulta, y comprobar en una transacción y escribir en otra deja justo el hueco que el bloqueo cierra.
+- **El enforcer vuelve a medir la métrica en vez de fiarse del contador**, tanto al decidir como al pintar, y deja escrito lo que encuentra. Hoy el contador solo lo mueve esta tarea —el recálculo diario es `T-066` y las otras once llamadas son `T-067`—, así que arrastra deriva que nadie cuadra: el propio registro de una organización deja los seis en cero con el `owner` ya creado. Hacer cumplir un techo contra una cifra que nadie mantiene es hacer cumplir una ficción, y pintarla junto a la lista que la contradice es peor. Cuando `T-066` mantenga los contadores, el valor materializado pasa a ser el camino único y la medida se muda a `UsageCalculator`; el `match` de `measure()` es literalmente lo que `T-066` amplía.
+- **`LimitEnforcer` no recibe la organización: la toma del global scope.** `Subscription::query()`, `User::query()` y `UsageCounter::query()` ya filtran, así que llamarlo sin tenant fijado lanza `MissingTenantContextException` en vez de aplicar el plan de otro.
+- **`assertCanCreate` con techo `NULL` ni siquiera coge el contador.** Sin techo contra el que comparar, serializar dos creaciones sería pagar un bloqueo por una pregunta ya respondida. Hay un test que lo fija por el contador intacto.
+- **Tres excepciones nuevas y tres códigos distintos, que es lo que los diferencia:** `PlanLimitReachedException` es `422` —falta sitio, y el cuerpo lleva `metric`, `used`, `limit`, `minimumPlan` y el enlace a Suscripción—; `PlanFeatureUnavailableException` es `403` y nunca `404` (RB-7: hay que **ver** lo que uno se pierde); `CreationSuspendedException` es `403` y existe aparte para no mandar a comparar planes a quien lo que tiene que hacer es pagar.
+- **El plan mínimo se resuelve recorriendo `Plan::public()` por `position` y comparando techos**, nunca códigos (`REQ-SUB-001` RB-1). Un plan fuera del escaparate no se ofrece como salida, y hay test.
+- **El token de invitación vive en `users`, en dos columnas nuevas, y no en una tabla `team_invitations`.** RB-3 crea al invitado como fila de `users` desde el primer instante y RB-4 deja vivo un solo enlace por persona, así que la relación es uno a uno y sin historia: una tabla aparte sería una partición vertical con un `JOIN` obligatorio y ninguna pregunta que respondiera mejor. [05 §4] bloque 12 no las declara; se añaden porque el enlace de 48 h de RB-4 no se sostiene sin guardar cuál vale y hasta cuándo.
+- **El token lleva delante el identificador de su organización** (`7.a8f3…`), y eso es lo que permite resolver el tenant **antes** de consultar `users`, que es una tabla del tenant y cuyo global scope lanza sin organización fijada. La alternativa era un `UNIQUE(invitation_token_hash)` global —la misma forma que `layaways.code`— y habría exigido una **cuarta** entrada en `GlobalUniqueExceptions`, que es una lista cerrada. Va el identificador y no el `slug` porque el `slug` es editable (`REQ-ORG-006`) y un renombrado no puede romper las invitaciones en vuelo. El índice queda en `(organization_id, invitation_token_hash)`.
+- **`/invitacion/{token}` se declara `outside-tenancy`, no abre una sexta superficie en `REQ-ORG-002` RB-4.** Quien llega no tiene sesión, ni catálogo, ni ficha: no pertenece a ninguna superficie. La organización sale del token y se fija **dentro** del controlador con `runFor()`, exactamente como `RegisterOrganizationAction` hace con la organización recién creada.
+- **`GET /invitacion/{token}` no consume un enlace vivo; solo marca el caducado.** Si consumiera, el primer antivirus de correo que visita los enlaces para comprobarlos quemaría la invitación antes de que la persona la viera. Lo que gasta el enlace es aceptar.
+- **La pantalla de enlace vencido no lleva un botón que reenvíe por sí solo.** Sería un endpoint sin autenticar capaz de disparar correos a partir de un token cualquiera, y quien decide si esa persona sigue entrando es el `owner`. Tampoco se muestra el correo del `owner` —sería revelar un dato de la organización a quien todavía no está dentro—: se le dice que se lo pida a quien le invitó.
+- **Revocar una invitación pendiente sí borra la fila**, y no contradice a `REQ-ORG-005` RB-1: esa regla protege `reviewed_by`, `registered_by` y la auditoría, y quien no ha entrado nunca no ha aprobado nada. Con baja lógica, en cambio, el correo quedaría ocupado **para siempre en toda la plataforma** (`REQ-ORG-001` RB-3) por haberse equivocado de dirección al invitar.
+- **Aceptar marca el correo como verificado.** Abrir un enlace que solo llegó a ese buzón es la prueba de control de la dirección; pedir después un segundo correo de verificación sería exigir dos veces lo mismo.
+- **Invitar, reenviar y revocar viven en `InviteTeamMemberAction`**, que es el único archivo que `REQ-ORG-004` declara en su superficie esperada. Comparten la emisión del enlace y el ajuste del cupo; repartidos en tres acciones, la segunda que alguien tocara dejaría de ajustar el contador.
+- **`LastOwnerException` no se alcanza desactivando por HTTP en un solo hilo**, y merece la pena saberlo: para desactivar hay que ser `owner`, y si el sujeto es el último `owner` activo, quien lo intenta o es él mismo —y salta antes RB-4— o no es `owner` —y salta la policy—. Quedan la vía concurrente (SP-3, que prueba `LastOwnerConcurrencyTest`) y la de un `owner` ya desactivado, que conserva su rol; el test de la acción usa esa segunda.
+- **`LimitEnforcerConcurrencyTest` aloja también el caso de «sin transacción, lanza»**, porque `RefreshDatabase` envuelve cada test en una transacción y en los demás archivos el nivel nunca es cero. Sigue la receta de `LastOwnerConcurrencyTest`: dos conexiones, orden forzado a mano, `innodb_lock_wait_timeout` a un segundo y la rival bloqueando **solo** el contador, para que lo único que pueda esperar sea la comprobación del cupo.
+- **Ninguna ruta de equipo declara `during-suspension`.** Lo que sobrevive a una suspensión es cobrar y aprobar comprobantes (`REQ-ORG-008` RB-3); ampliar el equipo mientras se le debe dinero a la plataforma es lo contrario. La omisión es la declaración, por el fallo cerrado de `T-012`.
+- **`UsageState.percentage` pasa a `number | null` en el espejo de TypeScript** (`REQ-QAX-006` RB-7). Decía `number` sin nadie que lo produjera, y `lib/plan.ts` ya devolvía la unión por el mismo motivo: sin techo no hay porcentaje, y un `0` o un `100` mienten en direcciones opuestas.
+- **`UsageMetric::label()`**, método nuevo, porque el mensaje de `PlanLimitReachedException` lo lee el dueño de un negocio y «tu plan permite 1 users» es el nombre de una columna, no un mensaje. Concuerda con la cantidad, que es justo lo que hace falta en Free, cuyo techo es uno.
+- **Dos átomos nuevos en `components/ui/`:** `select-field.tsx` —con las opciones como datos tipados y no como JSX, para que nadie cuele un `<option>` con un valor que el servidor no admite— y `badge.tsx`, donde el color nunca es lo único que distingue un estado. El listado genérico con filtros y orden **no** se anticipó: tiene su sitio en `features/data-table/` ([05 §8]).
+- **El cambio de rol (`REQ-ORG-003` RB-3) no entra.** El alcance de este prompt lo deja fuera y su «hecho cuando» tampoco lo pide. El uso «degradar» de `LastOwnerGuard` ya lo ejercita `LastOwnerConcurrencyTest` desde `T-009`, así que el mecanismo está probado; lo que falta es la acción, su ruta y el control en la pantalla de Equipo. **Ninguna tarea posterior lo recoge**: `T-013` era su hueco natural. **Resuelto abriendo `T-013b`, justo debajo.**
+
+**T-013b · Cambio de rol del equipo** · `AB` · 1 pt · *Requisitos: `REQ-ORG-003` (RB-3, SP-2, SP-4)*
+`ChangeTeamMemberRoleAction`, la ruta `POST equipo/{member}/rol` y el control en la pantalla de Equipo.
+**Hecho cuando:** un `owner` promueve a un `member` y se degrada a sí mismo; el **último `owner` activo no puede degradarse** (`422`, vía `LastOwnerGuard`); un `member` promovido con la sesión abierta tiene el permiso **en su siguiente petición** (SP-4, por HTTP y no tocando la BD a mano); la ruta declara superficie y **no** sobrevive a la suspensión; recetas en verde.
+
+**Por qué existe esta tarea.** `T-009` cerró `REQ-ORG-003` contra su gate —la matriz de dos roles por seis capacidades, el `403` del `member`, el bloqueo del último `owner` y el rol leído de BD— y el gate estaba bien pasado. Lo que el gate no pedía es la **vía por la que un dueño cambia un rol en el producto**: RB-3 la enuncia, SP-2 y SP-4 la suponen, y no existe. Se detectó al cerrar `T-013`, que construyó la pantalla donde ese control tiene que vivir.
+
+Se abre como tarea propia y no se anexa a `T-014` por dos razones. La primera, que `T-014` es ajustes, identidad y vitrina: meterle el control de roles la obligaría a tocar `TeamController` y la pantalla de Equipo, que no son suyos, y una tarea que toca dos superficies se revisa peor. La segunda, y es la que pesa: **un requisito que se dio por cerrado y no lo estaba merece su propia línea en el plan**, con su commit y su número, en lugar de colarse como apéndice de otra cosa. Si esto vuelve a pasar, quiero poder encontrarlo.
+
+Es barata porque el mecanismo ya está: `LastOwnerGuard` con su bloqueo transaccional y su test de concurrencia (`T-009`), `OrganizationCapability` con la frontera declarada, y la pantalla de Equipo con su listado (`T-013`). Lo que falta es la acción, la ruta y el `select` de rol.
 
 **T-014 · Ajustes, identidad y vitrina** · `AB` · 3 pts · *Requisitos: `REQ-ORG-006`*
 `SettingKey` reducido a **10** claves (retirando `storefront_enabled`, ver arriba) con sus reglas, migración de `organizations.phone`, `Settings` con caché **por organización**, `UpdateSettingsAction`, `UpdateOrganizationAction`, `OrganizationStorefrontController`, página de ajustes.
@@ -557,7 +591,7 @@ Los 118 requisitos están asignados. Reparto:
 
 | Dominio | Req. | Tareas |
 |---|---|---|
-| `ORG` | 8 | T-005, T-006, T-008…T-010, T-013…T-015, T-036, T-071 |
+| `ORG` | 8 | T-005, T-006, T-008…T-010, T-013, T-013b, T-014, T-015, T-036, T-071 |
 | `SUB` | 8 | T-011, T-066…T-072 |
 | `IDN` | 8 | T-040, T-043, T-045, T-049, T-050, T-065, T-077 |
 | `ACC` | 7 | T-073…T-078 |
@@ -575,7 +609,7 @@ Los 118 requisitos están asignados. Reparto:
 
 `REQ-QAX-005` y `REQ-QAX-006` no tienen tarea propia: son **política de proceso** y se cumplen en cada PR (declarar los IDs que cierra y propagar al espejo si cambia un identificador público).
 
-`REQ-QAX-003` y `REQ-QAX-007` se instalan en T-003 pero **se cumplen en las 84 tareas restantes**: son la razón por la que ninguna tarea de Fase B cierra sin tests ni sin PHPDoc.
+`REQ-QAX-003` y `REQ-QAX-007` se instalan en T-003 pero **se cumplen en las 85 tareas restantes**: son la razón por la que ninguna tarea de Fase B cierra sin tests ni sin PHPDoc.
 
 `REQ-INF-003` se abre en T-002 y **cierra al final de H8**, cuando las catorce entradas del schedule existen: cada job añade la suya en su propia tarea.
 

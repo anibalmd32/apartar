@@ -257,8 +257,11 @@ final readonly class RegisterOrganizationData
 - RB-2 La invitación **consume una unidad del límite `users` del plan** (`REQ-SUB-004`): se cuenta desde que se envía, no desde que se acepta, para que no se puedan enviar 50 invitaciones en plan Free.
 - RB-3 El invitado se crea con `invited_at` y sin contraseña utilizable; no puede entrar hasta establecerla.
 - RB-4 Enlace de 48 h, de un solo uso, reenviable (el reenvío invalida el anterior).
+- RB-4b **Lo que gasta el enlace es aceptar, no abrirlo.** Un `GET` sobre un enlace vivo no lo consume: si lo consumiera, el primer antivirus de correo que visita los enlaces para comprobarlos quemaría la invitación antes de que la persona la viera. Solo el enlace **ya caducado** se marca consumido al abrirse (SP-3). El token se guarda **hasheado**, como cualquier credencial, y lleva delante el identificador de su organización para poder resolver el tenant antes de consultar `users` ([05 §4] bloque 3).
 - RB-5 Al aceptar, el invitado fija su contraseña con la política de `REQ-BOF-001` y queda activo.
+- RB-5b Aceptar **marca el correo como verificado**. Abrir un enlace que solo llegó a ese buzón es la prueba de control de la dirección; pedir después un segundo correo de verificación sería exigir dos veces lo mismo. Distinto del registro, donde nadie ha demostrado nada todavía (`REQ-ORG-001` RB-5).
 - RB-6 Una invitación pendiente se puede **revocar**, lo que libera la unidad del límite.
+- RB-6b Revocar una invitación pendiente **sí borra la fila**, y no contradice a `REQ-ORG-005` RB-1: esa regla protege `reviewed_by`, `registered_by` y la auditoría, y quien no ha entrado nunca no ha aprobado nada. Con baja lógica, en cambio, el correo quedaría ocupado **para siempre en toda la plataforma** (`REQ-ORG-001` RB-3) por haberse equivocado de dirección al invitar. La frontera es exacta: **se borra lo que nunca llegó a actuar; se desactiva lo que actuó.**
 - RB-7 Toda invitación, aceptación, revocación y cambio de rol se audita (`REQ-BOF-005`).
 
 **Happy path**
@@ -268,7 +271,7 @@ final readonly class RegisterOrganizationData
 **Sad paths y edge cases**
 - SP-1 Límite del plan alcanzado → `422` con el plan que lo desbloquea y enlace a Suscripción (`REQ-SUB-004`).
 - SP-2 Email ya usado en cualquier organización → `422` (`REQ-ORG-001` RB-3).
-- SP-3 Enlace caducado o ya usado → pantalla con CTA para pedir reenvío al `owner`; el token se marca consumido.
+- SP-3 Enlace caducado o ya usado → pantalla con CTA para pedir reenvío al `owner`; el token se marca consumido. La pantalla **no lleva un botón que reenvíe por sí solo**: sería un endpoint sin autenticar capaz de disparar correos a partir de un token cualquiera, y quien decide si esa persona sigue entrando es el `owner`. Tampoco se muestra su correo —sería revelar un dato de la organización a quien todavía no está dentro—: se le dice que se lo pida a quien le invitó. La fila **no** se borra: la persona sigue invitada y ocupando su cupo, y un reenvío le emite otro enlace sin volver a crearla.
 - SP-4 `member` intentando invitar → `403`.
 - SP-5 Invitación aceptada después de que la organización quedara suspendida por impago → el usuario se crea, pero no puede entrar al backoffice hasta regularizar (`REQ-SUB-007`).
 - SP-6 Reenvío múltiple → solo el último enlace funciona.

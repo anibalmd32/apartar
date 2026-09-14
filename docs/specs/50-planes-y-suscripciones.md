@@ -213,6 +213,8 @@ export interface InvoiceRow {
 - RB-7 A partir del **80 %** de una métrica, el backoffice muestra un aviso no bloqueante con el plan que lo desbloquea.
 - RB-8 Un contador **nunca queda negativo**: el recálculo lo acota a cero y registra la anomalía.
 
+> **RB-1 no rige todavía, y `T-066` es quien lo pone en pie.** `T-013` construyó `LimitEnforcer` con la firma definitiva, pero midiendo la métrica de su propia tabla —tanto para decidir como para pintar— y dejando escrito lo medido, en lugar de leer el valor materializado. El motivo es de hoy y no de siempre: quien defiende ese valor frente a la deriva es el recálculo diario de RB-4, que llega con `T-066`, y las once llamadas restantes de `REQ-SUB-004` RB-3, que llegan con `T-067`. Hasta entonces el contador solo lo mueve el equipo, así que arrastra lo que nadie cuadra —el propio registro de una organización deja los seis en cero con el `owner` ya creado—. Hacer cumplir un techo contra una cifra que nadie mantiene es hacer cumplir una ficción, y pintarla junto a la lista que la contradice es peor: nadie vuelve a creerse ese número. **Cuando `T-066` mantenga los contadores, el valor materializado pasa a ser el camino único y la medida se muda a `UsageCalculator`**: el `match` de `LimitEnforcer::measure()` es literalmente lo que `T-066` amplía y después traslada. Lo que no cambia en ningún momento es el bloqueo: lo que serializa dos creaciones rivales es la fila de `usage_counters` cogida con `FOR UPDATE`, no el conteo.
+
 **Happy path**
 1. El negocio crea su producto número 24 de 30; el contador sube en la misma transacción.
 2. Al pasar de 24 sube el aviso del 80 % con el enlace a Suscripción.
