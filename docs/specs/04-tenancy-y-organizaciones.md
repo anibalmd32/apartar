@@ -350,6 +350,7 @@ final readonly class RegisterOrganizationData
 - RB-3 La caché de ajustes es **por organización** (`settings:{organization_id}`) y se invalida en cada escritura; sin caché se lee de BD.
 - RB-4 Los cambios afectan **solo al futuro**: `grace_period_days` se reevalúa a diario, pero `down_payment_window_hours` no mueve `expires_at` ya fijados. Cada clave declara su alcance en la UI.
 - RB-5 **Branding** (logo y color en el catálogo) es función de plan (`REQ-SUB-004`): en Free se ignora y se muestra el sello "Hecho con Apartar".
+- RB-5b **Guardar branding se permite siempre; lo que la función de plan gobierna es *aplicarlo*.** La tabla de `REQ-SUB-004` RB-3 dice «aplicar logo y color», no «guardarlos», y SP-3 lo exige: en Free se guarda, no se aplica, y al subir de plan se activa **sin volver a configurarlo**. Por tanto `UpdateOrganizationAction` **no** llama a `assertHasFeature()` —bloquearía el guardado y rompería SP-3—: quien pregunta es el renderizado, con la lectura `hasFeature(Branding)`. Es la diferencia entre una función que no tienes y un dato que no te dejan escribir.
 - RB-6 La **vitrina** en `/{org-slug}` lista **solo los catálogos publicados y listados de esa organización**; está desactivada por defecto (`storefront_enabled`). No es un directorio de la plataforma: no existe una página que liste organizaciones.
 - RB-7 La zona horaria de la organización rige todo cálculo de vencimiento y todo horario de notificación de sus clientes.
 - RB-8 Todo cambio de ajuste, identidad o branding se audita con antes y después.
@@ -377,7 +378,7 @@ final readonly class RegisterOrganizationData
 **Gate de validación**
 - Superficie esperada: `app/Actions/Organization/UpdateOrganizationAction.php`, `app/Actions/Settings/UpdateSettingsAction.php`, `app/Support/Settings.php`, `app/Domain/Settings/SettingKey.php`, `app/Http/Controllers/Catalog/OrganizationStorefrontController.php`, `app/Support/ReservedSlugs.php`.
 - Tipos esperados: `SettingKey`, `Settings`, `OrganizationBrand`, `ReservedSlugs`, `UnknownSettingException`.
-- Anti-`SHALLOW`: `SettingKey::validationRules()` y `defaultValue()` (los 11 mapas) junto al enum; `Settings::get()` (caché por organización, fallback y default) junto a su clase.
+- Anti-`SHALLOW`: `SettingKey::validationRules()` y `defaultValue()` (los **10** mapas: `storefront_enabled` no es un ajuste sino la columna `organizations.storefront_enabled`, ver §9.1 de la spec maestra) junto al enum; `Settings::get()` (caché por organización, fallback y default) junto a su clase.
 - Tests: cada clave valida su rango; caché aislada entre organizaciones (test de fuga); branding no se aplica en Free y sí al subir de plan; slug reservado rechazado; slug bloqueado con catálogos publicados; vitrina lista solo lo propio.
 
 ---
