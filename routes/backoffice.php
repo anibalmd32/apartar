@@ -94,6 +94,15 @@ Route::prefix('backoffice')->group(function (): void {
 
                 Route::post('equipo/{member}/desactivar', [TeamController::class, 'disable'])->name('team.disable');
                 Route::post('equipo/{member}/activar', [TeamController::class, 'enable'])->name('team.enable');
+
+                /*
+                | Cambio de rol (`REQ-ORG-003` RB-3, `T-013b`). Va con las
+                | demás y no sobrevive a la suspensión por el mismo motivo:
+                | repartir el gobierno del negocio no es cobrar ni aprobar
+                | comprobantes, que es lo único que `REQ-ORG-008` RB-3
+                | conserva.
+                */
+                Route::post('equipo/{member}/rol', [TeamController::class, 'role'])->name('team.role');
             });
         });
 });

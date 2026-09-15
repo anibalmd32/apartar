@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backoffice;
 
+use App\Actions\Organization\ChangeTeamMemberRoleAction;
 use App\Actions\Organization\DisableTeamMemberAction;
 use App\Actions\Organization\EnableTeamMemberAction;
 use App\Actions\Organization\InviteTeamMemberAction;
@@ -12,6 +13,7 @@ use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\LastOwnerGuard;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backoffice\ChangeTeamMemberRoleRequest;
 use App\Http\Requests\Backoffice\InviteTeamMemberRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -118,6 +120,30 @@ final class TeamController extends Controller
         return to_route('team.index')->with('status', sprintf(
             '%s ya no tiene acceso. Su historial se conserva.',
             $member->name,
+        ));
+    }
+
+    /**
+     * Promueve o degrada a alguien (`REQ-ORG-003` RB-3).
+     *
+     * El mensaje nombra el rol que queda y no el que se pidió: son lo mismo
+     * salvo cuando la acción no escribió nada por venir ya con ese rol, y
+     * entonces decir «ahora es Empleado» sigue siendo verdad.
+     */
+    public function role(
+        ChangeTeamMemberRoleRequest $request,
+        User $member,
+        ChangeTeamMemberRoleAction $change,
+    ): RedirectResponse {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $change->handle($member, $request->role(), $actor);
+
+        return to_route('team.index')->with('status', sprintf(
+            '%s ahora es %s.',
+            $member->name,
+            $member->role === OrganizationRole::Owner ? 'dueño' : 'empleado',
         ));
     }
 

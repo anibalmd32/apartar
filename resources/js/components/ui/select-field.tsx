@@ -25,9 +25,28 @@ interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>,
     options: readonly SelectOption[];
     error?: string;
     hint?: ReactNode;
+    /**
+     * Oculta la etiqueta a la vista **sin quitarla**.
+     *
+     * Para cuando el contexto ya la dice —una columna de tabla con su
+     * cabecera, por ejemplo— y repetirla en cada fila sería ruido. Sigue
+     * estando para quien navega con lector de pantalla, que no ve esa columna:
+     * un `select` sin nombre accesible se anuncia como «cuadro combinado» y
+     * nada más. Por eso es `sr-only` y no `label` ausente.
+     */
+    hideLabel?: boolean;
 }
 
-export function SelectField({ label, options, error, hint, id, className, ...props }: SelectFieldProps) {
+export function SelectField({
+    label,
+    options,
+    error,
+    hint,
+    hideLabel = false,
+    id,
+    className,
+    ...props
+}: SelectFieldProps) {
     const generatedId = useId();
     const fieldId = id ?? generatedId;
     const errorId = `${fieldId}-error`;
@@ -37,7 +56,7 @@ export function SelectField({ label, options, error, hint, id, className, ...pro
 
     return (
         <fieldset className="fieldset w-full">
-            <label className="fieldset-legend" htmlFor={fieldId}>
+            <label className={hideLabel ? 'sr-only' : 'fieldset-legend'} htmlFor={fieldId}>
                 {label}
             </label>
 
