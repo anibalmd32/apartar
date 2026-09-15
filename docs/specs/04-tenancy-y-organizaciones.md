@@ -214,6 +214,7 @@ final readonly class RegisterOrganizationData
 - RB-2 Toda organización tiene **al menos un `owner` activo**; la comprobación es transaccional con bloqueo, igual que en `REQ-ORG-005`.
 - RB-3 Puede haber varios `owner`. Un `owner` puede promover a un `member` y degradarse a sí mismo, salvo que sea el último.
 - RB-4 Las secciones exclusivas del `owner` **no se renderizan** para un `member`, y además están protegidas por policy en el servidor (la ocultación en UI nunca es el control de acceso).
+- RB-4b **La frontera se declara una sola vez, en `OrganizationCapability`.** Cada sección de la navegación dice qué capacidad necesita y el layout se la pregunta al rol (`OrganizationRole::capabilities()`); ninguna sección lleva su rol escrito a mano. Con la frontera en dos sitios, el día que una capacidad cambie de lado el enum lo sabrá y el menú no, y el síntoma no es un test en rojo: es un `member` viendo una sección que le dará `403`, o un `owner` sin ver algo que sí puede hacer.
 - RB-5 Los usuarios de plataforma (`platform_users`) **no tienen rol de organización** y nunca aparecen en el equipo: son tablas distintas (`D-5`).
 - RB-6 El rol se resuelve siempre desde la base de datos en la petición, nunca desde un claim de la sesión, para que una degradación tenga efecto inmediato.
 
