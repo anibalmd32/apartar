@@ -49,20 +49,21 @@ it('normaliza el correo a minúsculas y sin espacios', function (): void {
 });
 
 /**
- * El teléfono está en el contrato de la spec y hoy no tiene columna: se queda
- * declarado y sin recoger, en vez de pedirse para perderse.
+ * El teléfono **ya no se declara aquí** (`T-014`).
+ *
+ * Estuvo como propiedad huérfana desde `T-010`: el contrato de `REQ-ORG-001`
+ * lo menciona, pero no había columna donde guardarlo y el formulario no lo
+ * pedía, así que era un parámetro que nadie escribía ni leía. Se resolvió por
+ * el otro lado —`organizations.phone` existe y se captura en la pantalla de
+ * ajustes (`REQ-ORG-006`)— porque RB-8 quiere un alta sin fricción.
+ *
+ * El test se queda como guarda: si alguien lo devuelve al alta, aquí se ve.
  */
-it('acepta el teléfono del contrato sin exigirlo', function (): void {
-    expect(registrationData('Tienda')->phone)->toBeNull();
-
-    $withPhone = new RegisterOrganizationData(
-        organizationName: 'Tienda',
-        organizationSlug: '',
-        ownerName: 'Ana',
-        ownerEmail: 'ana@ejemplo.test',
-        ownerPassword: 'ContraseñaLarga123',
-        phone: '0414-1234567',
+it('no declara el teléfono, que se captura en ajustes', function (): void {
+    $properties = array_map(
+        fn (ReflectionProperty $property): string => $property->getName(),
+        (new ReflectionClass(RegisterOrganizationData::class))->getProperties(),
     );
 
-    expect($withPhone->phone)->toBe('0414-1234567');
+    expect($properties)->not->toContain('phone');
 });

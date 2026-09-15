@@ -68,7 +68,7 @@ final class RegisterOrganizationActionTest extends TestCase
             $this->assertSame(SubscriptionStatus::Active, $subscription->status);
             $this->assertNull($subscription->current_period_end);
 
-            $this->assertSame(11, OrganizationSetting::query()->count());
+            $this->assertSame(10, OrganizationSetting::query()->count());
         });
     }
 
@@ -88,10 +88,14 @@ final class RegisterOrganizationActionTest extends TestCase
     }
 
     /**
-     * Los once ajustes quedan sembrados con el valor de [02 §9.1], y con su
-     * tipo: un `false` que volviera como `"0"` rompería a quien lo lea.
+     * Los **diez** ajustes quedan sembrados con el valor de [02 §9.1], y con su
+     * tipo: un `3` que volviera como `"3"` rompería a quien lo lea.
+     *
+     * Eran once hasta `T-014`: `storefront_enabled` estaba declarado a la vez
+     * como clave y como columna `organizations.storefront_enabled`, y manda la
+     * columna ([02 §9.1]).
      */
-    public function test_it_seeds_the_eleven_default_settings(): void
+    public function test_it_seeds_the_ten_default_settings(): void
     {
         $organization = $this->register();
 
@@ -100,7 +104,9 @@ final class RegisterOrganizationActionTest extends TestCase
                 fn (OrganizationSetting $setting): string => $setting->key->value,
             );
 
-            $this->assertCount(11, $settings);
+            $this->assertCount(10, $settings);
+
+            $this->assertArrayNotHasKey('storefront_enabled', $settings->all());
 
             foreach (SettingKey::cases() as $key) {
                 $this->assertSame($key->defaultValue(), $settings[$key->value]?->value, sprintf(

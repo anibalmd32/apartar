@@ -3,7 +3,7 @@ import { type BackofficeSharedData } from '@/types/backoffice';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
-import { BackofficeNav, type NavSection } from '@/layouts/backoffice/nav';
+import { ANY_CAPABILITY, BackofficeNav, type NavSection } from '@/layouts/backoffice/nav';
 
 /**
  * El marco de todas las pantallas del backoffice (`REQ-BOF-001`).
@@ -11,10 +11,15 @@ import { BackofficeNav, type NavSection } from '@/layouts/backoffice/nav';
  * Tres cosas viven aquí y no en cada página, porque las tres tienen que
  * cumplirse en las cuarenta que vienen:
  *
- *  1. **La navegación se filtra por rol.** Las secciones de `owner` no se
- *     renderizan para un `member` (`REQ-ORG-003` RB-4). Ocultar no es control
- *     de acceso —eso es la policy del servidor— pero ofrecer lo que va a dar
- *     `403` es una forma de maltratar a quien confía en el menú.
+ *  1. **La navegación se filtra por capacidad, no por rol.** Cada sección
+ *     declara el área de `REQ-ORG-003` RB-1 que hay que ejercer, y el reparto
+ *     —qué es gobierno y qué es operación diaria— vive en
+ *     `OrganizationCapability::requiresOwner()` y llega resuelto en las props.
+ *     Hasta `T-014` esto era un `ownerOnly` por sección, es decir, la frontera
+ *     escrita dos veces; coincidían, y habrían dejado de coincidir el día que
+ *     una capacidad cambiara de lado. Ocultar no es control de acceso —eso es
+ *     la policy del servidor— pero ofrecer lo que va a dar `403` es una forma
+ *     de maltratar a quien confía en el menú.
  *  2. **El aviso de suspensión.** Va en el marco y no en el panel porque tiene
  *     que verse esté donde esté la persona: un equipo que no entiende por qué
  *     no puede crear nada no va a regularizar nada.
@@ -29,12 +34,15 @@ interface BackofficeLayoutProps {
 }
 
 /**
- * Secciones del menú. Hoy solo está el panel: las demás llegan con sus hitos y
- * se añaden aquí, cada una con el rol que la ejerce.
+ * Secciones del menú. Cada una declara **la capacidad que hay que ejercer**
+ * para verla, no el rol: el reparto de `REQ-ORG-003` RB-1 vive en
+ * `OrganizationCapability::requiresOwner()` y llega resuelto en las props. Las
+ * que faltan se añaden aquí con su hito.
  */
 const SECTIONS: NavSection[] = [
-    { label: 'Panel', href: '/backoffice', ownerOnly: false },
-    { label: 'Equipo', href: '/backoffice/equipo', ownerOnly: true },
+    { label: 'Panel', href: '/backoffice', capability: ANY_CAPABILITY },
+    { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
+    { label: 'Ajustes', href: '/backoffice/ajustes', capability: 'settings' },
 ];
 
 export default function BackofficeLayout({ title, description, children }: BackofficeLayoutProps) {
@@ -65,14 +73,13 @@ export default function BackofficeLayout({ title, description, children }: Backo
                 </div>
             </header>
 
-            <BackofficeNav sections={SECTIONS} role={teamMember?.role ?? 'member'} />
+            <BackofficeNav sections={SECTIONS} capabilities={teamMember?.capabilities ?? []} />
 
             <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4">
                 {suspended ? (
                     <Alert tone="warning" className="flex-col items-start gap-2 sm:flex-row sm:items-center">
                         <span>
-                            Tu suscripción está suspendida por falta de pago. Puedes cobrar y aprobar comprobantes, pero
-                            no crear cosas nuevas.
+                            Tu suscripción está suspendida por falta de pago. Puedes cobrar y aprobar comprobantes, pero no crear cosas nuevas.
                         </span>
 
                         {/* La pantalla de suscripción llega con su hito; el

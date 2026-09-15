@@ -6,7 +6,9 @@ namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
 use App\Domain\Tenancy\TenantContext;
+use App\Support\Settings;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Request;
@@ -27,6 +29,18 @@ class AppServiceProvider extends ServiceProvider
         // un contexto y el middleware escribiría en otro, y el aislamiento
         // dejaría de existir sin que nada fallase.
         $this->app->singleton(TenantContext::class);
+
+        // `Settings` también es singleton, y por un motivo distinto del de
+        // arriba: memoriza lo ya resuelto **por organización** dentro de la
+        // petición (`REQ-ORG-006` RB-3). Con instancias sueltas, cada
+        // inyección volvería a Redis y el memo no serviría de nada; con una
+        // sola, la caché de proceso vive donde se puede probar que no filtra
+        // entre organizaciones, que es justo lo que comprueba
+        // `SettingsCacheLeakTest`.
+        $this->app->singleton(Settings::class, fn (Application $app): Settings => new Settings(
+            $app->make(TenantContext::class),
+            $app->make(CacheFactory::class)->store(),
+        ));
     }
 
     /**

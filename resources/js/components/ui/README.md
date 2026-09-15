@@ -15,6 +15,14 @@ Cada átomo nace con la tarea que lo necesita. Los tres primeros llegaron con
 | `alert.tsx` | avisos con `role="alert"` siempre | `T-010` |
 | `select-field.tsx` | lo mismo que `text-field`, con las opciones como **datos tipados** y no como JSX | `T-013` |
 | `badge.tsx` | estado corto en una fila; el color nunca es lo único que distingue | `T-013` |
+| `checkbox-field.tsx` | interruptor cuya etiqueta **envuelve** al control, para que el área pulsable sea toda la fila | `T-014` |
+| `file-field.tsx` | selector de archivo con vista previa de lo que ya hay guardado | `T-014` |
+
+`select-field.tsx` admite `hideLabel` desde `T-013b`: oculta la etiqueta a la
+vista **sin quitarla**, para las columnas de tabla donde la cabecera ya la dice
+y repetirla en cada fila sería ruido. Un `select` sin nombre accesible se
+anuncia como «cuadro combinado» y nada más, así que la etiqueta sigue ahí en
+`sr-only`.
 
 Lo que **no** es un átomo: las clases de composición de daisyUI —`card`,
 `table`, `menu`— las aplican las páginas y los marcos directamente, como hace

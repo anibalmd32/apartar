@@ -19,9 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * propia fila de `grace_period_days` sin saber de la del vecino.
  *
  * El modelo es anémico a propósito (`REQ-QAX-001` RB-3) y **no es la forma en
- * que el resto del sistema leerá los ajustes**: eso será `Settings`, con caché
- * por organización, y llega con `T-014`. Aquí existe porque el registro siembra
- * los once valores por defecto dentro de su transacción, y hacerlo con
+ * que el resto del sistema lee los ajustes**: eso es `App\Support\Settings`,
+ * con su caché por organización (`T-014`). Aquí existe porque el registro
+ * siembra los diez valores por defecto dentro de su transacción, y hacerlo con
  * `DB::table()` se saltaría el trait que rellena `organization_id`
  * (`REQ-ORG-002` RB-2), que es justo la guarda que no conviene esquivar en la
  * operación que crea el tenant.

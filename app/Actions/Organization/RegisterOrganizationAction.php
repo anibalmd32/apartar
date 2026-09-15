@@ -23,7 +23,7 @@ use InvalidArgumentException;
  * Registra un negocio y lo deja dentro (`REQ-ORG-001`).
  *
  * **Cuatro creaciones en una sola transacción** (RB-1): la organización, su
- * usuario `owner`, la suscripción Free y los once ajustes por defecto. La
+ * usuario `owner`, la suscripción Free y los diez ajustes por defecto. La
  * atomicidad no es una precaución genérica, es lo que impide dos estados de
  * los que el sistema no sabe salir:
  *
@@ -128,7 +128,7 @@ final class RegisterOrganizationAction
     }
 
     /**
-     * Siembra los once ajustes con sus valores por defecto ([02 §9.1]).
+     * Siembra los diez ajustes con sus valores por defecto ([02 §9.1]).
      *
      * Se escriben como filas y no se dejan implícitos: un ajuste ausente
      * obligaría a que cada lectura conociera el default, que es la segunda

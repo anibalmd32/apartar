@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
+use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TeamController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -103,6 +104,26 @@ Route::prefix('backoffice')->group(function (): void {
                 | conserva.
                 */
                 Route::post('equipo/{member}/rol', [TeamController::class, 'role'])->name('team.role');
+
+                /*
+                | Ajustes del negocio (`REQ-ORG-006`, [05 §7.4]). Del `owner`,
+                | por RB-1: tasa, plazos e identidad son gobierno.
+                |
+                | Dos guardados y una pantalla: los ajustes de operación y la
+                | identidad son capacidades distintas de `REQ-ORG-003` RB-1
+                | —`Settings` y `Branding`— con policies distintas, y juntarlas
+                | obligaría a autorizar por la más permisiva de las dos.
+                |
+                | Tampoco sobreviven a la suspensión: configurar plazos no es
+                | cobrar ni aprobar comprobantes, que es lo único que
+                | `REQ-ORG-008` RB-3 conserva. `PUT /ajustes/tasa` es de
+                | `REQ-FX-003` y llega con H1.
+                */
+                Route::get('ajustes', [SettingsController::class, 'edit'])->name('settings.edit');
+                Route::put('ajustes', [SettingsController::class, 'update'])->name('settings.update');
+
+                Route::put('ajustes/identidad', [SettingsController::class, 'updateIdentity'])
+                    ->name('settings.identity');
             });
         });
 });

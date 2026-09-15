@@ -18,6 +18,15 @@ use Illuminate\Support\Str;
  * que **no** hace esta clase es resolver colisiones; eso es de la acción,
  * porque para saber si un slug está libre hay que mirar la base de datos
  * dentro de la transacción.
+ *
+ * **Ya no declara `phone`.** El contrato de `REQ-ORG-001` lo menciona, pero la
+ * propiedad se quedó huérfana desde `T-010`: no había columna donde guardarlo
+ * y el formulario no lo pedía, así que era un parámetro que nadie escribía ni
+ * leía. `T-014` lo resuelve por el otro lado —`organizations.phone` ya existe
+ * y se captura en la pantalla de ajustes—, porque RB-8 quiere un alta **sin
+ * fricción** y el teléfono pertenece al perfil del negocio, no a la puerta de
+ * entrada. Un dato que el formulario pide y el sistema tira es peor que no
+ * pedirlo; uno que el DTO declara y nadie usa, también.
  */
 final readonly class RegisterOrganizationData
 {
@@ -27,15 +36,6 @@ final readonly class RegisterOrganizationData
      * @param  string  $ownerName  nombre de la persona dueña
      * @param  string  $ownerEmail  correo del `owner`, único en toda la plataforma (RB-3)
      * @param  string  $ownerPassword  en claro; el modelo la cifra al guardar
-     * @param  string|null  $phone  teléfono de contacto del negocio. Está en el
-     *                              contrato de `REQ-ORG-001` pero **no hay
-     *                              columna donde guardarlo**: ni `organizations`
-     *                              ni `users` tienen teléfono en [05 §4]. El
-     *                              formulario no lo pide, para no recoger un
-     *                              dato que se perdería sin que nadie lo note;
-     *                              la propiedad se queda porque el contrato la
-     *                              declara y la columna llegará con la
-     *                              identidad del negocio (`REQ-ORG-006`).
      */
     public function __construct(
         public string $organizationName,
@@ -43,7 +43,6 @@ final readonly class RegisterOrganizationData
         public string $ownerName,
         public string $ownerEmail,
         public string $ownerPassword,
-        public ?string $phone = null,
     ) {}
 
     /**

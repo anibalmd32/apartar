@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string $slug
  * @property string|null $document RIF, opcional hasta la primera factura
+ * @property string|null $phone teléfono de contacto; se captura en ajustes, no en el registro
  * @property string $timezone zona con la que se presentan sus fechas
  * @property string|null $logo_path
  * @property string|null $brand_color
@@ -47,6 +48,7 @@ class Organization extends Model
         'name',
         'slug',
         'document',
+        'phone',
         'timezone',
         'logo_path',
         'brand_color',

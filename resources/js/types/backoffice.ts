@@ -10,13 +10,34 @@
 
 export type OrganizationRole = 'owner' | 'member';
 
+/**
+ * Las doce áreas de `REQ-ORG-003` RB-1: seis de gobierno y seis de operación
+ * diaria.
+ *
+ * Es un espejo de `App\Domain\Tenancy\OrganizationCapability` y **no repite el
+ * reparto**: qué capacidades ejerce cada rol lo decide el servidor y llega en
+ * `AuthenticatedTeamMember.capabilities`. Esta unión solo nombra las áreas,
+ * que es lo que TypeScript puede comprobar; la frontera vive en un único sitio
+ * (`requiresOwner()`), que es lo que `T-014` vino a arreglar.
+ */
+export type OrganizationCapability =
+    | 'subscription'
+    | 'billing'
+    | 'team'
+    | 'settings'
+    | 'payment_accounts'
+    | 'branding'
+    | 'products'
+    | 'catalogs'
+    | 'customers'
+    | 'collections'
+    | 'receipts'
+    | 'chat';
+
 export type OrganizationStatus = 'active' | 'suspended' | 'closed';
 
 /**
  * Identidad del negocio tal como la necesita el marco del backoffice.
- *
- * `OrganizationBrand` —logo, color y el sello «Hecho con Apartar»— es de
- * `REQ-ORG-006` y llega con su tarea, cuando exista algo que los pinte.
  */
 export interface OrganizationSummary {
     readonly name: string;
@@ -24,10 +45,85 @@ export interface OrganizationSummary {
     readonly status: OrganizationStatus;
 }
 
+/**
+ * Cómo se presenta un negocio (`REQ-ORG-006`, contrato del módulo 04).
+ *
+ * `brandingEnabled` es lo único que no sale de la fila: lo responde el plan
+ * (`LimitEnforcer::hasFeature(Branding)`). El logo y el color **viajan
+ * igualmente cuando es `false`**, porque en Free se guardan y no se aplican
+ * (`REQ-ORG-006` RB-5b, SP-3) y la pantalla tiene que enseñar lo que hay
+ * guardado —quien está en Free tiene que ver lo que se pierde
+ * (`REQ-SUB-004` RB-7)—.
+ */
+export interface OrganizationBrand {
+    readonly name: string;
+    readonly slug: string;
+    readonly logoUrl: string | null;
+    readonly brandColor: string | null;
+    /** `false` en plan Free: el catálogo muestra el sello «Hecho con Apartar». */
+    readonly brandingEnabled: boolean;
+}
+
+/**
+ * A qué alcanza cambiar un ajuste (`REQ-ORG-006` RB-4).
+ *
+ * Espejo de `App\Domain\Settings\SettingScope`. La frase que lo explica la
+ * manda el servidor en `SettingDefinition.scopeNote`, para que la pantalla no
+ * pueda decir una cosa distinta de la que hace el cálculo.
+ */
+export type SettingScope = 'immediate' | 'daily' | 'future_only';
+
+/**
+ * Lo que puede valer un ajuste, en la forma en que viaja del servidor al
+ * formulario y de vuelta.
+ *
+ * No es `unknown`, y la restricción es útil: obliga a decidir que
+ * `reminder_offsets_days` viaja como lista de enteros y no como el texto que
+ * escribió la persona, que es exactamente donde esa diferencia se pierde.
+ */
+export type SettingValue = string | number | boolean | null | number[];
+
+/** Los diez ajustes de una organización, por clave (`REQ-ORG-006`). */
+export type OrganizationSettings = Record<string, SettingValue>;
+
+/**
+ * Qué es cada clave de ajustes, resuelto por el servidor.
+ *
+ * Nombre, alcance y su explicación salen de `SettingKey`: repetirlos aquí
+ * sería la segunda fuente de verdad que `T-014` vino a retirar del menú.
+ */
+export interface SettingDefinition {
+    readonly key: string;
+    readonly label: string;
+    readonly scope: SettingScope;
+    readonly scopeNote: string;
+}
+
+/**
+ * La identidad editable del negocio, tal como la espera su formulario.
+ */
+export interface OrganizationIdentity {
+    readonly name: string;
+    readonly slug: string;
+    readonly document: string | null;
+    readonly phone: string | null;
+    readonly timezone: string;
+    readonly brandColor: string | null;
+    readonly storefrontEnabled: boolean;
+}
+
 export interface AuthenticatedTeamMember {
     readonly name: string;
     readonly email: string;
     readonly role: OrganizationRole;
+    /**
+     * Áreas que su rol ejerce, resueltas por el servidor (`REQ-ORG-003` RB-4).
+     *
+     * El menú se filtra con esto y no con el rol, para que la frontera de RB-1
+     * esté declarada una sola vez. Ocultar sigue sin ser control de acceso: la
+     * policy del servidor es la que manda.
+     */
+    readonly capabilities: readonly OrganizationCapability[];
     readonly mustChangePassword: boolean;
     readonly organization: OrganizationSummary;
 }

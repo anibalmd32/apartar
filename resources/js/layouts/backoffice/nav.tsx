@@ -1,32 +1,51 @@
-import { type OrganizationRole } from '@/types/backoffice';
+import { type OrganizationCapability } from '@/types/backoffice';
 import { Link, usePage } from '@inertiajs/react';
 
 /**
- * Navegación del backoffice filtrada por rol (`REQ-ORG-003` RB-4).
+ * Navegación del backoffice filtrada por capacidad (`REQ-ORG-003` RB-4).
  *
  * Vive aparte del marco por una razón práctica: aquí es donde se va a añadir
  * una sección cada vez que llegue un hito, y el archivo que más cambia es el
  * que peor conviene tener mezclado con el resto del esqueleto.
  *
+ * **Cada sección declara la capacidad que necesita, no el rol que la ve.** La
+ * diferencia parece de estilo y no lo es: el reparto de RB-1 —qué es gobierno
+ * y qué es operación diaria— vive en `OrganizationCapability::requiresOwner()`
+ * y llega resuelto en `teamMember.capabilities`. Con un `ownerOnly` por
+ * sección, como estaba hasta `T-014`, la frontera quedaba escrita dos veces y
+ * el día que una capacidad cambiara de lado el enum lo sabría y el menú no
+ * —sin un solo test en rojo, y con un `member` viendo una puerta que le va a
+ * dar `403`—.
+ *
  * **Ocultar no es control de acceso.** La policy del servidor es la que
- * protege; esto solo evita ofrecerle a un `member` una puerta que le va a
- * responder `403`.
+ * protege; esto solo evita ofrecer lo que va a responder `403`.
  */
+
+/**
+ * Secciones que no son ninguna de las doce áreas, como el propio panel.
+ *
+ * Es un valor declarado y no un campo ausente a propósito: con `capability`
+ * opcional, olvidarla haría pública una sección de gobierno **en silencio**,
+ * que es exactamente el modo de fallo que este archivo viene a cerrar. Así
+ * hay que escribir `'any'` para que la vea todo el mundo, y no escribir nada
+ * no compila.
+ */
+export const ANY_CAPABILITY = 'any';
 
 export interface NavSection {
     readonly label: string;
     readonly href: string;
-    /** Solo la ve el `owner`: suscripción, facturación, equipo, ajustes. */
-    readonly ownerOnly: boolean;
+    /** Área de `REQ-ORG-003` RB-1 que hay que ejercer para verla. */
+    readonly capability: OrganizationCapability | typeof ANY_CAPABILITY;
 }
 
 interface BackofficeNavProps {
     sections: readonly NavSection[];
-    role: OrganizationRole;
+    capabilities: readonly OrganizationCapability[];
 }
 
-export function BackofficeNav({ sections, role }: BackofficeNavProps) {
-    const visible = sections.filter((section) => !section.ownerOnly || role === 'owner');
+export function BackofficeNav({ sections, capabilities }: BackofficeNavProps) {
+    const visible = sections.filter((section) => section.capability === ANY_CAPABILITY || capabilities.includes(section.capability));
     const current = usePage().url;
 
     return (

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Domain\Tenancy\OrganizationCapability;
 use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -68,6 +69,19 @@ class HandleInertiaRequests extends Middleware
      * que el rol (`REQ-ORG-003` RB-6): una suspensión que esperase al próximo
      * inicio de sesión dejaría al equipo creando cosas que ya no debería.
      *
+     * **`capabilities` viaja con el rol y el menú se filtra con ella**
+     * (RB-4). Antes cada sección declaraba a mano un `ownerOnly`, de modo que
+     * la frontera de RB-1 estaba escrita dos veces: en
+     * `OrganizationCapability::requiresOwner()` y en el `.tsx`. Coincidían —lo
+     * detectó `T-013b` cuando eran dos entradas— y el problema no era el hoy
+     * sino el día en que una capacidad cambiara de lado: el enum lo sabría y
+     * el menú no, sin un solo test en rojo. El síntoma sería un `member`
+     * viendo una sección que le va a dar `403`, o un `owner` sin ver algo que
+     * sí puede hacer.
+     *
+     * Y lo de siempre: ocultar en la UI **no** es control de acceso. Esto solo
+     * evita ofrecer una puerta que la policy va a cerrar.
+     *
      * @return array<string, mixed>|null
      */
     private function teamMember(Request $request): ?array
@@ -84,6 +98,10 @@ class HandleInertiaRequests extends Middleware
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role->value,
+            'capabilities' => array_map(
+                fn (OrganizationCapability $capability): string => $capability->value,
+                $user->role->capabilities(),
+            ),
             'mustChangePassword' => $user->must_change_password,
             'organization' => [
                 'name' => $organization->name,
