@@ -76,6 +76,7 @@
 - RB-7 **Mobile-first**: cada componente se define primero para 375 px; el `body` **nunca** hace scroll horizontal — el contenido ancho (tablas, diagramas, bloques de código) scrollea dentro de su propio contenedor `overflow-x: auto`.
 - RB-8 Los tipos del dominio viven en `resources/js/types/domain.ts` como espejo manual de `app/Domain`; cualquier divergencia es un fallo de revisión (la generación automática con un transformer queda documentada como mejora).
 - RB-9 Accesibilidad mínima: todo control interactivo alcanzable por teclado, `label` asociado en cada campo, contraste AA y foco visible.
+- RB-10 **El formato lo comprueba una receta, no la buena voluntad.** `npm run format:check` forma parte de `npm run check` y del trabajo `frontend` de CI, igual que `composer lint` (`pint --test`) lo es del trabajo `backend`. Un `.prettierrc` que nada verifica es una guía de estilo que nadie lee: el código diverge en silencio y la divergencia aparece de golpe, como un `prettier --write` que reformatea treinta archivos ajenos dentro del commit de otra tarea. `resources/js/components/vendor/**` queda excluido en `.prettierignore` por el mismo motivo por el que ya está exento de `max-lines`: es andamiaje heredado en retirada.
 
 **Happy path**
 1. El desarrollador crea `useReceiptForm` con la lógica y un componente de 90 líneas que la consume.
