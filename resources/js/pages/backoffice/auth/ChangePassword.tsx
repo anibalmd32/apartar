@@ -37,10 +37,7 @@ export default function ChangePassword() {
     };
 
     return (
-        <AccessLayout
-            title="Elige una contraseña nueva"
-            description="Antes de seguir, tienes que cambiar la contraseña con la que entraste."
-        >
+        <AccessLayout title="Elige una contraseña nueva" description="Antes de seguir, tienes que cambiar la contraseña con la que entraste.">
             <form className="flex flex-col gap-2" onSubmit={submit} noValidate>
                 <TextField
                     label="Contraseña nueva"

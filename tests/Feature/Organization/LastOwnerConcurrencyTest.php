@@ -313,8 +313,20 @@ final class LastOwnerConcurrencyTest extends TestCase
      */
     private function purgeFixtures(): void
     {
-        DB::table('organizations')
+        $organizations = DB::table('organizations')
             ->where('slug', 'like', self::SLUG_PREFIX.'%')
-            ->delete();
+            ->pluck('id');
+
+        // **La auditoría se borra a mano y antes, porque no cae en cascada.**
+        // `activity_log.organization_id` no lleva clave foránea a propósito
+        // (`T-016`): `REQ-ORG-008` RB-5 conserva los datos de un negocio
+        // cerrado, y el rastro de quién aprobó qué comprobante tiene que
+        // sobrevivir justo al momento en que la organización deja de existir.
+        // Como este archivo **confirma de verdad** —no usa `RefreshDatabase`—,
+        // sus entradas se quedarían en la base contaminando los tests que
+        // corran después.
+        DB::table('activity_log')->whereIn('organization_id', $organizations)->delete();
+
+        DB::table('organizations')->whereIn('id', $organizations)->delete();
     }
 }

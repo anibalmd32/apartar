@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Payment\PaymentAccountInUseException;
 use App\Domain\Payment\RecordedReceipts;
 use App\Domain\Subscription\LimitEnforcer;
@@ -12,6 +13,7 @@ use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\PaymentAccount;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -56,6 +58,29 @@ use Illuminate\Support\Facades\Gate;
  */
 final class UpsertPaymentAccountAction
 {
+    use LogsSensitiveActivity;
+
+    /**
+     * Campos de la cuenta que viajan al «antes y después» de la auditoría.
+     *
+     * Están los ocho de la fila, y eso es deliberado: cambiar el titular o el
+     * identificador de una cuenta de cobro es **redirigir el dinero de los
+     * clientes**, así que la pregunta que esta entrada tiene que responder no
+     * es «¿se tocó?» sino «¿a dónde apuntaba antes?».
+     *
+     * @var list<string>
+     */
+    private const AUDITED_FIELDS = [
+        'method',
+        'bank',
+        'holder_name',
+        'holder_document',
+        'identifier',
+        'instructions',
+        'is_active',
+        'position',
+    ];
+
     public function __construct(
         private readonly TenantContext $context,
         private readonly LimitEnforcer $limits,
@@ -75,8 +100,9 @@ final class UpsertPaymentAccountAction
     {
         Gate::forUser($actor)->authorize('managePaymentAccounts', $this->context->organization());
 
-        return DB::transaction(function () use ($data, $account): PaymentAccount {
+        return DB::transaction(function () use ($data, $account, $actor): PaymentAccount {
             $wasActive = $account instanceof PaymentAccount && $account->is_active;
+            $before = $this->auditedFieldsOf($account);
 
             // SP-2 · solo se pide cupo cuando de verdad se ocupa uno: al crear
             // una cuenta activa y al reactivar una que estaba apagada. Editar
@@ -102,11 +128,25 @@ final class UpsertPaymentAccountAction
                     ?? ($account instanceof PaymentAccount ? $account->position : $this->nextPosition()),
             ];
 
+            $isNew = ! $account instanceof PaymentAccount;
+
             if ($account instanceof PaymentAccount) {
                 $account->forceFill($attributes)->save();
             } else {
                 $account = PaymentAccount::query()->create($attributes);
             }
+
+            // RB-1 · «alta, edición y desactivación de cuentas de cobro». El
+            // alta y la edición se distinguen porque responden a preguntas
+            // distintas: una es «¿desde cuándo cobramos aquí?» y la otra «¿qué
+            // número había antes de este?».
+            $this->audit(
+                $isNew ? AuditEvent::PaymentAccountCreated : AuditEvent::PaymentAccountUpdated,
+                subject: $account,
+                actor: $actor,
+                before: $before,
+                after: $this->auditedFieldsOf($account),
+            );
 
             // El consumo se materializa en la misma transacción
             // (`REQ-SUB-003` RB-3): quien mire la pantalla un instante después
@@ -142,12 +182,27 @@ final class UpsertPaymentAccountAction
 
         $inUse = $this->receipts->existFor($account);
 
-        DB::transaction(function () use ($account, $inUse): void {
+        DB::transaction(function () use ($account, $inUse, $actor): void {
+            $before = $this->auditedFieldsOf($account);
+
             if ($inUse) {
                 $account->forceFill(['is_active' => false])->save();
             } else {
                 $account->delete();
             }
+
+            // **Un solo evento para las dos salidas**, con `properties`
+            // diciendo cuál fue. RB-1 nombra la desactivación porque RB-6 es la
+            // vía normal, pero el borrado de verdad ocurre cuando no hay
+            // comprobantes — y esa es precisamente la operación cuyo único
+            // rastro va a ser esta entrada, porque la fila desaparece.
+            $this->audit(
+                AuditEvent::PaymentAccountRemoved,
+                subject: $account,
+                actor: $actor,
+                before: $before,
+                after: ['estado' => $inUse ? 'desactivada por tener comprobantes' : 'eliminada'],
+            );
 
             // RB-5 · las dos ramas liberan la unidad, porque la métrica cuenta
             // las **activas**: una cuenta desactivada ya no ocupa sitio en el
@@ -196,6 +251,26 @@ final class UpsertPaymentAccountAction
         }
 
         return $warnings;
+    }
+
+    /**
+     * Los campos auditados de una cuenta, o nada si todavía no existe.
+     *
+     * @return array<string, mixed>
+     */
+    private function auditedFieldsOf(?PaymentAccount $account): array
+    {
+        if (! $account instanceof PaymentAccount) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach (self::AUDITED_FIELDS as $field) {
+            $fields[$field] = $account->getAttribute($field);
+        }
+
+        return $fields;
     }
 
     /**

@@ -22,7 +22,17 @@ namespace App\Domain\Tenancy;
  * todo y `member` deja de servir para delegar.
  *
  * No es RBAC: no hay capacidades por recurso, ni roles personalizados, ni
- * permisos temporales (`D-4`). Son doce áreas fijas y dos roles.
+ * permisos temporales (`D-4`). Son áreas fijas y dos roles.
+ *
+ * **`T-016` añade una séptima de gobierno: `Audit`.** RB-1 enumeró doce áreas
+ * cuando `REQ-BOF-005` todavía no tenía pantalla, y la auditoría no es ninguna
+ * de ellas: no es el equipo, ni los ajustes, ni la facturación — es la vista de
+ * quién tocó todo lo demás, y `REQ-BOF-005` RB-9 la reserva al `owner`. Se
+ * declara aquí y no con un `->isOwner()` suelto en el controlador por la razón
+ * de siempre: la frontera de RB-1 se declara **una vez**, y un área que no
+ * pasara por este enum obligaría al menú a volver a decidirla por su cuenta,
+ * que es exactamente lo que `T-014` vino a arreglar. No cambia `D-4`: siguen
+ * siendo áreas fijas y dos roles.
  */
 enum OrganizationCapability: string
 {
@@ -45,6 +55,9 @@ enum OrganizationCapability: string
 
     /** Identidad de la vitrina: nombre, slug, logo, color (`REQ-ORG-006`). */
     case Branding = 'branding';
+
+    /** Registro de quién hizo qué y cuándo (`REQ-BOF-005` RB-9). */
+    case Audit = 'audit';
 
     // Operación diaria: los dos roles.
 
@@ -79,7 +92,8 @@ enum OrganizationCapability: string
     {
         return match ($this) {
             self::Subscription, self::Billing, self::Team,
-            self::Settings, self::PaymentAccounts, self::Branding => true,
+            self::Settings, self::PaymentAccounts, self::Branding,
+            self::Audit => true,
 
             self::Products, self::Catalogs, self::Customers,
             self::Collections, self::Receipts, self::Chat => false,
@@ -87,7 +101,7 @@ enum OrganizationCapability: string
     }
 
     /**
-     * Las seis áreas de gobierno, las que un `member` nunca ejerce.
+     * Las áreas de gobierno, las que un `member` nunca ejerce.
      *
      * @return list<self>
      */

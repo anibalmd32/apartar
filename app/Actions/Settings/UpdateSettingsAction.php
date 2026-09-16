@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions\Settings;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\OrganizationSetting;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\Settings;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +41,8 @@ use Illuminate\Validation\ValidationException;
  */
 final class UpdateSettingsAction
 {
+    use LogsSensitiveActivity;
+
     public function __construct(
         private readonly TenantContext $context,
         private readonly Settings $settings,
@@ -66,7 +70,13 @@ final class UpdateSettingsAction
 
         $validated = $this->validate($known);
 
-        DB::transaction(function () use ($validated, $actor): void {
+        // El «antes» se lee **fuera** de la transacción que escribe y antes de
+        // tocar nada: dentro ya sería el después. Solo las claves que se están
+        // guardando, porque auditar las diez en cada guardado convertiría el
+        // diff de RB-2 en una copia de la tabla.
+        $before = $this->currentValuesOf(array_keys($validated));
+
+        DB::transaction(function () use ($validated, $before, $actor): void {
             foreach ($validated as $key => $value) {
                 $setting = SettingKey::fromKey((string) $key);
 
@@ -75,6 +85,21 @@ final class UpdateSettingsAction
                     ['value' => $value, 'updated_by' => $actor->getKey()],
                 );
             }
+
+            // RB-1 y RB-2 · **la auditoría no sustituye a `updated_by`, y al
+            // revés tampoco**: la columna responde «quién lo tiene ahora» y la
+            // entrada «quién lo cambió, desde qué valor y cuándo». La segunda
+            // pregunta es la que aparece cuando un cliente discute un plazo que
+            // se aplicó con otra configuración.
+            //
+            // Sin `subject`: lo que cambió son los ajustes de la organización,
+            // y no hay una fila que los represente —son diez—.
+            $this->audit(
+                AuditEvent::SettingsUpdated,
+                actor: $actor,
+                before: $before,
+                after: $validated,
+            );
         });
 
         // RB-3 · invalidar **después del commit** y no dentro: si la
@@ -85,6 +110,28 @@ final class UpdateSettingsAction
         $this->settings->forget($organization);
 
         return $this->settings->all();
+    }
+
+    /**
+     * Valor vigente de esas claves, para el «antes» de la auditoría (RB-2).
+     *
+     * Va por `Settings`, que es quien resuelve el valor efectivo de la
+     * organización activa: leer la tabla a mano daría `null` para una clave sin
+     * fila sembrada y la entrada diría que se cambió desde nada cuando lo que
+     * había era el valor por defecto.
+     *
+     * @param  list<array-key>  $keys
+     * @return array<string, mixed>
+     */
+    private function currentValuesOf(array $keys): array
+    {
+        $current = [];
+
+        foreach ($keys as $key) {
+            $current[(string) $key] = $this->settings->get(SettingKey::fromKey((string) $key));
+        }
+
+        return $current;
     }
 
     /**

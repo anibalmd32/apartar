@@ -76,7 +76,7 @@ it('responde los tres métodos desde las capacidades y no desde una copia', func
  * esta es la de cortesía.
  */
 it('enumera las capacidades de cada rol para la navegación', function (): void {
-    expect(OrganizationRole::Owner->capabilities())->toHaveCount(12);
+    expect(OrganizationRole::Owner->capabilities())->toHaveCount(13);
     expect(OrganizationRole::Member->capabilities())->toHaveCount(6);
 
     $memberAreas = array_map(

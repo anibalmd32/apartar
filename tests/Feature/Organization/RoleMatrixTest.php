@@ -239,6 +239,7 @@ final class RoleMatrixTest extends TestCase
                 OrganizationCapability::Settings => Gate::authorize('viewSettings', $organization),
                 OrganizationCapability::PaymentAccounts => Gate::authorize('managePaymentAccounts', $organization),
                 OrganizationCapability::Branding => Gate::authorize('manageBranding', $organization),
+                OrganizationCapability::Audit => Gate::authorize('viewAuditLog', $organization),
 
                 OrganizationCapability::Products,
                 OrganizationCapability::Catalogs,

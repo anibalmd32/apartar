@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\InvitationNotPendingException;
@@ -12,6 +13,7 @@ use App\Domain\Tenancy\TeamInvitation;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\User;
 use App\Notifications\TeamInvitationNotification;
+use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +53,8 @@ use Illuminate\Validation\ValidationException;
  */
 final class InviteTeamMemberAction
 {
+    use LogsSensitiveActivity;
+
     public function __construct(
         private readonly TenantContext $context,
         private readonly LimitEnforcer $limits,
@@ -71,7 +75,7 @@ final class InviteTeamMemberAction
 
         $email = mb_strtolower(trim($email));
 
-        [$member, $invitation] = DB::transaction(function () use ($name, $email, $role): array {
+        [$member, $invitation] = DB::transaction(function () use ($name, $email, $role, $actor): array {
             // SP-1 · el cupo se comprueba con el contador bloqueado y **antes**
             // de crear, dentro de esta misma transacción. Dos invitaciones
             // simultáneas con un solo sitio se serializan aquí: una pasa y la
@@ -86,6 +90,17 @@ final class InviteTeamMemberAction
             // RB-3): quien mire el equipo un instante después ve «2 de 5», no
             // el número de antes de invitar.
             $this->limits->synchronise(UsageMetric::Users);
+
+            // RB-1 · quién abrió la puerta del negocio y a quién. `properties`
+            // no lleva la huella del enlace: es lo que abre esa puerta, y RB-5
+            // prohíbe tokens — `AuditProperties` la redactaría igualmente, pero
+            // no dársela es mejor que confiar en que la tape.
+            $this->audit(
+                AuditEvent::TeamMemberInvited,
+                subject: $member,
+                actor: $actor,
+                after: ['email' => $member->email, 'role' => $member->role, 'status' => 'invitación pendiente'],
+            );
 
             return [$member, $invitation];
         });
@@ -139,10 +154,24 @@ final class InviteTeamMemberAction
 
         $this->assertStillPending($member);
 
-        DB::transaction(function () use ($member): void {
+        DB::transaction(function () use ($member, $actor): void {
             $member->delete();
 
             $this->limits->synchronise(UsageMetric::Users);
+
+            // La fila se borra (RB-6 de `REQ-ORG-004`), así que **esta entrada
+            // es todo lo que queda** de que esa invitación existió. Se escribe
+            // después del borrado a propósito: el modelo conserva sus
+            // atributos en memoria y la descripción se queda con el correo,
+            // que es lo que alguien buscará («¿a quién invitamos y quién lo
+            // deshizo?») cuando ya no haya fila que consultar.
+            $this->audit(
+                AuditEvent::TeamInvitationRevoked,
+                subject: $member,
+                actor: $actor,
+                before: ['email' => $member->email, 'role' => $member->role, 'status' => 'invitación pendiente'],
+                after: ['status' => 'revocada'],
+            );
         });
     }
 

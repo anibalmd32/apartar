@@ -1,1 +1,14 @@
-resources/js/components/ui/*
+# Andamiaje del starter kit en retirada (REQ-QAX-002 RB-10).
+#
+# `components/vendor/**` son los primitivos de shadcn/Radix heredados: se
+# siguen analizando con ESLint —incluida la prohibición de `any`— pero no se
+# formatean, por el mismo motivo por el que `eslint.config.js` ya los exime de
+# `max-lines`: reformatear código que se va a borrar es ruido dentro del commit
+# de otra tarea.
+#
+# Hasta T-016 esta lista decía `resources/js/components/ui/*`, que era la ruta
+# del vendor en el starter kit original. Tras el traslado de T-010, `ui/` pasó a
+# ser **nuestro** —los envoltorios de daisyUI— así que la exclusión había
+# quedado justo al revés: eximía lo que escribimos y formateaba lo que está en
+# retirada. Nadie lo notó porque `format:check` no lo invocaba nadie.
+resources/js/components/vendor/**

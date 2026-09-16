@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\PublishedCatalogs;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
@@ -13,10 +14,12 @@ use App\Domain\Tenancy\SlugTakenException;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\ReservedSlugs;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -49,10 +52,33 @@ use Illuminate\Support\Str;
  */
 final class UpdateOrganizationAction
 {
+    use LogsSensitiveActivity;
+
     /**
      * Carpeta del logo dentro del disco público, por organización.
      */
     private const LOGO_DIRECTORY = 'logos';
+
+    /**
+     * Campos de identidad que viajan al «antes y después» de la auditoría.
+     *
+     * `logo_path` entra y el archivo **no**: RB-5 prohíbe el contenido de
+     * archivos en `properties`, y lo que hace falta para responder «¿quién
+     * cambió el logo?» es saber que la ruta cambió, no llevarse la imagen
+     * dentro del registro.
+     *
+     * @var list<string>
+     */
+    private const AUDITED_IDENTITY = [
+        'name',
+        'slug',
+        'document',
+        'phone',
+        'timezone',
+        'brand_color',
+        'storefront_enabled',
+        'logo_path',
+    ];
 
     public function __construct(
         private readonly TenantContext $context,
@@ -90,8 +116,25 @@ final class UpdateOrganizationAction
             $attributes['logo_path'] = $this->storeLogo($organization, $data->logo);
         }
 
+        $before = $this->auditedIdentityOf($organization);
+
         try {
-            $organization->forceFill($attributes)->save();
+            DB::transaction(function () use ($organization, $attributes, $before, $actor): void {
+                $organization->forceFill($attributes)->save();
+
+                // RB-1 · «cambios de ajustes, identidad y branding». El enlace
+                // de la vitrina es el que más importa de los ocho campos: es
+                // público, circula por WhatsApp, y cuando alguien pregunte por
+                // qué dejó de funcionar la respuesta tiene que ser fechada y
+                // con nombre.
+                $this->audit(
+                    AuditEvent::IdentityUpdated,
+                    subject: $organization,
+                    actor: $actor,
+                    before: $before,
+                    after: $this->auditedIdentityOf($organization),
+                );
+            });
         } catch (UniqueConstraintViolationException) {
             // Otro negocio reclamó ese enlace entre la comprobación y el
             // `UPDATE`. Es la misma carrera que resuelve el registro, y la
@@ -113,6 +156,22 @@ final class UpdateOrganizationAction
     public function brandOf(Organization $organization): OrganizationBrand
     {
         return OrganizationBrand::of($organization, $this->limits->hasFeature(PlanFeature::Branding));
+    }
+
+    /**
+     * Los campos de identidad que se auditan, tal como están ahora.
+     *
+     * @return array<string, mixed>
+     */
+    private function auditedIdentityOf(Organization $organization): array
+    {
+        $identity = [];
+
+        foreach (self::AUDITED_IDENTITY as $attribute) {
+            $identity[$attribute] = $organization->getAttribute($attribute);
+        }
+
+        return $identity;
     }
 
     /**

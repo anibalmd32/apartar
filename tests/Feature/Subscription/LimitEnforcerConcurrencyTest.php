@@ -361,7 +361,15 @@ final class LimitEnforcerConcurrencyTest extends TestCase
      */
     private function purgeFixtures(): void
     {
-        DB::table('organizations')->where('slug', 'like', self::SLUG_PREFIX.'%')->delete();
+        $organizations = DB::table('organizations')->where('slug', 'like', self::SLUG_PREFIX.'%')->pluck('id');
+
+        // Antes que las organizaciones y a mano: `activity_log.organization_id`
+        // no lleva clave foránea (`T-016`), porque la auditoría de un negocio
+        // cerrado tiene que sobrevivirle (`REQ-ORG-008` RB-5). Este archivo
+        // confirma de verdad, así que lo que no se borre aquí se queda.
+        DB::table('activity_log')->whereIn('organization_id', $organizations)->delete();
+
+        DB::table('organizations')->whereIn('id', $organizations)->delete();
         DB::table('plans')->where('code', 'like', self::SLUG_PREFIX.'%')->delete();
     }
 }

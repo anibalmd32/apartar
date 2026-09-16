@@ -24,8 +24,8 @@ export default function Dashboard() {
                     <h2 className="card-title text-base">Todavía no hay nada que mostrar aquí</h2>
 
                     <p className="text-sm opacity-70">
-                        Cuando cargues tus productos y armes tu primer catálogo, este panel mostrará tu cobranza del día:
-                        cuotas por vencer, comprobantes por revisar y apartados en curso.
+                        Cuando cargues tus productos y armes tu primer catálogo, este panel mostrará tu cobranza del día: cuotas por vencer,
+                        comprobantes por revisar y apartados en curso.
                     </p>
 
                     <p className="text-sm opacity-70">

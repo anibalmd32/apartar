@@ -1,0 +1,241 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Backoffice;
+
+use App\Domain\Auditing\AuditEvent;
+use App\Domain\Tenancy\OrganizationStatus;
+use App\Models\AuditEntry;
+use App\Models\Organization;
+use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
+use Inertia\Testing\AssertableInertia;
+use Tests\TestCase;
+
+/**
+ * La vista de auditoría por HTTP (`REQ-BOF-005` RB-3, RB-9, SP-4).
+ *
+ * Tres cosas que las pruebas de las acciones no ven: **quién entra**, que la
+ * paginación es del servidor y que los filtros de RB-9 filtran de verdad.
+ */
+final class AuditLogPageTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Organization $organization;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $neighbour = $this->neighbourOrganization();
+        $this->organization = Organization::factory()->create();
+
+        $plan = Plan::factory()->create();
+
+        foreach ([$neighbour, $this->organization] as $organization) {
+            $this->withinOrganization($organization, fn () => Subscription::factory()->forPlan($plan)->create());
+        }
+
+        $this->withinOrganization($neighbour, fn () => User::factory()->owner()->create());
+        $this->withoutOrganization();
+    }
+
+    /**
+     * RB-9 · la pantalla trae sus entradas, los treinta y cinco tipos
+     * agrupados en los seis bloques de RB-1, y los actores posibles.
+     */
+    public function test_the_page_carries_the_entries_and_the_filter_options(): void
+    {
+        $owner = $this->owner();
+
+        $this->writeEntries($owner, 3);
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('backoffice/audit/Index')
+                ->has('entries', 3)
+                ->has('events', 6)
+                ->where('events.3.area', 'organization')
+                ->where('meta.total', 3)
+                ->where('timezone', $this->organization->timezone));
+    }
+
+    /**
+     * **RB-9 · paginada por servidor.** Con treinta entradas, la primera
+     * página trae veinticinco y el total dice que hay más: traerlas todas para
+     * filtrar en el navegador sería mandar por la red justo lo que más cuidado
+     * pide.
+     */
+    public function test_the_listing_is_paginated_by_the_server(): void
+    {
+        $owner = $this->owner();
+
+        $this->writeEntries($owner, 30);
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('entries', 25)
+                ->where('meta.total', 30)
+                ->where('meta.lastPage', 2));
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria?page=2')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('entries', 5)->where('meta.page', 2));
+    }
+
+    public function test_the_type_filter_narrows_the_listing(): void
+    {
+        $owner = $this->owner();
+
+        $this->writeEntries($owner, 2, AuditEvent::SettingsUpdated);
+        $this->writeEntries($owner, 1, AuditEvent::IdentityUpdated);
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria?event='.AuditEvent::IdentityUpdated->value)
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('entries', 1)
+                ->where('filters.event', AuditEvent::IdentityUpdated->value));
+    }
+
+    public function test_the_actor_filter_narrows_the_listing(): void
+    {
+        $owner = $this->owner();
+        $other = $this->withinOrganization($this->organization, fn (): User => User::factory()->owner()->create());
+
+        $this->writeEntries($owner, 2);
+        $this->writeEntries($other, 3);
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria?actor='.$other->getKey())
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('entries', 3)->where('meta.total', 3));
+    }
+
+    public function test_the_date_range_narrows_the_listing(): void
+    {
+        $owner = $this->owner();
+
+        $this->writeEntries($owner, 1);
+
+        $this->withinOrganization($this->organization, function (): void {
+            AuditEntry::query()->firstOrFail()->forceFill(['created_at' => now()->subMonth()])->save();
+        });
+
+        $this->writeEntries($owner, 2);
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria?from='.now()->subWeek()->toDateString())
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('entries', 2));
+    }
+
+    /**
+     * Un filtro inventado en la URL **no rompe la pantalla ni se refleja como
+     * aplicado**: se ignora y la lista sale entera. Quien manipula una URL no
+     * merece una traza, y quien llega con un enlace viejo tampoco merece un
+     * error.
+     */
+    public function test_an_unknown_filter_is_ignored_instead_of_failing(): void
+    {
+        $owner = $this->owner();
+
+        $this->writeEntries($owner, 2);
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria?event=no-existe&from=manzana')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('entries', 2)
+                ->where('filters.event', null)
+                ->where('filters.from', null));
+    }
+
+    /**
+     * **SP-4 · un `member` recibe `403`.** El registro contiene lo que hizo
+     * cada miembro del equipo; dárselo a quien aparece en él convertiría una
+     * herramienta de control en una de vigilancia mutua.
+     */
+    public function test_a_member_cannot_open_the_audit_log(): void
+    {
+        $member = $this->withinOrganization($this->organization, fn (): User => User::factory()->create());
+
+        $this->actingAs($member)->get('/backoffice/auditoria')->assertForbidden();
+    }
+
+    /**
+     * **RB-3 · es `append-only`, y lo que lo sostiene es que no exista el
+     * código.**
+     *
+     * Se comprueba contra el router y no pidiendo una URL inventada: un `404`
+     * solo diría que *esa* ruta no está, y lo que la regla exige es que
+     * **ninguna** ruta de auditoría acepte un verbo que escriba. Así, el día
+     * que alguien añada un `POST /auditoria/{entry}/anular`, esto se pone rojo
+     * — que es justo cuando hay que discutirlo.
+     */
+    public function test_the_audit_log_exposes_no_route_that_changes_it(): void
+    {
+        $mutating = [];
+
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            if (! str_contains($route->uri(), 'auditoria')) {
+                continue;
+            }
+
+            foreach (array_diff($route->methods(), ['GET', 'HEAD']) as $method) {
+                $mutating[] = $method.' '.$route->uri();
+            }
+        }
+
+        $this->assertSame([], $mutating, 'La auditoría es append-only (RB-3): '.implode(', ', $mutating));
+    }
+
+    /**
+     * No declara `during-suspension`: lo que `REQ-ORG-008` RB-3 conserva es
+     * cobrar y aprobar comprobantes, y consultar quién cambió un precio en
+     * marzo puede esperar a que se regularice el pago. La omisión es la
+     * declaración.
+     */
+    public function test_the_audit_log_does_not_survive_a_suspension(): void
+    {
+        $this->organization->forceFill([
+            'status' => OrganizationStatus::Suspended,
+            'suspended_at' => now(),
+        ])->save();
+
+        $this->actingAs($this->owner())->get('/backoffice/auditoria')->assertForbidden();
+    }
+
+    // -------------------------------------------------------------------
+
+    /**
+     * Siembra entradas de auditoría de esa persona.
+     */
+    private function writeEntries(User $actor, int $count, ?AuditEvent $event = null): void
+    {
+        $event ??= AuditEvent::SettingsUpdated;
+
+        $this->withinOrganization($this->organization, function () use ($actor, $count, $event): void {
+            foreach (range(1, $count) as $index) {
+                AuditEntry::query()->create([
+                    'log_name' => AuditEntry::LOG_NAME,
+                    'event' => $event->value,
+                    'description' => $event->label().' #'.$index,
+                    'causer_type' => $actor->getMorphClass(),
+                    'causer_id' => $actor->getKey(),
+                    'properties' => ['changed' => []],
+                ]);
+            }
+        });
+    }
+
+    private function owner(): User
+    {
+        return $this->withinOrganization($this->organization, fn (): User => User::factory()->owner()->create());
+    }
+}

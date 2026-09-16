@@ -32,7 +32,5 @@ interface BadgeProps {
 }
 
 export function Badge({ tone = 'neutral', outline = false, children, className }: BadgeProps) {
-    return (
-        <span className={cn('badge badge-sm', TONES[tone], outline && 'badge-outline', className)}>{children}</span>
-    );
+    return <span className={cn('badge badge-sm', TONES[tone], outline && 'badge-outline', className)}>{children}</span>;
 }

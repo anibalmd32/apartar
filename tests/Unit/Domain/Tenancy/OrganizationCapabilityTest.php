@@ -13,13 +13,13 @@ use App\Domain\Tenancy\OrganizationCapability;
  * segunda —cada pantalla nueva parece un poco delicada— y el día que el
  * `member` deje de poder cobrar, el rol habrá dejado de servir para delegar.
  */
-it('declara las seis áreas de gobierno de RB-1', function (): void {
+it('declara las áreas de gobierno de RB-1 más la auditoría', function (): void {
     $names = array_map(
         fn (OrganizationCapability $capability): string => $capability->value,
         OrganizationCapability::ownerOnly(),
     );
 
-    expect($names)->toBe(['subscription', 'billing', 'team', 'settings', 'payment_accounts', 'branding']);
+    expect($names)->toBe(['subscription', 'billing', 'team', 'settings', 'payment_accounts', 'branding', 'audit']);
 });
 
 it('declara las seis áreas de operación diaria de RB-1', function (): void {
@@ -32,13 +32,18 @@ it('declara las seis áreas de operación diaria de RB-1', function (): void {
 });
 
 /**
- * Doce áreas y ninguna suelta: toda capacidad cae de un lado o del otro.
+ * Ninguna capacidad suelta: toda área cae de un lado o del otro.
+ *
+ * El número sube a trece con `audit` (`T-016`), que es una séptima de gobierno:
+ * `REQ-BOF-005` RB-9 reserva el registro al `owner` y la frontera de RB-1 se
+ * declara en un solo sitio, así que un área nueva pasa por aquí o el menú
+ * tendría que volver a decidirla por su cuenta.
  */
 it('reparte todas las capacidades entre las dos mitades', function (): void {
-    expect(OrganizationCapability::cases())->toHaveCount(12);
+    expect(OrganizationCapability::cases())->toHaveCount(13);
 
     expect(array_merge(OrganizationCapability::ownerOnly(), OrganizationCapability::shared()))
-        ->toHaveCount(12);
+        ->toHaveCount(13);
 });
 
 it('clasifica cada capacidad sin caer en un default permisivo', function (OrganizationCapability $capability): void {

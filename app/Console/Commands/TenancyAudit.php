@@ -115,8 +115,14 @@ final class TenancyAudit extends Command
         'job_batches' => 'Tabla del framework.',
         'failed_jobs' => 'Tabla del framework.',
         'media' => 'Tabla de spatie/laravel-medialibrary: se ata a su modelo por relación polimórfica.',
-        'activity_log' => 'Tabla de spatie/laravel-activitylog: se ata a su modelo por relación polimórfica.',
         'push_subscriptions' => 'Tabla de laravel-notification-channels/webpush: se ata a su notificable.',
+
+        // `activity_log` **estuvo aquí y salió con `T-016`**: la tabla del
+        // paquete es global, pero la nuestra no lo es. `REQ-BOF-005` SP-6 exige
+        // que la auditoría de una organización sea invisible para otra, así que
+        // lleva `organization_id` y su modelo (`AuditEntry`) lleva el trait.
+        // Dejarla en esta lista habría declarado por escrito lo contrario de lo
+        // que hace.
     ];
 
     /**

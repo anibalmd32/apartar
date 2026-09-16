@@ -57,7 +57,7 @@ final class NavigationCapabilitiesTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('teamMember.role', 'owner')
-                ->has('teamMember.capabilities', 12));
+                ->has('teamMember.capabilities', 13));
     }
 
     /**

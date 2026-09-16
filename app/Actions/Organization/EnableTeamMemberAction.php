@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanLimitReachedException;
 use App\Domain\Subscription\UsageMetric;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -33,6 +35,8 @@ use Illuminate\Support\Facades\Gate;
  */
 final class EnableTeamMemberAction
 {
+    use LogsSensitiveActivity;
+
     public function __construct(private readonly LimitEnforcer $limits) {}
 
     /**
@@ -52,7 +56,7 @@ final class EnableTeamMemberAction
             return $member;
         }
 
-        return DB::transaction(function () use ($member): User {
+        return DB::transaction(function () use ($member, $actor): User {
             $this->limits->assertCanCreate(UsageMetric::Users);
 
             $member->forceFill([
@@ -61,6 +65,18 @@ final class EnableTeamMemberAction
             ])->save();
 
             $this->limits->synchronise(UsageMetric::Users);
+
+            // RB-1 · devolverle el acceso a alguien es la operación simétrica
+            // de retirárselo, y se audita igual: entre una y otra hay una
+            // ventana en la que esa persona no debía entrar, y el registro es
+            // lo que permite acotarla.
+            $this->audit(
+                AuditEvent::TeamMemberEnabled,
+                subject: $member,
+                actor: $actor,
+                before: ['access' => 'desactivado'],
+                after: ['access' => 'activo', 'role' => $member->role],
+            );
 
             return $member;
         });

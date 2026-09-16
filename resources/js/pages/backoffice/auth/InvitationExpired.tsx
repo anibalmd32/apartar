@@ -35,8 +35,7 @@ export default function InvitationExpired({ organizationName }: InvitationExpire
             }
         >
             <Alert tone="info">
-                Pídele a quien te invitó que te lo reenvíe desde <strong>Equipo</strong>. Tu sitio sigue reservado:
-                no hace falta empezar de cero.
+                Pídele a quien te invitó que te lo reenvíe desde <strong>Equipo</strong>. Tu sitio sigue reservado: no hace falta empezar de cero.
             </Alert>
         </AccessLayout>
     );

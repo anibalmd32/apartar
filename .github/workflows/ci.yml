@@ -134,6 +134,13 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      # REQ-QAX-002 RB-10: el formato lo comprueba una receta, no la buena
+      # voluntad. Es el equivalente de `pint --test` en el trabajo `backend`, y
+      # hasta T-016 el script existía sin un solo llamante — con lo que el
+      # `.prettierrc` era una guía de estilo que nada verificaba.
+      - name: Prettier
+        run: npm run format:check
+
       - name: Comprobación de tipos
         run: npm run types
 

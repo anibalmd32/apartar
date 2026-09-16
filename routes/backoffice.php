@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Backoffice\AuditLogController;
 use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
@@ -156,6 +157,25 @@ Route::prefix('backoffice')->group(function (): void {
 
                 Route::delete('cuentas-de-cobro/{account}', [PaymentAccountController::class, 'destroy'])
                     ->name('payment-accounts.destroy');
+
+                /*
+                | Auditoría (`REQ-BOF-005` RB-9, SP-4). Del `owner`: el registro
+                | contiene lo que hizo cada miembro del equipo, y dárselo a
+                | quien aparece en él convertiría una herramienta de control en
+                | una de vigilancia mutua.
+                |
+                | **Una sola ruta y solo `GET`.** Es `append-only` (RB-3): no
+                | hay `PUT` ni `DELETE` porque no existe la operación, y lo que
+                | sostiene la invariante es que no haya código que la haga, no
+                | una comprobación que alguien pueda saltarse.
+                |
+                | Tampoco declara `during-suspension`. Lo que `REQ-ORG-008` RB-3
+                | conserva es cobrar y aprobar comprobantes; consultar quién
+                | cambió un precio en marzo puede esperar a que se regularice el
+                | pago. La omisión es la declaración, por el fallo cerrado de
+                | `T-012`.
+                */
+                Route::get('auditoria', [AuditLogController::class, 'index'])->name('audit.index');
             });
         });
 });

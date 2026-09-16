@@ -69,6 +69,20 @@ final class OrganizationPolicy
     }
 
     /**
+     * Leer el registro de quién hizo qué (`REQ-BOF-005` RB-9, SP-4).
+     *
+     * Del `owner` y de nadie más, y por un motivo que no es de jerarquía: la
+     * auditoría contiene **lo que hizo cada miembro del equipo**. Dársela a
+     * quien aparece en ella convertiría una herramienta de control en una de
+     * vigilancia mutua, y quien responde ante un cliente por lo que hizo su
+     * empleado es el dueño.
+     */
+    public function viewAuditLog(User $user, Organization $organization): bool
+    {
+        return $this->governs($user, $organization, OrganizationCapability::Audit);
+    }
+
+    /**
      * Operar el día a día del negocio: lo que los dos roles hacen.
      *
      * Existe para que las pantallas de operación tengan dónde autorizar la

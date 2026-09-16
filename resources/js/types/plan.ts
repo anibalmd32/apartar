@@ -17,22 +17,10 @@
 export type PlanLimit = number | null;
 
 /** Lo que una organización consume y que un día se le acaba. */
-export type UsageMetric =
-    | 'users'
-    | 'catalogs'
-    | 'products'
-    | 'active_layaways'
-    | 'storage_mb'
-    | 'payment_accounts';
+export type UsageMetric = 'users' | 'catalogs' | 'products' | 'active_layaways' | 'storage_mb' | 'payment_accounts';
 
 /** Funciones que un plan tiene o no tiene. */
-export type PlanFeature =
-    | 'branding'
-    | 'excel_export'
-    | 'web_push'
-    | 'subscriber_digest'
-    | 'full_analytics'
-    | 'custom_domain';
+export type PlanFeature = 'branding' | 'excel_export' | 'web_push' | 'subscriber_digest' | 'full_analytics' | 'custom_domain';
 
 /** Estado de la suscripción (`REQ-SUB-007`). */
 export type SubscriptionStatus = 'active' | 'past_due' | 'grace' | 'suspended' | 'cancelled';

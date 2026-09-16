@@ -74,9 +74,7 @@ export default function Register() {
                 <div className="card-body gap-4">
                     <header>
                         <h1 className="card-title text-xl">Crea tu negocio en Apartar</h1>
-                        <p className="text-sm opacity-70">
-                            Empiezas en el plan Free, sin tarjeta y sin período de prueba que se acabe.
-                        </p>
+                        <p className="text-sm opacity-70">Empiezas en el plan Free, sin tarjeta y sin período de prueba que se acabe.</p>
                     </header>
 
                     {errors.organization_slug ? <Alert tone="warning">{errors.organization_slug}</Alert> : null}

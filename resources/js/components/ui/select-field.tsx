@@ -37,16 +37,7 @@ interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>,
     hideLabel?: boolean;
 }
 
-export function SelectField({
-    label,
-    options,
-    error,
-    hint,
-    hideLabel = false,
-    id,
-    className,
-    ...props
-}: SelectFieldProps) {
+export function SelectField({ label, options, error, hint, hideLabel = false, id, className, ...props }: SelectFieldProps) {
     const generatedId = useId();
     const fieldId = id ?? generatedId;
     const errorId = `${fieldId}-error`;

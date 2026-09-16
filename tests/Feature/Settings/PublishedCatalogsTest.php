@@ -10,16 +10,37 @@ use Illuminate\Support\Facades\Schema;
  *
  * `UpdateOrganizationAction` ya pregunta, ya bloquea y ya tiene su test —con
  * esta clase sustituida en el contenedor—. Lo que se comprueba aquí es la
- * otra mitad: que **la respuesta de hoy es honesta y no un `TODO` disfrazado**.
+ * otra mitad: que **la respuesta de hoy es honesta y no un `TODO` disfrazado**,
+ * y que **deja de responder el día que llegue la tabla**.
  *
- * `catalogs` llega con `T-030`; hasta entonces ninguna organización tiene
+ * `catalogs` llega con `T-024`; hasta entonces ninguna organización tiene
  * catálogos publicados, que es literalmente cierto. Cuando esa tabla exista, el
  * cuerpo de `exist()` pasa a ser la consulta del modelo y no cambia nada más.
  */
 it('responde que no hay catálogos publicados mientras la tabla no exista', function (): void {
-    expect(Schema::hasTable('catalogs'))->toBeFalse('`catalogs` ya existe: `PublishedCatalogs::exist()` tiene que consultarla (T-030).');
+    expect(Schema::hasTable('catalogs'))->toBeFalse('`catalogs` ya existe: `PublishedCatalogs::exist()` tiene que consultarla (T-032).');
 
     expect((new PublishedCatalogs)->exist())->toBeFalse();
+});
+
+/**
+ * **Y falla ruidosamente cuando la tabla llegue** (`T-016`, cierre de H0).
+ *
+ * Es la deuda que esta tarea salda. La guarda estaba escrita al revés
+ * —comprobaba que `catalogs` no existiera y devolvía `false`—, y `T-024` crea
+ * esa tabla **ocho tareas antes** de que `T-032` rellene el cuerpo: en esa
+ * ventana SP-5 quedaba desactivado sin un solo test en rojo, y el síntoma no
+ * habría aparecido hasta que un negocio perdiera su enlace.
+ *
+ * Se finge que la tabla existe en vez de crearla: un `CREATE TABLE` a mitad de
+ * un test provoca en MySQL un *commit* implícito que se lleva por delante el
+ * aislamiento de `RefreshDatabase`.
+ */
+it('lanza si la tabla existe y nadie ha rellenado el cuerpo', function (): void {
+    Schema::shouldReceive('hasTable')->with('catalogs')->andReturnTrue();
+
+    expect(fn (): bool => (new PublishedCatalogs)->exist())
+        ->toThrow(LogicException::class, 'T-032');
 });
 
 /**

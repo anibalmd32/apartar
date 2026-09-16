@@ -11,8 +11,9 @@
 export type OrganizationRole = 'owner' | 'member';
 
 /**
- * Las doce áreas de `REQ-ORG-003` RB-1: seis de gobierno y seis de operación
- * diaria.
+ * Las áreas de `REQ-ORG-003` RB-1 —seis de gobierno y seis de operación
+ * diaria— más `audit`, que `T-016` añade del lado del gobierno
+ * (`REQ-BOF-005` RB-9).
  *
  * Es un espejo de `App\Domain\Tenancy\OrganizationCapability` y **no repite el
  * reparto**: qué capacidades ejerce cada rol lo decide el servidor y llega en
@@ -27,6 +28,7 @@ export type OrganizationCapability =
     | 'settings'
     | 'payment_accounts'
     | 'branding'
+    | 'audit'
     | 'products'
     | 'catalogs'
     | 'customers'

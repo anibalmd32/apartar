@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Tenancy\LastOwnerException;
 use App\Domain\Tenancy\LastOwnerGuard;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -43,6 +46,8 @@ use Illuminate\Support\Facades\Gate;
  */
 final class ChangeTeamMemberRoleAction
 {
+    use LogsSensitiveActivity;
+
     public function __construct(private readonly LastOwnerGuard $guard) {}
 
     /**
@@ -64,10 +69,34 @@ final class ChangeTeamMemberRoleAction
             return $member;
         }
 
-        return match ($role) {
-            OrganizationRole::Owner => $this->promote($member),
-            OrganizationRole::Member => $this->demote($member),
-        };
+        $previous = $member->role;
+
+        // La auditoría va **dentro de la transacción** que escribe
+        // (`REQ-BOF-005` RB-4), y por eso hay una aquí aunque promover no la
+        // necesitase: sin ella, degradar dejaría su entrada fuera del bloqueo
+        // de `LastOwnerGuard` — la de dentro es anidada, así que el candado se
+        // suelta con este `commit` y no antes.
+        return DB::transaction(function () use ($member, $role, $actor, $previous): User {
+            $member = match ($role) {
+                OrganizationRole::Owner => $this->promote($member),
+                OrganizationRole::Member => $this->demote($member),
+            };
+
+            // RB-1 · repartir el gobierno del negocio es de lo más sensible que
+            // hace esta pantalla, y la entrada se escribe **solo cuando algo
+            // cambió**: el `return` de arriba ya se llevó el caso de pedir el
+            // rol que la persona ya tenía, y auditarlo habría llenado el
+            // registro de cambios que nunca ocurrieron.
+            $this->audit(
+                AuditEvent::TeamMemberRoleChanged,
+                subject: $member,
+                actor: $actor,
+                before: ['role' => $previous],
+                after: ['role' => $member->role],
+            );
+
+            return $member;
+        });
     }
 
     /**

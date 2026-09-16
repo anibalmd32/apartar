@@ -36,8 +36,15 @@ return [
      * This model will be used to log activity.
      * It should implement the Spatie\Activitylog\Contracts\Activity interface
      * and extend Illuminate\Database\Eloquent\Model.
+     *
+     * T-016 · es `AuditEntry` y no el del paquete porque `activity_log` es una
+     * tabla del tenant (REQ-BOF-005, SP-6): el modelo tiene que llevar
+     * `BelongsToOrganization` para que toda consulta filtre por la organización
+     * activa y toda escritura la rellene. Apuntar aquí —y no solo en nuestro
+     * código— cierra también la vía del helper `activity()` del paquete: una
+     * entrada escrita por él tampoco se saldría del aislamiento.
      */
-    'activity_model' => Spatie\Activitylog\Models\Activity::class,
+    'activity_model' => App\Models\AuditEntry::class,
 
     /*
      * This is the name of the table that will be created by the migration and

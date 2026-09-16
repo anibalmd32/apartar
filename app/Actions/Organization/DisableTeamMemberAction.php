@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CannotDisableSelfException;
 use App\Domain\Tenancy\LastOwnerException;
 use App\Domain\Tenancy\LastOwnerGuard;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 
@@ -38,6 +40,8 @@ use Illuminate\Support\Facades\Gate;
  */
 final class DisableTeamMemberAction
 {
+    use LogsSensitiveActivity;
+
     public function __construct(
         private readonly LastOwnerGuard $guard,
         private readonly LimitEnforcer $limits,
@@ -65,7 +69,7 @@ final class DisableTeamMemberAction
             return $member;
         }
 
-        return $this->guard->whileKeepingAnOwner($member, 'desactivar', function () use ($member): User {
+        return $this->guard->whileKeepingAnOwner($member, 'desactivar', function () use ($member, $actor): User {
             $member->forceFill(['disabled_at' => now()])->save();
 
             // RB-5 · la baja **libera** su unidad del límite `users`, en la
@@ -73,6 +77,17 @@ final class DisableTeamMemberAction
             // cae en su siguiente petición sin que nadie más haga nada:
             // `EnsureAdminIsActive` mira esta columna en cada una (RB-2).
             $this->limits->synchronise(UsageMetric::Users);
+
+            // RB-1 · quitarle el acceso a alguien es de las cosas que el dueño
+            // va a querer poder fechar: «desde cuándo no entra» es la primera
+            // pregunta cuando aparece algo raro hecho por esa cuenta.
+            $this->audit(
+                AuditEvent::TeamMemberDisabled,
+                subject: $member,
+                actor: $actor,
+                before: ['access' => 'activo', 'role' => $member->role],
+                after: ['access' => 'desactivado', 'disabled_at' => $member->disabled_at],
+            );
 
             return $member;
         });
