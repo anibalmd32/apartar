@@ -411,7 +411,7 @@ final readonly class RegisterOrganizationData
 **Sad paths y edge cases**
 - SP-1 Publicar un catálogo sin ninguna cuenta activa → `422` con el enlace para crearla.
 - SP-2 Límite del plan alcanzado → `422` con el plan que lo desbloquea.
-- SP-3 Borrar una cuenta con comprobantes → se convierte en desactivación, informándolo.
+- SP-3 Borrar una cuenta con comprobantes → se convierte en desactivación, informándolo. **`PaymentAccountInUseException` señala una operación completada, no un fallo**, y se lanza **fuera** de la transacción que ya confirmó la desactivación: dentro la desharía. No tiene manejador en `bootstrap/app.php` ni código HTTP, y **no debe dársele ninguno**: darle uno convertiría en error para el cliente una operación que sí ocurrió. Cada llamante la recoge y la traduce a su mensaje; un llamante que la ignore revienta, que es el comportamiento buscado —el `422` sería la regresión silenciosa—.
 - SP-4 Desactivar la última cuenta activa con catálogos publicados → **permitido con advertencia**: no se despublican catálogos, pero se avisa de que los clientes no verán dónde pagar; aparece como alerta en el dashboard.
 - SP-5 `identifier` con formato inválido para su método (teléfono no venezolano en pago móvil) → `422`.
 - SP-6 Dos cuentas idénticas → advertencia, permitido (hay negocios con dos cuentas en el mismo banco).
