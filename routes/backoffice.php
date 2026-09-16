@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
+use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TeamController;
 use Illuminate\Support\Facades\Route;
@@ -124,6 +125,37 @@ Route::prefix('backoffice')->group(function (): void {
 
                 Route::put('ajustes/identidad', [SettingsController::class, 'updateIdentity'])
                     ->name('settings.identity');
+
+                /*
+                | Cuentas de cobro (`REQ-ORG-007`). Del `owner` por RB-1 de
+                | `REQ-ORG-003`, y es la capacidad de gobierno más sensible que
+                | hay: un empleado registra pagos y aprueba comprobantes, pero
+                | **no decide a qué cuenta va el dinero**. Por eso no vive con
+                | la cobranza.
+                |
+                | **Ninguna declara `during-suspension`, y es la respuesta
+                | correcta.** `REQ-ORG-008` RB-2 conserva los datos de cobro
+                | intactos durante una suspensión —los apartados vivos siguen
+                | mostrando a dónde pagar—, que es distinto de poder cambiarlos:
+                | lo que RB-3 deja abierto es cobrar y aprobar comprobantes, no
+                | redirigir el dinero mientras se le debe a la plataforma. La
+                | omisión es la declaración, por el fallo cerrado de `T-012`.
+                |
+                | El `{account}` se resuelve ya filtrado por el tenant, así que
+                | el identificador de otra organización da `404` y no `403`
+                | (`REQ-ORG-002` RB-6): no se confirma que exista.
+                */
+                Route::get('cuentas-de-cobro', [PaymentAccountController::class, 'index'])
+                    ->name('payment-accounts.index');
+
+                Route::post('cuentas-de-cobro', [PaymentAccountController::class, 'store'])
+                    ->name('payment-accounts.store');
+
+                Route::put('cuentas-de-cobro/{account}', [PaymentAccountController::class, 'update'])
+                    ->name('payment-accounts.update');
+
+                Route::delete('cuentas-de-cobro/{account}', [PaymentAccountController::class, 'destroy'])
+                    ->name('payment-accounts.destroy');
             });
         });
 });

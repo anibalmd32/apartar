@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tenancy;
 
+use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
@@ -140,7 +141,11 @@ final class TenantFactoriesTest extends TestCase
 
     /**
      * Cada método de cobro cambia su `identifier` a la vez: por separado
-     * producirían una cuenta que `ValidPaymentIdentifier` (T-015) rechazaría.
+     * producirían una cuenta que `ValidPaymentIdentifier` rechazaría.
+     *
+     * Desde `T-015` la comparación es contra el enum y no contra la cadena: la
+     * factory sigue sembrando el valor de la columna, y quien lo lee recibe el
+     * `PaymentMethod` del cast.
      */
     public function test_payment_account_states_keep_method_and_identifier_together(): void
     {
@@ -156,15 +161,15 @@ final class TenantFactoriesTest extends TestCase
 
         [$movil, $transferencia, $zelle, $efectivo] = $accounts;
 
-        $this->assertSame('pago_movil', $movil->method);
+        $this->assertSame(PaymentMethod::PagoMovil, $movil->method);
         $this->assertStringStartsWith('0414', $movil->identifier);
 
-        $this->assertSame('transferencia', $transferencia->method);
-        $this->assertSame('zelle', $zelle->method);
+        $this->assertSame(PaymentMethod::Transferencia, $transferencia->method);
+        $this->assertSame(PaymentMethod::Zelle, $zelle->method);
         $this->assertStringContainsString('@', $zelle->identifier);
         $this->assertNull($zelle->bank);
 
-        $this->assertSame('efectivo_usd', $efectivo->method);
+        $this->assertSame(PaymentMethod::EfectivoUsd, $efectivo->method);
     }
 
     public function test_an_inactive_payment_account_keeps_its_trail(): void

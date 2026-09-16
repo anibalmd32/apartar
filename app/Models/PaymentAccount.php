@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\BelongsToOrganization;
 use Database\Factories\PaymentAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,13 +16,19 @@ use Illuminate\Database\Eloquent\Model;
  * Tabla del tenant. El catálogo se la muestra al cliente al apartar, y sin al
  * menos una activa no se puede publicar un catálogo (`REQ-CAT-022`).
  *
- * El modelo es anémico a propósito (`REQ-QAX-001` RB-3): el enum
- * `PaymentMethod` con sus tres métodos y la regla `ValidPaymentIdentifier`
- * llegan con `T-015`.
+ * El modelo es anémico a propósito (`REQ-QAX-001` RB-3): quién puede crearla y
+ * con qué límite es de `UpsertPaymentAccountAction`, qué forma tiene su
+ * `identifier` es de `ValidPaymentIdentifier`, y cómo se pinta es de
+ * `PaymentAccountView`.
+ *
+ * `method` se castea al enum y no se queda en texto: `identifierLabel()` y la
+ * validación del formato cuelgan de él, y leer la columna cruda obligaría a un
+ * `PaymentMethod::from()` en cada sitio que la toca, que es donde se cuela el
+ * que falta.
  *
  * @property int $id
  * @property int $organization_id
- * @property string $method método de pago (`PaymentMethod`)
+ * @property PaymentMethod $method método de pago
  * @property string|null $bank
  * @property string $holder_name titular de la cuenta
  * @property string $holder_document cédula o RIF del titular
@@ -57,6 +64,7 @@ class PaymentAccount extends Model
     protected function casts(): array
     {
         return [
+            'method' => PaymentMethod::class,
             'is_active' => 'boolean',
             'position' => 'integer',
         ];

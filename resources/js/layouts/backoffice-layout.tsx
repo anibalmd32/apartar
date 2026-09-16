@@ -43,6 +43,7 @@ const SECTIONS: NavSection[] = [
     { label: 'Panel', href: '/backoffice', capability: ANY_CAPABILITY },
     { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
     { label: 'Ajustes', href: '/backoffice/ajustes', capability: 'settings' },
+    { label: 'Cuentas de cobro', href: '/backoffice/cuentas-de-cobro', capability: 'payment_accounts' },
 ];
 
 export default function BackofficeLayout({ title, description, children }: BackofficeLayoutProps) {

@@ -18,7 +18,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * y el que exige titular y cédula (`REQ-ORG-007` RB-3); el `identifier` es
  * entonces un teléfono. Cada estado cambia método e `identifier` a la vez,
  * porque por separado producirían una cuenta que `ValidPaymentIdentifier`
- * (`T-015`) rechazaría.
+ * rechazaría — y desde `T-015` esa regla existe, así que lo que se siembra
+ * aquí pasa por el mismo formato que exige el formulario.
  *
  * @extends Factory<PaymentAccount>
  */
