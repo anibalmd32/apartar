@@ -43,4 +43,40 @@ enum RateSource: string
 
     /** Tasa que fija el propio negocio en sus ajustes. */
     case Manual = 'manual';
+
+    /**
+     * Las fuentes **de plataforma**: las que se ingestan y se persisten.
+     *
+     * Es la misma lista que consulta el job, la que admite el endpoint público
+     * y la que la pantalla de ajustes enseña con su antigüedad. Vive aquí
+     * porque es una propiedad de las fuentes y no de ninguno de los tres: con
+     * un censo por consumidor, el día que aparezca una cuarta pública habría
+     * que acordarse de tres sitios, y el que se olvide no fallará —servirá de
+     * menos, en silencio—.
+     *
+     * @return list<self>
+     */
+    public static function platform(): array
+    {
+        $platform = [];
+
+        foreach (self::cases() as $source) {
+            if ($source !== self::Manual) {
+                $platform[] = $source;
+            }
+        }
+
+        return $platform;
+    }
+
+    /**
+     * Indica si esta fuente se ingesta y se guarda en `exchange_rates`.
+     *
+     * La manual no: es un dato de la organización que la escribió y su
+     * histórico vive en la auditoría (`REQ-FX-003` RB-4).
+     */
+    public function isPlatformWide(): bool
+    {
+        return $this !== self::Manual;
+    }
 }

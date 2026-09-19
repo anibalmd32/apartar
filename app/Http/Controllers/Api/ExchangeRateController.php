@@ -77,23 +77,14 @@ class ExchangeRateController extends Controller
     /**
      * Las fuentes que este endpoint puede servir.
      *
-     * Se derivan del enum quitando la manual, y no se escriben a mano: con dos
-     * censos, el día que aparezca una cuarta fuente pública uno de los dos se
-     * quedaría corto y el síntoma sería un `422` sobre una fuente que sí
-     * existe.
+     * Son las de plataforma, y el censo lo lleva `RateSource`: con una copia
+     * aquí, el día que aparezca una cuarta fuente pública esta se quedaría
+     * corta y el síntoma sería un `422` sobre una fuente que sí existe.
      *
      * @return list<RateSource>
      */
     public static function publicSources(): array
     {
-        $public = [];
-
-        foreach (RateSource::cases() as $source) {
-            if ($source !== RateSource::Manual) {
-                $public[] = $source;
-            }
-        }
-
-        return $public;
+        return RateSource::platform();
     }
 }

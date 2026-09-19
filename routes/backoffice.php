@@ -118,14 +118,35 @@ Route::prefix('backoffice')->group(function (): void {
                 |
                 | Tampoco sobreviven a la suspensión: configurar plazos no es
                 | cobrar ni aprobar comprobantes, que es lo único que
-                | `REQ-ORG-008` RB-3 conserva. `PUT /ajustes/tasa` es de
-                | `REQ-FX-003` y llega con H1.
+                | `REQ-ORG-008` RB-3 conserva.
                 */
                 Route::get('ajustes', [SettingsController::class, 'edit'])->name('settings.edit');
                 Route::put('ajustes', [SettingsController::class, 'update'])->name('settings.update');
 
                 Route::put('ajustes/identidad', [SettingsController::class, 'updateIdentity'])
                     ->name('settings.identity');
+
+                /*
+                | Fuente de la tasa (`REQ-FX-003`, `T-021`). Tercer guardado de
+                | la misma pantalla, y aparte por la misma razón que la
+                | identidad: es una operación distinta —la fuente y la tasa
+                | manual son un par que solo tiene sentido guardado junto
+                | (SP-1)— con sus propios datos.
+                |
+                | La capacidad **sí** es la misma que la de los demás ajustes:
+                | `OrganizationCapability::Settings` nombra la tasa
+                | explícitamente, así que la policy es `updateSettings` y un
+                | `member` recibe `403` (SP-3).
+                |
+                | Tampoco sobrevive a la suspensión, y aquí la tentación es
+                | real: la tasa se ve en el catálogo. Pero elegir con qué tasa
+                | se proyecta es gobierno del negocio, no cobrar ni aprobar
+                | comprobantes, que es lo único que `REQ-ORG-008` RB-3
+                | conserva; y la suspendida sigue proyectando con la fuente que
+                | ya tenía elegida.
+                */
+                Route::put('ajustes/tasa', [SettingsController::class, 'updateRate'])
+                    ->name('settings.rate');
 
                 /*
                 | Cuentas de cobro (`REQ-ORG-007`). Del `owner` por RB-1 de

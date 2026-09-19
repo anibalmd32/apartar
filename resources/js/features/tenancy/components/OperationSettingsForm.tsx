@@ -7,7 +7,7 @@ import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 
 /**
- * Los diez ajustes de operación (`REQ-ORG-006`, [02 §9.1]).
+ * Los ajustes de operación (`REQ-ORG-006`, [02 §9.1]).
  *
  * Cada campo lleva **su alcance al lado** (RB-4): guardar no es aplicar, y
  * quien cambia un plazo tiene que saber a qué afecta antes de pulsar el botón.
@@ -15,18 +15,20 @@ import { type FormEventHandler } from 'react';
  * repetirlos haría que la pantalla pudiera decir una cosa distinta de la que
  * hace el cálculo.
  *
+ * **La fuente de la tasa y la tasa manual ya no están aquí**: se fueron a
+ * `ExchangeRateForm` con `T-021`. No es una separación estética —son un par
+ * que solo tiene sentido guardado junto (`REQ-FX-003` SP-1) y su pantalla
+ * necesita las tasas vigentes de cada fuente para poder comparar (RB-6)—, y
+ * dejar aquí una segunda casilla que escribiera las mismas dos claves habría
+ * sido el camino por el que se cambia la fuente sin pasar por su validación
+ * cruzada.
+ *
  * `reminder_offsets_days` se escribe como lista separada por comas y viaja
  * como array. Es el único campo que necesita traducción, y va en su propia
  * función para que se vea: «-3, 0, 1» escrito por una persona no es `[-3, 0,
  * 1]`, y el sitio donde esa diferencia se pierde siempre es el que no tiene
  * nombre.
  */
-
-const SOURCE_OPTIONS = [
-    { value: 'bcv', label: 'BCV · tasa oficial' },
-    { value: 'parallel', label: 'Paralelo' },
-    { value: 'manual', label: 'Manual · la que yo fije' },
-];
 
 const DISPLAY_OPTIONS = [
     { value: 'usd_primary', label: 'Dólares primero' },
@@ -96,26 +98,6 @@ export function OperationSettingsForm({ settings, definitions }: OperationSettin
     return (
         <form className="flex flex-col gap-2" onSubmit={submit} noValidate>
             <div className="grid gap-2 sm:grid-cols-2">
-                <SelectField
-                    label={labelOf('exchange_rate_source')}
-                    options={SOURCE_OPTIONS}
-                    value={value('exchange_rate_source')}
-                    onChange={(event) => change('exchange_rate_source', event.target.value)}
-                    error={errors['settings.exchange_rate_source']}
-                    hint={scopeOf('exchange_rate_source')}
-                />
-
-                <TextField
-                    label={labelOf('exchange_rate_manual')}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={value('exchange_rate_manual')}
-                    onChange={(event) => change('exchange_rate_manual', event.target.value === '' ? null : event.target.value)}
-                    error={errors['settings.exchange_rate_manual']}
-                    hint="Solo se usa cuando la fuente es «manual»."
-                />
-
                 <SelectField
                     label={labelOf('currency_display_default')}
                     options={DISPLAY_OPTIONS}

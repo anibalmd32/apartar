@@ -151,11 +151,14 @@ it('inserta cuando la tasa es idéntica pero la fecha de publicación es otra', 
 it('rechaza una variación mayor al 30 % y conserva la anterior', function (): void {
     $log = Log::spy();
 
-    fakeDolarApi(bcv: 36.5);
+    // La referencia tiene que ser **reciente** para poder vetar (SP-2b): una
+    // obsoleta se abstiene, y entonces esto probaría lo contrario de lo que
+    // dice su nombre.
+    fakeDolarApi(bcv: 36.5, publishedAt: CarbonImmutable::now()->subHours(2)->toIso8601String());
     runIngest();
 
     // Más del doble: el proveedor publicó basura.
-    fakeDolarApi(bcv: 90.0, publishedAt: '2026-09-11T14:30:00.000Z');
+    fakeDolarApi(bcv: 90.0, publishedAt: CarbonImmutable::now()->subHour()->toIso8601String());
     runIngest();
 
     expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(1);
@@ -167,10 +170,12 @@ it('rechaza una variación mayor al 30 % y conserva la anterior', function (): v
 });
 
 it('admite una variación que cabe en el 30 %', function (float $rate, int $rows): void {
-    fakeDolarApi(bcv: 36.5);
+    // Referencia reciente en las dos vueltas: lo que se mide aquí es el
+    // umbral, no la abstención de SP-2b.
+    fakeDolarApi(bcv: 36.5, publishedAt: CarbonImmutable::now()->subHours(2)->toIso8601String());
     runIngest();
 
-    fakeDolarApi(bcv: $rate, publishedAt: '2026-09-11T14:30:00.000Z');
+    fakeDolarApi(bcv: $rate, publishedAt: CarbonImmutable::now()->subHour()->toIso8601String());
     runIngest();
 
     expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe($rows);
@@ -387,4 +392,114 @@ it('no toca las filas ya escritas', function (): void {
 
     expect($first->fresh()?->rate)->toBe('36.50000000');
     expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(2);
+});
+
+/**
+ * **SP-2b · la guarda del 30 % exige una referencia reciente para poder
+ * vetar.**
+ *
+ * Con la referencia fresca protege: un salto grande contra una tasa publicada
+ * hace un rato es una fila corrupta del proveedor, y se rechaza.
+ */
+it('veta el salto grande cuando la referencia está fresca', function (): void {
+    $log = Log::spy();
+
+    fakeDolarApi(bcv: 36.5, publishedAt: CarbonImmutable::now()->subHours(2)->toIso8601String());
+    runIngest();
+
+    fakeDolarApi(bcv: 90.0, publishedAt: CarbonImmutable::now()->subHour()->toIso8601String());
+    runIngest();
+
+    expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(1);
+    expect(ExchangeRate::query()->where('source', 'bcv')->value('rate'))->toBe('36.50000000');
+
+    $log->shouldHaveReceived('error')->withArgs(
+        fn (string $message): bool => str_contains($message, 'variación implausible'),
+    )->once();
+});
+
+/**
+ * Y con la referencia obsoleta **se abstiene**, que es lo que impide el cierre
+ * permanente: si la ingesta o la fuente están caídas una semana y el bolívar
+ * se mueve de verdad, sin esto *ninguna* lectura entraría jamás —el rechazo no
+ * persiste nada, así que la referencia no avanza nunca— y la plataforma entera
+ * se quedaría proyectando la tasa de la semana pasada.
+ */
+it('no veta el salto grande cuando su referencia ya está obsoleta', function (): void {
+    $log = Log::spy();
+
+    fakeDolarApi(bcv: 36.5, publishedAt: CarbonImmutable::now()->subDays(7)->toIso8601String());
+    runIngest();
+
+    fakeDolarApi(bcv: 90.0, publishedAt: CarbonImmutable::now()->subMinutes(10)->toIso8601String());
+    runIngest();
+
+    expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(2);
+    expect(app(ExchangeRateService::class)->forSource(RateSource::Bcv)?->rate)->toBe('90.00000000');
+
+    // Aceptar por abstención **no es** aceptar por plausible: queda dicho, y
+    // con `warning` para que se distinga del veto, que es `error`.
+    $log->shouldHaveReceived('warning')->withArgs(
+        fn (string $message): bool => str_contains($message, 'abstenida'),
+    )->once();
+});
+
+/**
+ * La abstención se decide con **el mismo `isStale()`** del sello y de la
+ * alerta de plataforma, así que el borde es el mismo: a las 24 h justas la
+ * referencia todavía vigila.
+ */
+it('mantiene el veto justo en el borde de las 24 h', function (): void {
+    // Con el reloj corriendo, «hace veinticuatro horas justas» deja de serlo
+    // en los microsegundos que van de persistir la referencia a consultarla, y
+    // el borde solo se puede afirmar con el tiempo congelado.
+    CarbonImmutable::setTestNow('2026-09-19 12:00:00');
+
+    fakeDolarApi(bcv: 36.5, publishedAt: CarbonImmutable::now()->subHours(24)->toIso8601String());
+    runIngest();
+
+    fakeDolarApi(bcv: 90.0, publishedAt: CarbonImmutable::now()->toIso8601String());
+    runIngest();
+
+    expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(1);
+
+    CarbonImmutable::setTestNow();
+});
+
+/**
+ * Una aceptación normal **no escribe nada**: es lo que hace legible el log de
+ * la abstención. Si cada ingesta dejara una línea, la que importa se perdería
+ * entre cuarenta y ocho al día.
+ */
+it('no registra nada cuando la tasa entra por plausible', function (): void {
+    $log = Log::spy();
+
+    fakeDolarApi(bcv: 36.5);
+    runIngest();
+
+    fakeDolarApi(bcv: 37.0, publishedAt: '2026-09-11T14:30:00.000Z');
+    runIngest();
+
+    expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(2);
+
+    $log->shouldNotHaveReceived('warning');
+    $log->shouldNotHaveReceived('error');
+});
+
+/**
+ * SP-2 · **el rechazo por implausibilidad no consume reintentos.** Volver a
+ * pedir la misma respuesta absurda da la misma respuesta absurda, así que el
+ * job termina bien y espera a su próxima vuelta en lugar de gastar los tres
+ * intentos en media hora.
+ */
+it('no falla el job cuando rechaza una tasa por implausible', function (): void {
+    fakeDolarApi(bcv: 36.5, publishedAt: CarbonImmutable::now()->subHours(2)->toIso8601String());
+    runIngest();
+
+    fakeDolarApi(bcv: 90.0, publishedAt: CarbonImmutable::now()->subHour()->toIso8601String());
+
+    // Si consumiera reintentos, esto lanzaría y el job quedaría fallido.
+    runIngest();
+
+    expect(ExchangeRate::query()->where('source', 'bcv')->count())->toBe(1);
 });

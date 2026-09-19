@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Organization\UpdateOrganizationAction;
+use App\Actions\Settings\UpdateExchangeRateSettingsAction;
 use App\Actions\Settings\UpdateSettingsAction;
+use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Exchange\RateSource;
+use App\Domain\Exchange\RateView;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\SlugLockedException;
 use App\Domain\Tenancy\SlugTakenException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backoffice\UpdateExchangeRateRequest;
 use App\Http\Requests\Backoffice\UpdateOrganizationRequest;
 use App\Http\Requests\Backoffice\UpdateSettingsRequest;
 use App\Models\User;
@@ -46,6 +51,7 @@ final class SettingsController extends Controller
         private readonly TenantContext $context,
         private readonly Settings $settings,
         private readonly UpdateOrganizationAction $organization,
+        private readonly ExchangeRateService $rates,
     ) {}
 
     public function edit(Request $request): Response
@@ -59,6 +65,7 @@ final class SettingsController extends Controller
             'definitions' => $this->definitions(),
             'identity' => $this->identity($organization->getAttributes()),
             'brand' => $this->organization->brandOf($organization)->toArray(),
+            'rateSources' => $this->rateSources(),
         ]);
     }
 
@@ -97,6 +104,53 @@ final class SettingsController extends Controller
         }
 
         return to_route('settings.edit')->with('status', 'Identidad del negocio guardada.');
+    }
+
+    /**
+     * Guarda la fuente de la tasa y, cuando toca, la tasa manual
+     * (`REQ-FX-003` RB-1).
+     *
+     * Va aparte de `update()` porque es una operación distinta —un par que
+     * solo tiene sentido guardado junto— con su propia pantalla y sus propios
+     * datos. La capacidad es la misma, `Settings`, así que la policy también:
+     * la tasa es uno de los ajustes que RB-1 de `REQ-ORG-003` reserva al
+     * `owner`, y `OrganizationCapability::Settings` la nombra explícitamente.
+     */
+    public function updateRate(UpdateExchangeRateRequest $request, UpdateExchangeRateSettingsAction $update): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $update->handle($request->source(), $request->manualRate(), $actor);
+
+        return to_route('settings.edit')->with('status', 'Fuente de la tasa guardada.');
+    }
+
+    /**
+     * Las fuentes de plataforma con su tasa vigente y su antigüedad (RB-6).
+     *
+     * Es lo que permite al `owner` **comparar antes de elegir**: «BCV
+     * Bs. 42,50 (hace 12 min) · Paralelo Bs. 47,80 (hace 12 min)». Sin esto, la
+     * elección sería a ciegas entre tres palabras.
+     *
+     * La antigüedad se calcula en la pantalla sobre `publishedAt` —cuándo lo
+     * publicó la fuente—, que es la misma fecha que viaja en `RateView` desde
+     * que `T-019` corrigió el contrato: decir «hace 12 min» sobre la hora a la
+     * que corrió nuestro job sería contar otra cosa.
+     *
+     * Una fuente **sin ninguna tasa todavía** viaja igual, con `rate: null`
+     * (SP-4): se puede elegir, y la pantalla dice que aún no hay cifra en vez
+     * de esconder la opción. Bloquear la elección por falta de tasa sería
+     * violar `REQ-FX-005` RB-1 desde la pantalla de ajustes.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function rateSources(): array
+    {
+        return array_map(
+            fn (RateSource $source): array => RateView::of($this->rates->forSource($source), $source)->toArray(),
+            RateSource::platform(),
+        );
     }
 
     /**

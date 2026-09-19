@@ -54,14 +54,6 @@ class FetchExchangeRate implements ShouldQueue
     use Queueable;
 
     /**
-     * Las fuentes **públicas**. La manual no se ingesta: es de cada negocio y
-     * vive en sus ajustes (`REQ-FX-003` RB-4).
-     *
-     * @var list<RateSource>
-     */
-    private const PLATFORM_SOURCES = [RateSource::Bcv, RateSource::Parallel];
-
-    /**
      * Variación máxima admisible respecto a la última tasa de esa fuente
      * (SP-2), en tanto por uno.
      */
@@ -119,7 +111,10 @@ class FetchExchangeRate implements ShouldQueue
     {
         $failures = [];
 
-        foreach (self::PLATFORM_SOURCES as $source) {
+        // Las fuentes de plataforma las censa `RateSource`: la manual no se
+        // ingesta porque es de cada negocio y vive en sus ajustes
+        // (`REQ-FX-003` RB-4).
+        foreach (RateSource::platform() as $source) {
             try {
                 $this->ingest($provider->fetch($source), $rates);
             } catch (ExchangeRateUnavailableException $exception) {
@@ -186,6 +181,19 @@ class FetchExchangeRate implements ShouldQueue
 
         $row->refresh();
 
+        return $this->snapshotOf($row);
+    }
+
+    /**
+     * La fila, como cotización.
+     *
+     * Existe para que la guarda de SP-2b pueda preguntar `isStale()` en vez de
+     * comparar fechas con un umbral propio: si la obsolescencia se midiera en
+     * dos sitios con dos criterios, el día que uno cambiara la guarda se
+     * abstendría cuando la plataforma todavía vigila, o al revés.
+     */
+    private function snapshotOf(ExchangeRate $row): RateSnapshot
+    {
         return new RateSnapshot(
             rate: $row->rate,
             source: $row->source,
@@ -202,6 +210,26 @@ class FetchExchangeRate implements ShouldQueue
      * una fuente solo tiene que ser positiva. Exigirle además una variación
      * pequeña sería exigirle parecerse a algo que no existe, y dejaría una
      * instalación nueva sin poder ingestar nunca.
+     *
+     * ## Y la guarda exige una referencia reciente para poder vetar (SP-2b)
+     *
+     * Un umbral del 30 % es una **velocidad de cambio**, y no hay velocidad
+     * sin base de tiempo: 30 % en media hora es una fila corrupta del
+     * proveedor y 30 % en cuatro meses es el bolívar. Comparar contra «la
+     * última fila» sin mirar su antigüedad produce un **cierre permanente**, y
+     * el escenario no es rebuscado: si la ingesta o la fuente están caídas una
+     * semana y la tasa se mueve de verdad, al volver toda lectura se rechaza
+     * —y como el rechazo no persiste nada, la referencia no avanza nunca—. La
+     * plataforma entera se quedaría proyectando la tasa de la semana pasada,
+     * con un `Log::error` cada media hora que nadie lee.
+     *
+     * La abstención se decide con **el mismo `isStale()`** que usa el sello
+     * del catálogo y la alerta de plataforma de `REQ-PLT-006` RB-4, y no con
+     * un umbral propio: mientras haya vigilancia, la guarda protege; cuando la
+     * referencia es tan vieja que la propia plataforma la declara obsoleta,
+     * deja de tener autoridad para vetar la única cifra reciente que existe.
+     * Lo que **no** se toca es el 30 %, que es lo que protege de una tasa
+     * corrupta.
      */
     private function isPlausible(RateSnapshot $snapshot, ?ExchangeRate $previous): bool
     {
@@ -224,10 +252,29 @@ class FetchExchangeRate implements ShouldQueue
             return true;
         }
 
+        if ($this->snapshotOf($previous)->isStale()) {
+            // Aceptar por abstención **no es** aceptar por plausible, y por eso
+            // se registra aunque la tasa entre: es la única señal de que la
+            // guarda estuvo a punto de cerrar la puerta y se apartó. En el log
+            // se distingue de una aceptación normal —que no escribe nada— y
+            // del veto, que es `error`.
+            Log::warning('Guarda de variación abstenida: la referencia ya está obsoleta y no puede vetar.', [
+                'source' => $snapshot->source->value,
+                'rate' => $snapshot->rate,
+                'previous' => $previous->rate,
+                'previous_published_at' => $previous->published_at->toIso8601String(),
+                'variation' => $variation,
+                'max' => self::MAX_VARIATION,
+            ]);
+
+            return true;
+        }
+
         Log::error('Tasa rechazada por variación implausible; se conserva la anterior.', [
             'source' => $snapshot->source->value,
             'rate' => $snapshot->rate,
             'previous' => $previous->rate,
+            'previous_published_at' => $previous->published_at->toIso8601String(),
             'variation' => $variation,
             'max' => self::MAX_VARIATION,
         ]);
