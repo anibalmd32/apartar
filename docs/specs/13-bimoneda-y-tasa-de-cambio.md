@@ -54,6 +54,8 @@ export interface RateView {
 > **`rate` es `number`, y es el único coma flotante de todo el sistema.** Está aquí, en el borde de salida, y en ningún sitio más: `REQ-FX-001` RB-1 prohíbe el `float` porque la aritmética del dinero tiene que ser exacta, y esta cifra **no participa en ninguna aritmética**. Los importes llegan ya proyectados y formateados en `MoneyView` (RB-6), así que lo único que el cliente hace con `rate` es pintarlo en el sello. Del lado PHP, `RateView::of()` es el único punto donde `RateSnapshot->rate` deja de ser una cadena decimal, y eso lo hace revisable de un vistazo. Si algún día aparece una multiplicación sobre este campo, el error no es el `float`: es que la cuenta está en el lado equivocado.
 >
 > `fetchedAt` **no viaja al cliente**. Su propio comentario dice que solo sirve para diagnosticar la ingesta, y un campo que se envía en todas las páginas con precios y significa algo sutilmente distinto de lo que parece es justo el que acaba pintado por error. La antigüedad de la ingesta se diagnostica en el servidor y se ve en Salud del sistema (`REQ-PLT-006` RB-4).
+>
+> **Cómo se llama cada fuente lo dice el servidor, y `T-021` lo escribió en la pantalla.** `RateSource` no tiene `label()`, así que `ExchangeRateForm` guarda las tres etiquetas en una constante propia — el segundo censo contra el que avisa el comentario del tipo y lo que `PaymentMethod` ya resolvió con `label()` en el enum. Con un solo consumidor no hace daño; deja de ser inocuo en `T-022`, donde `RateStamp` tiene que escribir «Tasa BCV del DD/MM HH:mm» sobre las mismas tres fuentes: con dos diccionarios, la pantalla de ajustes y el sello del catálogo pueden acabar llamando cosas distintas a la misma tasa, y quien lo note será alguien que ya dudaba de la cifra. **Lo realinea `T-022`.** El **nombre** de la fuente se escribe una vez y sale del enum; lo que el desplegable añada para explicar la opción es presentación de esa opción, no un segundo nombre.
 
 ---
 
@@ -271,6 +273,8 @@ final readonly class Money
 - Tipos esperados: `CurrencyDisplay`, `MoneyView`, `RateView`.
 - Anti-`SHALLOW`: `useCurrencyDisplay` (lectura de cookie + `localStorage` + default + persistencia + emisión de telemetría) supera 4 líneas junto a su tipo; el trait `ProjectsMoney::money()` compone `MoneyView` completo.
 - Tests (Vitest): renderiza ambos modos con el formato exacto; sin tasa muestra solo USD y deshabilita el toggle; `localStorage` inaccesible no rompe; cookie corrupta cae al default; emite `currency_toggled`.
+
+> **RB-7 y el punto de gate que lo acompaña se cierran en `T-084`, no en `T-022`.** El bus de telemetría —`TelemetryEventName` con sus 15 eventos, el buffer, el endpoint de ingesta y el test por evento— es `REQ-TLM-001…004`, en H8. `T-022` escribe `useCurrencyDisplay` sin emisor y **no** deja un colaborador provisional que se llame `track()` y no haga nada: un emisor que traga eventos en silencio es indistinguible de uno conectado, y ningún test se pondría rojo el día que el bus llegue y nadie lo enchufe. El enchufe se nombra donde sí se ve: `currency_toggled` sale de `useCurrencyDisplay`, y `T-084` lo conecta con el resto de los quince.
 
 ---
 
