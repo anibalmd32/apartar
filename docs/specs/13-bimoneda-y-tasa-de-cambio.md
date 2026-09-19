@@ -49,7 +49,7 @@ export interface RateView {
 }
 ```
 
-> **`RateView` lleva `publishedAt`, no `fetchedAt`, y se corrigió en `T-019`.** El contrato decía `fetchedAt` mientras `RateSnapshot::isStale()` mide sobre `publishedAt`, así que el sello de `REQ-FX-005` RB-2 —«Tasa BCV del DD/MM HH:mm»— habría mostrado **cuándo la leímos nosotros** y el aviso de RB-3 se habría disparado sobre otra fecha distinta de la mostrada. El fallo se ve un fin de semana: el BCV no publica, el job sigue leyendo cada media hora, y el catálogo estampa «hoy 09:00» sobre una tasa del viernes — exactamente el engaño que tener dos columnas venía a evitar.
+> **`RateView` lleva `publishedAt`, no `fetchedAt`.** Lo detectó `T-019`, que shipeó el contrato como estaba; el código se alineó en `T-017`. El contrato decía `fetchedAt` mientras `RateSnapshot::isStale()` mide sobre `publishedAt`, así que el sello de `REQ-FX-005` RB-2 —«Tasa BCV del DD/MM HH:mm»— habría mostrado **cuándo la leímos nosotros** y el aviso de RB-3 se habría disparado sobre otra fecha distinta de la mostrada. El fallo se ve un fin de semana: el BCV no publica, el job sigue leyendo cada media hora, y el catálogo estampa «hoy 09:00» sobre una tasa del viernes — exactamente el engaño que tener dos columnas venía a evitar.
 >
 > `fetchedAt` **no viaja al cliente**. Su propio comentario dice que solo sirve para diagnosticar la ingesta, y un campo que se envía en todas las páginas con precios y significa algo sutilmente distinto de lo que parece es justo el que acaba pintado por error. La antigüedad de la ingesta se diagnostica en el servidor y se ve en Salud del sistema (`REQ-PLT-006` RB-4).
 
@@ -98,6 +98,8 @@ final readonly class Money
 - RB-5 La conversión a VES usa `bcmul` con escala 8 y redondea **half-up** a 2 decimales al final; nunca se redondea en pasos intermedios.
 - RB-6 El frontend recibe importes **ya formateados** en `MoneyView` (`usd` y `ves` como strings listos) además de los centavos; no reimplementa el formateo de la conversión.
 - RB-7 Formato de presentación: USD `$1,234.56` (coma de miles, punto decimal); VES `Bs. 1.234,56` (punto de miles, coma decimal), conforme a la convención local.
+- RB-8 **`isZeroOrBelowTolerance()` compara con signo (`cents <= tolerance`), no en valor absoluto.** Decidido en `T-017`, y es normativo porque de él dependen `LAY` y `PAY`: la pregunta que responde es *si se puede dar por saldado*, y **haber pagado de más no es una razón para dejar un apartado abierto**. Con `abs()`, un cliente que paga cinco dólares de sobra se queda con el apartado vivo y sin forma de cerrarlo. Qué hacer con ese crédito es de `REQ-PAY-…`, no de esta comparación.
+- RB-9 **`MoneyCast` es de USD y lanza si le dan otra moneda.** Toda columna `*_cents` guarda centavos de dólar (RB-1), así que un parámetro de moneda en el cast sería la forma más discreta posible de romper la invariante: un `Money` en VES guardado ahí produce una fila **indistinguible de una correcta** —el número cabe, la columna lo acepta— y el error solo aparece cuando alguien suma ese saldo con otro. Los importes declarados en bolívares tienen su sitio propio (`payments.declared_amount`, con su tasa congelada al lado, `REQ-FX-006`) y no pasan por el cast.
 
 **Happy path**
 1. `products.price_cents = 2000` se hidrata como `Money(2000, USD)`.
