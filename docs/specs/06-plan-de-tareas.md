@@ -472,6 +472,8 @@ CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUs
 `SyncSpecificationsAction`, `SpecificationBuilder`, `useSpecificationRows`, `SpecificationTable`, `SpecificationGroupsQuery`.
 **Hecho cuando:** posiciones contiguas tras reordenar; reemplazo transaccional con rollback; 51 filas rechazadas; **autocompletado de grupos acotado a la organización** (fuga); escapado de HTML verificado.
 
+**`ProductDetailResource` no es de aquí: es de `T-035`.** De `REQ-CAT-004` sí es de esta tarea todo lo demás —la agrupación de RB-2 y RB-3 con su comparación *case-insensitive*, y `SpecificationTable` con sus tests de Vitest, incluido el de XSS—, y la agrupación se escribe **donde `T-035` pueda llamarla** en vez de dentro de un *resource* que todavía no existe. Es el mismo reparto que `T-022` hizo con `MoneyLabel`: la pieza y su prueba ahora, la página que la monta en su tarea.
+
 **T-029 · Imágenes de producto** · `B` · 3 pts · *Requisitos: `REQ-BOF-022`, `REQ-CAT-005`*
 medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAction`, `RealMimeType`, `ImageUploader`, `ProductGallery`.
 **Hecho cuando:** 3 conversiones en cola; MIME falso rechazado; borrar la principal promueve la siguiente; **la ruta física incluye el `organization_id`**; **el producto sabe decir si tiene imágenes**, que es la pieza que `T-030` necesita para RB-5.
