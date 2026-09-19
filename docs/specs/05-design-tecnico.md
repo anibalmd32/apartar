@@ -93,6 +93,8 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 > **Los importes son `BIGINT` con signo, nunca `UNSIGNED`.** La resta de dos `BIGINT UNSIGNED` en MySQL no da negativo: desborda a un número enorme. Con dinero eso es un balance corrupto en lugar de un error visible. Las cantidades que no son dinero (`max_*`, `position`, `stock`) sí van `UNSIGNED`.
 
+> **«`TIMESTAMP` en UTC» solo es cierto si la sesión de MySQL corre en la misma zona que la aplicación**, y por eso la conexión fija `timezone` a `APP_TIMEZONE` (`config/database.php`). Un `TIMESTAMP` se guarda en UTC pero se escribe y se lee convirtiendo con la zona **de la sesión**, y por defecto esa zona es `SYSTEM` —UTC en el contenedor— mientras Laravel manda cadenas ingenuas en `America/Caracas`. Lo que escribe PHP cuadra igual, porque va y vuelve por el mismo camino torcido; lo que escribe **la base de datos** no. `exchange_rates.fetched_at` es el primer valor del proyecto que pone MySQL —lleva `useCurrent()` precisamente para que un reloj de contenedor desfasado no lo falsee (`REQ-FX-002` SP-6)— y salió cuatro horas por delante. Toda columna con `useCurrent()` o escrita por un `DEFAULT`/trigger hereda esta dependencia. Detectado al cerrar `T-020`.
+
 ### Bloque 0 — Framework (Laravel las genera)
 `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `sessions`, `password_reset_tokens`.
 
@@ -435,17 +437,23 @@ Respuesta (por elemento):
 
 La elección de campo se declara en `config/services.php` (`exchange_rate.field_priority`) por si el negocio decide después que quiere `venta` en lugar de `promedio`. El default es `['promedio', 'venta', 'compra']`.
 
+**«Se descarta» es en singular: se descarta esa cotización, no el payload.** Si el paralelo viene con los tres campos a cero, el BCV de la misma respuesta **entra igual**; perder las dos fuentes porque una venía rota es convertir un fallo parcial del proveedor en uno total nuestro. Quien pregunte después por la fuente descartada recibe **el motivo** —no un hueco—, y el job la anota y sigue con la otra. Lo mismo vale para `fechaActualizacion`: la valida cada cotización por su cuenta.
+
+**`fechaActualizacion` viene en UTC (`…T14:30:00.000Z`) y se normaliza a la zona de la aplicación en el borde**, donde entra el dato de fuera. El instante no cambia, solo cómo se escribe — pero escribirlo mal no se ve como una fecha torcida: `published_at` es la mitad de la clave de deduplicación de `REQ-FX-002` RB-3, así que un desplazamiento de cuatro horas hace que la comparación **no vuelva a coincidir nunca** y el job inserte una fila nueva de la misma cotización cada media hora. Detectado al cerrar `T-020`.
+
 ### 6.3 Comportamiento
 
 - Timeout **8 s**, 3 reintentos con backoff (10 s / 60 s / 300 s), `WithoutOverlapping`.
-- **Validación de plausibilidad** (`REQ-FX-002` SP-2): se rechaza `rate <= 0` y toda variación **> 30 %** respecto a la última persistida de la misma fuente. Se registra alerta y se conserva la anterior.
+- **Validación de plausibilidad** (`REQ-FX-002` SP-2): se rechaza `rate <= 0` y toda variación **> 30 %** respecto a la última persistida de la misma fuente, **si esa última tiene menos de 24 h** (SP-2b: sin referencia reciente la guarda se abstiene, porque una referencia vieja veta para siempre). Se registra alerta y se conserva la anterior, **sin reintentar**. La cuenta va entera por `bcmath` sobre cadenas: con una división en coma flotante el umbral del 30 % dejaría de ser exactamente el 30 % en los bordes, y es la comprobación que decide si una cifra entra al histórico.
 - Si `fechaActualizacion` no cambió y `rate` es idéntica, **no se inserta fila** (`REQ-FX-002` RB-3).
 - Test de contrato con un **fixture del payload real** (`REQ-QAX-003` RB-9); `Http::fake()` en el resto de los tests.
 - `ManualRateProvider` lee `organization_settings.exchange_rate_manual` y **no** inserta en `exchange_rates` (`REQ-FX-003` RB-4).
 
 ### 6.4 Sembrado inicial
 
-`ExchangeRateSeeder` inserta una tasa BCV inicial, para que una instalación nueva no arranque sin ninguna (`REQ-FX-005` SP-1).
+`ExchangeRateSeeder` inserta una tasa BCV inicial, para que una instalación nueva no arranque sin ninguna (`REQ-FX-005` SP-1). Es **idempotente** —`exchange_rates` es histórico inmutable y sembrar dos veces ensucia lo que existe para justificar pagos— y se fecha **dos días atrás a propósito**, para que nazca marcada como obsoleta: es un marcador de posición, y una cifra de ejemplo aparentando ser la tasa de hoy engaña mejor que no tener ninguna.
+
+**Esa antigüedad deliberada es también lo que impide que la semilla bloquee la primera ingesta real.** Con la guarda de `REQ-FX-002` SP-2b, una referencia de más de 24 h no veta, así que la primera lectura entra por lejos que quede de `36.50`. Sin SP-2b habría hecho falta acordarse de actualizar la cifra en cada despliegue —un paso manual, no escrito en ningún runbook, cuyo olvido se manifiesta como precios en bolívares equivocados para toda la plataforma y una línea de log—, y eso es exactamente la clase de deber que nadie cumple.
 
 ---
 
