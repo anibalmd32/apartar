@@ -440,8 +440,19 @@ Las 8 tablas de catálogo, con `FULLTEXT` y el `UNIQUE(slug)` global de `catalog
 CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUseException`.
 **Hecho cuando:** borrado con productos rechazado; **mismo nombre en dos organizaciones permitido**; creación inline reutiliza; orden persistido.
 
+**Cerrada** (`bf15d5a`). `REQ-BOF-023` cerrado. Cuatro cosas que dejar dichas:
+
+**`TaxonomyByName` está escrita y no tiene llamante: es de `T-027`.** Resuelve la creación al vuelo de RB-8 reintentando el par leer-crear —el choque puede ser del nombre o del `slug`, y los dos se resuelven releyendo o desambiguando—, y vive en el dominio de la taxonomía porque la regla es de `REQ-BOF-023` y la carrera se explica junto al índice que la hace posible. **El formulario de producto la usa; no escribe su propia reutilización.** La asimetría que sostiene: el mismo nombre en el CRUD de `/categorias` es `422` (SP-2), y en la creación al vuelo se reutiliza (SP-6).
+
+**Tres conteos distintos de productos por categoría, y cada uno mide lo suyo.** El visible de RB-7 incluye `draft` y `archived` pero no lo borrado lógicamente; la guarda del borrado cuenta `withTrashed()`, porque la FK `restrict` cuenta filas y no productos visibles; y el bloqueo del `slug` de SP-3 cuenta los `published` por **estado** y no por fecha, porque un `published_at` futuro ya está comprometido. Que el primero excluya lo que el segundo cuenta es deliberado: la cifra de la pantalla tiene que explicar el `422` del borrado, y por eso `ReassignCategoryProductsAction` mueve **también** los de la papelera — si los dejara atrás, «reasignar y luego borrar» fallaría con un error de base después de que la persona hiciera exactamente lo que se le pidió.
+
+**RB-2 dice «arrastre» y lo que hay son botones de subir y bajar.** Es la única parte de `REQ-BOF-023` por debajo de la letra, y está declarada: no hay ninguna dependencia de *drag & drop* en el proyecto y la API nativa del navegador no responde al dedo, que es con lo que se usa este backoffice. Lo que sí quedó con su forma definitiva es el contrato de guardado —`PATCH /categorias/orden` con la lista entera de identificadores—, así que **`T-031` cambia el gesto y no el endpoint** (ver su nota).
+
+**`OrganizationPolicy::manageProducts()`** entra aquí, para que el menú y las rutas del área de inventario pregunten por la capacidad `Products` en vez de volver a decidir el reparto de `REQ-ORG-003` RB-1 cada una por su cuenta.
+
 **T-027 · CRUD de productos** · `B` · 5 pts · *Requisitos: `REQ-BOF-020`*
 `ProductData`, `UpsertProductAction`, `CoherentFinancingTerms`, requests, formulario con previsualización del plan en vivo.
+**Hereda dos encargos:** llamar a `TaxonomyByName` para la creación al vuelo (ver la nota de `T-026`) y validar que las etiquetas que adjunta son de la misma organización, que es la guarda de escritura de `product_tag` que `REQ-ORG-002` RB-7 pone en la `Action`.
 **Hecho cuando:** matriz de las **6 reglas de coherencia** con casos límite; **SKU duplicado en otra organización permitido**; slug inmutable tras publicar; más de 2 decimales rechazado; cambio de precio auditado; defaults de la organización aplicados.
 
 **T-028 · Ficha técnica dinámica** · `B` · 3 pts · *Requisitos: `REQ-BOF-021`, `REQ-CAT-004`*
@@ -459,6 +470,8 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 **T-031 · Composición de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-023`*
 `SyncCatalogProductsAction`, `CatalogProductSorter`, `useSortableProducts`.
 **Hecho cuando:** posiciones contiguas desde 1; **`created_at` del pivote NO cambia al reordenar**; deduplicación; producto de otra organización rechazado (fuga); vaciar un catálogo publicado rechazado.
+**Y trae el arrastre que `T-026` dejó pendiente** (`REQ-BOF-023` RB-2): con `useSortableProducts` escrito, la lista de categorías cambia el gesto —hoy son botones de subir y bajar— **sin tocar su endpoint**, que ya recibe la lista entera de identificadores. Es media hora y cierra la única parte de `REQ-BOF-023` que quedó por debajo de la letra.
+**Aquí también va la guarda de escritura de `catalog_product`** (`REQ-ORG-002` RB-7, SP-5): validar en la `Action` que el producto y el catálogo son de la misma organización, que es lo que sostiene que el pivote no lleve `organization_id`.
 
 **T-032 · Publicación de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-022`, `REQ-BOF-024`*
 `PublishCatalogAction`, `UnpublishCatalogAction`, `UniqueCatalogSlug`, `SlugLockedException`, `ShareLinkField`, CRUD y listado con badge de visibilidad.

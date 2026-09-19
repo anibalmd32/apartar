@@ -233,7 +233,7 @@ export interface SpecificationFormRow {
 
 **Reglas de negocio y precondiciones**
 - RB-1 **La taxonomía es de cada organización** (`REQ-CAT-006` RB-1). No hay categorías compartidas ni sugeridas por la plataforma, y por tanto tampoco comparables entre negocios.
-- RB-2 Categorías **planas**, con orden manual por `position` (arrastre).
+- RB-2 Categorías **planas**, con orden manual por `position` (arrastre). **Hoy el gesto son botones de subir y bajar**, no arrastre: `T-026` cerró el requisito sin la librería de *drag & drop*, que llega con `T-031` (`useSortableProducts`) y entonces cambia el gesto. Lo que ya tiene su forma definitiva es el contrato —`PATCH /backoffice/categorias/orden` con la lista entera de identificadores—, así que el cambio no toca el servidor. Se declara aquí para que nadie lea esta regla creyendo que está cumplida al pie de la letra.
 - RB-3 `name` y `slug` únicos por organización; el `slug` se autogenera y es editable solo si no hay productos publicados asociados.
 - RB-4 Una categoría con productos asociados **no** se puede eliminar (FK `restrict`): la UI ofrece "reasignar productos a otra categoría" antes de borrar.
 - RB-5 Una etiqueta se puede eliminar en cualquier momento: se desasocia de los productos.
