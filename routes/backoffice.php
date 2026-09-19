@@ -6,8 +6,10 @@ use App\Http\Controllers\Backoffice\AuditLogController;
 use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
+use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\SettingsController;
+use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -70,6 +72,47 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('cambiar-contrasena', [ForcedPasswordChangeController::class, 'update'])
                 ->middleware('during-suspension')
                 ->name('password.change.store');
+
+            /*
+            | Taxonomía: categorías y etiquetas ([05 §7.4], `REQ-BOF-023`).
+            |
+            | **De los dos roles, y fuera del grupo del `owner`.** Categorías y
+            | etiquetas son cómo se ordena el inventario, no cómo se gobierna
+            | el negocio: `OrganizationCapability::Products` es de operación
+            | diaria, y un empleado que carga productos y no puede crear la
+            | categoría donde ponerlos tendría que pedírsela al dueño cada vez.
+            |
+            | **Ninguna declara `during-suspension`, y es la respuesta
+            | correcta.** Lo que `REQ-ORG-008` RB-3 conserva durante una
+            | suspensión es cobrar y aprobar comprobantes; reorganizar la
+            | taxonomía del inventario no es ninguna de las dos cosas, y cuando
+            | se regularice el pago vuelven todas a la vez. La omisión es la
+            | declaración, por el fallo cerrado de `T-012`.
+            |
+            | `categorias/orden` va **antes** que `categorias/{category}` no
+            | por necesidad —`PATCH` y `PUT` son verbos distintos— sino para
+            | que se lea en el orden en que se usa, y para que siga siendo
+            | correcta el día que alguien cambie uno de los dos verbos.
+            |
+            | El `{category}` y el `{tag}` se resuelven ya filtrados por el
+            | tenant, así que el identificador de otra organización da `404` y
+            | no `403` (SP-7, `REQ-ORG-002` RB-6): no se confirma que exista.
+            */
+            Route::get('categorias', [CategoryController::class, 'index'])->name('categories.index');
+            Route::post('categorias', [CategoryController::class, 'store'])->name('categories.store');
+
+            Route::patch('categorias/orden', [CategoryController::class, 'reorder'])->name('categories.reorder');
+
+            Route::put('categorias/{category}', [CategoryController::class, 'update'])->name('categories.update');
+            Route::delete('categorias/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+            Route::post('categorias/{category}/reasignar', [CategoryController::class, 'reassign'])
+                ->name('categories.reassign');
+
+            Route::get('etiquetas', [TagController::class, 'index'])->name('tags.index');
+            Route::post('etiquetas', [TagController::class, 'store'])->name('tags.store');
+            Route::put('etiquetas/{tag}', [TagController::class, 'update'])->name('tags.update');
+            Route::delete('etiquetas/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
             /*
             | Equipo (`REQ-ORG-004`, `REQ-ORG-005`). Del `owner`, por [05 §7.4]

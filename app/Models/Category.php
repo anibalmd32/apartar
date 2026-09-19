@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Tenancy\BelongsToOrganization;
 use Database\Factories\CategoryFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -72,5 +73,35 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * La taxonomía tal como se lista, **con su conteo** (RB-2, RB-7).
+     *
+     * Las dos mitades van juntas porque la pantalla nunca necesita una sin la
+     * otra: la lista es arrastrable —de ahí `position`— y cada fila enseña
+     * cuántos productos caen dentro, que es lo que convierte «no puedes borrar
+     * esta categoría» en una tarea con tamaño conocido.
+     *
+     * **El conteo incluye los `draft`** —lo pide RB-7 y lo hace `withCount`
+     * solo— **y también los archivados**, que la regla no nombra: un archivado
+     * sigue ocupando su categoría y sigue impidiendo borrarla, así que
+     * descontarlo enseñaría «0 productos» al lado de una categoría que luego
+     * se niega a desaparecer. Lo que sí queda fuera es lo borrado lógicamente,
+     * porque la relación lleva el `SoftDeletingScope` del producto.
+     *
+     * `position` manda y el identificador desempata: sin el segundo criterio,
+     * dos categorías que compartieran posición saldrían en el orden que
+     * quisiera MySQL y la lista bailaría sin que nadie la tocara.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query
+            ->withCount('products')
+            ->orderBy('position')
+            ->orderBy('id');
     }
 }

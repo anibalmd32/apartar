@@ -93,6 +93,27 @@ final class OrganizationPolicy
         return $this->belongsTo($user, $organization);
     }
 
+    /**
+     * Mantener el inventario: productos y la taxonomía con la que se ordenan
+     * (`REQ-CAT-001`, `REQ-BOF-023`).
+     *
+     * De los dos roles, y esa es la respuesta correcta aunque la taxonomía
+     * parezca configuración: categorías y etiquetas son **cómo se ordena el
+     * inventario**, no cómo se gobierna el negocio. Un empleado que carga
+     * productos y no puede crear la categoría donde ponerlos tendría que
+     * pedírsela al dueño cada vez, que es justo lo que `OrganizationCapability`
+     * describe como encoger la mitad del `member` hasta dejar el rol inútil.
+     *
+     * Pasa por `governs()` y no por `operate()` para que el área quede
+     * **nombrada**: el menú se filtra por `products` y la frontera de
+     * `REQ-ORG-003` RB-1 sigue declarada en un solo sitio. El día que esa
+     * capacidad cambiara de lado, esta policy lo sabría sola.
+     */
+    public function manageProducts(User $user, Organization $organization): bool
+    {
+        return $this->governs($user, $organization, OrganizationCapability::Products);
+    }
+
     private function governs(User $user, Organization $organization, OrganizationCapability $capability): bool
     {
         return $this->belongsTo($user, $organization) && $user->role->can($capability);

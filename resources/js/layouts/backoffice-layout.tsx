@@ -41,6 +41,11 @@ interface BackofficeLayoutProps {
  */
 const SECTIONS: NavSection[] = [
     { label: 'Panel', href: '/backoffice', capability: ANY_CAPABILITY },
+    // Taxonomía (`REQ-BOF-023`): dos secciones y una sola capacidad. Ordenar
+    // el inventario es operación diaria, así que un `member` las ve — es lo
+    // que le permite cargar productos sin pedirle una categoría al dueño.
+    { label: 'Categorías', href: '/backoffice/categorias', capability: 'products' },
+    { label: 'Etiquetas', href: '/backoffice/etiquetas', capability: 'products' },
     { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
     { label: 'Ajustes', href: '/backoffice/ajustes', capability: 'settings' },
     { label: 'Cuentas de cobro', href: '/backoffice/cuentas-de-cobro', capability: 'payment_accounts' },
