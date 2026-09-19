@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Settings;
 
 use App\Domain\Auditing\AuditEvent;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\OrganizationSetting;
@@ -206,7 +207,7 @@ final class UpdateSettingsAction
         $sourceKey = SettingKey::ExchangeRateSource->value;
         $rateKey = SettingKey::ExchangeRateManual->value;
 
-        if (($values[$sourceKey] ?? null) !== SettingKey::MANUAL_EXCHANGE_RATE_SOURCE) {
+        if (($values[$sourceKey] ?? null) !== RateSource::Manual->value) {
             return;
         }
 

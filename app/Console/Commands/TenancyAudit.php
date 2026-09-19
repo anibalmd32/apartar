@@ -102,7 +102,13 @@ final class TenancyAudit extends Command
         'platform_users' => 'Operadores de la plataforma, tabla separada por construcción (REQ-PLT-001 RB-1).',
         'plans' => 'Catálogo de planes, común a toda la plataforma (REQ-SUB-001).',
         'organizations' => 'Es el tenant; no está sujeta a él.',
-        'exchange_rates' => 'Tasa de cambio única para toda la plataforma (REQ-FX-001).',
+        // Con `organization_id`, cada negocio guardaría su copia de la misma
+        // cifra y la ingesta tendría que escribir N filas por lectura, que es
+        // justo lo que prohíbe la regla de **una sola petición HTTP** para
+        // toda la plataforma. Lo que sí es del tenant —qué fuente usa cada
+        // organización y su tasa manual— vive en `organization_settings`, y
+        // una tasa manual nunca llega a esta tabla (`REQ-FX-003` RB-4).
+        'exchange_rates' => 'Tasa única para toda la plataforma, ingestada una sola vez (REQ-FX-002 RB-0, D-6).',
         'accounts' => 'Cuenta global del cliente final, anterior a cualquier organización (REQ-ACC-001).',
         'platform_settings' => 'Ajustes de la plataforma, no de un negocio (REQ-PLT-005).',
 

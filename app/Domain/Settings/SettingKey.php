@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Settings;
 
+use App\Domain\Exchange\RateSource;
+
 /**
  * Las diez claves de `organization_settings` con su valor por defecto, su
  * rango y su alcance ([02 §9.1], `REQ-ORG-006`).
@@ -60,16 +62,6 @@ enum SettingKey: string
 
     /** Días de retraso a partir de los que se alerta (`REQ-LAY-009`). */
     case OverdueAlertDays = 'overdue_alert_days';
-
-    /**
-     * Fuentes de tasa admitidas (`REQ-FX-003` RB-1).
-     *
-     * @var list<string>
-     */
-    public const EXCHANGE_RATE_SOURCES = ['bcv', 'parallel', 'manual'];
-
-    /** Fuente que obliga a fijar una tasa propia (`REQ-FX-003` SP-1). */
-    public const MANUAL_EXCHANGE_RATE_SOURCE = 'manual';
 
     /**
      * Formas de presentar el precio (`REQ-FX-004`).
@@ -134,7 +126,12 @@ enum SettingKey: string
     public function validationRules(): array
     {
         return match ($this) {
-            self::ExchangeRateSource => ['required', 'string', 'in:'.implode(',', self::EXCHANGE_RATE_SOURCES)],
+            // El censo de las tres fuentes es `RateSource`, y no se copia aquí
+            // (`T-019`): con dos listas, la cuarta fuente deja corta a una de
+            // ellas, y el síntoma no es un test en rojo sino un
+            // `RateSource::from()` que lanza en producción sobre un ajuste
+            // que esta misma validación dio por bueno.
+            self::ExchangeRateSource => ['required', 'string', 'in:'.implode(',', array_column(RateSource::cases(), 'value'))],
 
             // SP-2 de `REQ-FX-003`: formato inválido o ≤ 0 es `422`. Nulo sí,
             // porque es lo que vale mientras la fuente no sea manual.
