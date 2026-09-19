@@ -35,10 +35,10 @@ Convenciones del plan:
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
 | H0 · Cimientos | T-001…T-016 (+ `T-013b`) | 41 | 16 req. |
-| H1 · Aritmética y tasa | T-017…T-023 | 15 | 6 req. |
+| H1 · Aritmética y tasa | T-017…T-022 | 14 | 5 req. |
 | H2 · Catálogo | T-024…T-038 | 43 | 19 req. |
 | H3 · Apartado | T-039…T-053 | 41 | 23 req. |
-| H4 · Cobranza | T-054…T-065 | 36 | 15 req. |
+| H4 · Cobranza | T-054…T-065 (+ `T-023`) | 37 | 16 req. |
 | H5 · Planes | T-066…T-072 | 20 | 8 req. |
 | H6 · Cuentas y feed | T-073…T-078 | 18 | 7 req. |
 | H7 · Comunicación | T-079…T-083 | 17 | 10 req. |
@@ -385,11 +385,19 @@ Provider según [05 §6](05-design-tecnico.md), `ManualRateProvider`, `ExchangeR
 
 **Y hereda dos realineados de `T-021`:** el censo de etiquetas de `RateSource` y el traslado de `publishedAgo()`.
 
-**T-023 · Snapshot inmutable de tasa** · `A` · 1 pt · *Requisitos: `REQ-FX-006`*
-Columnas de snapshot en la migración de `payments` (se completa en H4).
-**Hecho cuando:** las 6 columnas existen; `rate_applied` es `DECIMAL(18,8)`.
+**Cerrada** (`0913525`). `REQ-FX-004` y `REQ-FX-005` cerrados, y con ellos la degradación entera. Lo que trajo y no estaba escrito:
 
-**Cierre de H1:** la aritmética monetaria está probada y la tasa entra sola · 6 requisitos cerrados.
+**`CurrentRate`, una resolución de tasa por respuesta.** La tasa se usa dos veces en la misma página —la pinta el sello y la multiplica cada importe—, y con dos consultas basta que la ingesta inserte entre ellas para estampar una tasa distinta de la que multiplicó. Ese fallo no tiene síntoma: no hay excepción ni log, hay un cliente que multiplica a mano y no le da. El binding es `scoped()` y no `singleton()`, que es la misma trampa de `REQ-FX-003` RB-5b vista desde el otro lado: el memo tiene que morir con la petición o el worker de colas sirve la tasa de hace media hora para siempre.
+
+**La cookie de la preferencia sale del cifrado de Laravel**, y es consecuencia de RB-6 —la escribe el navegador, así que llega sin cifrar—, no una excepción de seguridad. Está razonada en [13](13-bimoneda-y-tasa-de-cambio.md) junto a `REQ-FX-004`, con lo que la justifica: **el precedente no es «esta cookie no es sensible», es «el cliente es quien la escribe»**.
+
+**El sello escribe su hora en la zona del negocio**, que viaja en las page props, y compone `DD/MM HH:mm` sin delegar el patrón en el *locale* (`es-VE` da `18/9` o `18/09` según la versión de ICU). Las dos decisiones están en [13](13-bimoneda-y-tasa-de-cambio.md) bajo `REQ-FX-005`.
+
+**Tercer censo suelto del módulo, y van tres:** `CurrencyDisplay` entra como enum de PHP y `SettingKey` valida contra él en vez de contra su copia de las dos cadenas — después de `RateSource` en `T-019` y `RateSource::platform()` en `T-021`.
+
+**`T-023` se reubica a H4, y no se renumera.** Pedía «las columnas de snapshot en la migración de `payments`», y esa migración **no existe hasta `T-054`**: `T-039` trae `layaways` e `installments`, y `payments` cuelga de `receipts`, que es de cobranza. Adelantarla exigiría una tabla sin sus claves ajenas durante dos hitos, capaz de guardar filas huérfanas de un apartado que todavía no se puede crear. Es el criterio de `T-014` con la vitrina y el de `T-006` con los middlewares: **no se construye contra una tabla que no existe**. `REQ-FX-006` se cierra donde corren sus tests de gate, que es H4 — su regla verificable es «cambiar la tasa no mueve `paid_cents` ni `remaining_cents`», y eso necesita pagos.
+
+**Cierre de H1:** la aritmética monetaria está probada y la tasa entra sola · 5 requisitos cerrados.
 
 ---
 
@@ -535,6 +543,7 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 
 **T-054 · Migraciones de cobranza** · `A` · 2 pts
 `receipts`, `payments`, `payment_allocations`; verificar que la unicidad de `receipts` es **por organización**.
+**Y las seis columnas del snapshot de tasa** (`REQ-FX-006`): `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied DECIMAL(18,8)`, `rate_source` y **`rate_published_at`** — no `rate_fetched_at`, ver la nota de `REQ-FX-006` en [13](13-bimoneda-y-tasa-de-cambio.md). Venían de `T-023`, que no podía escribirlas porque esta tabla nace aquí.
 
 **Y rellenar `RecordedReceipts::existFor()` (`T-015`), en esta misma tarea.** `REQ-ORG-007` RB-6 —una cuenta de cobro con comprobantes no se borra, se desactiva— está escrita, probada y en producción desde `T-015` contra un colaborador que hoy responde que ninguna cuenta tiene comprobantes, porque la tabla no existe. **El cuerpo pasa a ser `Receipt::query()->where('payment_account_id', $account->getKey())->exists()`**, que va por el global scope del tenant, y no cambia nada más: ni la acción, ni la ruta, ni el mensaje, ni el test. La clase no es `final` por eso. Si se deja para después, la tarea no compila: la guarda **lanza** en cuanto `receipts` existe y el cuerpo sigue sin sustituirse, que es justo lo contrario del `false` silencioso que `T-024` habría dejado con `PublishedCatalogs`.
 
@@ -570,6 +579,12 @@ El colaborador compartido con la firma de [05 §5](05-design-tecnico.md).
 `RejectReceiptAction`, `RegisterManualPaymentAction`, `ReceiptRejectedNotification`.
 **Hecho cuando:** motivo obligatorio y archivo conservado; **prórroga solo si la ventana venció**; rechazado no se puede aprobar; pago manual sin `receipt_id` con `registered_by`; **produce el mismo resultado que la aprobación para el mismo importe** (test de equivalencia).
 
+**T-023 · Snapshot inmutable de tasa** · `B` · 1 pt · *Requisitos: `REQ-FX-006`*
+La inmutabilidad del snapshot y el cierre del requisito: nada actualiza `rate_applied`, `rate_source` ni `rate_published_at` (RB-3), y cambiar la tasa **no** dispara ningún recálculo (RB-7).
+**Hecho cuando:** las 6 columnas existen con `rate_applied` en `DECIMAL(18,8)`; pago en VES congela la tasa; **subir la tasa después no mueve `paid_cents` ni `remaining_cents`**; pago en USD guarda `rate_applied = 1`; el historial muestra el par (USD, declarado + tasa) sin reconvertir.
+
+**Reubicada desde H1** (ver la nota al cierre de H1). Va **después** de `T-062` y no antes: la afirmación que cierra `REQ-FX-006` es que un pago ya conciliado no cambia cuando la tasa sube, y eso solo se puede probar cuando existen los dos caminos que crean pagos —aprobación y registro manual—. Escribir sus columnas en H1 habría sido una migración sin tabla; escribir sus tests antes de `T-058`, un test sin sujeto.
+
 **T-063 · Reasignación de pagos** · `B` · 2 pts · *Requisitos: `REQ-PAY-009`*
 `ReallocatePaymentAction`, `AllocationEditor`.
 **Hecho cuando:** suma distinta rechazada; cuota ajena rechazada; sobrepago de cuota rechazado; **balance total invariante**; salir de `completed` con el plan en el techo se permite.
@@ -582,7 +597,7 @@ El colaborador compartido con la firma de [05 §5](05-design-tecnico.md).
 `CollectionFilters`, `CollectionPreset`, `CustomerDirectoryQuery`, `CustomerShowController`, `DashboardMetricsQuery`, `DashboardWarningsQuery`, páginas y `MergeCustomersAction` (`REQ-IDN-006`).
 **Hecho cuando:** un test **por cada uno de los 6 presets** en los límites exactos de fecha; **la vista y la exportación devuelven el mismo conjunto** (equivalencia, aunque la exportación llegue en T-070); búsqueda por los 4 criterios con normalización; sin `N+1`; **el perfil no filtra actividad en otras organizaciones**; cada uno de los **7 warnings** se dispara solo en su condición; el balance del perfil coincide con el del portal.
 
-**Cierre de H4:** ciclo completo apartar → pagar → conciliar → cobrar · 15 requisitos cerrados · **el producto ya es usable**.
+**Cierre de H4:** ciclo completo apartar → pagar → conciliar → cobrar · 16 requisitos cerrados · **el producto ya es usable**.
 
 ---
 
@@ -726,7 +741,7 @@ Los 118 requisitos están asignados. Reparto:
 | `IDN` | 8 | T-040, T-043, T-045, T-049, T-050, T-065, T-077 |
 | `ACC` | 7 | T-073…T-078 |
 | `CAT` | 9 | T-025, T-026, T-030…T-035 |
-| `FX` | 6 | T-017…T-023 |
+| `FX` | 6 | T-017…T-022, T-023 (en H4) |
 | `LAY` | 15 | T-041…T-048, T-051…T-053, T-061 (022), T-076 (020) |
 | `PAY` | 9 | T-054…T-064 |
 | `BOF` | 13 | T-012, T-016, T-026…T-029, T-032, T-038, T-065, T-070 |

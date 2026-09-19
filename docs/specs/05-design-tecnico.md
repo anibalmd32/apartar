@@ -705,10 +705,10 @@ El criterio: **tener lo antes posible un esqueleto que camine de punta a punta**
 | Hito | Objetivo demostrable | Módulos | Req. |
 |---|---|---|---|
 | **H0 · Cimientos** | El stack corre, hay dos organizaciones sembradas y el gate de aislamiento existe (aunque cubra poco) | INF (local), ORG, QAX | 16 |
-| **H1 · Aritmética** | `Money` y el cronograma pasan sus tests de propiedad; la tasa se ingesta de DolarApi | FX | 6 |
+| **H1 · Aritmética** | `Money` y el cronograma pasan sus tests de propiedad; la tasa se ingesta de DolarApi | FX | 5 |
 | **H2 · Catálogo** | Un negocio carga productos, arma un catálogo y **el enlace público funciona** | CAT, BOF-inventario | 19 |
 | **H3 · Apartado** | Un cliente **aparta** desde el catálogo y ve su apartado en el portal | IDN, LAY | 23 |
-| **H4 · Cobranza** | El cliente **sube un comprobante**, el negocio lo aprueba y el balance cuadra ← *aquí el producto ya sirve* | PAY, BOF-cobranza | 15 |
+| **H4 · Cobranza** | El cliente **sube un comprobante**, el negocio lo aprueba y el balance cuadra ← *aquí el producto ya sirve* | PAY, BOF-cobranza + `FX-006` | 16 |
 | **H5 · Planes** | Los límites bloquean, el cambio de plan funciona, se cobra por comprobante | SUB | 8 |
 | **H6 · Cuentas y feed** | Google, suscripción a catálogo, feed multi-negocio y reclamo de ficha | ACC | 7 |
 | **H7 · Comunicación** | Chat en tiempo real y notificaciones de cobro | CHT, NOT | 10 |

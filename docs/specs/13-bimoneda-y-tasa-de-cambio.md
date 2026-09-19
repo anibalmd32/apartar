@@ -44,8 +44,16 @@ interface ExchangeRateProvider
 export interface RateView {
   readonly rate: number | null;        // null ⇒ sin tasa disponible
   readonly source: 'bcv' | 'parallel' | 'manual';
+  readonly sourceLabel: string;        // «BCV» · resuelto en RateSource::label()
   readonly publishedAt: string | null; // ISO 8601 · cuándo la publicó la fuente
   readonly isStale: boolean;           // > 24 h sobre publishedAt
+}
+
+/** Lo que toda página con precios recibe en sus props compartidas. */
+export interface CurrencyPageProps {
+  readonly display: CurrencyDisplay;   // resuelta en el servidor: sin parpadeo
+  readonly rate: RateView;
+  readonly timezone: string;           // la del negocio, no la del navegador
 }
 ```
 
@@ -55,7 +63,9 @@ export interface RateView {
 >
 > `fetchedAt` **no viaja al cliente**. Su propio comentario dice que solo sirve para diagnosticar la ingesta, y un campo que se envía en todas las páginas con precios y significa algo sutilmente distinto de lo que parece es justo el que acaba pintado por error. La antigüedad de la ingesta se diagnostica en el servidor y se ve en Salud del sistema (`REQ-PLT-006` RB-4).
 >
-> **Cómo se llama cada fuente lo dice el servidor, y `T-021` lo escribió en la pantalla.** `RateSource` no tiene `label()`, así que `ExchangeRateForm` guarda las tres etiquetas en una constante propia — el segundo censo contra el que avisa el comentario del tipo y lo que `PaymentMethod` ya resolvió con `label()` en el enum. Con un solo consumidor no hace daño; deja de ser inocuo en `T-022`, donde `RateStamp` tiene que escribir «Tasa BCV del DD/MM HH:mm» sobre las mismas tres fuentes: con dos diccionarios, la pantalla de ajustes y el sello del catálogo pueden acabar llamando cosas distintas a la misma tasa, y quien lo note será alguien que ya dudaba de la cifra. **Lo realinea `T-022`.** El **nombre** de la fuente se escribe una vez y sale del enum; lo que el desplegable añada para explicar la opción es presentación de esa opción, no un segundo nombre.
+> **Los tres datos de `CurrencyPageProps` viajan juntos porque se usan juntos, y entran por `HandleInertiaRequests`** (`T-022`). No por cada controlador: los atraviesan catálogo, portal, feed y backoffice, y repetirlos garantiza que a la pantalla siguiente se le olvide a alguien. La preferencia la resuelve el **servidor** —cookie válida, `currency_display_default`, `usd_primary`— porque descubrirla al montar abriría la página en dólares y saltaría a bolívares en cada visita de todo el que hubiera elegido bolívares (RB-4). Y la tasa sale de `CurrentRate`, que la resuelve **una sola vez por respuesta**: si el sello sale de una consulta y los importes de otra, basta que la ingesta inserte entre las dos para estampar una tasa distinta de la que multiplicó, y ese fallo no tiene síntoma — el número es creíble. Su binding es `scoped()` por lo mismo que el del proveedor no es singleton (`REQ-FX-003` RB-5b).
+>
+> **Cómo se llama cada fuente lo dice el servidor, y `T-021` lo escribió en la pantalla.** `RateSource` no tiene `label()`, así que `ExchangeRateForm` guarda las tres etiquetas en una constante propia — el segundo censo contra el que avisa el comentario del tipo y lo que `PaymentMethod` ya resolvió con `label()` en el enum. Con un solo consumidor no hace daño; deja de ser inocuo en `T-022`, donde `RateStamp` tiene que escribir «Tasa BCV del DD/MM HH:mm» sobre las mismas tres fuentes: con dos diccionarios, la pantalla de ajustes y el sello del catálogo pueden acabar llamando cosas distintas a la misma tasa, y quien lo note será alguien que ya dudaba de la cifra. **Lo realinea `T-022`.** El **nombre** de la fuente se escribe una vez y sale del enum; lo que el desplegable añada para explicar la opción es presentación de esa opción, no un segundo nombre. **Hecho** (`0913525`): `RateSource::label()` da «BCV», «Paralelo» y «Manual», viajan resueltos en `RateView.sourceLabel`, y la pantalla de ajustes conserva solo su frase de ayuda —«tasa oficial», «la que yo fije»—, que no es un nombre sino lo que se le dice a quien está decidiendo.
 
 ---
 
@@ -274,6 +284,8 @@ final readonly class Money
 - Anti-`SHALLOW`: `useCurrencyDisplay` (lectura de cookie + `localStorage` + default + persistencia + emisión de telemetría) supera 4 líneas junto a su tipo; el trait `ProjectsMoney::money()` compone `MoneyView` completo.
 - Tests (Vitest): renderiza ambos modos con el formato exacto; sin tasa muestra solo USD y deshabilita el toggle; `localStorage` inaccesible no rompe; cookie corrupta cae al default; emite `currency_toggled`.
 
+> **La cookie de la preferencia queda fuera del cifrado de cookies de Laravel** (`T-022`), y es consecuencia de RB-6, no un descuido. Si el cambio de toggle es puramente de cliente, la escribe el navegador y llega sin cifrar: con la exclusión el servidor la lee y el primer render ya es el correcto; sin ella la descarta en cada petición y el render vuelve siempre al default — el parpadeo que RB-4 existe para evitar, pero permanente y silencioso. Lo que guarda es cuál de dos monedas va primero: no identifica a nadie, no autoriza nada, y un valor que no reconocemos cae al default sin error (SP-3). Ninguna otra cookie sale del cifrado por este precedente; lo que lo justifica es que el cliente sea quien la escribe.
+>
 > **RB-7 y el punto de gate que lo acompaña se cierran en `T-084`, no en `T-022`.** El bus de telemetría —`TelemetryEventName` con sus 15 eventos, el buffer, el endpoint de ingesta y el test por evento— es `REQ-TLM-001…004`, en H8. `T-022` escribe `useCurrencyDisplay` sin emisor y **no** deja un colaborador provisional que se llame `track()` y no haga nada: un emisor que traga eventos en silencio es indistinguible de uno conectado, y ningún test se pondría rojo el día que el bus llegue y nadie lo enchufe. El enchufe se nombra donde sí se ve: `currency_toggled` sale de `useCurrencyDisplay`, y `T-084` lo conecta con el resto de los quince.
 
 ---
@@ -307,6 +319,8 @@ final readonly class Money
 - SP-3 Tasa que vuelve tras horas caída → los importes vigentes se reproyectan; los ya conciliados no cambian (`REQ-FX-006`).
 - SP-4 Provider que responde muy lento en el request del endpoint interno → el endpoint **nunca** consulta el provider; solo lee caché/BD, así que no hay riesgo de latencia.
 
+> **La hora del sello de RB-2 se escribe en la zona del negocio** (`organizations.timezone`), y viaja en las page props junto a la tasa (`T-022`). De las tres candidatas, la del navegador haría que el mismo sello dijera cosas distintas a dos personas mirando el mismo precio —quien lo abra desde Madrid leería «15:00» sobre lo que en Venezuela todo el mundo llama las nueve— y el sello existe justamente para poder cotejar la cifra con lo que publicó el BCV; la de la aplicación funciona hoy solo porque `APP_TIMEZONE` coincide, y deja de funcionar el día que cambie el despliegue, con un desfase que no parece una fecha mal puesta. **Y el patrón `DD/MM HH:mm` se compone explícitamente, no se delega en el *locale***: `es-VE` escribe `18/9` o `18/09` según la versión de ICU del entorno, que es el mismo motivo por el que `MoneyFormatter` no usa `NumberFormatter` (`REQ-FX-001` RB-7).
+
 **Fuera de alcance inmediato**
 - Página de estado público del servicio.
 - Notificación automática al administrador por caída de la tasa.
@@ -325,13 +339,15 @@ final readonly class Money
 > Como administrador, quiero que un pago conciliado conserve para siempre la tasa con la que se procesó, para que el balance del cliente no cambie cuando la tasa suba.
 
 **Contratos de datos**
-- Campos en `payments`: `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied DECIMAL(18,8)`, `rate_source`, `rate_fetched_at`, `settled_at`.
+- Campos en `payments`: `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied DECIMAL(18,8)`, `rate_source`, `rate_published_at`, `settled_at`.
 - `RateSnapshot` como parámetro obligatorio de `ApproveReceiptAction` y `RegisterManualPaymentAction`.
+
+> **La columna es `rate_published_at`, no `rate_fetched_at`.** Es la misma corrección que `T-019` trajo a `RateView` y que ya estaba aplicada en [05 §4](05-design-tecnico.md) mientras este módulo seguía diciendo lo otro. `02` queda alineado aquí; en `01` se deja como está, porque es el registro de lo que se decidió el 10 de septiembre y lo que allí se decidió —que el pago congela su tasa— sigue en pie: lo que cambia es qué fecha de las dos se congela. Congelar la hora de **nuestra ingesta** dentro de un pago sería guardar un dato de diagnóstico nuestro en el sitio donde el negocio va a leer «con qué tasa se concilió este pago»: el historial de RB-5, la exportación de RB-6 y la confirmación de SP-5 —tasa de más de 30 días— hablan todos de **cuándo se publicó** la tasa, no de a qué hora corrió el job. Un fin de semana las dos fechas se separan tres días, y la que explica el importe es la de publicación. **Lo aplica la tarea que cree la tabla**, que es `T-054`.
 
 **Reglas de negocio y precondiciones**
 - RB-1 **La deuda es siempre en USD** (`ASU-FX-04`). El cronograma, el total y el saldo se expresan exclusivamente en centavos de USD.
 - RB-2 Un pago declarado en VES se convierte a USD con la tasa **vigente el día de la conciliación**, y el resultado se congela en `payments`.
-- RB-3 `rate_applied`, `rate_source` y `rate_fetched_at` son **inmutables**: no existe operación que los actualice. Corregir un pago exige anularlo y crear otro (fuera de alcance en v1: se resuelve con `REQ-PAY-009` reasignando, o cancelando el apartado).
+- RB-3 `rate_applied`, `rate_source` y `rate_published_at` son **inmutables**: no existe operación que los actualice. Corregir un pago exige anularlo y crear otro (fuera de alcance en v1: se resuelve con `REQ-PAY-009` reasignando, o cancelando el apartado).
 - RB-4 Un pago declarado en USD guarda `rate_applied = 1`, `rate_source` = la vigente y `declared_amount` en USD; así el historial es homogéneo.
 - RB-5 El historial del cliente y del backoffice muestra cada pago con el par (monto USD, monto declarado + tasa aplicada), nunca reconvertido con la tasa de hoy.
 - RB-6 Las exportaciones a Excel incluyen `rate_applied` y `rate_source` por fila de pago (`REQ-BOF-043`).
