@@ -38,8 +38,8 @@ export type RateSource = 'bcv' | 'parallel' | 'manual';
 export interface RateView {
     readonly rate: number | null;
     readonly source: RateSource;
-    /** ISO 8601. */
-    readonly fetchedAt: string | null;
-    /** Más de 24 h desde que la **publicó** la fuente (`REQ-FX-002` RB-3b). */
+    /** ISO 8601 · cuándo la **publicó** la fuente, no cuándo la leímos. */
+    readonly publishedAt: string | null;
+    /** Más de 24 h medidas sobre `publishedAt` (`REQ-FX-002` RB-3b). */
     readonly isStale: boolean;
 }

@@ -26,7 +26,7 @@ describe('contrato de la tasa en las page props', () => {
         const degraded: RateView = {
             rate: null,
             source: 'bcv',
-            fetchedAt: null,
+            publishedAt: null,
             isStale: false,
         };
 
@@ -34,15 +34,21 @@ describe('contrato de la tasa en las page props', () => {
         expect(degraded.rate).not.toBe(0);
     });
 
+    /**
+     * La fecha que viaja es la de **publicación**, no la de la ingesta: el
+     * sello de `REQ-FX-005` RB-2 dice cuándo publicó el BCV, que es la
+     * antigüedad que le importa al negocio. Con `fetchedAt`, un fin de semana
+     * sin publicación estamparía «hoy 09:00» sobre una tasa del viernes.
+     */
     it('lleva la fecha en ISO 8601 y el sello de obsolescencia', () => {
         const stale: RateView = {
             rate: 42.5,
             source: 'parallel',
-            fetchedAt: '2026-09-18T10:30:00.000Z',
+            publishedAt: '2026-09-18T10:30:00.000Z',
             isStale: true,
         };
 
-        expect(new Date(stale.fetchedAt ?? '').toISOString()).toBe('2026-09-18T10:30:00.000Z');
+        expect(new Date(stale.publishedAt ?? '').toISOString()).toBe('2026-09-18T10:30:00.000Z');
         expect(stale.isStale).toBe(true);
     });
 });
