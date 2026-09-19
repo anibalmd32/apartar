@@ -149,9 +149,9 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 | # | Tabla | Columnas clave | Índices |
 |---|---|---|---|
-| 18 | `categories` | `organization_id`, `name`, `slug`, `position` | `UNIQUE(organization_id, slug)` |
-| 19 | `tags` | `organization_id`, `name`, `slug` | `UNIQUE(organization_id, slug)` |
-| 20 | `products` | `organization_id`, `category_id`, `sku`, `name`, `slug`, `description`, `price_cents`, `compare_at_price_cents?`, `down_payment_cents`, `installments_count`, `frequency_days`, `stock`, `status`, `published_at?`, `deleted_at?` | `UNIQUE(organization_id, sku)`, `UNIQUE(organization_id, slug)`, `INDEX(organization_id, status)`, `FULLTEXT(name, description, sku)` |
+| 18 | `categories` | `organization_id`, `name`, `slug`, `position` | `UNIQUE(organization_id, slug)`, `UNIQUE(organization_id, name)`, `INDEX(organization_id, position)` |
+| 19 | `tags` | `organization_id`, `name`, `slug` | `UNIQUE(organization_id, slug)`, `UNIQUE(organization_id, name)` |
+| 20 | `products` | `organization_id`, `category_id`, `sku`, `name`, `slug`, `description`, `price_cents`, `compare_at_price_cents?`, `down_payment_cents`, `installments_count`, `frequency_days`, `stock`, `status`, `published_at?`, `deleted_at?` | `UNIQUE(organization_id, sku)`, `UNIQUE(organization_id, slug)`, `INDEX(organization_id, status)`, `INDEX(organization_id, category_id)`, `FULLTEXT(name, description, sku)` |
 | 21 | `product_tag` | `product_id`, `tag_id` | `PRIMARY(product_id, tag_id)` |
 | 22 | `product_specifications` | `organization_id`, `product_id`, `group?`, `label`, `value`, `position` | `INDEX(product_id, position)` |
 | 23 | `media` | de `spatie/laravel-medialibrary` | — |
@@ -160,6 +160,8 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 > `catalog_product.created_at` es **funcional, no metadato**: ordena el feed y define qué es novedad (`REQ-CAT-023` RB-3). No se toca al reordenar.
 > `products.category_id` con FK `restrict` (`REQ-BOF-023` RB-4).
+> **`UNIQUE(organization_id, name)` en `categories` y `tags` lo exige `REQ-BOF-023` RB-3, y tiene que estar en la base y no solo en la acción** (añadido en `T-024`): RB-8 reutiliza la categoría existente cuando se crea al vuelo desde el formulario de producto, y sin el índice dos peticiones simultáneas con el mismo nombre crean dos categorías y dejan la taxonomía duplicada. La colación por defecto es *case-insensitive*, que es justo lo que «se reutiliza» necesita.
+> **`product_specifications.group` conserva su nombre aunque sea palabra reservada en MySQL**: Laravel entrecomilla los identificadores, y renombrarla a `group_name` rompería el contrato del módulo [11](11-catalogo-y-productos.md).
 
 ### Bloque 6 — Puente cuenta ↔ catálogo (plataforma)
 
@@ -211,6 +213,8 @@ Van en la lista blanca de `GlobalUniqueExceptions` con su motivo, y `tenancy:aud
 | `layaways.code` | Es la prueba de acceso al portal; de él se resuelve la organización sin tenant previo (`REQ-IDN-008` RB-3) |
 
 `catalog_subscriptions` y `catalog_digest_dispatches` se añaden a la lista como **tablas** exentas de `organization_id`, por el motivo de §4 bloque 6.
+
+**Y desde `T-024` hay una segunda clase de exención, que conviene no confundir con la primera.** Las dos de arriba son **puentes de plataforma**: relacionan una `Account` global con un catálogo y cruzan la frontera del tenant a propósito. `product_tag` y `catalog_product` son **pivotes entre dos tablas ya aisladas**: a una fila solo se llega desde padres que ya llevan el *global scope*, así que la columna sería un segundo censo de a quién pertenece la fila —derivable de cualquiera de sus extremos y capaz de discrepar de ellos—. Lo que impide juntar el producto de un negocio con el catálogo de otro no es una columna: es la validación de `SyncCatalogProductsAction` (`REQ-CAT-023` RB-1), que es donde la spec la pone. **No hay una tercera clase**: una tabla con modelo propio y consultas propias lleva su `organization_id`, sin excepción.
 
 ---
 

@@ -412,9 +412,17 @@ Las 8 tablas de catálogo, con `FULLTEXT` y el `UNIQUE(slug)` global de `catalog
 
 **Y hay que decidir qué pasa con los dos pivotes.** `product_tag` y `catalog_product` no llevan `organization_id` en [05 §4](05-design-tecnico.md), así que `tenancy:audit` los va a reclamar: o se declaran en `GlobalUniqueExceptions::tables()` con su motivo escrito, o llevan la columna. No es trámite —`catalog_product` se consulta de forma directa y multi-organización para ordenar el feed (`REQ-CAT-023` RB-3)—, y la respuesta hay que razonarla, no silenciarla.
 
+**Cerrada** (`8a5a5b8`). Las ocho tablas, el relevo cerrado y tres cosas que dejar dichas:
+
+**Los dos pivotes quedaron declarados, no dotados de columna**, y la lista blanca pasó de dos tablas a cuatro con la distinción escrita: puentes de plataforma frente a pivotes entre tablas ya aisladas. El razonamiento está en [05 §4.1](05-design-tecnico.md) y en la propia clase; lo que decidió `catalog_product` —el caso con argumento en contra, porque el feed lo lee cruzando organizaciones— es que ahí la columna no filtraría nada y quedaría como un dato derivable de `catalog_id` capaz de discrepar de él.
+
+**Tres índices que [05 §4] no listaba**, todos añadidos con su motivo y ya recogidos allí: `UNIQUE(organization_id, name)` en `categories` y `tags` —que es una regla de `REQ-BOF-023` RB-3 que solo la base puede garantizar bajo concurrencia, y la nota de §4 explica por qué—, `INDEX(organization_id, position)` para el orden manual y `INDEX(organization_id, category_id)` para el listado filtrado por categoría.
+
+**Un catálogo expirado sigue contando como publicado** para `PublishedCatalogs::exist()`: su `published_at` no es nulo y su enlace circuló igual, así que renombrar el slug rompería los enlaces compartidos lo mismo. Lo que devuelve un catálogo a borrador es despublicarlo (`REQ-CAT-022` RB-7), y eso sí vacía la columna.
+
 **T-025 · Modelos y enums de catálogo** · `A` · 2 pts · *Requisitos: `REQ-CAT-007`*
 `Category`, `Tag`, `Product`, `ProductSpecification`, `Catalog` con el trait, `ProductStatus`, `CatalogVisibility` con sus métodos derivados.
-**`Catalog` llega medio escrito de `T-024`** (ver su nota): esta tarea lo completa, no lo crea.
+**`Catalog` llega medio escrito de `T-024`** (ver su nota): esta tarea lo completa, no lo crea. Lo que tiene hoy es tabla, `BelongsToOrganization`, `$fillable` y los casts de fechas que el relevo necesitaba; le faltan `CatalogVisibility`, los estados derivados y sus relaciones.
 
 **T-026 · Taxonomía** · `B` · 2 pts · *Requisitos: `REQ-BOF-023`*
 CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUseException`.
