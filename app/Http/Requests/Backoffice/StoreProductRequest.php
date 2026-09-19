@@ -6,6 +6,7 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Product\ProductData;
 use App\Domain\Money\Money;
+use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -37,6 +38,8 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class StoreProductRequest extends FormRequest
 {
+    use ValidatesSpecifications;
+
     /**
      * @return array<string, list<mixed>>
      */
@@ -76,7 +79,10 @@ class StoreProductRequest extends FormRequest
             'tag_ids.*' => ['integer'],
             'tag_names' => ['array'],
             'tag_names.*' => ['string', 'max:80'],
-        ];
+            // La ficha técnica viaja con el producto y no en un endpoint
+            // aparte (`REQ-BOF-021` RB-8): sus cuatro reglas están en el
+            // *concern*, con el porqué de cada tope.
+        ] + $this->specificationRules();
     }
 
     /**
@@ -94,7 +100,7 @@ class StoreProductRequest extends FormRequest
             'frequency_days' => 'días entre cuotas',
             'stock' => 'existencias',
             'slug' => 'enlace',
-        ];
+        ] + $this->specificationAttributes();
     }
 
     /**
@@ -134,6 +140,7 @@ class StoreProductRequest extends FormRequest
             categoryName: $this->nullableString('category_name'),
             tagIds: $this->integerList('tag_ids'),
             tagNames: $this->stringList('tag_names'),
+            specifications: $this->specifications(),
         );
     }
 

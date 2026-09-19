@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { ProductIdentityFields } from '@/features/products/components/ProductIdentityFields';
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
+import { SpecificationBuilder } from '@/features/products/components/SpecificationBuilder';
 import { useProductForm } from '@/features/products/hooks/useProductForm';
+import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type FinancingPlanView, type ProductDefaults, type ProductFormValues, type TaxonomyOption } from '@/types/product';
 import { Link } from '@inertiajs/react';
@@ -33,17 +35,24 @@ interface ProductFormPageProps {
     categories: TaxonomyOption[];
     tags: TaxonomyOption[];
     plan: FinancingPlanView | null;
+    specificationGroups: string[];
     [key: string]: unknown;
 }
 
-export default function ProductForm({ product, defaults, categories, tags, plan }: ProductFormPageProps) {
+export default function ProductForm({ product, defaults, categories, tags, plan, specificationGroups }: ProductFormPageProps) {
     const { data, setData, errors, processing, submit } = useProductForm(defaults, product);
+
+    const sheet = useSpecificationRows(product);
 
     const fields = { data, setData, errors };
 
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
-        submit();
+
+        // La ficha va con el producto, en la misma operación (`REQ-BOF-021`
+        // RB-8): se adjunta al enviar porque su orden lo gobierna
+        // `useSpecificationRows` y no el estado del formulario.
+        submit(sheet.payload());
     };
 
     return (
@@ -63,6 +72,8 @@ export default function ProductForm({ product, defaults, categories, tags, plan 
                 <ProductPricingFields {...fields} plan={plan} />
 
                 <ProductTaxonomyFields {...fields} categories={categories} tags={tags} />
+
+                <SpecificationBuilder rows={sheet} groups={specificationGroups} errors={errors} />
 
                 <div className="flex flex-wrap gap-2">
                     <Button type="submit" loading={processing}>

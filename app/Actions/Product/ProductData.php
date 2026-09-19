@@ -40,6 +40,15 @@ use App\Domain\Money\Money;
  * eso es lo que hace verdadero que renombrar no arrastre el enlace, igual que
  * en la categoría. Pedir el cambio es explícito, y se cierra en cuanto el
  * producto está publicado (SP-5).
+ *
+ * ## Y `specifications` nulo significa «no la toques»
+ *
+ * Que no es lo mismo que la lista vacía, que **borra la ficha entera**
+ * (`REQ-BOF-021` SP-3). La distinción existe porque el guardado de la ficha es
+ * un reemplazo completo (RB-5): con un solo valor para las dos cosas, un
+ * llamante que no gestione la ficha —un seeder, una importación— la borraría
+ * sin pedirlo. El formulario del producto siempre manda la lista, aunque sea
+ * con cero filas.
  */
 final readonly class ProductData
 {
@@ -58,6 +67,7 @@ final readonly class ProductData
      * @param  string|null  $categoryName  categoría escrita al vuelo; se reutiliza si ya existe
      * @param  list<int>  $tagIds  etiquetas elegidas de la lista
      * @param  list<string>  $tagNames  etiquetas escritas al vuelo
+     * @param  list<SpecificationInput>|null  $specifications  la ficha técnica completa; `null` no la toca
      */
     public function __construct(
         public string $name,
@@ -74,6 +84,7 @@ final readonly class ProductData
         public ?string $categoryName = null,
         public array $tagIds = [],
         public array $tagNames = [],
+        public ?array $specifications = null,
     ) {}
 
     /**

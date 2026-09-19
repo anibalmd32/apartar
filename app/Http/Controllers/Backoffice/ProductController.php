@@ -18,8 +18,10 @@ use App\Http\Requests\Backoffice\UpdateProductRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductSpecification;
 use App\Models\Tag;
 use App\Models\User;
+use App\Queries\SpecificationGroupsQuery;
 use App\Support\Settings;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -77,6 +79,7 @@ final class ProductController extends Controller
     public function __construct(
         private readonly TenantContext $context,
         private readonly Settings $settings,
+        private readonly SpecificationGroupsQuery $groups,
     ) {}
 
     /**
@@ -173,6 +176,10 @@ final class ProductController extends Controller
             'categories' => $this->categories(),
             'tags' => $this->tags(),
             'plan' => $this->plan($request, $product),
+            // RB-6 de `REQ-BOF-021` · las secciones que el negocio ya usa, para
+            // autocompletar. La consulta va por el global scope: nunca sugiere
+            // las del negocio de al lado (SP-8).
+            'specificationGroups' => $this->groups->all(),
         ];
     }
 
@@ -292,7 +299,7 @@ final class ProductController extends Controller
     {
         $product->loadMissing('tags');
 
-        return [
+        return $this->specificationRows($product) + [
             'id' => (int) $product->getKey(),
             'name' => $product->name,
             'sku' => $product->sku,
@@ -318,6 +325,40 @@ final class ProductController extends Controller
             'slugIsLocked' => $product->status === ProductStatus::Published,
             'updatedAt' => $product->updated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * La ficha técnica del producto, en su orden de guardado
+     * (`REQ-BOF-021` RB-4).
+     *
+     * Por `position` y a igualdad por `id`, que es el mismo desempate que usa
+     * la agrupación de la ficha pública: sin el segundo criterio, dos filas que
+     * compartieran posición saldrían en el orden que quisiera MySQL y el
+     * formulario mostraría una lista distinta en cada recarga.
+     *
+     * **Sin `group` traducido a «General»**: aquí sigue siendo `null`, que es
+     * lo que el formulario reenvía. Convertirlo a la cadena haría que guardar
+     * sin tocar nada creara una sección llamada así.
+     *
+     * @return array{specifications: list<array<string, mixed>>}
+     */
+    private function specificationRows(Product $product): array
+    {
+        $rows = ProductSpecification::query()
+            ->where('product_id', $product->getKey())
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ProductSpecification $specification): array => [
+                'id' => (int) $specification->getKey(),
+                'group' => $specification->group,
+                'label' => $specification->label,
+                'value' => $specification->value,
+            ])
+            ->values()
+            ->all();
+
+        return ['specifications' => $rows];
     }
 
     /**

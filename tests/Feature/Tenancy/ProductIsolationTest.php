@@ -7,6 +7,7 @@ namespace Tests\Feature\Tenancy;
 use App\Models\Category;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Models\ProductSpecification;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -173,6 +174,55 @@ final class ProductIsolationTest extends TestCase
             ->assertSessionHasErrors();
 
         $this->assertSame(0, $this->countIn($this->organization));
+    }
+
+    /**
+     * **`REQ-BOF-021` SP-8 · el autocompletado de secciones no cruza
+     * organizaciones.**
+     *
+     * Sugerir «Del vecino» porque la ferretería de al lado lo escribió no daría
+     * un error: daría una pista de que ese negocio existe y de cómo describe lo
+     * que vende. `SpecificationGroupsQueryTest` lo prueba sobre la consulta;
+     * esto lo prueba **donde la persona lo vería**, que es la prop del
+     * formulario.
+     */
+    public function test_the_group_autocomplete_never_offers_the_neighbours_sections(): void
+    {
+        $this->withinOrganization($this->neighbour, function (): void {
+            $product = Product::factory()->create();
+
+            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Del vecino']);
+        });
+
+        $this->withinOrganization($this->organization, function (): void {
+            $product = Product::factory()->create();
+
+            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Mía']);
+        });
+
+        $this->actingAs($this->owner())
+            ->get('/backoffice/productos/crear')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('specificationGroups', ['Mía']));
+
+        $this->assertTrue($this->hasNeighbourOrganization());
+    }
+
+    /**
+     * Y la ficha del producto de al lado tampoco se lee desde aquí: la tabla
+     * es del tenant (`REQ-CAT-004` RB-6) y su global scope la filtra.
+     */
+    public function test_the_neighbours_specification_rows_are_unreachable(): void
+    {
+        $foreign = $this->withinOrganization($this->neighbour, function (): ProductSpecification {
+            $product = Product::factory()->create();
+
+            return ProductSpecification::factory()->forProduct($product)->create(['label' => 'Del vecino']);
+        });
+
+        $this->actingAsOrganization($this->organization);
+
+        $this->assertNull(ProductSpecification::query()->find($foreign->getKey()));
+        $this->assertSame(0, ProductSpecification::query()->count());
     }
 
     private function countIn(Organization $organization): int

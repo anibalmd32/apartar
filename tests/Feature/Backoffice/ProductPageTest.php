@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use App\Models\Product;
+use App\Models\ProductSpecification;
 use App\Models\User;
 use App\Support\Settings;
 use Closure;
@@ -251,6 +252,129 @@ final class ProductPageTest extends TestCase
     }
 
     /**
+     * `REQ-BOF-021` RB-8 · la ficha técnica se guarda **con el producto**, en
+     * la misma petición, y vuelve al formulario en su orden.
+     */
+    public function test_the_specification_sheet_is_saved_with_the_product(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => [
+                    ['group' => 'Motor', 'label' => 'Potencia', 'value' => '750 W'],
+                    ['group' => '', 'label' => 'Material', 'value' => 'Acero'],
+                ],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $product = $this->inTenant(fn (): Product => Product::query()->sole());
+
+        $this->actingAs($owner)
+            ->get("/backoffice/productos/{$product->getKey()}/editar")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('product.specifications', 2)
+                ->where('product.specifications.0.label', 'Potencia')
+                ->where('product.specifications.0.group', 'Motor')
+                ->where('product.specifications.1.label', 'Material')
+                // La sección vacía llega como `null` y no como cadena: de otro
+                // modo, guardar sin tocar nada crearía una sección sin nombre.
+                ->where('product.specifications.1.group', null));
+    }
+
+    /**
+     * SP-1 · la fila sin característica se rechaza **señalando su índice**, que
+     * es lo que hace utilizable un formulario de cincuenta filas.
+     */
+    public function test_a_row_without_a_label_is_rejected_with_its_index(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => [
+                    ['group' => '', 'label' => 'Material', 'value' => 'Acero'],
+                    ['group' => '', 'label' => '', 'value' => 'Sin característica'],
+                ],
+            ]))
+            ->assertSessionHasErrors('specifications.1.label');
+
+        $this->assertSame(0, $this->inTenant(fn (): int => Product::query()->count()));
+    }
+
+    /**
+     * RB-2 · los dos topes de columna, cada uno en su campo.
+     */
+    public function test_a_row_over_the_column_limits_is_rejected(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => [['group' => '', 'label' => str_repeat('a', 61), 'value' => 'Acero']],
+            ]))
+            ->assertSessionHasErrors('specifications.0.label');
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => [['group' => '', 'label' => 'Material', 'value' => str_repeat('a', 501)]],
+            ]))
+            ->assertSessionHasErrors('specifications.0.value');
+    }
+
+    /**
+     * RB-3 y SP-2 · 51 filas se rechazan. El tope es **técnico**: no pasa por
+     * el plan y no se desbloquea pagando.
+     */
+    public function test_more_than_fifty_rows_are_rejected(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => $this->specificationRows(51),
+            ]))
+            ->assertSessionHasErrors('specifications');
+
+        $this->assertSame(0, $this->inTenant(fn (): int => Product::query()->count()));
+    }
+
+    /**
+     * SP-3 · guardar con cero filas **borra la ficha entera** y no falla.
+     */
+    public function test_saving_with_zero_rows_clears_the_sheet(): void
+    {
+        $product = $this->inTenant(function (): Product {
+            $product = Product::factory()->create(['sku' => 'BOSCH-01', 'slug' => 'taladro-bosch']);
+
+            ProductSpecification::factory()->forProduct($product)->create(['label' => 'Material', 'value' => 'Acero']);
+
+            return $product;
+        });
+
+        $this->actingAs($this->owner())
+            ->put("/backoffice/productos/{$product->getKey()}", $this->payload(['specifications' => []]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, $this->inTenant(fn (): int => ProductSpecification::query()->count()));
+    }
+
+    /**
+     * RB-6 · el formulario trae las secciones que el negocio ya usa, para
+     * autocompletar.
+     */
+    public function test_the_form_carries_the_group_suggestions(): void
+    {
+        $this->inTenant(function (): void {
+            $product = Product::factory()->create();
+
+            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Motor']);
+            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Acabado']);
+        });
+
+        $this->actingAs($this->owner())
+            ->get('/backoffice/productos/crear')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('specificationGroups', ['Acabado', 'Motor']));
+    }
+
+    /**
      * SP-11 · el producto de otra organización da `404`, no `403`: no se
      * confirma que exista.
      */
@@ -335,6 +459,22 @@ final class ProductPageTest extends TestCase
             'frequency_days' => 15,
             'stock' => 10,
         ], $overrides);
+    }
+
+    /**
+     * Filas de ficha técnica tal como las manda el formulario.
+     *
+     * @return list<array<string, string>>
+     */
+    private function specificationRows(int $count): array
+    {
+        $rows = [];
+
+        for ($number = 1; $number <= $count; $number++) {
+            $rows[] = ['group' => '', 'label' => 'Característica '.$number, 'value' => 'Valor '.$number];
+        }
+
+        return $rows;
     }
 
     /**

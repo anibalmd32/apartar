@@ -76,6 +76,7 @@ final class UpsertProductAction
     public function __construct(
         private readonly TenantContext $context,
         private readonly TaxonomyByName $taxonomy,
+        private readonly SyncSpecificationsAction $specifications,
     ) {}
 
     /**
@@ -85,7 +86,7 @@ final class UpsertProductAction
      *
      * @throws AuthorizationException si el actor no mantiene el inventario
      * @throws CrossTenantRelationException si la categoría o alguna etiqueta son de otra organización
-     * @throws ValidationException si el SKU ya existe o el enlace ya no se puede cambiar
+     * @throws ValidationException si el SKU ya existe, el enlace ya no se puede cambiar o la ficha pasa de 50 filas
      */
     public function handle(ProductData $data, User $actor, ?Product $product = null): Product
     {
@@ -125,6 +126,18 @@ final class UpsertProductAction
             // `sync` y no `attach`: la lista que llega es la lista completa, y
             // guardar un producto quitándole una etiqueta tiene que quitarla.
             $product->tags()->sync($tags);
+
+            if ($data->specifications !== null) {
+                // RB-8 de `REQ-BOF-021` · la ficha técnica se guarda **con el
+                // producto**, dentro de esta misma transacción y sin endpoint
+                // propio. Es lo que hace cumplible su SP-4: si algo falla a
+                // mitad del reemplazo, el producto conserva sus filas
+                // anteriores íntegras porque no se confirmó nada.
+                //
+                // `null` es «no la toques» y la lista vacía **borra la ficha
+                // entera** (SP-3); la diferencia está escrita en `ProductData`.
+                $this->specifications->handle($product, $data->specifications);
+            }
 
             $after = $this->auditedTermsOf($product);
 

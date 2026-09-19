@@ -1,3 +1,4 @@
+import { type SpecificationPayloadRow } from '@/features/products/hooks/useSpecificationRows';
 import { type ProductDefaults, type ProductFormValues } from '@/types/product';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
@@ -122,7 +123,19 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, terms);
 
-    const submit = () => {
+    /**
+     * Envía el producto **con su ficha técnica**, en la misma operación
+     * (`REQ-BOF-021` RB-8).
+     *
+     * Las filas llegan por parámetro y se adjuntan con `transform()` en vez de
+     * vivir en `data`: su orden y sus claves locales los gobierna
+     * `useSpecificationRows`, y duplicarlas aquí sería una segunda lista que
+     * se queda vieja en cuanto alguien reordena. Se envían **siempre**, aunque
+     * sean cero: la lista vacía es lo que borra la ficha entera (SP-3).
+     */
+    const submit = (specifications: SpecificationPayloadRow[]) => {
+        form.transform((current) => ({ ...current, specifications }));
+
         if (product) {
             form.put(`/backoffice/productos/${product.id}`, { preserveScroll: true });
 

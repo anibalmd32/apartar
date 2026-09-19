@@ -65,6 +65,43 @@ export interface FinancingPlanView {
 }
 
 /**
+ * Una fila de ficha técnica tal como la edita el formulario
+ * (`REQ-BOF-021` RB-1).
+ *
+ * `key` es **local y obligatoria**, y es la pieza que hace que SP-6 funcione:
+ * una fila recién añadida todavía no tiene `id` de base, así que si el
+ * arrastre y el `key` de React dependieran del `id`, todas las filas nuevas
+ * compartirían `undefined` y reordenar las mezclaría. La clave local existe
+ * desde que la fila aparece en pantalla y no cambia al moverla.
+ *
+ * `id` viaja solo como información: **el servidor no lo usa**. El guardado es
+ * un reemplazo completo (RB-5), así que las filas se borran y se reinsertan y
+ * los identificadores de después no son los de antes.
+ */
+export interface SpecificationFormRow {
+    /** Clave estable en el cliente; no es el `id` de la base (SP-6). */
+    readonly key: string;
+    readonly id: number | null;
+    /** Sección de la ficha; vacío es «General». */
+    readonly group: string;
+    readonly label: string;
+    readonly value: string;
+}
+
+/**
+ * Una sección de la ficha, tal como se lee (`REQ-CAT-004` RB-2).
+ *
+ * Espejo de lo que compone `App\Domain\Catalog\SpecificationGroups`. `group`
+ * es `null` para las filas sin sección, y **el rótulo «General» lo pone la
+ * pantalla**: traducirlo en el servidor haría indistinguible una ficha sin
+ * secciones de una con una sección llamada así.
+ */
+export interface SpecificationGroupView {
+    readonly group: string | null;
+    readonly items: readonly { readonly label: string; readonly value: string }[];
+}
+
+/**
  * Un producto tal como lo carga su formulario.
  *
  * Los importes viajan **en dólares con dos decimales** y como cadena, que es
@@ -89,6 +126,8 @@ export interface ProductFormValues {
     readonly status: ProductStatus;
     readonly categoryId: number | null;
     readonly tagIds: readonly number[];
+    /** Las filas guardadas, por `position` y a igualdad por `id` (RB-4). */
+    readonly specifications: readonly { readonly id: number; readonly group: string | null; readonly label: string; readonly value: string }[];
     /** Publicado: su URL ya circuló y el enlace deja de ser editable (SP-5). */
     readonly slugIsLocked: boolean;
     /** SP-7 · gana el último, y la marca dice cuándo fue. */
