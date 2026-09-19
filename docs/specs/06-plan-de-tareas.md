@@ -408,8 +408,13 @@ Provider según [05 §6](05-design-tecnico.md), `ManualRateProvider`, `ExchangeR
 **T-024 · Migraciones bloque 5** · `A` · 2 pts
 Las 8 tablas de catálogo, con `FULLTEXT` y el `UNIQUE(slug)` global de `catalogs`.
 
+**Esta tarea arma la guarda de `PublishedCatalogs::exist()` y tiene que cerrarla en el mismo commit.** `T-016` la dejó lanzando en cuanto `catalogs` exista con el cuerpo sin sustituir, y eso es exactamente lo que pasa aquí: desde la migración, cualquier cambio de slug revienta y la suite se pone roja. Es lo que se buscaba —el `false` silencioso habría desactivado `REQ-ORG-006` SP-5 durante ocho tareas—, pero significa que **la tarea que crea la tabla es la que rellena el cuerpo**, igual que `T-054` con `RecordedReceipts`. El cuerpo necesita `Catalog`, así que `T-024` **adelanta el modelo mínimo** —tabla, `BelongsToTenant` y nada más— y `T-025` lo termina con sus casts, sus relaciones y `CatalogVisibility`. La alternativa era escribir el filtro del tenant a mano en un `DB::table()`, que es la línea que `tenancy:audit` existe para que nadie escriba.
+
+**Y hay que decidir qué pasa con los dos pivotes.** `product_tag` y `catalog_product` no llevan `organization_id` en [05 §4](05-design-tecnico.md), así que `tenancy:audit` los va a reclamar: o se declaran en `GlobalUniqueExceptions::tables()` con su motivo escrito, o llevan la columna. No es trámite —`catalog_product` se consulta de forma directa y multi-organización para ordenar el feed (`REQ-CAT-023` RB-3)—, y la respuesta hay que razonarla, no silenciarla.
+
 **T-025 · Modelos y enums de catálogo** · `A` · 2 pts · *Requisitos: `REQ-CAT-007`*
 `Category`, `Tag`, `Product`, `ProductSpecification`, `Catalog` con el trait, `ProductStatus`, `CatalogVisibility` con sus métodos derivados.
+**`Catalog` llega medio escrito de `T-024`** (ver su nota): esta tarea lo completa, no lo crea.
 
 **T-026 · Taxonomía** · `B` · 2 pts · *Requisitos: `REQ-BOF-023`*
 CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUseException`.
