@@ -461,11 +461,14 @@ CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUs
 
 **T-029 · Imágenes de producto** · `B` · 3 pts · *Requisitos: `REQ-BOF-022`, `REQ-CAT-005`*
 medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAction`, `RealMimeType`, `ImageUploader`, `ProductGallery`.
-**Hecho cuando:** 3 conversiones en cola; MIME falso rechazado; borrar la principal promueve la siguiente; **la ruta física incluye el `organization_id`**; publicado sin imágenes rechazado.
+**Hecho cuando:** 3 conversiones en cola; MIME falso rechazado; borrar la principal promueve la siguiente; **la ruta física incluye el `organization_id`**; **el producto sabe decir si tiene imágenes**, que es la pieza que `T-030` necesita para RB-5.
+
+**«Publicado sin imágenes rechazado» no se prueba aquí: es de `T-030`.** La completitud de `REQ-BOF-020` RB-5 —imagen, categoría, descripción y condiciones válidas— se verifica **entera y en un solo sitio**, que es la transición a `published`, y esa transición la escribe `T-030`. Repartir la comprobación entre la tarea de las imágenes y la de los estados dejaría dos listas de requisitos para publicar, y la que se quede corta no falla: publica de menos o de más, en silencio. Lo que sí es de esta tarea es que el producto sepa contestar la pregunta.
 
 **T-030 · Estados de publicación** · `B` · 2 pts · *Requisitos: `REQ-CAT-007`*
 `ChangeProductStatusAction`, scopes, `ProductNotAvailableException`.
-**Hecho cuando:** matriz de transiciones; `draft`/`archived` dan `404`; **la relación con el catálogo se conserva al archivar**; `published_at` futuro no se lista; publicado en 0 catálogos no es error.
+**Hecho cuando:** matriz de transiciones; **la completitud de RB-5 con sus cuatro condiciones** (`IncompleteProductException` con la lista de lo que falta); `draft`/`archived` dan `404`; **la relación con el catálogo se conserva al archivar**; `published_at` futuro no se lista; publicado en 0 catálogos no es error.
+**`ChangeProductStatusAction` llega medio escrita de `T-027`**, que necesita el archivado para su `POST /productos/{product}/archivar` (`REQ-BOF-020` RB-10) y lo escribe ahí en vez de abrir un segundo camino que cambie `status`. Esta tarea añade el resto de la matriz y la completitud; no duplica el archivado ni lo mueve.
 
 **T-031 · Composición de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-023`*
 `SyncCatalogProductsAction`, `CatalogProductSorter`, `useSortableProducts`.
