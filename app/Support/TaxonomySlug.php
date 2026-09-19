@@ -8,13 +8,19 @@ use Closure;
 use Illuminate\Support\Str;
 
 /**
- * El `slug` de una categoría o de una etiqueta, derivado de su nombre y libre
- * dentro de la organización (`REQ-BOF-023` RB-3).
+ * El `slug` de una fila del inventario, derivado de su nombre y libre dentro
+ * de la organización (`REQ-BOF-023` RB-3, `REQ-BOF-020` RB-3).
  *
- * Vive aparte porque lo necesitan tres sitios —el alta de categoría, la de
- * etiqueta y la reutilización al vuelo de RB-8— y porque la parte que se
- * olvida no es «convertir el nombre en slug», que hace `Str::slug`, sino
- * **qué hacer cuando el resultado ya está tomado**.
+ * Vive aparte porque lo necesitan cuatro sitios —el alta de categoría, la de
+ * etiqueta, la reutilización al vuelo de RB-8 y el alta de producto— y porque
+ * la parte que se olvida no es «convertir el nombre en slug», que hace
+ * `Str::slug`, sino **qué hacer cuando el resultado ya está tomado**.
+ *
+ * Las tres tablas comparten la regla —`UNIQUE(organization_id, slug)`— y la
+ * condición bajo la que el enlace deja de ser editable es la única que cambia,
+ * así que esa se queda en cada acción: en la categoría es «sin productos
+ * publicados» (`REQ-BOF-023` SP-3) y en el producto es «no publicado»
+ * (`REQ-BOF-020` SP-5). Lo que se comparte es generar, no decidir.
  *
  * ## Desambigua con sufijo en vez de rechazar
  *
@@ -41,7 +47,7 @@ final class TaxonomySlug
      *
      * @param  string  $name  el nombre tal como lo escribió el negocio
      * @param  Closure(string): bool  $isTaken  si ese slug ya existe en la organización
-     * @param  int  $maxLength  tope de la columna: 120 en `categories`, 80 en `tags`
+     * @param  int  $maxLength  tope de la columna: 120 en `categories`, 80 en `tags`, 200 en `products`
      */
     public static function from(string $name, Closure $isTaken, int $maxLength = 120): string
     {
@@ -51,8 +57,9 @@ final class TaxonomySlug
             // Un nombre escrito entero en un alfabeto que `Str::slug` no
             // translitera —o a base de emoji— deja la cadena vacía, y un slug
             // vacío colisionaría con el siguiente igual de vacío. El nombre
-            // sigue siendo el suyo; lo que se inventa es la URL.
-            $base = 'categoria';
+            // sigue siendo el suyo; lo que se inventa es la URL, y el sufijo
+            // del bucle de abajo la hace única.
+            $base = 'sin-nombre';
         }
 
         $base = Str::limit($base, $maxLength - 4, '');

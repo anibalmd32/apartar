@@ -8,6 +8,7 @@ use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
 use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
+use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
@@ -72,6 +73,43 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('cambiar-contrasena', [ForcedPasswordChangeController::class, 'update'])
                 ->middleware('during-suspension')
                 ->name('password.change.store');
+
+            /*
+            | Productos ([05 §7.4], `REQ-BOF-020`).
+            |
+            | **De los dos roles**, como el resto del inventario: cargar
+            | productos es operación diaria y no gobierno del negocio
+            | (`OrganizationCapability::Products`).
+            |
+            | **Ninguna declara `during-suspension`, y es exactamente lo que
+            | RB-11 pide**: con la organización suspendida no se crean ni se
+            | editan productos. Lo que `REQ-ORG-008` RB-3 conserva es cobrar y
+            | aprobar comprobantes; el inventario espera a que se regularice el
+            | pago. Aquí la omisión no es descuido sino el fallo cerrado de
+            | `T-012`, y esta vez además coincide con una regla escrita.
+            |
+            | `productos/crear` va **antes** que `productos/{product}/editar`
+            | por costumbre de lectura: los dos son `GET` y no compiten, porque
+            | el segundo lleva un segmento más.
+            |
+            | El `{product}` se resuelve ya filtrado por el tenant, así que el
+            | identificador de otra organización da `404` y no `403` (SP-11,
+            | `REQ-ORG-002` RB-6): no se confirma que exista.
+            */
+            Route::get('productos', [ProductController::class, 'index'])->name('products.index');
+            Route::get('productos/crear', [ProductController::class, 'create'])->name('products.create');
+            Route::post('productos', [ProductController::class, 'store'])->name('products.store');
+
+            Route::get('productos/{product}/editar', [ProductController::class, 'edit'])->name('products.edit');
+            Route::put('productos/{product}', [ProductController::class, 'update'])->name('products.update');
+
+            /*
+            | RB-10 · el borrado es siempre lógico y se llama «archivar». El
+            | producto conserva su fila, su historial y su sitio en los
+            | catálogos (`REQ-CAT-007` RB-7, SP-10).
+            */
+            Route::post('productos/{product}/archivar', [ProductController::class, 'archive'])
+                ->name('products.archive');
 
             /*
             | Taxonomía: categorías y etiquetas ([05 §7.4], `REQ-BOF-023`).

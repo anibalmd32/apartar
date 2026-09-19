@@ -83,19 +83,29 @@ it('exige que toda Action ya escrita audite el evento que declara', function (Au
  *
  * Si mañana alguien renombrara `UpsertPaymentAccountAction` y se olvidara de
  * esta lista, el test de arriba pasaría en verde sobre cero clases. Este fija
- * el suelo: hoy existen los diez eventos del bloque Organización, que son los
- * que `T-013`, `T-013b`, `T-014` y `T-015` dejaron con Action.
+ * el suelo, y **el suelo sube con cada tarea que escribe su Action**: a los
+ * diez del bloque Organización —`T-013`, `T-013b`, `T-014`, `T-015`— `T-027`
+ * añade los dos de Catálogo que ya tienen clase, `ProductPricingChanged` y
+ * `ProductStatusChanged`. Los tres que faltan en ese bloque son de catálogos y
+ * llegan con `T-032`.
+ *
+ * Que la cifra haya que tocarla al añadir un emisor es el punto: obliga a
+ * mirar si la Action nueva audita de verdad, en vez de dejar que el conteo se
+ * ajuste solo.
  */
-it('cubre hoy los diez eventos del bloque Organización', function (): void {
+it('cubre hoy los doce eventos cuya Action ya existe', function (): void {
     $covered = array_values(array_filter(
         AuditEvent::cases(),
         fn (AuditEvent $event): bool => class_exists($event->emitter()),
     ));
 
-    expect($covered)->toHaveCount(10);
+    expect($covered)->toHaveCount(12);
 
-    expect(array_map(fn (AuditEvent $event): string => $event->area()->value, $covered))
-        ->each->toBe(AuditArea::Organization->value);
+    $areas = array_values(array_unique(
+        array_map(fn (AuditEvent $event): string => $event->area()->value, $covered),
+    ));
+
+    expect($areas)->toEqualCanonicalizing([AuditArea::Organization->value, AuditArea::Catalog->value]);
 });
 
 /**
