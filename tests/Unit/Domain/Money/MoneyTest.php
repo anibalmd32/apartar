@@ -7,17 +7,21 @@ use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Currency;
 use App\Domain\Money\CurrencyMismatchException;
 use App\Domain\Money\Money;
+use App\Domain\Money\MoneyFormatter;
 use Carbon\CarbonImmutable;
 
 /**
  * El tipo del que depende todo el dinero del sistema (`REQ-FX-001`).
  *
- * Esto es la Fase A: se comprueba **la forma** —las ocho firmas del bloque
- * normativo— y **la aritmética entera**, que es la parte que va entera aquí
- * porque son sumas y comparaciones. Los 500 casos de propiedad de
- * `allocateEvenly()`, la conversión con `bcmul` y el parseo son de `T-018`; lo
- * que se comprueba de ellos aquí es que **lanzan diciendo qué falta**, y no
- * que devuelvan un valor plausible.
+ * Aquí viven **la forma** —las ocho firmas del bloque normativo— y **la
+ * aritmética entera**: sumar, restar, multiplicar por un entero, comparar con
+ * la tolerancia. Es la parte exacta por construcción.
+ *
+ * Los cuatro sitios donde vive el riesgo tienen su propio archivo, porque cada
+ * uno necesita una batería entera: `MoneyAllocationTest` (los 500 casos de la
+ * invariante), `MoneyConversionTest` (`bcmul` y el redondeo único),
+ * `MoneyParsingTest` (la frontera de lo que se acepta) y `MoneyFormatterTest`
+ * (los dos formatos exactos).
  */
 
 /**
@@ -138,35 +142,38 @@ it('da por saldado lo que cabe en la tolerancia', function (int $cents, int $tol
 ]);
 
 /**
- * Los tres métodos diferidos **lanzan nombrando a `T-018`**, y eso es la
- * convención de fallo ruidoso del proyecto, no un descuido. Un
- * `allocateEvenly()` que devolviera `[]` compilaría, pasaría por delante de
- * todo y reaparecería como un cronograma vacío tres hitos después.
+ * **`T-017` dejó cuatro métodos lanzando un `LogicException` que nombraba a
+ * esta tarea, y no queda ninguno.**
+ *
+ * Esta comprobación es la que impide que uno vuelva. Un muñón reintroducido
+ * —por una fusión mal resuelta, por un `git revert` de más— no rompería la
+ * compilación ni ningún tipo: rompería el cronograma de un apartado en
+ * producción, que es donde se descubren estas cosas. Su comportamiento real
+ * lo prueban `MoneyAllocationTest`, `MoneyConversionTest`, `MoneyParsingTest`
+ * y `MoneyFormatterTest`; lo que se fija aquí es que **responden**.
  */
-it('deja el reparto declarado y lanzando, con lo que se pidió repartir', function (): void {
-    expect(fn (): array => (new Money(10_000))->allocateEvenly(3))
-        ->toThrow(LogicException::class, 'T-018');
+it('no deja ningún método sin implementar', function (callable $call): void {
+    // Un muñón lanzaría, y el propio `LogicException` haría fallar el test con
+    // su mensaje delante —que es el que dice qué falta—. Que la llamada
+    // devuelva algo es la comprobación entera.
+    expect($call())->not->toBeNull();
+})->with([
+    'el reparto' => [fn (): array => (new Money(10_000))->allocateEvenly(3)],
+    'el parseo' => [fn (): Money => Money::fromDecimalString('19.99')],
+    'la conversión' => [fn (): Money => (new Money(2_000))->convertTo(
+        Currency::VES,
+        new RateSnapshot('42.50000000', RateSource::Bcv, CarbonImmutable::now(), CarbonImmutable::now()),
+    )],
+    'el formateo' => [fn (): string => MoneyFormatter::format(new Money(2_000))],
+]);
 
-    expect(fn (): array => (new Money(10_000))->allocateEvenly(3))
-        ->toThrow(LogicException::class, 'repartir 10000 céntimos en 3 partes');
-});
-
-it('deja la conversión declarada y lanzando, con la tasa que se le pasó', function (): void {
+it('responde con el valor que le toca a cada uno', function (): void {
     $rate = new RateSnapshot('42.50000000', RateSource::Bcv, CarbonImmutable::now(), CarbonImmutable::now());
 
-    expect(fn (): Money => (new Money(2_000))->convertTo(Currency::VES, $rate))
-        ->toThrow(LogicException::class, 'T-018');
-
-    expect(fn (): Money => (new Money(2_000))->convertTo(Currency::VES, $rate))
-        ->toThrow(LogicException::class, 'convertir 2000 céntimos de USD a VES con la tasa 42.50000000 (bcv)');
-});
-
-it('deja el parseo declarado y lanzando', function (): void {
-    expect(fn (): Money => Money::fromDecimalString('19.99'))
-        ->toThrow(LogicException::class, 'T-018');
-
-    expect(fn (): Money => Money::fromDecimalString('19.99'))
-        ->toThrow(LogicException::class, 'parsear "19.99" a centavos de USD');
+    expect((new Money(10_000))->allocateEvenly(3))->toHaveCount(3);
+    expect(Money::fromDecimalString('19.99')->cents)->toBe(1_999);
+    expect((new Money(2_000))->convertTo(Currency::VES, $rate)->cents)->toBe(85_000);
+    expect(MoneyFormatter::format(new Money(2_000)))->toBe('$20.00');
 });
 
 /**
