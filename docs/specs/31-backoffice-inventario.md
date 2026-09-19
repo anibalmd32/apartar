@@ -266,6 +266,8 @@ export interface SpecificationFormRow {
 - Superficie esperada: `app/Http/Controllers/Backoffice/CategoryController.php`, `app/Http/Controllers/Backoffice/TagController.php`, `app/Actions/Catalog/ReassignCategoryProductsAction.php`, `app/Models/Category.php`, `app/Models/Tag.php`.
 - Tipos esperados: `Category`, `Tag`, `CategoryInUseException`.
 - Anti-`SHALLOW`: `ReassignCategoryProductsAction::handle()` (reasignación en lote, validación de pertenencia, auditoría) supera 4 líneas; `Category::scopeOrdered()` con `withCount` junto al modelo.
+
+> **La mención de «auditoría» de ese anti-`SHALLOW` no crea un evento.** La lista de `REQ-BOF-005` RB-1 es **cerrada** y su bloque de Catálogo cubre el precio, el financiamiento y el estado de un producto y la publicación de catálogos — no la taxonomía. Mover productos de una categoría a otra no cambia lo que se vende, ni a qué precio, ni quién puede verlo: cambia cómo se filtra. Así que la reasignación **no audita**, y lo que sostiene el anti-`SHALLOW` es lo demás —el lote, la validación de pertenencia y la transacción—, que ya pasa de cuatro líneas de sobra. Si algún día hiciera falta el rastro, es un evento nuevo en RB-1 con su tarea, no una línea colada en una acción.
 - Tests: borrado con productos rechazado; reasignar y luego borrar funciona; **mismo nombre de categoría en dos organizaciones permitido** (tenancy); slug bloqueado con productos publicados; borrar etiqueta desasocia; creación inline reutiliza; categoría ajena da `404`.
 
 ---
