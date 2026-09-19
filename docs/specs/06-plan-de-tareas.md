@@ -424,6 +424,18 @@ Las 8 tablas de catálogo, con `FULLTEXT` y el `UNIQUE(slug)` global de `catalog
 `Category`, `Tag`, `Product`, `ProductSpecification`, `Catalog` con el trait, `ProductStatus`, `CatalogVisibility` con sus métodos derivados.
 **`Catalog` llega medio escrito de `T-024`** (ver su nota): esta tarea lo completa, no lo crea. Lo que tiene hoy es tabla, `BelongsToOrganization`, `$fillable` y los casts de fechas que el relevo necesitaba; le faltan `CatalogVisibility`, los estados derivados y sus relaciones.
 
+**Cerrada** (`53dbf4f`). Tres cosas que conviene no perder:
+
+**Un `published_at` futuro cuenta como publicado en un catálogo y como programado en un producto.** La asimetría es de la spec —`REQ-CAT-022` deja la publicación programada fuera de alcance y `REQ-CAT-007` RB-5 la exige para el producto— y está ahora escrita en [12](12-catalogos-curados.md) junto al enum, con el orden de evaluación completo, porque es de las que se copian mal de un lado al otro.
+
+**Las relaciones entre catálogo y producto ni filtran ni ordenan.** No filtran por estado porque el archivado conserva su relación (`REQ-CAT-007` RB-7) y quien omite es la consulta pública; no ordenan por `position` porque el orden curado es el **defecto** de la vista (`REQ-CAT-006` RB-5) y cablearlo en la relación dejaría `price_asc` ordenando por posición y desempatando por precio.
+
+**Una factory anidada se resuelve antes de que el contexto del tenant esté fijado**, así que `ProductSpecificationFactory` no trae `product_id` por defecto: el defecto habría creado el producto en una organización y su ficha en otra, en silencio. La forma prevista es `Product::factory()->has(ProductSpecification::factory(), 'specifications')`.
+
+**`Catalog::subscriptions()` no es de `T-025` aunque su docblock lo anunciara:** `catalog_subscriptions` es del bloque 6 y la crea `T-073`, que cierra también `REQ-CAT-022` RB-9.
+
+**Quien escribe en un pivote exento valida que sus dos extremos son de la misma organización.** Es la otra mitad del argumento con el que `T-024` declaró `product_tag` y `catalog_product` sin `organization_id`: el trait del tenant lanza cuando alguien **asigna a mano** un `organization_id` ajeno, pero no cuando una clave foránea apunta a una fila de otra organización —esa fila se guardaría con la organización activa—. Hoy lo contiene la lectura, porque el *global scope* hace que la fila ajena no exista desde ningún lado, y la spec pone la guarda de escritura en la `Action` (`REQ-ORG-002` RB-7, SP-5). Le toca a **`T-027`** para `product_tag` y a **`T-031`** para `catalog_product`, cada una con su test de relación cruzada.
+
 **T-026 · Taxonomía** · `B` · 2 pts · *Requisitos: `REQ-BOF-023`*
 CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUseException`.
 **Hecho cuando:** borrado con productos rechazado; **mismo nombre en dos organizaciones permitido**; creación inline reutiliza; orden persistido.
