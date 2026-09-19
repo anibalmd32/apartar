@@ -47,13 +47,26 @@ it('pone high primero y telemetry último', function (): void {
 });
 
 /**
- * El plan T-002 deja `routes/console.php` vacío a propósito.
+ * Las catorce entradas del schedule de `REQ-INF-003` RB-5 entran **con la
+ * tarea de cada job**, no todas de golpe, y cierran al final de H8.
+ *
+ * `T-002` dejó `routes/console.php` vacío a propósito y `T-020` registró la
+ * primera: la ingesta de la tasa. Lo que se comprueba aquí es que existe y con
+ * su cadencia; que el schedule esté completo es el criterio de cierre de
+ * `REQ-INF-003`, no de esta comprobación.
  */
-it('no registra todavía ninguna entrada del schedule', function (): void {
-    $console = (string) file_get_contents(base_path('routes/console.php'));
+it('registra la ingesta de tasa cada treinta minutos', function (): void {
+    $events = collect(app(Illuminate\Console\Scheduling\Schedule::class)->events())
+        ->map(fn (Illuminate\Console\Scheduling\Event $event): string => $event->expression)
+        ->all();
 
-    expect($console)
-        ->not->toContain('Schedule::')
-        ->not->toContain('->daily()')
-        ->not->toContain('->hourly()');
+    expect($events)->toContain('*/30 * * * *');
+});
+
+/**
+ * Corre en la cola `high`, que es la primera de la lista de prioridad: sin
+ * tasa, ningún catálogo puede mostrar precios en bolívares.
+ */
+it('encola la ingesta de tasa en la cola de mayor prioridad', function (): void {
+    expect((new App\Jobs\FetchExchangeRate)->queue)->toBe('high');
 });

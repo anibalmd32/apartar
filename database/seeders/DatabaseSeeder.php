@@ -9,10 +9,18 @@ use Illuminate\Database\Seeder;
 /**
  * Siembra lo que **cualquier** entorno necesita para funcionar.
  *
- * Hoy es solo el catálogo de planes, y no es poco: sin el plan Free no se
- * puede dar de alta a nadie (`REQ-SUB-002` SP-1), así que una base migrada y
- * sin sembrar es una base en la que el registro falla. `PlanSeeder` es
- * idempotente, de modo que volver a ejecutarlo es inofensivo.
+ * Son dos, y las dos hacen falta para que la plataforma funcione desde el
+ * primer minuto:
+ *
+ *  - **`PlanSeeder`**: sin el plan Free no se puede dar de alta a nadie
+ *    (`REQ-SUB-002` SP-1), así que una base migrada y sin sembrar es una base
+ *    en la que el registro falla.
+ *  - **`ExchangeRateSeeder`**: sin ninguna tasa, el catálogo arranca en
+ *    dólares puros hasta la primera vuelta del job, que puede tardar media
+ *    hora ([05 §6.4], `REQ-FX-005` SP-1).
+ *
+ * Las dos son **idempotentes**, de modo que volver a ejecutarlas es
+ * inofensivo.
  *
  * El escenario de desarrollo —dos organizaciones con datos de mentira— es
  * `DevSeeder` y llega con `T-016`: son cosas distintas y no deben mezclarse,
@@ -23,5 +31,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(PlanSeeder::class);
+        $this->call(ExchangeRateSeeder::class);
     }
 }

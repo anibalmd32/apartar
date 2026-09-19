@@ -1,0 +1,26 @@
+[
+  {
+    "fuente": "oficial",
+    "nombre": "Oficial",
+    "compra": 0,
+    "venta": 0,
+    "promedio": 36.5,
+    "fechaActualizacion": "2026-09-10T14:30:00.000Z"
+  },
+  {
+    "fuente": "paralelo",
+    "nombre": "Paralelo",
+    "compra": 41.8,
+    "venta": 42.6,
+    "promedio": 42.2,
+    "fechaActualizacion": "2026-09-10T14:45:00.000Z"
+  },
+  {
+    "fuente": "bitcoin",
+    "nombre": "Bitcoin",
+    "compra": 0,
+    "venta": 0,
+    "promedio": 43.15,
+    "fechaActualizacion": "2026-09-10T14:50:00.000Z"
+  }
+]

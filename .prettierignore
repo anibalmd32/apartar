@@ -12,3 +12,17 @@
 # quedado justo al revés: eximía lo que escribimos y formateaba lo que está en
 # retirada. Nadie lo notó porque `format:check` no lo invocaba nadie.
 resources/js/components/vendor/**
+
+# Falso positivo de `format:check` en un host Windows (T-020).
+#
+# `resources/js/ssr.jsx` no tiene ningún problema de formato: el archivo es LF
+# en git y `.gitattributes` fuerza `eol=lf`, pero
+# `prettier-plugin-organize-imports` emite CRLF en el bloque de imports cuando
+# corre fuera del contenedor. Comprobado que **no se arregla con
+# `--end-of-line lf`**: la normalización de Prettier no alcanza la salida del
+# plugin. Dentro del contenedor —que es lo que corre CI— pasa en verde.
+#
+# Es el punto de entrada de SSR heredado del starter kit y nadie lo edita.
+# Dejar un aviso permanente en la receta que `T-016` acaba de cablear es la
+# forma más rápida de que la gente aprenda a ignorarla.
+resources/js/ssr.jsx

@@ -59,6 +59,25 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+
+            /*
+             * La sesión de MySQL corre en la misma zona que la aplicación
+             * (REQ-FX-002 SP-6, [05 §4]).
+             *
+             * Sin esto, la sesión hereda `SYSTEM` —UTC en el contenedor—
+             * mientras Laravel escribe y lee las columnas `TIMESTAMP` como
+             * cadenas ingenuas en `APP_TIMEZONE`. Los valores que escribe PHP
+             * cuadran igual, porque van y vuelven por el mismo camino; los que
+             * escribe **la base de datos** no, y `exchange_rates.fetched_at`
+             * es el primero del proyecto: lleva `useCurrent()` precisamente
+             * para que un reloj de contenedor desfasado no lo falsee, y salía
+             * cuatro horas por delante de la hora real.
+             *
+             * Detectado al cerrar T-020, con `fetched_at` marcando las 02:36
+             * cuando eran las 22:36.
+             */
+            'timezone' => env('DB_TIMEZONE', env('APP_TIMEZONE', 'UTC')),
+
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

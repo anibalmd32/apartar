@@ -28,6 +28,11 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        // Endpoints internos que refresca el propio frontend (REQ-FX-002
+        // RB-5). Van aparte de `web` porque no tienen sesión ni CSRF: son
+        // lecturas públicas y sin estado, y meterlas en el grupo `web`
+        // arrancaría una sesión por cada refresco de cada pestaña abierta.
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )

@@ -37,4 +37,31 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tasa de cambio (REQ-FX-002, REQ-FX-003, [05 §6])
+    |--------------------------------------------------------------------------
+    |
+    | `driver` elige la implementación de `ExchangeRateProvider` que resuelve
+    | las fuentes públicas; lo resuelve `ExchangeServiceProvider` y un nombre
+    | que no existe **falla al arrancar**, no en tiempo de request
+    | (`REQ-FX-003` SP-5).
+    |
+    | `timeout` son 8 s (`REQ-FX-002` SP-3): la ingesta corre en la cola `high`
+    | y una petición colgada bloquearía al worker detrás de un servicio que no
+    | controlamos.
+    |
+    | `field_priority` es el orden en que se busca la cifra dentro de cada
+    | cotización ([05 §6.2]): el **primer valor > 0**. Está en configuración y
+    | no en el código por si el negocio decide después que quiere `venta` en
+    | lugar de `promedio`.
+    |
+    */
+    'exchange_rate' => [
+        'driver' => env('EXCHANGE_RATE_DRIVER', 'dolarapi'),
+        'url' => env('EXCHANGE_RATE_URL', 'https://ve.dolarapi.com/v1/dolares'),
+        'timeout' => (int) env('EXCHANGE_RATE_TIMEOUT', 8),
+        'field_priority' => ['promedio', 'venta', 'compra'],
+    ],
+
 ];
