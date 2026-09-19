@@ -1,4 +1,4 @@
-import { publishedAgo } from '@/features/tenancy/components/ExchangeRateForm';
+import { publishedAgo } from '@/features/currency/lib/rateAge';
 import { describe, expect, it } from 'vitest';
 
 /**

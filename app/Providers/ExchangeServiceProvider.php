@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\DolarApiProvider;
 use App\Domain\Exchange\ExchangeRateProvider;
 use App\Domain\Exchange\ManualRateProvider;
@@ -70,6 +71,14 @@ class ExchangeServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ManualRateProvider::class);
+
+        // `scoped()` y no `singleton()`: el memo de la tasa tiene que morir
+        // con la petición. Un singleton sobreviviría en el worker de colas
+        // —un proceso de vida larga— y serviría la tasa de hace media hora en
+        // el job siguiente, que es la misma trampa que RB-5b dejó escrita para
+        // el proveedor. Laravel limpia los *scoped* entre peticiones y entre
+        // jobs.
+        $this->app->scoped(CurrentRate::class);
     }
 
     /**

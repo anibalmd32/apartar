@@ -4,14 +4,24 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Domain\Exchange\CurrentRate;
+use App\Domain\Money\CurrencyDisplay;
+use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\OrganizationCapability;
+use App\Domain\Tenancy\TenantContext;
 use App\Models\User;
+use App\Support\Settings;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        private readonly TenantContext $context,
+        private readonly Settings $settings,
+    ) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -50,8 +60,86 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'teamMember' => $this->teamMember($request),
+            'currency' => $this->currency($request),
             'status' => $request->session()->get('status'),
         ]);
+    }
+
+    /**
+     * La tasa vigente y en qué orden se leen las monedas (`REQ-FX-004`,
+     * `REQ-FX-005`).
+     *
+     * **Va en las props compartidas y no en cada controlador** porque los dos
+     * datos atraviesan todas las superficies con precios —catálogo, portal,
+     * feed y backoffice—, y repetirlos controlador a controlador garantizaría
+     * que el día que aparezca una pantalla nueva se le olvide a alguien: el
+     * síntoma sería una página con precios sin sello, o con el toggle muerto.
+     *
+     * **La preferencia la resuelve el servidor** (RB-4). Si se descubriera al
+     * montar el componente, la página abriría en dólares y saltaría a
+     * bolívares un instante después —en cada visita de todo el que eligiera
+     * bolívares—, que es el parpadeo que `ASU-FX-08` quiere evitar.
+     *
+     * La zona horaria viaja con ellos porque el sello escribe una hora y hay
+     * **tres** candidatas: la del navegador, la de la aplicación y la del
+     * negocio. Manda la del negocio (`organizations.timezone`): el BCV publica
+     * en hora de Venezuela y el catálogo es de un negocio venezolano, así que
+     * un cliente que mira desde Madrid tiene que leer la misma hora que dice
+     * el BCV y no las cinco de la tarde.
+     *
+     * @return array<string, mixed>
+     */
+    private function currency(Request $request): array
+    {
+        return [
+            'display' => $this->currencyDisplay($request)->value,
+            'rate' => app(CurrentRate::class)->view()->toArray(),
+            'timezone' => $this->timezone(),
+        ];
+    }
+
+    /**
+     * Qué moneda va primero, en el orden que fija RB-5.
+     *
+     * Cookie válida → ajuste de la organización → default de plataforma.
+     *
+     * **La cookie no se parte por organización y no se reescribe al cambiar de
+     * una a otra** (RB-3): la preferencia es de la persona. Quien navega el
+     * catálogo de dos negocios en bolívares no quiere volver a pulsar el
+     * toggle en el segundo, y `currency_display_default` solo decide el
+     * arranque de quien todavía no ha elegido nada.
+     *
+     * Una cookie con un valor que no reconocemos **se descarta sin error**
+     * (SP-3): no es un `422` ni un log, porque quien la lleva no puede hacer
+     * nada al respecto y la página tiene que abrir igual.
+     */
+    private function currencyDisplay(Request $request): CurrencyDisplay
+    {
+        $chosen = CurrencyDisplay::tryFromValue($request->cookie(CurrencyDisplay::COOKIE));
+
+        if ($chosen instanceof CurrencyDisplay) {
+            return $chosen;
+        }
+
+        if (! $this->context->hasOrganization()) {
+            return CurrencyDisplay::platformDefault();
+        }
+
+        return CurrencyDisplay::tryFromValue($this->settings->get(SettingKey::CurrencyDisplayDefault))
+            ?? CurrencyDisplay::platformDefault();
+    }
+
+    /**
+     * La zona en la que el sello escribe su hora: la del negocio.
+     *
+     * Fuera de un tenant —marketing, acceso, feed— no hay negocio del que
+     * tomarla y manda la de la aplicación.
+     */
+    private function timezone(): string
+    {
+        return $this->context->hasOrganization()
+            ? $this->context->organization()->timezone
+            : (string) config('app.timezone');
     }
 
     /**

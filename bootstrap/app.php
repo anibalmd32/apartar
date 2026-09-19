@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Money\CurrencyDisplay;
 use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\PlanFeatureUnavailableException;
 use App\Domain\Subscription\PlanLimitReachedException;
@@ -41,6 +42,17 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        // La preferencia de moneda la escribe el navegador al pulsar el
+        // toggle, porque el cambio es puramente de cliente (REQ-FX-004 RB-6):
+        // llega sin cifrar y el servidor no podría descifrarla. Sin esta
+        // exclusión el valor se descartaría en cada petición y el primer
+        // render volvería siempre al default —el parpadeo que RB-4 existe para
+        // evitar, pero permanente—.
+        //
+        // Lo que guarda es cuál de dos monedas va primero: no identifica a
+        // nadie ni autoriza nada.
+        $middleware->encryptCookies(except: [CurrencyDisplay::COOKIE]);
 
         // El tenant se fija ANTES de que `SubstituteBindings` resuelva el
         // binding, y este orden es lo que hace verdadera la regla del `404`

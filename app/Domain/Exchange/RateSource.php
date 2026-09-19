@@ -45,6 +45,35 @@ enum RateSource: string
     case Manual = 'manual';
 
     /**
+     * Cómo se llama esta fuente para una persona.
+     *
+     * **Es el único nombre de cada fuente, y por eso está aquí.** Hasta
+     * `T-022`, `ExchangeRateForm` guardaba las tres etiquetas en una constante
+     * propia: con un solo consumidor no hacía daño, pero el sello del catálogo
+     * escribe «Tasa BCV del 18/09 09:00» sobre estas mismas tres, y con dos
+     * diccionarios la pantalla de ajustes y el catálogo pueden acabar llamando
+     * cosas distintas a la misma tasa — delante de alguien que ya dudaba de la
+     * cifra. Es el mismo problema que `PaymentMethod::label()` resolvió en
+     * `T-015`, y se resuelve igual.
+     *
+     * Lo que un desplegable añada para **explicar** la opción —«tasa oficial»,
+     * «la que yo fije»— es presentación de esa opción y vive en su pantalla:
+     * no es un segundo nombre, es una frase de ayuda que solo tiene sentido
+     * mientras se elige.
+     *
+     * El `match` es exhaustivo y sin `default`: una fuente nueva tiene que
+     * decir cómo se llama en vez de heredar el nombre de la vecina.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Bcv => 'BCV',
+            self::Parallel => 'Paralelo',
+            self::Manual => 'Manual',
+        };
+    }
+
+    /**
      * Las fuentes **de plataforma**: las que se ingestan y se persisten.
      *
      * Es la misma lista que consulta el job, la que admite el endpoint público

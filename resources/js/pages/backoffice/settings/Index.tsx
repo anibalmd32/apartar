@@ -29,9 +29,10 @@ interface SettingsPageProps {
     identity: OrganizationIdentity;
     brand: OrganizationBrand;
     rateSources: RateView[];
+    rateSourceOptions: { value: RateSource; label: string }[];
 }
 
-export default function SettingsIndex({ settings, definitions, identity, brand, rateSources }: SettingsPageProps) {
+export default function SettingsIndex({ settings, definitions, identity, brand, rateSources, rateSourceOptions }: SettingsPageProps) {
     const source = (settings.exchange_rate_source ?? 'bcv') as RateSource;
     const manualRate =
         settings.exchange_rate_manual === null || settings.exchange_rate_manual === undefined ? '' : String(settings.exchange_rate_manual);
@@ -50,7 +51,7 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
                         </p>
                     </header>
 
-                    <ExchangeRateForm source={source} manualRate={manualRate} rateSources={rateSources} />
+                    <ExchangeRateForm source={source} manualRate={manualRate} sourceOptions={rateSourceOptions} rateSources={rateSources} />
                 </div>
             </section>
 

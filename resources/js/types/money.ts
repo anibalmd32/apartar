@@ -8,6 +8,18 @@
  * según el toggle de `REQ-FX-004`.
  */
 
+/**
+ * Cuál de las dos monedas se muestra primero (`REQ-FX-004`).
+ *
+ * No cambia el importe, cambia el orden en que se lee: `$20.00 (Bs. 850,00)`
+ * o `Bs. 850,00 ($20.00)`. Las dos representaciones viajan siempre en
+ * `MoneyView`, así que elegir es puramente de presentación y **no genera
+ * ninguna petición** (RB-6).
+ *
+ * Espejo de `CurrencyDisplay` en `app/Domain/Money/`.
+ */
+export type CurrencyDisplay = 'usd_primary' | 'ves_primary';
+
 declare const centsUsdBrand: unique symbol;
 
 /**

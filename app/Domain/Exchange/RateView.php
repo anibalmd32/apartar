@@ -60,13 +60,20 @@ final readonly class RateView
     /**
      * Forma con la que viaja a las page props y al endpoint.
      *
-     * @return array{rate: float|null, source: string, publishedAt: string|null, isStale: bool}
+     * **`sourceLabel` viaja resuelto desde el enum** y no se compone en la
+     * pantalla, por lo mismo que `PaymentAccountView` lleva su `methodLabel`:
+     * el sello del catálogo y el selector de ajustes hablan de las mismas tres
+     * fuentes, y un diccionario por pantalla acaba llamándolas distinto. El
+     * nombre lo dice `RateSource::label()`, una sola vez.
+     *
+     * @return array{rate: float|null, source: string, sourceLabel: string, publishedAt: string|null, isStale: bool}
      */
     public function toArray(): array
     {
         return [
             'rate' => $this->rate,
             'source' => $this->source->value,
+            'sourceLabel' => $this->source->label(),
             'publishedAt' => $this->publishedAt,
             'isStale' => $this->isStale,
         ];

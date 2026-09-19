@@ -66,6 +66,7 @@ final class SettingsController extends Controller
             'identity' => $this->identity($organization->getAttributes()),
             'brand' => $this->organization->brandOf($organization)->toArray(),
             'rateSources' => $this->rateSources(),
+            'rateSourceOptions' => $this->rateSourceOptions(),
         ]);
     }
 
@@ -150,6 +151,30 @@ final class SettingsController extends Controller
         return array_map(
             fn (RateSource $source): array => RateView::of($this->rates->forSource($source), $source)->toArray(),
             RateSource::platform(),
+        );
+    }
+
+    /**
+     * Las tres fuentes elegibles, con su nombre.
+     *
+     * **El nombre sale del enum** (`RateSource::label()`) y no de una
+     * constante en el `.tsx`. Hasta `T-022` el desplegable guardaba las tres
+     * etiquetas por su cuenta; con `RateStamp` escribiendo «Tasa BCV del …»
+     * sobre las mismas tres, dos diccionarios acabarían llamando cosas
+     * distintas a la misma tasa en dos pantallas — delante de alguien que ya
+     * dudaba de la cifra.
+     *
+     * Aquí van **las tres**, incluida la manual, porque son las que se pueden
+     * elegir; `rateSources()` son solo las de plataforma, porque son las que
+     * tienen una cifra que comparar.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function rateSourceOptions(): array
+    {
+        return array_map(
+            fn (RateSource $source): array => ['value' => $source->value, 'label' => $source->label()],
+            RateSource::cases(),
         );
     }
 

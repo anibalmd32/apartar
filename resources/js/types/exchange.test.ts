@@ -26,6 +26,7 @@ describe('contrato de la tasa en las page props', () => {
         const degraded: RateView = {
             rate: null,
             source: 'bcv',
+            sourceLabel: 'BCV',
             publishedAt: null,
             isStale: false,
         };
@@ -44,6 +45,7 @@ describe('contrato de la tasa en las page props', () => {
         const stale: RateView = {
             rate: 42.5,
             source: 'parallel',
+            sourceLabel: 'Paralelo',
             publishedAt: '2026-09-18T10:30:00.000Z',
             isStale: true,
         };

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Settings;
 
 use App\Domain\Exchange\RateSource;
+use App\Domain\Money\CurrencyDisplay;
 
 /**
  * Las diez claves de `organization_settings` con su valor por defecto, su
@@ -62,13 +63,6 @@ enum SettingKey: string
 
     /** Días de retraso a partir de los que se alerta (`REQ-LAY-009`). */
     case OverdueAlertDays = 'overdue_alert_days';
-
-    /**
-     * Formas de presentar el precio (`REQ-FX-004`).
-     *
-     * @var list<string>
-     */
-    public const CURRENCY_DISPLAYS = ['usd_primary', 'ves_primary'];
 
     /**
      * Valor por defecto de la clave, tal como lo fija [02 §9.1].
@@ -137,7 +131,11 @@ enum SettingKey: string
             // porque es lo que vale mientras la fuente no sea manual.
             self::ExchangeRateManual => ['present', 'nullable', 'numeric', 'gt:0', 'max:1000000'],
 
-            self::CurrencyDisplayDefault => ['required', 'string', 'in:'.implode(',', self::CURRENCY_DISPLAYS)],
+            // El censo de los dos modos es `CurrencyDisplay`, por lo mismo que el
+            // de las fuentes es `RateSource`: con una copia aquí, el tercer
+            // modo dejaría corta a una de las dos y el síntoma sería un
+            // `from()` que lanza sobre un ajuste ya validado.
+            self::CurrencyDisplayDefault => ['required', 'string', 'in:'.implode(',', CurrencyDisplay::values())],
 
             self::GracePeriodDays => ['required', 'integer', 'min:0', 'max:30'],
             self::DownPaymentWindowHours => ['required', 'integer', 'min:1', 'max:168'],

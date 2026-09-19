@@ -1,3 +1,5 @@
+import { type CurrencyDisplay } from '@/types/money';
+
 /**
  * Contratos de la tasa de cambio (`REQ-FX-002`, `REQ-FX-003`, `REQ-FX-005`).
  *
@@ -38,8 +40,39 @@ export type RateSource = 'bcv' | 'parallel' | 'manual';
 export interface RateView {
     readonly rate: number | null;
     readonly source: RateSource;
+    /**
+     * Cómo se llama la fuente para una persona: «BCV», «Paralelo», «Manual».
+     *
+     * Viaja resuelto desde `RateSource::label()` y no se compone aquí, por lo
+     * mismo que `PaymentAccountView.methodLabel`: el sello del catálogo y el
+     * selector de ajustes hablan de las mismas tres fuentes, y un diccionario
+     * por pantalla acaba llamándolas distinto delante de alguien que ya
+     * dudaba de la cifra.
+     */
+    readonly sourceLabel: string;
     /** ISO 8601 · cuándo la **publicó** la fuente, no cuándo la leímos. */
     readonly publishedAt: string | null;
     /** Más de 24 h medidas sobre `publishedAt` (`REQ-FX-002` RB-3b). */
     readonly isStale: boolean;
+}
+
+/**
+ * Lo que toda página con precios recibe en sus props compartidas.
+ *
+ * Los tres viajan juntos porque los tres se usan juntos: la preferencia decide
+ * el orden, la tasa decide si hay bolívares que enseñar, y la zona decide en
+ * qué hora se lee el sello.
+ */
+export interface CurrencyPageProps {
+    /** Resuelta **en el servidor**, para que el primer render ya sea correcto. */
+    readonly display: CurrencyDisplay;
+    readonly rate: RateView;
+    /**
+     * La zona del negocio (`organizations.timezone`), no la del navegador.
+     *
+     * El BCV publica en hora de Venezuela y el catálogo es de un negocio
+     * venezolano: quien mire desde Madrid tiene que leer la misma hora que
+     * dice el BCV, no las cinco de la tarde.
+     */
+    readonly timezone: string;
 }
