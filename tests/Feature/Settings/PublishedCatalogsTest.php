@@ -2,60 +2,123 @@
 
 declare(strict_types=1);
 
+namespace Tests\Feature\Settings;
+
 use App\Domain\Catalog\PublishedCatalogs;
-use Illuminate\Support\Facades\Schema;
+use App\Models\Catalog;
+use App\Models\Organization;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 /**
- * El punto de extensión de SP-5 (`REQ-ORG-006`).
+ * El relevo de SP-5 (`REQ-ORG-006`), ya cerrado.
  *
- * `UpdateOrganizationAction` ya pregunta, ya bloquea y ya tiene su test —con
- * esta clase sustituida en el contenedor—. Lo que se comprueba aquí es la
- * otra mitad: que **la respuesta de hoy es honesta y no un `TODO` disfrazado**,
- * y que **deja de responder el día que llegue la tabla**.
+ * La regla la sostiene `UpdateOrganizationAction`: **cambiar el slug con
+ * catálogos publicados da `422`**, porque rompería los enlaces de la vitrina ya
+ * compartidos — y el caso de uso de la vitrina es literalmente pegar esa URL
+ * en una bio de Instagram.
  *
- * `catalogs` llega con `T-024`; hasta entonces ninguna organización tiene
- * catálogos publicados, que es literalmente cierto. Cuando esa tabla exista, el
- * cuerpo de `exist()` pasa a ser la consulta del modelo y no cambia nada más.
+ * Hasta `T-024` esta clase respondía que no había ninguno, lo cual era cierto
+ * porque la tabla no existía, y **lanzaba** en cuanto la tabla apareciera para
+ * que el relevo no se quedara abierto ocho tareas sin un test en rojo. Ahora
+ * consulta de verdad, y lo que se comprueba aquí son las tres respuestas que
+ * tiene que dar —incluida la que de verdad importa: que el catálogo publicado
+ * **de otra organización** no cuenta—.
+ *
+ * Va como clase de PHPUnit y no con la sintaxis de Pest porque usa los helpers
+ * de instancia del caso base (`withinOrganization`, `neighbourOrganization`),
+ * y PHPStan nivel 6 no resuelve el `$this` de las *closures* de Pest.
  */
-it('responde que no hay catálogos publicados mientras la tabla no exista', function (): void {
-    expect(Schema::hasTable('catalogs'))->toBeFalse('`catalogs` ya existe: `PublishedCatalogs::exist()` tiene que consultarla (T-032).');
+final class PublishedCatalogsTest extends TestCase
+{
+    use RefreshDatabase;
 
-    expect((new PublishedCatalogs)->exist())->toBeFalse();
-});
-
-/**
- * **Y falla ruidosamente cuando la tabla llegue** (`T-016`, cierre de H0).
- *
- * Es la deuda que esta tarea salda. La guarda estaba escrita al revés
- * —comprobaba que `catalogs` no existiera y devolvía `false`—, y `T-024` crea
- * esa tabla **ocho tareas antes** de que `T-032` rellene el cuerpo: en esa
- * ventana SP-5 quedaba desactivado sin un solo test en rojo, y el síntoma no
- * habría aparecido hasta que un negocio perdiera su enlace.
- *
- * Se finge que la tabla existe en vez de crearla: un `CREATE TABLE` a mitad de
- * un test provoca en MySQL un *commit* implícito que se lleva por delante el
- * aislamiento de `RefreshDatabase`.
- */
-it('lanza si la tabla existe y nadie ha rellenado el cuerpo', function (): void {
-    Schema::shouldReceive('hasTable')->with('catalogs')->andReturnTrue();
-
-    expect(fn (): bool => (new PublishedCatalogs)->exist())
-        ->toThrow(LogicException::class, 'T-032');
-});
-
-/**
- * Y se puede sustituir, que es lo que permite ejercitar el `422` de SP-5 antes
- * de que exista el modelo. Si la clase fuera `final`, la regla no se podría
- * probar hasta H2.
- */
-it('se puede sustituir para ejercitar el bloqueo del enlace', function (): void {
-    $withCatalogs = new class extends PublishedCatalogs
+    public function test_it_answers_false_when_the_organization_has_no_catalogs(): void
     {
-        public function exist(): bool
-        {
-            return true;
-        }
-    };
+        $organization = Organization::factory()->create();
 
-    expect($withCatalogs->exist())->toBeTrue();
-});
+        $this->assertFalse($this->existFor($organization));
+    }
+
+    /**
+     * Un borrador no cuenta: su URL no ha circulado, así que cambiar el slug
+     * del negocio no rompe ningún enlace.
+     */
+    public function test_a_draft_catalog_does_not_count(): void
+    {
+        $organization = Organization::factory()->create();
+
+        $this->withinOrganization($organization, fn (): Catalog => Catalog::factory()->create());
+
+        $this->assertFalse($this->existFor($organization));
+    }
+
+    public function test_a_published_catalog_counts(): void
+    {
+        $organization = Organization::factory()->create();
+
+        $this->withinOrganization($organization, fn (): Catalog => Catalog::factory()->published()->create());
+
+        $this->assertTrue($this->existFor($organization));
+    }
+
+    /**
+     * **La mitad que el global scope tiene que estar haciendo.**
+     *
+     * El catálogo publicado del negocio vecino no puede bloquear el cambio de
+     * slug de este. Si esta prueba fallara, la consulta estaría leyendo la
+     * tabla entera —y el síntoma sería un `422` que nadie sabe explicar: «no
+     * puedes cambiar tu enlace» sobre un negocio que no ha publicado nada—.
+     */
+    public function test_a_published_catalog_of_another_organization_does_not_count(): void
+    {
+        $organization = Organization::factory()->create();
+        $neighbour = $this->neighbourOrganization();
+
+        $this->withinOrganization($neighbour, fn (): Catalog => Catalog::factory()->published()->create());
+
+        $this->assertFalse($this->existFor($organization));
+        $this->assertTrue($this->existFor($neighbour));
+    }
+
+    /**
+     * Un catálogo **expirado sigue contando**: su URL circuló igual y su
+     * `published_at` no es nulo. Lo que devuelve un catálogo a borrador es
+     * despublicarlo (`REQ-CAT-022` RB-7), no que pase su fecha.
+     */
+    public function test_an_expired_catalog_still_counts(): void
+    {
+        $organization = Organization::factory()->create();
+
+        $this->withinOrganization($organization, fn (): Catalog => Catalog::factory()->published()->create([
+            'expires_at' => now()->subDay(),
+        ]));
+
+        $this->assertTrue($this->existFor($organization));
+    }
+
+    /**
+     * Y se sigue pudiendo sustituir, que es lo que permite a
+     * `UpdateOrganizationActionTest` ejercitar el `422` sin montar un catálogo.
+     */
+    public function test_it_can_still_be_substituted(): void
+    {
+        $withCatalogs = new class extends PublishedCatalogs
+        {
+            public function exist(): bool
+            {
+                return true;
+            }
+        };
+
+        $this->assertTrue($withCatalogs->exist());
+    }
+
+    private function existFor(Organization $organization): bool
+    {
+        return $this->withinOrganization(
+            $organization,
+            fn (): bool => (new PublishedCatalogs)->exist(),
+        );
+    }
+}

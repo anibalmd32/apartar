@@ -17,10 +17,26 @@ it('declara exactamente los tres índices únicos globales', function (): void {
         ->toBe(['users.email', 'catalogs.slug', 'layaways.code']);
 });
 
-it('declara exactamente las dos tablas exentas de organization_id', function (): void {
+/**
+ * Las tablas exentas son de dos clases y conviene no confundirlas: las dos
+ * primeras son **puentes de la capa de plataforma** —relacionan una `Account`
+ * global con un catálogo y cruzan la frontera a propósito— y las dos que trajo
+ * `T-024` son **pivotes entre tablas ya aisladas**, sin modelo ni consultas
+ * propias, a cuyas filas solo se llega desde padres que ya llevan el global
+ * scope.
+ *
+ * La lista sigue estando fijada aquí: una quinta entrada pone esto en rojo y
+ * hay que justificarla, que es todo el valor que tiene una lista blanca.
+ */
+it('declara exactamente las cuatro tablas exentas de organization_id', function (): void {
     expect(array_keys(GlobalUniqueExceptions::tables()))
-        ->toBe(['catalog_subscriptions', 'catalog_digest_dispatches']);
+        ->toBe(['catalog_subscriptions', 'catalog_digest_dispatches', 'product_tag', 'catalog_product']);
 });
+
+it('distingue los pivotes de los puentes de plataforma', function (string $pivot): void {
+    expect(GlobalUniqueExceptions::allowsMissingTenantColumn($pivot))->toBeTrue();
+    expect(GlobalUniqueExceptions::reasonFor($pivot))->toContain('Pivote');
+})->with(['product_tag', 'catalog_product']);
 
 /**
  * El motivo es la mitad útil de la lista: sin él, dentro de seis meses las

@@ -493,13 +493,25 @@ final class TenancyAuditTest extends TestCase
     }
 
     /**
-     * `REQ-QAX-008` RB-5 y `REQ-ORG-002` RB-3: la lista blanca no crece.
+     * `REQ-QAX-008` RB-5 y `REQ-ORG-002` RB-3: la lista blanca no crece **sin
+     * que se note**.
+     *
+     * Los **tres índices** son los de [05 §4.1] y no admiten un cuarto: añadir
+     * uno exige modificar esa spec, y este test es lo que obliga a pasar por
+     * ahí en vez de colarlo.
+     *
+     * Las **tablas** eran dos y son cuatro desde `T-024`, y la diferencia
+     * entre las dos parejas está escrita en `GlobalUniqueExceptions`: las dos
+     * primeras son puentes de la capa de plataforma, y las dos nuevas son
+     * pivotes entre tablas ya aisladas, sin modelo ni consultas propias. Lo
+     * que el test conserva es la propiedad que importa: la lista está fijada
+     * aquí, así que una quinta entrada pone esto en rojo y hay que justificarla.
      *
      * La misma aserción vive en `tests/Unit`, y la repetición es deliberada:
      * el job `tenancy` de CI es independiente (RB-7) y no puede depender de que
      * otro job compruebe la lista de la que este comando deriva sus reglas.
      */
-    public function test_the_whitelist_still_holds_exactly_three_indexes_and_two_tables(): void
+    public function test_the_whitelist_still_holds_exactly_three_indexes_and_four_tables(): void
     {
         $this->assertSame(
             ['users.email', 'catalogs.slug', 'layaways.code'],
@@ -507,7 +519,7 @@ final class TenancyAuditTest extends TestCase
         );
 
         $this->assertSame(
-            ['catalog_subscriptions', 'catalog_digest_dispatches'],
+            ['catalog_subscriptions', 'catalog_digest_dispatches', 'product_tag', 'catalog_product'],
             array_keys(GlobalUniqueExceptions::tables()),
         );
     }

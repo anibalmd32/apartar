@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalog;
 
-use Illuminate\Support\Facades\Schema;
-use LogicException;
+use App\Models\Catalog;
 
 /**
  * Si la organización activa tiene catálogos publicados (`REQ-ORG-006` SP-5).
@@ -16,57 +15,47 @@ use LogicException;
  * Instagram. Un negocio que renombra su enlace y descubre a los tres días que
  * nadie llega no tiene forma de saber por qué.
  *
- * **La regla está escrita con su forma definitiva; lo que falta es la tabla.**
- * `catalogs` llega con `T-024`, así que hoy la respuesta es que no hay ninguno
- * publicado — lo cual es literalmente cierto, no un `TODO` que aparenta
- * funcionar—. `UpdateOrganizationAction` ya pregunta, ya bloquea y ya tiene su
- * test: lo hace contra una implementación sustituida en el contenedor, que es
- * lo que permite ejercitar el `422` antes de que exista el modelo.
+ * ## El relevo, y por qué estuvo abierto
  *
- * ## Y por eso falla ruidosamente cuando llegue la tabla (`T-016`)
+ * La regla se escribió en `T-014` con su forma definitiva, pero `catalogs` no
+ * existía: la respuesta de entonces era que no había ninguno publicado, lo
+ * cual era **literalmente cierto** y no un `TODO` disfrazado.
  *
- * Esta clase nació con la guarda al revés: comprobaba que `catalogs` **no**
- * existiera y respondía `false`. Parecía prudente y era una bomba de relojería
- * silenciosa. **`T-024` crea esa tabla ocho tareas antes de que `T-032` rellene
- * el cuerpo**, y desde ese commit la comprobación habría pasado, el cuerpo
- * habría seguido devolviendo `false`, y `REQ-ORG-006` SP-5 —el bloqueo del
- * enlace con catálogos publicados— habría quedado desactivado **sin un solo
- * test en rojo**. El síntoma no aparece hasta que un negocio renombra su slug,
- * y lo descubre a los tres días porque nadie llega a su vitrina: exactamente el
- * daño que la regla existía para evitar.
+ * Lo que sí era una bomba de relojería fue la primera versión de la guarda,
+ * que comprobaba que la tabla **no** existiera y devolvía `false`. `T-024`
+ * crea esa tabla ocho tareas antes de que `T-032` publique nada, y en esa
+ * ventana `REQ-ORG-006` SP-5 habría quedado desactivado **sin un solo test en
+ * rojo**: el síntoma no aparece hasta que un negocio renombra su slug y
+ * descubre a los tres días que nadie llega a su vitrina. `T-016` invirtió la
+ * guarda para que lanzara al llegar la tabla, y `T-024` —esta misma tarea—
+ * cierra el relevo escribiendo la consulta de verdad.
  *
- * Así que ahora, si la tabla existe y el cuerpo no se ha sustituido, **lanza**.
- * Es la convención de fallo cerrado que ya rige las declaraciones de superficie
- * y de suspensión de las rutas y el `match` sin `default` de
- * `LimitEnforcer::measure()`; `RecordedReceipts` (`T-015`) nació ya con esta
- * forma, copiada de aquí una vez corregida.
+ * ## Va por el global scope, y esa es la mitad que importa
  *
- * **Quien lo rellena es `T-032`**, que es quien publica catálogos y por tanto
- * quien introduce el `published_at` que esta consulta lee. Si `T-024` llega
- * antes —y llega—, la suite se pone roja y dice qué escribir.
+ * `Catalog::query()` lleva el filtro del tenant puesto, así que **el catálogo
+ * publicado de otra organización no cuenta**. Escribir aquí un
+ * `DB::table('catalogs')->where('organization_id', …)` a mano daría el mismo
+ * resultado hoy y sería exactamente la línea que `tenancy:audit` existe para
+ * que nadie escriba: convierte el aislamiento en algo que hay que acordarse de
+ * hacer.
+ *
+ * Sigue sin ser `final` y sigue teniendo su propio tipo —en vez de ser un
+ * método de la acción que la usa— por lo mismo de siempre: es el punto por el
+ * que `UpdateOrganizationActionTest` sustituye la respuesta para ejercitar el
+ * `422` sin montar un catálogo entero.
  */
 class PublishedCatalogs
 {
     /**
      * Indica si queda algún catálogo publicado de la organización activa.
      *
-     * @throws LogicException si `catalogs` ya existe y nadie ha sustituido este cuerpo
+     * Un catálogo **expirado sigue contando**: su `published_at` no es nulo y
+     * su URL circuló igual, así que cambiar el slug del negocio rompería los
+     * enlaces compartidos lo mismo. Lo que devuelve el catálogo a borrador es
+     * despublicarlo (`REQ-CAT-022` RB-7), y eso sí vacía `published_at`.
      */
     public function exist(): bool
     {
-        if (Schema::hasTable('catalogs')) {
-            throw new LogicException(sprintf(
-                'La tabla `catalogs` ya existe y %s::exist() sigue respondiendo que no hay ninguno publicado. '
-                .'`T-032` es quien publica catálogos y quien tiene que sustituir este cuerpo por '
-                .'`Catalog::query()->whereNotNull(\'published_at\')->exists()`, que va por el global scope del '
-                .'tenant. Hasta que lo haga, `REQ-ORG-006` SP-5 estaría desactivado: cambiar el slug con la '
-                .'vitrina ya circulando rompería los enlaces compartidos y ningún test se pondría en rojo.',
-                self::class,
-            ));
-        }
-
-        // Mientras la tabla no exista, ninguna organización tiene catálogos
-        // publicados y esta es la única respuesta honesta.
-        return false;
+        return Catalog::query()->whereNotNull('published_at')->exists();
     }
 }

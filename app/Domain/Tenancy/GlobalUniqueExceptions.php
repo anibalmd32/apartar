@@ -45,9 +45,19 @@ final class GlobalUniqueExceptions
     /**
      * Tablas exentas de llevar `organization_id`.
      *
-     * Las dos pertenecen a la capa de plataforma y cruzan la frontera a
-     * propósito: relacionan una `Account` global con un catálogo concreto.
-     * Es la única excepción estructural del modelo.
+     * Son de dos clases, y conviene no confundirlas:
+     *
+     *  - **Puentes de plataforma** (`catalog_subscriptions`,
+     *    `catalog_digest_dispatches`): relacionan una `Account` global con un
+     *    catálogo concreto y cruzan la frontera del tenant a propósito.
+     *  - **Pivotes entre dos tablas ya aisladas** (`product_tag`,
+     *    `catalog_product`): sus filas solo se alcanzan desde padres que ya
+     *    llevan el global scope, así que la columna sería un segundo censo de
+     *    a quién pertenece la fila —derivable de cualquiera de sus extremos y
+     *    capaz de discrepar de ellos—.
+     *
+     * Lo que **no** hay es una tercera clase: una tabla con modelo propio y
+     * consultas propias lleva su `organization_id`, sin excepción.
      *
      * @var array<string, string>
      */
@@ -57,6 +67,17 @@ final class GlobalUniqueExceptions
 
         'catalog_digest_dispatches' => 'Registro de envíos del digest por cuenta y catálogo: misma capa '
             .'de plataforma que catalog_subscriptions ([05 §4] bloque 6).',
+
+        'product_tag' => 'Pivote puro entre products y tags, las dos ya aisladas: a una fila solo se '
+            .'llega desde un producto o desde una etiqueta, los dos con el global scope puesto, así que '
+            .'una fila solo existe si alguien tenía acceso a sus dos extremos ([05 §4] bloque 5).',
+
+        'catalog_product' => 'Pivote entre catalogs y products. Se lee además desde la capa de '
+            .'plataforma —el feed multi-negocio ordena por su created_at (REQ-CAT-023 RB-3)—, y esa '
+            .'consulta cruza organizaciones por diseño: la columna no filtraría nada y quedaría como un '
+            .'segundo censo derivable de catalog_id. Mismo caso que catalog_subscriptions, y se resuelve '
+            .'igual: declarado. Lo que impide mezclar el producto de un negocio con el catálogo de otro '
+            .'es la validación de SyncCatalogProductsAction (REQ-CAT-023 RB-1).',
     ];
 
     /**
