@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Catalog;
 use Database\Factories\Concerns\CreatesWithinTenant;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -69,5 +70,29 @@ class CatalogFactory extends Factory
     public function unlisted(): static
     {
         return $this->state(fn (): array => ['is_listed' => false]);
+    }
+
+    /**
+     * Publicado y caducado: la campaña terminó y su URL responde `410`
+     * (`REQ-CAT-021` SP-3).
+     */
+    public function expired(): static
+    {
+        return $this->state(fn (): array => [
+            'published_at' => now()->subMonth(),
+            'expires_at' => now()->subDay(),
+        ]);
+    }
+
+    /**
+     * Solo la fecha de caducidad, sin tocar la publicación.
+     *
+     * Existe para el cruce que la precedencia de `Catalog::visibility()` tiene
+     * que resolver: un catálogo **nunca publicado** con la caducidad ya
+     * pasada, que es borrador y no expirado.
+     */
+    public function expiresAt(DateTimeInterface $expiresAt): static
+    {
+        return $this->state(fn (): array => ['expires_at' => $expiresAt]);
     }
 }
