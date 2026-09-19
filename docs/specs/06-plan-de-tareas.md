@@ -347,6 +347,8 @@ Hoy no rompe nada: son dos entradas de menú y coinciden. El problema es cuándo
 Provider según [05 §6](05-design-tecnico.md), `ManualRateProvider`, `ExchangeRateService`, `FetchExchangeRate`, `ExchangeServiceProvider`, `ExchangeRateSeeder`, endpoint `/api/tasa`.
 **Hecho cuando:** **una sola petición** HTTP trae oficial y paralelo (assert con N organizaciones); prioridad `promedio > venta > compra`; rechaza variación > 30 % y `rate <= 0`; no inserta si nada cambió; fixture de contrato del payload real; `WithoutOverlapping`.
 
+**Añadido de alcance: `format:check` da un falso positivo en un host Windows.** `resources/js/ssr.jsx` lo incumple solo fuera del contenedor, y no es un problema de formato: `prettier-plugin-organize-imports` emite CRLF en el bloque de imports en Windows, el archivo es LF en git y `.gitattributes` fuerza `eol=lf`. Comprobado que **no se arregla con `--end-of-line lf`**: la normalización de Prettier no alcanza la salida del plugin. Dentro del contenedor —que es lo que corre CI— pasa en verde. Se resuelve añadiendo `resources/js/ssr.jsx` al `.prettierignore` con ese motivo escrito: es el punto de entrada de SSR heredado del starter kit, nadie lo edita, y dejar un aviso permanente en la receta que acabamos de cablear es la forma más rápida de que la gente aprenda a ignorarla. Detectado al cerrar `T-019`.
+
 **T-021 · Fuente de tasa por organización** · `B` · 2 pts · *Requisitos: `REQ-FX-003`*
 `UpdateExchangeRateSettingsAction`, UI en ajustes con las fuentes disponibles y su antigüedad.
 **Hecho cuando:** **dos organizaciones con fuentes distintas proyectan importes distintos** para el mismo producto; `manual` no inserta en `exchange_rates`; `member` recibe `403`.

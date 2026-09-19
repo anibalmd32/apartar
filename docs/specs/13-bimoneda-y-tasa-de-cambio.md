@@ -44,10 +44,14 @@ interface ExchangeRateProvider
 export interface RateView {
   readonly rate: number | null;        // null ⇒ sin tasa disponible
   readonly source: 'bcv' | 'parallel' | 'manual';
-  readonly fetchedAt: string | null;   // ISO 8601
-  readonly isStale: boolean;           // > 24 h
+  readonly publishedAt: string | null; // ISO 8601 · cuándo la publicó la fuente
+  readonly isStale: boolean;           // > 24 h sobre publishedAt
 }
 ```
+
+> **`RateView` lleva `publishedAt`, no `fetchedAt`, y se corrigió en `T-019`.** El contrato decía `fetchedAt` mientras `RateSnapshot::isStale()` mide sobre `publishedAt`, así que el sello de `REQ-FX-005` RB-2 —«Tasa BCV del DD/MM HH:mm»— habría mostrado **cuándo la leímos nosotros** y el aviso de RB-3 se habría disparado sobre otra fecha distinta de la mostrada. El fallo se ve un fin de semana: el BCV no publica, el job sigue leyendo cada media hora, y el catálogo estampa «hoy 09:00» sobre una tasa del viernes — exactamente el engaño que tener dos columnas venía a evitar.
+>
+> `fetchedAt` **no viaja al cliente**. Su propio comentario dice que solo sirve para diagnosticar la ingesta, y un campo que se envía en todas las páginas con precios y significa algo sutilmente distinto de lo que parece es justo el que acaba pintado por error. La antigüedad de la ingesta se diagnostica en el servidor y se ve en Salud del sistema (`REQ-PLT-006` RB-4).
 
 ---
 
@@ -181,7 +185,7 @@ final readonly class Money
 **Reglas de negocio y precondiciones**
 - RB-1 **La fuente es una decisión de cada organización**, no de la plataforma ni por producto (`D-6`, `ASU-FX-02`): `bcv | parallel | manual` en `organization_settings`. Dos negocios pueden mostrar el mismo producto proyectado con tasas distintas, y cada catálogo lleva su propio sello (`REQ-FX-005` RB-2).
 - RB-2 La **ingesta** sigue siendo de plataforma y única (`REQ-FX-002` RB-0). La elección de fuente solo afecta a la **lectura**: `ExchangeRateService::current($organization)` resuelve qué fuente leer.
-- RB-3 `ManualRateProvider` toma su valor de `organization_settings.exchange_rate_manual` de **esa** organización y devuelve `RateSnapshot` con `source = manual` y `fetchedAt` = fecha de la última edición.
+- RB-3 `ManualRateProvider` toma su valor de `organization_settings.exchange_rate_manual` de **esa** organización y devuelve `RateSnapshot` con `source = manual` y **`publishedAt` = `fetchedAt` = fecha de la última edición**. En una tasa manual la publicación *es* la edición del `owner`: no hay fuente externa de la que separarla. Poner solo `fetchedAt` dejaría `publishedAt` sin valor y la tasa se vería **siempre obsoleta**, porque `isStale()` mide sobre esa columna — y una tasa que el dueño acaba de fijar a mano avisando de que está desactualizada es el aviso que enseña a ignorar todos los avisos.
 - RB-4 Fijar una tasa manual requiere `owner`, se audita en la organización (`REQ-BOF-005`) y **no** inserta fila en `exchange_rates`: la tabla de plataforma solo guarda tasas de fuentes públicas, y la manual de un negocio es un dato suyo, no de la plataforma. Su histórico vive en la auditoría.
 - RB-5 El binding del provider se resuelve en un `ServiceProvider` a partir de la config; añadir un proveedor nuevo no exige tocar el resto del sistema.
 - RB-6 La UI del backoffice muestra, junto al selector, la tasa vigente de cada fuente disponible con su antigüedad, para que el `owner` compare antes de elegir.
