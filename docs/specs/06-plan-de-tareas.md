@@ -706,6 +706,8 @@ La inmutabilidad del snapshot y el cierre del requisito: nada actualiza `rate_ap
 `LimitEnforcer`, `EnforcePlanLimit`, excepciones enriquecidas, `usePlanLimits`, `LimitBanner`, `UpgradePrompt`; **insertar las llamadas en las 12 acciones** de `REQ-SUB-004` RB-3.
 **Hecho cuando:** un test por cada uno de los **12 puntos de aplicación**; concurrencia con un cupo disponible; **el mensaje al cliente final no revela el plan del negocio**; límite `NULL` no bloquea; `suspended` bloquea todo; función de pago da `403` por API.
 
+**El punto de aplicación que se olvida es `max_products_per_catalog`**, y es el único que **no** pasa por `LimitEnforcer::assertCanCreate()`: no tiene `UsageMetric` porque se cuenta **por catálogo** y los contadores son por organización (ver el docblock de `UsageMetric`). Se comprueba con `Plan::maxProductsPerCatalog()` contra las filas del pivote de ese catálogo, dentro de `SyncCatalogProductsAction` (`REQ-CAT-023` RB-6, SP-3). `T-031` lo deja fuera a propósito —por la misma razón que todos los demás, que las llamadas se insertan aquí— pero su forma es distinta de las otras once, así que buscar el patrón de las once dejaría esta sin hacer y sin síntoma.
+
 **T-068 · Cambio de plan** · `B` · 3 pts · *Requisitos: `REQ-SUB-005`*
 `ChangePlanAction`, `PlanChangePreview`, página de suscripción.
 **Hecho cuando:** subir aplica límites al instante; bajar programa sin quitar nada; cancelar deja Free; la previsualización lista lo que excede; revertir antes del vencimiento funciona.
