@@ -474,6 +474,16 @@ CRUD de categorías y etiquetas, `ReassignCategoryProductsAction`, `CategoryInUs
 
 **`ProductDetailResource` no es de aquí: es de `T-035`.** De `REQ-CAT-004` sí es de esta tarea todo lo demás —la agrupación de RB-2 y RB-3 con su comparación *case-insensitive*, y `SpecificationTable` con sus tests de Vitest, incluido el de XSS—, y la agrupación se escribe **donde `T-035` pueda llamarla** en vez de dentro de un *resource* que todavía no existe. Es el mismo reparto que `T-022` hizo con `MoneyLabel`: la pieza y su prueba ahora, la página que la monta en su tarea.
 
+**Cerrada** (`a1785c6`). `REQ-BOF-021` cerrado y `REQ-CAT-004` en la parte que no necesita la página. Cuatro cosas:
+
+**La agrupación vive en `SpecificationGroups`, en el dominio, y tiene dos llamantes**: la ficha pública de `T-035` y `SpecificationGroupsQuery`, que necesita la **misma** comparación insensible a mayúsculas para no sugerir «Motor» y «motor» como dos secciones. El rótulo «General» lo pone la pantalla y no el dominio: con el grupo en `null`, una ficha sin secciones no se confunde con una que tenga una sección llamada así. El orden entre grupos es por **primera aparición**, porque la spec no lo fija y alfabético habría sido inventarse un criterio.
+
+**El reemplazo cambia los `id` de todas las filas**, también las que no cambiaron de texto, y hay un test que lo afirma. De ahí que el `id` de una fila no sea una promesa que la pantalla pueda guardar, y que el cliente ordene con claves locales (SP-6). Las inserciones van **fila a fila por el modelo** y no con un `insert()` en lote: el relleno de `organization_id` lo hace el evento `creating` del trait, y una inserción masiva se lo salta — cincuenta consultas como mucho, que es el tope de RB-3, a cambio de que la tabla siga siendo del tenant por construcción.
+
+**`ProductData::$specifications` distingue `null` de `[]`:** `null` es «no la toques» y `[]` borra la ficha entera (SP-3). La distinción existe para que un llamante que no gestiona la ficha —un *seeder*, una importación— no la borre sin pedirlo, y se produce con `sometimes` en la validación.
+
+**El arrastre de RB-1 tampoco está**, por lo mismo que en `T-026`: son botones de subir y bajar, el orden viaja entero y `T-031` cambia el gesto. Ver su nota.
+
 **T-029 · Imágenes de producto** · `B` · 3 pts · *Requisitos: `REQ-BOF-022`, `REQ-CAT-005`*
 medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAction`, `RealMimeType`, `ImageUploader`, `ProductGallery`.
 **Hecho cuando:** 3 conversiones en cola; MIME falso rechazado; borrar la principal promueve la siguiente; **la ruta física incluye el `organization_id`**; **el producto sabe decir si tiene imágenes**, que es la pieza que `T-030` necesita para RB-5.
@@ -488,7 +498,7 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 **T-031 · Composición de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-023`*
 `SyncCatalogProductsAction`, `CatalogProductSorter`, `useSortableProducts`.
 **Hecho cuando:** posiciones contiguas desde 1; **`created_at` del pivote NO cambia al reordenar**; deduplicación; producto de otra organización rechazado (fuga); vaciar un catálogo publicado rechazado.
-**Y trae el arrastre que `T-026` dejó pendiente** (`REQ-BOF-023` RB-2): con `useSortableProducts` escrito, la lista de categorías cambia el gesto —hoy son botones de subir y bajar— **sin tocar su endpoint**, que ya recibe la lista entera de identificadores. Es media hora y cierra la única parte de `REQ-BOF-023` que quedó por debajo de la letra.
+**Y trae el arrastre que `T-026` y `T-028` dejaron pendiente** (`REQ-BOF-023` RB-2 y `REQ-BOF-021` RB-1): con `useSortableProducts` escrito, la lista de categorías y las filas de la ficha técnica cambian el gesto —hoy son botones de subir y bajar— **sin tocar su endpoint ni su payload**, que en los dos casos ya viajan enteros en su orden. Son las dos únicas partes de H2 que quedaron por debajo de la letra, y las dos están declaradas en sus requisitos.
 **Aquí también va la guarda de escritura de `catalog_product`** (`REQ-ORG-002` RB-7, SP-5): validar en la `Action` que el producto y el catálogo son de la misma organización, que es lo que sostiene que el pivote no lleve `organization_id`.
 
 **T-032 · Publicación de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-022`, `REQ-BOF-024`*

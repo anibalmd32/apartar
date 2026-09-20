@@ -131,10 +131,10 @@ export interface SpecificationFormRow {
 **Contratos de datos**
 - `SyncSpecificationsAction(Product $product, list<SpecificationInput> $rows)`, invocada desde `UpsertProductAction`.
 - `product_specifications` con `organization_id`, `group?`, `label`, `value`, `position`.
-- Formulario con `@tanstack/react-form` en modo arreglo dinámico.
+- Formulario con `@tanstack/react-form` en modo arreglo dinámico. **No fue así, y está razonado** (`T-028`): el formulario de producto usa el `useForm` de Inertia desde `T-027`, y meter un segundo motor dentro del mismo `<form>` parte en dos la fuente de `errors` y de `processing` —los errores de las filas llegan como `specifications.3.label`, del mismo bolsín que el resto—. Lo que RB-1 pide de verdad —añadir, quitar y reordenar con claves locales— vive en `useSpecificationRows`. Queda entonces sin enumerar cuáles son «los tres formularios complejos» de [91 §RB-4](91-calidad-y-gates.md): el único llamante planificado de `react-form` es el formulario de apartado de `T-045`, **y esa tarea decide** — si también lo resuelve con Inertia, la dependencia sale del *stack*.
 
 **Reglas de negocio y precondiciones**
-- RB-1 Filas dinámicas: añadir, eliminar y reordenar por arrastre, con `group` opcional por fila.
+- RB-1 Filas dinámicas: añadir, eliminar y reordenar por arrastre, con `group` opcional por fila. **El gesto son hoy botones de subir y bajar**, no arrastre, por lo mismo que en `REQ-BOF-023` RB-2 y con el mismo relevo: el orden viaja entero en el guardado, así que `T-031` cambia el gesto sin tocar el servidor.
 - RB-2 `label` y `value` obligatorios y no vacíos; `label` ≤ 60 caracteres, `value` ≤ 500.
 - RB-3 Máximo **50** especificaciones por producto (límite técnico, no de plan).
 - RB-4 `position` se **recalcula** contiguo desde 1 en cada guardado; el orden lo fija el arrastre, no el índice del formulario.
