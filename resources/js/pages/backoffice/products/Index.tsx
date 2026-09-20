@@ -1,9 +1,10 @@
+import { Alert } from '@/components/ui/alert';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { ProductRow } from '@/features/products/components/ProductRow';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type ProductFilters, type ProductListItem, type ProductStatus, type ProductStatusDefinition, type TaxonomyOption } from '@/types/product';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 /**
@@ -18,6 +19,15 @@ import { useEffect, useState } from 'react';
  * Los filtros viven en la query string y no en el estado del componente: la
  * URL es compartible y reproducible, que es lo mismo que pide `REQ-CAT-006`
  * RB-6 para el catálogo público. Cambiar uno recarga solo el listado.
+ *
+ * ## Y es donde aterriza el rechazo de publicar
+ *
+ * `REQ-BOF-020` SP-3 pide «la lista de lo que falta», no un «está
+ * incompleto», y la fila desde la que se pulsó «Publicar» no tiene sitio para
+ * cuatro mensajes. Así que el resumen —el que los nombra todos de una vez—
+ * llega bajo `status` y se pinta arriba; el detalle por campo viaja igual, y
+ * lo lee el formulario cuando se abre el producto para arreglarlo. Es el mismo
+ * reparto que hace la pantalla de categorías con `category_id`.
  */
 
 interface ProductsPageProps {
@@ -29,6 +39,8 @@ interface ProductsPageProps {
 }
 
 export default function ProductsIndex({ products, filters, categories, statuses }: ProductsPageProps) {
+    const { errors } = usePage<{ errors: Record<string, string> }>().props;
+
     const [search, setSearch] = useState(filters.search ?? '');
 
     const statusLabels = Object.fromEntries(statuses.map((status) => [status.value, status.label])) as Record<ProductStatus, string>;
@@ -66,6 +78,8 @@ export default function ProductsIndex({ products, filters, categories, statuses 
             title="Productos"
             description="Lo que vendes. Desde aquí lo creas, lo editas y lo archivas cuando deja de estar a la venta."
         >
+            {errors.status ? <Alert tone="warning">{errors.status}</Alert> : null}
+
             <section className="card bg-base-100 shadow-sm">
                 <div className="card-body gap-4">
                     <header className="flex flex-wrap items-baseline justify-between gap-2">
@@ -144,6 +158,7 @@ export default function ProductsIndex({ products, filters, categories, statuses 
 
                     <p className="text-xs opacity-70">
                         Archivar no borra: el producto conserva su historial y su sitio en los catálogos, y deja de mostrarse y de poder apartarse.
+                        Restaurarlo lo devuelve como borrador, para que lo revises antes de que vuelva a verse.
                     </p>
                 </div>
             </section>

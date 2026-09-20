@@ -308,6 +308,7 @@ export interface ImageSet {
 **Contratos de datos**
 - `ProductStatus`, `products.published_at`, `products.deleted_at` (`SoftDeletes`), `products.stock`.
 - Scope `Product::scopePublished()`; `ChangeProductStatusAction`.
+- **Las transiciones tienen ruta, una por botón** (`T-030`): `POST /backoffice/productos/{product}/publicar` —con `published_at` opcional, que es por donde entra la programación de RB-5—, `.../despublicar` y `.../restaurar`, junto a la `.../archivar` que `REQ-BOF-020` ya declaraba. Este requisito solo nombraba la `Action`, y sin rutas la matriz no tendría quien la pulsara; son cuatro y no una con parámetro de destino porque el estado al que se va no es un dato que el cliente elija: `archived → published` no existe (SP-4), y un endpoint que aceptara el destino invitaría a pedirlo. Ninguna sobrevive a la suspensión, como el resto del inventario (`REQ-BOF-020` RB-11).
 
 **Reglas de negocio y precondiciones**
 - RB-1 `draft`: invisible en todo catálogo y sin URL alcanzable. `published`: visible si `published_at <= now()` **y** está en un catálogo accesible. `archived`: invisible, conserva historial, no se puede apartar.
@@ -327,7 +328,7 @@ export interface ImageSet {
 
 **Sad paths y edge cases**
 - SP-1 URL directa de un producto `draft` o `archived` → `404`.
-- SP-2 Intento de apartar un producto archivado con el formulario ya abierto → `422` "ya no está disponible".
+- SP-2 Intento de apartar un producto archivado con el formulario ya abierto → `422` "ya no está disponible". **La guarda es `ProductNotAvailableException::guard()`** (`T-030`) y su llamante es `CreateLayawayAction`, que es de `T-044`: el mecanismo se escribe con los estados y el recorrido con los apartados, y no se inventa un apartado para tener dónde llamarla.
 - SP-3 Producto agotado con el formulario abierto → rechazado en `CreateLayawayAction` (`REQ-LAY-003` SP-1).
 - SP-4 Restaurar un archivado → vuelve como `draft`, nunca directamente a `published`, y vuelve a consumir cupo del plan (si no hay, `422`).
 - SP-5 `published_at` futuro → no aparece hasta la fecha; el backoffice lo marca "Programado".
@@ -339,7 +340,7 @@ export interface ImageSet {
 - Despublicación programada.
 
 **Gate de validación**
-- Superficie esperada: `app/Models/Product.php`, `app/Actions/Product/ChangeProductStatusAction.php`, `app/Domain/Catalog/ProductStatus.php`.
-- Tipos esperados: `ProductStatus`, `ProductNotAvailableException`.
-- Anti-`SHALLOW`: `ChangeProductStatusAction::handle()` (transiciones válidas, ajuste del consumo del plan, auditoría) supera 4 líneas; `ProductStatus::isVisibleInCatalog()` y `canBeReserved()` junto al enum.
+- Superficie esperada: `app/Models/Product.php`, `app/Actions/Product/ChangeProductStatusAction.php`, `app/Domain/Catalog/ProductStatus.php`, `app/Http/Requests/Backoffice/PublishProductRequest.php`, las tres rutas de arriba en `routes/backoffice.php` y sus acciones en `ProductController`, `resources/js/features/products/components/ProductRow.tsx`.
+- Tipos esperados: `ProductStatus`, `ProductNotAvailableException`, `IncompleteProductException` (declarada en `REQ-BOF-020`, y es aquí donde se lanza: la completitud de su RB-5 vive entera en la transición a `published`).
+- Anti-`SHALLOW`: las transiciones válidas, el ajuste del consumo del plan y la auditoría de `ChangeProductStatusAction` superan 4 líneas; `ProductStatus::isVisibleInCatalog()` y `canBeReserved()` junto al enum. **No hay un `handle()`** (`T-027`, `T-030`): la clase tiene un método por paso —`publish()`, `unpublish()`, `restore()`, `archive()`— sobre un `transitionTo()` privado que escribe la columna y audita una sola vez para todas. Un `handle($status)` haría del estado de destino un parámetro, y el destino no es un dato que el llamante elija: es lo que la matriz decide. El ajuste del cupo (RB-8) sigue sin estar aquí y es de `T-067`, con `T-066` enseñando a `measure()` a contar `products`.
 - Tests: matriz de transiciones; `draft` y `archived` dan `404`; archivar no rompe apartados vigentes y libera cupo; restaurar deja `draft` y reclama cupo; `published_at` futuro no se lista; publicado en 0 catálogos no es visible pero no es error; la relación con el catálogo se conserva al archivar.

@@ -83,7 +83,7 @@ export interface SpecificationFormRow {
 - RB-2 Los importes se introducen en USD con dos decimales y se persisten en centavos (`REQ-FX-001`).
 - RB-3 `sku` y `slug` son únicos **por organización** (`UNIQUE(organization_id, …)`): dos negocios pueden usar el mismo SKU sin interferir. El `slug` se autogenera del nombre y es editable mientras el producto no esté publicado.
 - RB-4 Los valores por defecto de `installments_count` y `frequency_days` vienen de `organization_settings` (`REQ-ORG-006`), para que el negocio no los reescriba en cada producto.
-- RB-5 Publicar exige: al menos una imagen, categoría asignada, descripción no vacía y condiciones financieras válidas. Un `draft` puede estar incompleto.
+- RB-5 Publicar exige: al menos una imagen, categoría asignada, descripción no vacía y condiciones financieras válidas. Un `draft` puede estar incompleto. **Las cuatro se comprueban enteras y en un solo sitio** (`T-030`): la transición a `published` de `ChangeProductStatusAction`, no el guardado del formulario. `UpsertProductAction` no toca `status` —crea en `draft` y al editar lo deja como está—, así que no hay un segundo camino por el que publicar; media lista aquí sería la que se queda corta, y publicar de más no falla, se ve cuando un cliente abre una ficha sin foto. La comprobación se hace **sobre la fila guardada**: la imagen por `Product::hasImages()` (`T-029`) y las condiciones por `CoherentFinancingTerms::violationsIn()`, sin reescribir ninguna de las dos.
 - RB-6 Cambiar precio, inicial, número de cuotas o frecuencia **no** afecta a apartados existentes (`REQ-LAY-002` RB-4) y **se audita** (`REQ-BOF-005`).
 - RB-7 La UI muestra en vivo la previsualización del plan ("inicial $50 + 5 cuotas de $30 cada 15 días") usando el mismo cálculo del dominio que generará el cronograma real.
 - RB-8 **Crear un producto consume la métrica `products`**; al alcanzar el techo, `422` con el plan que lo desbloquea (`REQ-SUB-004`). Archivar libera cupo (`REQ-CAT-007` RB-8).
@@ -99,7 +99,7 @@ export interface SpecificationFormRow {
 **Sad paths y edge cases**
 - SP-1 `down_payment >= price` → `422` con la regla explícita.
 - SP-2 `compare_at_price <= price` → `422`.
-- SP-3 Publicar sin imágenes o sin categoría → `422` con la lista de lo que falta.
+- SP-3 Publicar sin imágenes o sin categoría → `422` con la lista de lo que falta. **La lista viaja dos veces y desde un solo origen** (`T-030`): `IncompleteProductException::$missing` reparte una frase por campo —la que el formulario pone junto al control que hay que corregir— y `getMessage()` los nombra todos de una vez, que es lo que pinta el listado desde el que se pulsó «Publicar». Quien pulsa con un producto sin foto y sin categoría va a arreglar las dos de una pasada; nombrar solo la primera lo manda a buscar dos veces.
 - SP-4 SKU duplicado **en la misma organización** → `422`. En otra organización → permitido.
 - SP-5 Editar el `slug` de un producto publicado → `422`.
 - SP-6 Reducir `stock` por debajo de lo reservado → permitido con advertencia (`REQ-LAY-003` SP-2).

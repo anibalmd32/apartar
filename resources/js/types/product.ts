@@ -194,6 +194,13 @@ export interface ProductDefaults {
  * `catalogsCount` es la columna de `REQ-CAT-007` RB-6: un producto puede estar
  * publicado y no verlo nadie porque no está en ningún catálogo, y el
  * backoffice tiene que poder decirlo.
+ *
+ * `scheduledFor` es SP-5 y llega **resuelto y formateado por el servidor**,
+ * igual que el dinero. La pantalla no compara fechas con su propio reloj:
+ * quien decide si un producto se lista es `Product::scopePublished()` contra
+ * la hora del servidor, y un navegador con la hora corrida pintaría
+ * «Programado» sobre algo que ya se ve. `null` es «no está programado», que
+ * cubre a la vez el borrador, el archivado y el publicado ya visible.
  */
 export interface ProductListItem {
     readonly id: number;
@@ -204,6 +211,8 @@ export interface ProductListItem {
     readonly price: MoneyView;
     readonly categoryName: string | null;
     readonly catalogsCount: number;
+    /** Publicado con fecha futura: desde cuándo se verá, ya formateado (SP-5). */
+    readonly scheduledFor: string | null;
 }
 
 /** Los filtros del listado, tal como viajan en la URL (RB-9). */

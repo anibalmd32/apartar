@@ -110,21 +110,55 @@ it('no castea ninguna propiedad de modelo a float o double', function (): void {
 });
 
 /**
- * `REQ-QAX-001` RB-3 y SP-3: un modelo que crece por encima de 200 líneas es
- * la señal de que hay lógica de negocio que debería vivir en `app/Domain`.
+ * Las líneas de **código** de un archivo: sin blancos y sin comentarios.
+ *
+ * Es cómo cuenta `max-lines` de ESLint en el gate gemelo del frontend
+ * (`REQ-QAX-002` RB-1, con `skipBlankLines` y `skipComments`), y desde `T-030`
+ * también el del backend. El motivo está en `REQ-QAX-001` RB-3.
  */
-it('mantiene los modelos por debajo de 200 líneas', function (): void {
+function codeLinesIn(string $file): int
+{
+    $lines = 0;
+
+    foreach (file($file) ?: [] as $line) {
+        $trimmed = ltrim($line);
+
+        if ($trimmed === '' || str_starts_with($trimmed, '//') || str_starts_with($trimmed, '/*')
+            || str_starts_with($trimmed, '*')) {
+            continue;
+        }
+
+        $lines++;
+    }
+
+    return $lines;
+}
+
+/**
+ * `REQ-QAX-001` RB-3 y SP-3: un modelo que crece por encima de 200 líneas de
+ * código es la señal de que hay lógica de negocio que debería vivir en
+ * `app/Domain`.
+ *
+ * **Cuenta código y no documentación** (`T-030`), igual que el gate gemelo del
+ * frontend. Contando líneas en crudo, lo que se mide es cuánto se explica el
+ * archivo, y este proyecto exige explicarlos: `Product` llegó a 200 con 87
+ * líneas de código y 99 de comentario, de modo que el `scopePublished()` que
+ * `REQ-CAT-007` **exige en ese mismo modelo** no cabía —ni siquiera sin una
+ * sola línea de docblock—. Dos requisitos cerrados no pueden contradecirse, y
+ * el que cede es el que estaba midiendo la cosa equivocada.
+ */
+it('mantiene los modelos por debajo de 200 líneas de código', function (): void {
     $offenders = [];
 
     foreach (phpFilesIn(app_path('Models')) as $file) {
-        $lines = count(file($file) ?: []);
+        $lines = codeLinesIn($file);
 
         if ($lines > 200) {
             $offenders[] = basename($file).' ('.$lines.')';
         }
     }
 
-    expect($offenders)->toBe([], 'Modelos por encima de 200 líneas: '.implode(', ', $offenders));
+    expect($offenders)->toBe([], 'Modelos por encima de 200 líneas de código: '.implode(', ', $offenders));
 });
 
 /**

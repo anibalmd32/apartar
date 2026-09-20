@@ -221,4 +221,79 @@ final class ProductModelTest extends TestCase
 
         $this->assertSame(3, $catalog->products()->count());
     }
+
+    /**
+     * **`REQ-CAT-007` RB-1 · el mecanismo detrás del `404` de SP-1.**
+     *
+     * Un `draft` y un `archived` no tienen forma de entrar en la consulta que
+     * la vista pública usará. La respuesta HTTP la prueban `T-033` y `T-035`,
+     * que son las que tienen página que pedir; lo que se fija aquí es que no
+     * haya por dónde colarse.
+     */
+    public function test_the_published_scope_leaves_out_drafts_and_archived(): void
+    {
+        $published = Product::factory()->published()->create();
+        Product::factory()->create();
+        Product::factory()->archived()->create();
+
+        $this->assertSame(1, Product::query()->published()->count());
+        $this->assertTrue(Product::query()->published()->sole()->is($published));
+    }
+
+    /**
+     * **RB-5 y SP-5 · la fecha se evalúa en la consulta, sin job.**
+     *
+     * El producto está `published` —la transición ya ocurrió— y aun así no se
+     * lista hasta su hora. Si esto dependiera de un job, una cola parada
+     * dejaría el producto invisible sin que nada fallara.
+     */
+    public function test_the_published_scope_hides_a_scheduled_product_until_its_date(): void
+    {
+        $scheduled = Product::factory()->scheduled()->create();
+
+        $this->assertSame(ProductStatus::Published, $scheduled->status);
+        $this->assertSame(0, Product::query()->published()->count());
+
+        $this->travelTo(now()->addWeeks(2));
+
+        $this->assertSame(1, Product::query()->published()->count());
+    }
+
+    /**
+     * Y el borde del reloj: la fecha exacta ya cuenta, porque RB-1 dice
+     * `published_at <= now()` y no `<`.
+     */
+    public function test_the_published_scope_includes_a_product_published_exactly_now(): void
+    {
+        $this->freezeTime();
+
+        Product::factory()->create(['status' => ProductStatus::Published, 'published_at' => now()]);
+
+        $this->assertSame(1, Product::query()->published()->count());
+    }
+
+    /**
+     * Un `published` **sin fecha** no se lista: no hay ningún instante desde
+     * el cual esté publicado. No debería existir —`publish()` siempre escribe
+     * la fecha— y por eso mismo el scope no se fía de que no exista.
+     */
+    public function test_the_published_scope_leaves_out_a_published_product_without_a_date(): void
+    {
+        Product::factory()->create(['status' => ProductStatus::Published, 'published_at' => null]);
+
+        $this->assertSame(0, Product::query()->published()->count());
+    }
+
+    /**
+     * SP-5 · el sello «Programado» del backoffice, que es la mitad por fila de
+     * lo que el scope decide por consulta. Las dos miran la misma columna
+     * contra el mismo reloj.
+     */
+    public function test_only_a_published_product_with_a_future_date_is_scheduled(): void
+    {
+        $this->assertTrue(Product::factory()->scheduled()->create()->isScheduled());
+        $this->assertFalse(Product::factory()->published()->create()->isScheduled());
+        $this->assertFalse(Product::factory()->create()->isScheduled());
+        $this->assertFalse(Product::factory()->archived()->create()->isScheduled());
+    }
 }

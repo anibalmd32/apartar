@@ -11,6 +11,7 @@ use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Rules\RealMimeType;
 use Database\Factories\ProductFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,7 +27,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  *
  * Tabla del tenant y la pieza central de H2. El modelo es anémico a propósito
  * (`REQ-QAX-001` RB-3): las transiciones de estado son de
- * `ChangeProductStatusAction` (`T-030`) y la búsqueda del catálogo de `T-034`.
+ * `ChangeProductStatusAction` y la búsqueda del catálogo de `T-034`. Lo que sí
+ * vive aquí es **leer** —`scopePublished()`, `isScheduled()`, `hasImages()`—,
+ * porque son preguntas sobre la fila y no decisiones sobre ella.
  *
  * ## El dinero sale como `Money`, no como `int`
  *
@@ -196,5 +199,52 @@ class Product extends Model implements HasMedia
     public function hasImages(): bool
     {
         return $this->hasMedia(self::IMAGES);
+    }
+
+    /**
+     * Los productos que de verdad se pueden mostrar hoy
+     * (`REQ-CAT-007` RB-1, RB-5).
+     *
+     * El estado **y el reloj**, los dos en la consulta: `published_at` futuro
+     * es publicación programada y RB-5 dice explícitamente que se evalúa aquí
+     * y **sin job**, que de otro modo sería un segundo mecanismo capaz de no
+     * correr. El porqué entero está en `ChangeProductStatusAction`, que es
+     * quien escribe la columna. `whereNotNull` es redundante en SQL —`NULL <=
+     * now()` no es cierto— y se escribe igual: auditar si un `published` sin
+     * fecha se cuela no debería exigir saberse la lógica de tres valores de
+     * MySQL.
+     *
+     * **No sabe en qué catálogo está el producto.** La visibilidad real es la
+     * intersección con la accesibilidad del catálogo (RB-6) y la cruza la
+     * consulta pública de `REQ-CAT-021` (`T-033`); lo que esto garantiza es
+     * que un `draft` o un `archived` **no tengan por dónde entrar** en ella,
+     * que es el mecanismo detrás del `404` de SP-1. Lo borrado y lo ajeno ya
+     * quedan fuera por sus dos *global scopes*.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query
+            ->where('status', ProductStatus::Published)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    /**
+     * Publicado con fecha futura: el sello «Programado» del backoffice (SP-5).
+     *
+     * Es la mitad por fila de lo que `scopePublished()` decide por consulta
+     * —aquella elige **qué se lista** y esta **qué se le dice al negocio**
+     * sobre una fila que ya tiene delante—, y las dos miran la misma columna
+     * contra el mismo reloj sin guardar nada, que es lo que impide que digan
+     * cosas distintas.
+     */
+    public function isScheduled(): bool
+    {
+        return $this->status === ProductStatus::Published
+            && $this->published_at !== null
+            && $this->published_at->isFuture();
     }
 }

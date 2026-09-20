@@ -8,12 +8,14 @@ use App\Actions\Product\ChangeProductStatusAction;
 use App\Actions\Product\UpsertProductAction;
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
+use App\Domain\Catalog\IncompleteProductException;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Money\Money;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backoffice\PublishProductRequest;
 use App\Http\Requests\Backoffice\StoreProductImagesRequest;
 use App\Http\Requests\Backoffice\StoreProductRequest;
 use App\Http\Requests\Backoffice\UpdateProductRequest;
@@ -60,6 +62,16 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * Con sus filtros de RB-9 y su columna de en cuántos catálogos está cada
  * producto (`REQ-CAT-007` RB-6), pero sin la tabla genérica de
  * `REQ-BOF-045`: esa la trae `T-038`.
+ *
+ * ## Y es donde se pulsan las cuatro transiciones
+ *
+ * Publicar, despublicar, restaurar y archivar (`REQ-CAT-007`). Las cuatro son
+ * una línea a `ChangeProductStatusAction`, que es quien tiene la matriz y la
+ * completitud de RB-5; aquí solo se traduce lo que sale mal. Los dos rechazos
+ * posibles llegan ya como `422` —uno como `ValidationException` desde la
+ * acción, el otro como `IncompleteProductException` que se reparte por
+ * campos—, porque en los dos casos la petición está bien formada y quien la
+ * hace tiene permiso: lo que falla son los datos.
  *
  * ## Y el `{product}` llega ya filtrado
  *
@@ -146,6 +158,76 @@ final class ProductController extends Controller
         }
 
         return to_route('products.edit', $product)->with('status', 'Producto guardado.');
+    }
+
+    /**
+     * Publica el producto, si está completo (`REQ-CAT-007`, RB-5, SP-3).
+     *
+     * La lista de lo que falta llega dentro de la excepción y se reparte por
+     * campos: cada frase aterriza donde se corrige, y el resumen —el que
+     * nombra los tres o cuatro pendientes de una vez— va bajo `status`, que es
+     * lo que pinta el listado. Repartirla sin resumen obligaría a quien está
+     * en la lista a abrir el producto para enterarse de qué le falta.
+     *
+     * @throws ValidationException si le falta algo de RB-5 o está archivado (SP-4)
+     */
+    public function publish(
+        PublishProductRequest $request,
+        Product $product,
+        ChangeProductStatusAction $status,
+    ): RedirectResponse {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $status->publish($product, $actor, $request->publishedAt());
+        } catch (IncompleteProductException $exception) {
+            throw ValidationException::withMessages(
+                ['status' => $exception->getMessage()] + $exception->missing,
+            );
+        }
+
+        return to_route('products.index')->with('status', $product->isScheduled()
+            // SP-5 · programado. El mensaje dice la fecha porque quien acaba
+            // de pulsar «Publicar» y no ve el producto en su catálogo necesita
+            // saber que no ha fallado nada.
+            ? sprintf('Producto programado: se verá a partir del %s.', $this->scheduledFor($product))
+            : 'Producto publicado. Ya se ve en los catálogos publicados donde lo hayas puesto.');
+    }
+
+    /**
+     * Devuelve el producto a borrador (`REQ-CAT-007` RB-1).
+     *
+     * Deja de verse en el acto, y su enlace vuelve a poder editarse
+     * (`REQ-BOF-020` SP-5).
+     */
+    public function unpublish(Request $request, Product $product, ChangeProductStatusAction $status): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $status->unpublish($product, $actor);
+
+        return to_route('products.index')
+            ->with('status', 'Producto despublicado. Vuelve a estar en borrador y deja de verse.');
+    }
+
+    /**
+     * Saca el producto del archivo y lo deja en borrador (SP-4).
+     *
+     * **Nunca publicado**, y el mensaje lo dice con esas palabras: el producto
+     * sigue en los catálogos donde estaba (RB-7), así que volver publicado lo
+     * devolvería a la venta sin que nadie hubiera revisado nada.
+     */
+    public function restore(Request $request, Product $product, ChangeProductStatusAction $status): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        $status->restore($product, $actor);
+
+        return to_route('products.index')
+            ->with('status', 'Producto restaurado como borrador. Revísalo y publícalo cuando esté listo.');
     }
 
     /**
@@ -452,6 +534,7 @@ final class ProductController extends Controller
                 'price' => $this->money($product->price_cents),
                 'categoryName' => $product->category?->name,
                 'catalogsCount' => (int) $product->getAttribute('catalogs_count'),
+                'scheduledFor' => $this->scheduledFor($product),
             ])
             ->values()
             ->all();
@@ -531,6 +614,26 @@ final class ProductController extends Controller
                 ProductStatus::Archived => 'Archivado',
             },
         ], ProductStatus::cases());
+    }
+
+    /**
+     * Desde cuándo se verá un producto programado, o `null` si no lo está
+     * (`REQ-CAT-007` SP-5).
+     *
+     * Viaja **ya formateada y en la zona horaria del negocio**, igual que el
+     * dinero: quien decide si un producto se lista es la consulta contra el
+     * reloj del servidor, y dejar la comparación o el formato al cliente daría
+     * un sello distinto según la hora del navegador de quien mire.
+     */
+    private function scheduledFor(Product $product): ?string
+    {
+        if (! $product->isScheduled()) {
+            return null;
+        }
+
+        return $product->published_at
+            ?->setTimezone($this->context->organization()->timezone)
+            ->isoFormat('LLL');
     }
 
     /**

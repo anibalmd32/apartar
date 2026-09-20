@@ -443,6 +443,132 @@ final class ProductPageTest extends TestCase
     }
 
     /**
+     * **`REQ-CAT-007` SP-3 · publicar incompleto llega como `422` con la lista
+     * de lo que falta.**
+     *
+     * Y llega dos veces: el resumen bajo `status`, que es lo que pinta el
+     * listado desde el que se pulsó, y el detalle en cada campo, que es lo que
+     * lee el formulario al abrir el producto para arreglarlo. Las dos formas
+     * salen de la misma lista, así que no pueden discrepar.
+     */
+    public function test_publishing_an_incomplete_product_lands_the_missing_list_on_its_fields(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->create(['description' => null]));
+
+        $this->actingAs($this->owner())
+            ->from('/backoffice/productos')
+            ->post("/backoffice/productos/{$product->getKey()}/publicar")
+            ->assertRedirect('/backoffice/productos')
+            ->assertSessionHasErrors(['status', 'images', 'category_id', 'description']);
+
+        $this->assertSame(ProductStatus::Draft, $product->refresh()->status);
+    }
+
+    /**
+     * SP-4 · desde el archivo solo se vuelve a **borrador**, y el rechazo de
+     * publicar un archivado atraviesa la ruta como `422`.
+     */
+    public function test_restoring_leaves_a_draft_and_publishing_an_archived_product_is_refused(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->archived()->create());
+
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->from('/backoffice/productos')
+            ->post("/backoffice/productos/{$product->getKey()}/publicar")
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(ProductStatus::Archived, $product->refresh()->status);
+
+        $this->actingAs($owner)
+            ->post("/backoffice/productos/{$product->getKey()}/restaurar")
+            ->assertRedirect('/backoffice/productos');
+
+        $this->assertSame(ProductStatus::Draft, $product->refresh()->status);
+    }
+
+    /**
+     * Despublicar desde el listado devuelve el producto a borrador y lo saca
+     * de la consulta pública en el acto.
+     */
+    public function test_unpublishing_a_product_works_from_the_listing(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->published()->create());
+
+        $this->actingAs($this->owner())
+            ->post("/backoffice/productos/{$product->getKey()}/despublicar")
+            ->assertRedirect('/backoffice/productos');
+
+        $this->assertSame(ProductStatus::Draft, $product->refresh()->status);
+        $this->assertNull($product->published_at);
+    }
+
+    /**
+     * **SP-5 · el listado marca «Programado», y desde cuándo.**
+     *
+     * Las dos cosas llegan resueltas por el servidor: comparar relojes en el
+     * cliente daría un sello distinto según la hora del navegador —y quien
+     * manda sobre `published_at <= now()` es la consulta—, y formatear la
+     * fecha allí la pintaría en la zona horaria de quien mira en vez de en la
+     * del negocio.
+     */
+    public function test_the_listing_marks_a_scheduled_product_with_its_date(): void
+    {
+        $this->inTenant(function (): void {
+            Product::factory()->scheduled()->create(['name' => 'Programado']);
+            Product::factory()->published()->create(['name' => 'Publicado']);
+        });
+
+        $this->actingAs($this->owner())
+            ->get('/backoffice/productos')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('products', 2)
+                // El listado va por `id` descendente: el publicado entró después.
+                ->where('products.0.name', 'Publicado')
+                ->where('products.0.scheduledFor', null)
+                ->where('products.1.name', 'Programado')
+                ->where('products.1.scheduledFor', fn (mixed $date): bool => is_string($date) && $date !== ''));
+    }
+
+    /**
+     * RB-11 · con la organización suspendida el escaparate espera. Publicar es
+     * moverlo, así que las cuatro transiciones quedan fuera igual que el resto
+     * del inventario.
+     */
+    public function test_a_suspended_organization_cannot_change_a_product_status(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->published()->create());
+
+        $this->organization->forceFill(['status' => OrganizationStatus::Suspended])->save();
+
+        $owner = $this->owner();
+
+        $this->actingAs($owner)->post("/backoffice/productos/{$product->getKey()}/despublicar")->assertForbidden();
+        $this->actingAs($owner)->post("/backoffice/productos/{$product->getKey()}/archivar")->assertForbidden();
+        $this->actingAs($owner)->post("/backoffice/productos/{$product->getKey()}/restaurar")->assertForbidden();
+        $this->actingAs($owner)->post("/backoffice/productos/{$product->getKey()}/publicar")->assertForbidden();
+    }
+
+    /**
+     * SP-11 · las transiciones de un producto ajeno dan `404`, no `403`: no se
+     * confirma que exista.
+     */
+    public function test_the_transitions_of_a_foreign_product_are_not_found(): void
+    {
+        $foreign = $this->withinOrganization(
+            $this->neighbourOrganization(),
+            fn (): Product => Product::factory()->published()->create(),
+        );
+
+        $owner = $this->owner();
+
+        $this->actingAs($owner)->post("/backoffice/productos/{$foreign->getKey()}/publicar")->assertNotFound();
+        $this->actingAs($owner)->post("/backoffice/productos/{$foreign->getKey()}/despublicar")->assertNotFound();
+        $this->actingAs($owner)->post("/backoffice/productos/{$foreign->getKey()}/restaurar")->assertNotFound();
+    }
+
+    /**
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */

@@ -25,7 +25,7 @@
 **Reglas de negocio y precondiciones**
 - RB-1 **Thin controllers**: un método de controlador recibe un `FormRequest`, invoca **una** `Action` inyectada por constructor y devuelve la respuesta. Prohibidos: queries de Eloquent, `if` de negocio y cálculos en controladores.
 - RB-2 **Actions transaccionales**: toda mutación de más de una tabla ocurre en una `Action` dentro de `DB::transaction()`, con bloqueo pesimista donde la spec lo exija.
-- RB-3 **Modelos anémicos**: `app/Models` contiene relaciones, casts, scopes y accesores triviales. Las reglas de negocio viven en `app/Domain`. Ningún modelo supera 200 líneas.
+- RB-3 **Modelos anémicos**: `app/Models` contiene relaciones, casts, scopes y accesores triviales. Las reglas de negocio viven en `app/Domain`. Ningún modelo supera 200 **líneas de código**, sin contar blancos ni comentarios. **La medida se precisó en `T-030`**, y no es un aflojamiento: contando líneas en crudo, lo que se mide es cuánto se explica el archivo, y este proyecto exige explicarlos. `Product` llegó a 200 con 87 líneas de código y 99 de comentario, así que el `Product::scopePublished()` que `REQ-CAT-007` **exige en ese mismo modelo** no cabía ni escrito sin un solo docblock: dos requisitos cerrados se contradecían, y el que cede es el que medía la cosa equivocada. Es además cómo cuenta desde el principio el gate gemelo del frontend (`REQ-QAX-002` RB-1, `skipBlankLines` + `skipComments`), así que las dos mitades de la misma regla vuelven a decir lo mismo.
 - RB-4 **Sin facades en `app/Domain`**: el dominio recibe sus dependencias por constructor y es testeable sin arrancar el framework.
 - RB-5 **Inyección por constructor** con propiedades promovidas `readonly`. Prohibido `app()`/`resolve()` dentro de métodos de negocio.
 - RB-6 **Larastan nivel 6** obligatorio en CI, con el objetivo declarado de subir a 8 (`ASU-QAX-03`). Cada `@phpstan-ignore` exige un comentario que justifique por qué.
@@ -41,7 +41,7 @@
 **Sad paths y edge cases**
 - SP-1 Controlador con una query → detectado en revisión; se documenta como falta de arquitectura (no automatizable de forma fiable, es criterio de revisión).
 - SP-2 Larastan reportando un falso positivo → se añade `@phpstan-ignore` **con** justificación; sin justificación, la revisión lo rechaza.
-- SP-3 Modelo que crece por encima de 200 líneas → señal de que hay lógica de negocio mal ubicada; se refactoriza a `app/Domain`.
+- SP-3 Modelo que crece por encima de 200 líneas de código → señal de que hay lógica de negocio mal ubicada; se refactoriza a `app/Domain`. Crecer en documentación no es esa señal (RB-3).
 - SP-4 Facade usada en `app/Domain` → detectada en revisión; el test unitario del dominio, que corre sin framework, lo evidencia al fallar.
 - SP-5 Nivel 6 que se vuelve inviable por una dependencia sin tipos → se acota con un baseline **explícito y con fecha**, no con la bajada del nivel global.
 
@@ -54,7 +54,7 @@
 - Superficie esperada: `pint.json`, `phpstan.neon`, `composer.json` (scripts), estructura de `app/`.
 - Tipos esperados: los directorios de §6.1 presentes con al menos un artefacto cada uno.
 - Anti-`SHALLOW`: no aplica (requisito de proceso); su verificación es el paso de CI de `REQ-QAX-004`.
-- Tests: `composer analyse` sale con código 0 en nivel 6; `composer lint --test` sin diferencias; ningún archivo de `app/` sin `strict_types`; búsqueda de `float`/`double` en migraciones sin resultados; ningún modelo supera 200 líneas.
+- Tests: `composer analyse` sale con código 0 en nivel 6; `composer lint --test` sin diferencias; ningún archivo de `app/` sin `strict_types`; búsqueda de `float`/`double` en migraciones sin resultados; ningún modelo supera 200 líneas de código (RB-3).
 
 ---
 

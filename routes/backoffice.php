@@ -105,6 +105,36 @@ Route::prefix('backoffice')->group(function (): void {
             Route::put('productos/{product}', [ProductController::class, 'update'])->name('products.update');
 
             /*
+            | Estados de publicación (`REQ-CAT-007`).
+            |
+            | Las cuatro transiciones de la matriz, una ruta por botón:
+            | publicar —con la lista de completitud de `REQ-BOF-020` RB-5
+            | delante—, despublicar, restaurar y archivar. No hay una quinta
+            | que lleve a `published` desde el archivo: SP-4 dice que restaurar
+            | devuelve a **borrador**, y la matriz de la acción lo niega aunque
+            | alguien componga la petición a mano.
+            |
+            | **Ninguna declara `during-suspension`**, como el resto del
+            | inventario: publicar es mover el escaparate, y con la
+            | organización suspendida el escaparate espera a que se regularice
+            | el pago (RB-11, `REQ-ORG-008` RB-3).
+            |
+            | `publicar` admite un `published_at` opcional: futuro es
+            | publicación programada (RB-5), evaluada en la consulta y sin job.
+            |
+            | El `{product}` llega ya filtrado por el tenant, así que el de
+            | otra organización da `404` (SP-11).
+            */
+            Route::post('productos/{product}/publicar', [ProductController::class, 'publish'])
+                ->name('products.publish');
+
+            Route::post('productos/{product}/despublicar', [ProductController::class, 'unpublish'])
+                ->name('products.unpublish');
+
+            Route::post('productos/{product}/restaurar', [ProductController::class, 'restore'])
+                ->name('products.restore');
+
+            /*
             | RB-10 · el borrado es siempre lógico y se llama «archivar». El
             | producto conserva su fila, su historial y su sitio en los
             | catálogos (`REQ-CAT-007` RB-7, SP-10).

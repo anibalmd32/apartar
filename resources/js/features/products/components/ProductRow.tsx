@@ -7,13 +7,19 @@ import { Link, router } from '@inertiajs/react';
 /**
  * Un producto en el listado del backoffice (`REQ-BOF-020` RB-9).
  *
- * ## Tres cosas que la fila tiene que decir y no son el precio
+ * ## Cuatro cosas que la fila tiene que decir y no son el precio
  *
  *  - **En cuántos catálogos está** (`REQ-CAT-007` RB-6). Un producto puede
  *    estar publicado y no verlo nadie porque no pertenece a ningún catálogo, y
  *    eso **no es un error**: es una situación normal que el backoffice tiene
  *    que poder explicar, o el negocio se pasa la tarde buscando por qué su
  *    producto «no aparece».
+ *  - **Programado, y desde cuándo** (`REQ-CAT-007` SP-5). Publicado con fecha
+ *    futura es un producto que no se ve **y no ha fallado nada**. Sin el
+ *    sello, quien acaba de programarlo lo busca en su catálogo, no lo
+ *    encuentra y lo vuelve a publicar; sin la fecha, se queda sin saber
+ *    cuándo dejar de mirar. Las dos cosas llegan resueltas del servidor, en
+ *    la zona horaria del negocio: aquí no se comparan ni se formatean relojes.
  *  - **Agotado, sin dejar de estar publicado** (`REQ-CAT-007` RB-4). Cero
  *    existencias no cambia el estado: el producto sigue en el catálogo con su
  *    sello y lo que se deshabilita es apartarlo. Por eso el sello de agotado
@@ -23,6 +29,15 @@ import { Link, router } from '@inertiajs/react';
  *
  * El color nunca es lo único que distingue un estado: cada distintivo lleva su
  * texto.
+ *
+ * ## Los botones son la matriz, no una lista de verbos
+ *
+ * Cada estado ofrece **solo los pasos que la acción acepta desde él**
+ * (`REQ-CAT-007` RB-1, SP-4), y por eso un archivado ofrece «Restaurar» y no
+ * «Publicar»: restaurar devuelve a borrador para que alguien revise el
+ * producto antes de que vuelva a los catálogos donde seguía. Esconder el botón
+ * no es el control —quien manda es la matriz del servidor, que niega el paso
+ * aunque la petición se componga a mano—, es no ofrecer lo que va a dar `422`.
  */
 
 interface ProductRowProps {
@@ -38,7 +53,7 @@ const STATUS_TONES: Readonly<Record<ProductStatus, 'neutral' | 'success' | 'warn
 };
 
 export function ProductRow({ product, statusLabels }: ProductRowProps) {
-    const archive = () => router.post(`/backoffice/productos/${product.id}/archivar`, {}, { preserveScroll: true });
+    const step = (path: string) => router.post(`/backoffice/productos/${product.id}/${path}`, {}, { preserveScroll: true });
 
     return (
         <tr className={product.status === 'archived' ? 'opacity-60' : undefined}>
@@ -58,6 +73,12 @@ export function ProductRow({ product, statusLabels }: ProductRowProps) {
             <td>
                 <div className="flex flex-wrap gap-1">
                     <Badge tone={STATUS_TONES[product.status]}>{statusLabels[product.status]}</Badge>
+
+                    {product.scheduledFor === null ? null : (
+                        <Badge tone="info" outline>
+                            Programado: {product.scheduledFor}
+                        </Badge>
+                    )}
 
                     {product.stock === 0 ? <Badge tone="error">Agotado</Badge> : null}
 
@@ -79,8 +100,24 @@ export function ProductRow({ product, statusLabels }: ProductRowProps) {
                         Editar
                     </Link>
 
-                    {product.status === 'archived' ? null : (
-                        <Button size="sm" variant="ghost" onClick={archive}>
+                    {product.status === 'draft' ? (
+                        <Button size="sm" variant="ghost" onClick={() => step('publicar')}>
+                            Publicar
+                        </Button>
+                    ) : null}
+
+                    {product.status === 'published' ? (
+                        <Button size="sm" variant="ghost" onClick={() => step('despublicar')}>
+                            Despublicar
+                        </Button>
+                    ) : null}
+
+                    {product.status === 'archived' ? (
+                        <Button size="sm" variant="ghost" onClick={() => step('restaurar')}>
+                            Restaurar
+                        </Button>
+                    ) : (
+                        <Button size="sm" variant="ghost" onClick={() => step('archivar')}>
                             Archivar
                         </Button>
                     )}

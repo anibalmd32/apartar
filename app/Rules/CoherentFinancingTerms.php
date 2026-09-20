@@ -199,8 +199,14 @@ final class CoherentFinancingTerms implements DataAwareRule, ValidationRule, Val
 
     /**
      * Cómo se llama en el formulario el campo del que habla cada regla.
+     *
+     * Pública porque `violationsIn()` lo es, y quien la llama de fuera del
+     * formulario necesita la misma traducción: la completitud al publicar
+     * (`REQ-BOF-020` RB-5) reparte los mismos mensajes por los mismos campos.
+     * Una segunda tabla de equivalencias allí coincidiría hasta el día en que
+     * un campo se renombrara.
      */
-    private static function formFieldFor(string $field): string
+    public static function formFieldFor(string $field): string
     {
         return $field === 'down_payment_cents' ? 'down_payment' : $field;
     }
