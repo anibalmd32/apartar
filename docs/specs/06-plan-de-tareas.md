@@ -508,6 +508,8 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 **Hecho cuando:** matriz de transiciones; **la completitud de RB-5 con sus cuatro condiciones** (`IncompleteProductException` con la lista de lo que falta); `draft`/`archived` dan `404`; **la relación con el catálogo se conserva al archivar**; `published_at` futuro no se lista; publicado en 0 catálogos no es error.
 **`ChangeProductStatusAction` llega medio escrita de `T-027`**, que necesita el archivado para su `POST /productos/{product}/archivar` (`REQ-BOF-020` RB-10) y lo escribe ahí en vez de abrir un segundo camino que cambie `status`. Esta tarea añade el resto de la matriz y la completitud; no duplica el archivado ni lo mueve.
 
+**El `404` de SP-1 —un `draft` o un `archived` por URL directa— no se verifica aquí**, porque no hay página pública hasta `T-033` y `T-035`. Lo de esta tarea es el mecanismo: `scopePublished()` y que la consulta pública no tenga forma de traerlos. La respuesta HTTP la prueban aquellas dos, cada una en su superficie.
+
 **T-031 · Composición de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-023`*
 `SyncCatalogProductsAction`, `CatalogProductSorter`, `useSortableProducts`.
 **Hecho cuando:** posiciones contiguas desde 1; **`created_at` del pivote NO cambia al reordenar**; deduplicación; producto de otra organización rechazado (fuga); vaciar un catálogo publicado rechazado.
@@ -530,7 +532,8 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 
 **T-035 · Ficha de producto pública** · `B` · 3 pts · *Requisitos: `REQ-CAT-003`*
 `ProductShowController`, `ProductDetailResource`, página `catalog/ProductShow.tsx` con galería, ficha técnica, desglose del plan y **cuentas de cobro**.
-**Hecho cuando:** la cuota mostrada **coincide con el cronograma real que generaría el apartado**; producto fuera del catálogo `404`; cuentas de cobro activas visibles y las inactivas no; sin ficha técnica no se renderiza la sección.
+**Hecho cuando:** la cuota mostrada **coincide con el cronograma real que generaría el apartado**; producto fuera del catálogo `404`; **`draft` y `archived` por URL directa dan `404`** (`REQ-CAT-007` SP-1, que `T-030` deja probado como mecanismo y aquí como respuesta); cuentas de cobro activas visibles y las inactivas no; sin ficha técnica no se renderiza la sección.
+**Y monta lo que `T-028` y `T-029` dejaron listos:** `ProductDetailResource` llama a `SpecificationGroups` y a `ImageSet`; ninguna de las dos se reescribe aquí.
 **Depende de:** T-041 (`ScheduleGenerator`, para que el cálculo mostrado sea el real y no una copia).
 
 **T-036 · Vitrina de la organización** · `B` · 2 pts · *Requisitos: `REQ-ORG-006`*
