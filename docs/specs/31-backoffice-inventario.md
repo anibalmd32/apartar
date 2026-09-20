@@ -186,8 +186,8 @@ export interface SpecificationFormRow {
 - RB-2 La imagen de `position = 1` es la principal: cards del catálogo, Open Graph y feed.
 - RB-3 Las conversiones se generan en cola; la UI muestra "procesando" por imagen hasta que existan.
 - RB-4 Eliminar la principal promueve automáticamente a la siguiente.
-- RB-5 Subida múltiple con vista previa local y barra de progreso por archivo.
-- RB-6 `alt` editable por imagen, con el valor por defecto de `REQ-CAT-005` RB-4.
+- RB-5 Subida múltiple con vista previa local y barra de progreso por archivo. **El progreso es por petición, no por archivo** (`T-029`): Inertia informa del avance de la subida entera, que es una sola petición con todos los archivos. Partirla en N daría una barra por archivo a cambio de que cada petición validara el límite de 10 por su cuenta, y dos tandas simultáneas podrían pasarse. Lo que sí es por archivo es el fallo (SP-5), y eso lo garantiza el servidor.
+- RB-6 `alt` editable por imagen, con el valor por defecto de `REQ-CAT-005` RB-4. **Viaja en el `PATCH` del orden** (`T-029`): el contrato de este requisito fija tres rutas y ninguna es «editar la descripción», así que separarlo pedía una cuarta; la galería edita las dos cosas en el mismo guardado. Vaciarlo devuelve el valor por defecto en lugar de guardar una cadena vacía.
 - RB-7 Eliminar una imagen **sí** borra el archivo del disco y libera cuota — a diferencia de los comprobantes, que son evidencia y nunca se borran (`REQ-PAY-002` RB-8).
 - RB-8 **La subida consume `storage_mb`**: con la cuota agotada se rechaza con el mensaje del plan (`REQ-SUB-008` SP-4). Aquí el afectado es el negocio por su propia decisión, a diferencia del comprobante de un cliente, que siempre se acepta (`REQ-PAY-001` RB-10).
 - RB-9 Los archivos se guardan bajo una ruta que incluye el `organization_id`.

@@ -41,6 +41,7 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
 - RB-4 `app_storage` es un volumen nombrado y persistente compartido por `app`, `queue` y `nginx`: contiene los comprobantes (`REQ-PAY-002`), las imágenes y los archivos de exportación. **Perderlo pierde evidencia**, y así se documenta.
 - RB-5 `healthcheck` obligatorio en `mysql`, `redis` y `app`; `depends_on` con `condition: service_healthy` para que las migraciones no arranquen antes de la BD.
 - RB-6 Todos los servicios llevan `restart: unless-stopped` y límites de memoria declarados.
+- RB-6b **La imagen compila `gd` con `--with-webp`**, y no es un detalle de empaquetado: sin ese flag `imagewebp()` no existe y **las tres conversiones de `REQ-CAT-005` fallan en el *worker***, no en el request — ninguna prueba del código lo nota, y lo que se ve es un catálogo sirviendo originales sin que nadie sepa por qué. Detectado y arreglado en `T-029`, con un test que genera las tres conversiones de verdad. Los límites de memoria declarados en RB-6 son un techo **del contenedor**, y el de `app` (768 MB) convive con herramientas que piden 1 GB por proceso: ver la nota de `composer analyse` en [91](91-calidad-y-gates.md).
 - RB-7 El `entrypoint` de `app` espera a la BD, ejecuta `migrate --force` (solo en el servicio `app`, nunca en `queue` ni en `reverb`, para evitar migraciones concurrentes) y luego arranca PHP-FPM.
 - RB-8 Los secretos viajan por `.env`, nunca en el `docker-compose.yml`; `.env.example` documenta cada variable.
 

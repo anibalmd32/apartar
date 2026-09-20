@@ -18,6 +18,8 @@
 
 **Contratos de datos**
 - `pint.json` (preset `laravel`), `phpstan.neon` (Larastan), `composer.json` con los scripts `lint`, `analyse`, `test`.
+
+> **`composer analyse` corre con `parallel.maximumNumberOfProcesses: 2`, y el motivo conviene entenderlo antes de subirlo.** El script da `memory_limit=1G` a **cada** proceso y el contenedor `app` tiene 768 MB en total ([90](90-infraestructura-y-entorno.md) RB-6): con la paralelización por defecto —tantos procesos como núcleos— la suma se pasa del techo y el kernel mata un *worker*. El síntoma **no se parece** a quedarse sin memoria: es «Child process was killed by signal 9» y un análisis que termina incompleto, es decir, un gate que pasa por no haber mirado. Empezó a morder en `T-029` al analizar el trait de medialibrary, pero el techo estaba sobrevendido desde el principio: el `memory_limit` es un máximo por proceso y el del contenedor es un total duro, y nadie los había reconciliado. Si vuelve a morder, las salidas son subir el contenedor o bajar el límite por proceso — **no** volver a la paralelización por defecto.
 - Estructura de `app/` según [02-spec-consolidada.md](02-spec-consolidada.md) §6.1.
 
 **Reglas de negocio y precondiciones**
