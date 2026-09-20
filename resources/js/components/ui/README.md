@@ -17,6 +17,18 @@ Cada átomo nace con la tarea que lo necesita. Los tres primeros llegaron con
 | `badge.tsx`          | estado corto en una fila; el color nunca es lo único que distingue                            | `T-013` |
 | `checkbox-field.tsx` | interruptor cuya etiqueta **envuelve** al control, para que el área pulsable sea toda la fila | `T-014` |
 | `file-field.tsx`     | selector de archivo con vista previa de lo que ya hay guardado                                | `T-014` |
+| `sortable.tsx`       | listas que se reordenan arrastrando, con teclado y anuncios en español                        | `T-031` |
+
+`sortable.tsx` es el único átomo que **no** envuelve daisyUI sino una
+dependencia de comportamiento (`@dnd-kit`), y está aquí por el mismo motivo
+que los demás: acumula reglas de accesibilidad que nadie quiere repetir. Las
+cuatro listas que se ordenan a mano —productos de un catálogo, categorías,
+filas de la ficha técnica e imágenes— usaban hasta `T-031` dos botones de
+subir y bajar, con su desviación declarada en cada requisito; el arrastre las
+sustituye **sin tocar ningún endpoint**, porque las cuatro mandaban ya la
+lista entera en su orden. Lo que no se podía perder al cambiar el gesto era el
+teclado, así que el tirador es un `<button>` de verdad y el `KeyboardSensor`
+va siempre puesto.
 
 `select-field.tsx` admite `hideLabel` desde `T-013b`: oculta la etiqueta a la
 vista **sin quitarla**, para las columnas de tabla donde la cabecera ya la dice

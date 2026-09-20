@@ -78,29 +78,27 @@ export function useSpecificationRows(product?: ProductFormValues | null) {
     };
 
     /**
-     * Mueve una fila una posición arriba o abajo.
+     * Mueve una fila de una posición a otra.
      *
-     * Se intercambian **los valores** y no las claves: la clave viaja con su
-     * fila, que es lo que mantiene el foco y el texto donde estaban mientras
-     * alguien reordena una lista que está escribiendo.
+     * **La fila entera viaja con su clave**, que es lo que mantiene el foco y
+     * el texto donde estaban mientras alguien reordena una lista que está
+     * escribiendo. Desde `T-031` el gesto es un arrastre y no dos botones, así
+     * que se saca y se vuelve a meter en lugar de intercambiar dos vecinas:
+     * mover tres sitios de golpe y cambiar de sitio con el de al lado tres
+     * veces no dan el mismo resultado.
      */
-    const move = (index: number, direction: -1 | 1) => {
+    const move = (from: number, to: number) => {
         setRows((current) => {
             const next = [...current];
-            const target = index + direction;
+            const [moved] = next.splice(from, 1);
 
-            const moved = next[index];
-            const displaced = next[target];
-
-            // Los extremos se comprueban por el valor y no por el índice: es
-            // lo mismo que mirar los límites del array, y así TypeScript sabe
-            // que el intercambio no mete un `undefined` en la lista.
-            if (moved === undefined || displaced === undefined) {
+            // El valor y no el índice: así TypeScript sabe que no se mete un
+            // `undefined` en la lista.
+            if (moved === undefined) {
                 return current;
             }
 
-            next[index] = displaced;
-            next[target] = moved;
+            next.splice(to, 0, moved);
 
             return next;
         });

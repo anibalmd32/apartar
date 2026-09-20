@@ -1,5 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { SortableList } from '@/components/ui/sortable';
 import { CategoryRow } from '@/features/catalog/components/CategoryRow';
 import { TaxonomyForm } from '@/features/catalog/components/TaxonomyForm';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -50,24 +51,24 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
     const editable = order.find((category) => category.id === editing);
     const dirty = order.some((category, index) => category.id !== categories[index]?.id);
 
-    const move = (index: number, direction: -1 | 1) => {
-        const next = [...order];
-        const target = index + direction;
+    // `T-031` · el gesto pasó de dos botones a un arrastre, y el guardado no
+    // se enteró: sigue siendo la lista entera de identificadores por el mismo
+    // `PATCH`, que es lo que `T-026` dejó con su forma definitiva.
+    const move = (from: number, to: number) => {
+        setOrder((current) => {
+            const next = [...current];
+            const [moved] = next.splice(from, 1);
 
-        const moved = next[index];
-        const displaced = next[target];
+            // El valor y no el índice: así TypeScript sabe que no se mete un
+            // `undefined` en la lista.
+            if (moved === undefined) {
+                return current;
+            }
 
-        // Los dos extremos se comprueban por el valor y no por el índice: es
-        // lo mismo que mirar los límites del array, y así TypeScript sabe que
-        // el intercambio no mete un `undefined` en la lista.
-        if (moved === undefined || displaced === undefined) {
-            return;
-        }
+            next.splice(to, 0, moved);
 
-        next[index] = displaced;
-        next[target] = moved;
-
-        setOrder(next);
+            return next;
+        });
     };
 
     const saveOrder = () =>
@@ -127,17 +128,20 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
                                 </thead>
 
                                 <tbody>
-                                    {order.map((category, index) => (
-                                        <CategoryRow
-                                            key={category.id}
-                                            category={category}
-                                            others={order.filter((other) => other.id !== category.id)}
-                                            isFirst={index === 0}
-                                            isLast={index === order.length - 1}
-                                            onEdit={() => setEditing(category.id)}
-                                            onMove={(direction) => move(index, direction)}
-                                        />
-                                    ))}
+                                    <SortableList
+                                        ids={order.map((category) => category.id)}
+                                        onReorder={move}
+                                        labelOf={(id) => order.find((category) => category.id === id)?.name ?? 'la categoría'}
+                                    >
+                                        {order.map((category) => (
+                                            <CategoryRow
+                                                key={category.id}
+                                                category={category}
+                                                others={order.filter((other) => other.id !== category.id)}
+                                                onEdit={() => setEditing(category.id)}
+                                            />
+                                        ))}
+                                    </SortableList>
                                 </tbody>
                             </table>
                         </div>

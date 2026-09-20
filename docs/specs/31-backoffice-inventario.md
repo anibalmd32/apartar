@@ -134,7 +134,7 @@ export interface SpecificationFormRow {
 - Formulario con `@tanstack/react-form` en modo arreglo dinámico. **No fue así, y está razonado** (`T-028`): el formulario de producto usa el `useForm` de Inertia desde `T-027`, y meter un segundo motor dentro del mismo `<form>` parte en dos la fuente de `errors` y de `processing` —los errores de las filas llegan como `specifications.3.label`, del mismo bolsín que el resto—. Lo que RB-1 pide de verdad —añadir, quitar y reordenar con claves locales— vive en `useSpecificationRows`. Queda entonces sin enumerar cuáles son «los tres formularios complejos» de [91 §RB-4](91-calidad-y-gates.md): el único llamante planificado de `react-form` es el formulario de apartado de `T-045`, **y esa tarea decide** — si también lo resuelve con Inertia, la dependencia sale del *stack*.
 
 **Reglas de negocio y precondiciones**
-- RB-1 Filas dinámicas: añadir, eliminar y reordenar por arrastre, con `group` opcional por fila. **El gesto son hoy botones de subir y bajar**, no arrastre, por lo mismo que en `REQ-BOF-023` RB-2 y con el mismo relevo: el orden viaja entero en el guardado, así que `T-031` cambia el gesto sin tocar el servidor.
+- RB-1 Filas dinámicas: añadir, eliminar y reordenar por arrastre, con `group` opcional por fila. **Cumplida al pie de la letra desde `T-031`**, que trajo la librería de *drag & drop* y cambió el gesto sin tocar el servidor: la ficha entera sigue viajando en su orden dentro del `PUT` del producto (RB-8), que es lo que hacía el cambio posible.
 - RB-2 `label` y `value` obligatorios y no vacíos; `label` ≤ 60 caracteres, `value` ≤ 500.
 - RB-3 Máximo **50** especificaciones por producto (límite técnico, no de plan).
 - RB-4 `position` se **recalcula** contiguo desde 1 en cada guardado; el orden lo fija el arrastre, no el índice del formulario.
@@ -183,7 +183,7 @@ export interface SpecificationFormRow {
 
 **Reglas de negocio y precondiciones**
 - RB-1 Hasta **10** imágenes por producto; `jpg`, `png`, `webp`; **8 MB** máximo por archivo; validación de MIME real.
-- RB-2 La imagen de `position = 1` es la principal: cards del catálogo, Open Graph y feed.
+- RB-2 La imagen de `position = 1` es la principal: cards del catálogo, Open Graph y feed. **El orden se cambia arrastrando desde `T-031`** —hasta entonces eran botones de subir y bajar, por lo mismo que en `REQ-BOF-023` RB-2—, y el `PATCH .../imagenes/orden` no se enteró: recibía ya la lista entera con su `alt` (RB-6). Arrastrar la última foto hasta arriba **es** hacerla principal, como lo era pulsar «subir» cinco veces. Esta regla no nombraba el gesto —la desviación estaba declarada en el plan y en el código, no aquí—, así que se escribe ahora para que quede en el requisito.
 - RB-3 Las conversiones se generan en cola; la UI muestra "procesando" por imagen hasta que existan.
 - RB-4 Eliminar la principal promueve automáticamente a la siguiente.
 - RB-5 Subida múltiple con vista previa local y barra de progreso por archivo. **El progreso es por petición, no por archivo** (`T-029`): Inertia informa del avance de la subida entera, que es una sola petición con todos los archivos. Partirla en N daría una barra por archivo a cambio de que cada petición validara el límite de 10 por su cuenta, y dos tandas simultáneas podrían pasarse. Lo que sí es por archivo es el fallo (SP-5), y eso lo garantiza el servidor.
@@ -233,7 +233,7 @@ export interface SpecificationFormRow {
 
 **Reglas de negocio y precondiciones**
 - RB-1 **La taxonomía es de cada organización** (`REQ-CAT-006` RB-1). No hay categorías compartidas ni sugeridas por la plataforma, y por tanto tampoco comparables entre negocios.
-- RB-2 Categorías **planas**, con orden manual por `position` (arrastre). **Hoy el gesto son botones de subir y bajar**, no arrastre: `T-026` cerró el requisito sin la librería de *drag & drop*, que llega con `T-031` (`useSortableProducts`) y entonces cambia el gesto. Lo que ya tiene su forma definitiva es el contrato —`PATCH /backoffice/categorias/orden` con la lista entera de identificadores—, así que el cambio no toca el servidor. Se declara aquí para que nadie lea esta regla creyendo que está cumplida al pie de la letra.
+- RB-2 Categorías **planas**, con orden manual por `position` (arrastre). **Cumplida al pie de la letra desde `T-031`.** `T-026` la cerró con botones de subir y bajar porque el proyecto no tenía librería de *drag & drop*; aquella tarea la trajo y el gesto cambió **sin tocar el servidor**, que es exactamente lo que el contrato —`PATCH /backoffice/categorias/orden` con la lista entera de identificadores— estaba pensado para permitir. Lo que sí hubo que conservar al cambiar el gesto es el teclado: los dos botones lo daban gratis, y el tirador del arrastre es un `<button>` con el `KeyboardSensor` puesto para no perderlo.
 - RB-3 `name` y `slug` únicos por organización; el `slug` se autogenera y es editable solo si no hay productos publicados asociados.
 - RB-4 Una categoría con productos asociados **no** se puede eliminar (FK `restrict`): la UI ofrece "reasignar productos a otra categoría" antes de borrar.
 - RB-5 Una etiqueta se puede eliminar en cualquier momento: se desasocia de los productos.

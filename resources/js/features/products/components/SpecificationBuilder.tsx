@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
 import { TextField } from '@/components/ui/text-field';
 import { type useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
 import { useId } from 'react';
@@ -20,15 +21,18 @@ import { useId } from 'react';
  *    acepta y lo único que hace la pantalla es señalarla por si fue un
  *    descuido.
  *
- * ## Subir y bajar, no arrastrar
+ * ## Se arrastra, desde `T-031`
  *
- * RB-1 dice «reordenar por arrastre» y el gesto natural es ese, pero el
- * proyecto todavía no tiene ninguna dependencia de *drag & drop* —llega con
- * `useSortableProducts` en `T-031`— y la API nativa del navegador no responde
- * al dedo, que es con lo que se usa este backoffice. Es la misma decisión que
- * `T-026` tomó con el orden de las categorías, y se cierra igual: lo que
- * manda el formulario es **la lista entera en su orden**, así que cambiar el
- * gesto no toca ni el contrato ni el servidor.
+ * RB-1 pedía «reordenar por arrastre» y hasta ahora eran dos botones de subir
+ * y bajar, porque el proyecto no tenía dependencia de *drag & drop* y la API
+ * nativa no responde al dedo. La dependencia llegó con `T-031` y **el guardado
+ * no se enteró**: la ficha entera sigue viajando en su orden dentro del `PUT`
+ * del producto, sin endpoint propio (`REQ-BOF-021` RB-8).
+ *
+ * El tirador va al principio de la fila y el botón de quitar al final: se
+ * agarra por donde empieza lo que se mueve. Y el arrastre funciona con el
+ * teclado —espacio para levantar, flechas para mover—, que es lo que los dos
+ * botones daban gratis y no se podía perder al cambiarlos.
  *
  * ## Y aquí no se escapa nada
  *
@@ -50,6 +54,14 @@ export function SpecificationBuilder({ rows: sheet, groups, errors }: Specificat
 
     const { rows, add, remove, update, move } = sheet;
     const duplicates = sheet.duplicateKeys();
+
+    /**
+     * Cómo se nombra una fila en los anuncios del arrastre.
+     *
+     * Por su **posición** y no por su texto: una fila recién añadida está
+     * vacía, y «has levantado la fila» a secas no dice cuál de las nueve.
+     */
+    const labelAt = (index: number) => `la fila ${index + 1}`;
 
     return (
         <section className="card bg-base-100 shadow-sm">
@@ -84,94 +96,91 @@ export function SpecificationBuilder({ rows: sheet, groups, errors }: Specificat
                     </p>
                 ) : (
                     <ul className="flex flex-col gap-3">
-                        {rows.map((row, index) => (
-                            <li key={row.key} className="border-base-300 grid gap-2 border-b pb-3 last:border-0 sm:grid-cols-12">
-                                <div className="sm:col-span-3">
-                                    <TextField
-                                        label="Sección"
-                                        name={`specifications[${index}][group]`}
-                                        list={groupsListId}
-                                        value={row.group}
-                                        onChange={(event) => update(row.key, 'group', event.target.value)}
-                                        error={errors[`specifications.${index}.group`]}
-                                        maxLength={80}
-                                        autoComplete="off"
-                                    />
-                                </div>
+                        <SortableList
+                            ids={rows.map((row) => row.key)}
+                            onReorder={move}
+                            labelOf={(key) => labelAt(rows.findIndex((row) => row.key === key))}
+                        >
+                            {rows.map((row, index) => (
+                                <SortableRow key={row.key} id={row.key} label={labelAt(index)}>
+                                    {({ containerProps, handleProps }) => (
+                                        <li
+                                            ref={containerProps.ref}
+                                            style={containerProps.style}
+                                            className={`border-base-300 grid gap-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
+                                        >
+                                            <div className="flex items-end sm:col-span-1">
+                                                <SortableHandle handleProps={handleProps} />
+                                            </div>
 
-                                <div className="sm:col-span-3">
-                                    <TextField
-                                        label="Característica"
-                                        name={`specifications[${index}][label]`}
-                                        value={row.label}
-                                        onChange={(event) => update(row.key, 'label', event.target.value)}
-                                        error={errors[`specifications.${index}.label`]}
-                                        maxLength={60}
-                                        autoComplete="off"
-                                        required
-                                    />
-                                </div>
+                                            <div className="sm:col-span-3">
+                                                <TextField
+                                                    label="Sección"
+                                                    name={`specifications[${index}][group]`}
+                                                    list={groupsListId}
+                                                    value={row.group}
+                                                    onChange={(event) => update(row.key, 'group', event.target.value)}
+                                                    error={errors[`specifications.${index}.group`]}
+                                                    maxLength={80}
+                                                    autoComplete="off"
+                                                />
+                                            </div>
 
-                                <div className="sm:col-span-4">
-                                    <TextField
-                                        label="Valor"
-                                        name={`specifications[${index}][value]`}
-                                        value={row.value}
-                                        onChange={(event) => update(row.key, 'value', event.target.value)}
-                                        error={errors[`specifications.${index}.value`]}
-                                        maxLength={500}
-                                        autoComplete="off"
-                                        required
-                                    />
-                                </div>
+                                            <div className="sm:col-span-3">
+                                                <TextField
+                                                    label="Característica"
+                                                    name={`specifications[${index}][label]`}
+                                                    value={row.label}
+                                                    onChange={(event) => update(row.key, 'label', event.target.value)}
+                                                    error={errors[`specifications.${index}.label`]}
+                                                    maxLength={60}
+                                                    autoComplete="off"
+                                                    required
+                                                />
+                                            </div>
 
-                                <div className="flex items-end gap-1 sm:col-span-2">
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => move(index, -1)}
-                                        disabled={index === 0}
-                                        aria-label={`Subir la fila ${index + 1}`}
-                                    >
-                                        ↑
-                                    </Button>
+                                            <div className="sm:col-span-4">
+                                                <TextField
+                                                    label="Valor"
+                                                    name={`specifications[${index}][value]`}
+                                                    value={row.value}
+                                                    onChange={(event) => update(row.key, 'value', event.target.value)}
+                                                    error={errors[`specifications.${index}.value`]}
+                                                    maxLength={500}
+                                                    autoComplete="off"
+                                                    required
+                                                />
+                                            </div>
 
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => move(index, 1)}
-                                        disabled={index === rows.length - 1}
-                                        aria-label={`Bajar la fila ${index + 1}`}
-                                    >
-                                        ↓
-                                    </Button>
+                                            <div className="flex items-end sm:col-span-1">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => remove(row.key)}
+                                                    aria-label={`Quitar ${labelAt(index)}`}
+                                                >
+                                                    ✕
+                                                </Button>
+                                            </div>
 
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => remove(row.key)}
-                                        aria-label={`Quitar la fila ${index + 1}`}
-                                    >
-                                        ✕
-                                    </Button>
-                                </div>
-
-                                {duplicates.has(row.key) ? (
-                                    <p className="text-xs opacity-70 sm:col-span-12">
-                                        Repites esta característica dentro de la misma sección. Se guarda igual: a veces es a propósito, como un peso
-                                        en kilos y en libras.
-                                    </p>
-                                ) : null}
-                            </li>
-                        ))}
+                                            {duplicates.has(row.key) ? (
+                                                <p className="text-xs opacity-70 sm:col-span-12">
+                                                    Repites esta característica dentro de la misma sección. Se guarda igual: a veces es a propósito,
+                                                    como un peso en kilos y en libras.
+                                                </p>
+                                            ) : null}
+                                        </li>
+                                    )}
+                                </SortableRow>
+                            ))}
+                        </SortableList>
                     </ul>
                 )}
 
                 <p className="text-xs opacity-70">
-                    Hasta 50 características. Las que dejes sin sección se muestran primero, bajo el rótulo «General».
+                    Hasta 50 características. Las que dejes sin sección se muestran primero, bajo el rótulo «General». Arrastra por el tirador de la
+                    izquierda para cambiar el orden.
                 </p>
             </div>
         </section>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Backoffice\AuditLogController;
 use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
+use App\Http\Controllers\Backoffice\CatalogController;
 use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\ProductController;
@@ -181,6 +182,37 @@ Route::prefix('backoffice')->group(function (): void {
             Route::delete('productos/{product}/imagenes/{media}', [ProductImageController::class, 'destroy'])
                 ->whereNumber('media')
                 ->name('products.images.destroy');
+
+            /*
+            | Composición de catálogos ([05 §7.4], `REQ-CAT-023`).
+            |
+            | **Una sola ruta de las cuatro de `REQ-BOF-024`**: qué productos
+            | entran en el catálogo y en qué orden. El CRUD y la publicación
+            | son de `T-032`, y esta se escribe aparte porque tiene su propio
+            | requisito cerrado y su propia acción — meterla en el guardado del
+            | formulario abriría un segundo camino hacia `catalog_product`, que
+            | es exactamente lo que `T-024` evitó al dejar el pivote con un
+            | único escritor.
+            |
+            | **De los dos roles**, como el resto del inventario: armar un
+            | catálogo es operación diaria (`OrganizationCapability::Products`),
+            | y un empleado que carga productos y no puede ponerlos en el
+            | escaparate tendría que pedírselo al dueño cada vez.
+            |
+            | **No declara `during-suspension`**, como el inventario entero: lo
+            | que `REQ-ORG-008` RB-3 conserva durante una suspensión es cobrar
+            | y aprobar comprobantes, y mover el escaparate no es ninguna de
+            | las dos. La omisión es la declaración, por el fallo cerrado de
+            | `T-012`.
+            |
+            | El `{catalog}` llega ya filtrado por el tenant → `404` para el
+            | ajeno (`REQ-BOF-024` SP-10). Los **productos** de la lista no los
+            | puede comprobar el binding, y esa guarda es de la acción
+            | (`REQ-ORG-002` RB-7): es lo que sostiene que el pivote no lleve
+            | `organization_id`.
+            */
+            Route::patch('catalogos/{catalog}/productos', [CatalogController::class, 'products'])
+                ->name('catalogs.products');
 
             /*
             | Taxonomía: categorías y etiquetas ([05 §7.4], `REQ-BOF-023`).

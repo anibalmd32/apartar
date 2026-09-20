@@ -167,6 +167,8 @@ export interface CatalogView {
 - Tabla pivote `catalog_product` (`catalog_id`, `product_id`, `position`, `created_at`), PK compuesta.
 - `SyncCatalogProductsAction(Catalog $catalog, list<int> $orderedProductIds)`.
 - Rutas `PATCH /backoffice/catalogos/{catalog}/productos`.
+- **`CatalogProductSorter` nace sin pantalla que lo monte** (`T-031`), y es deliberado: la ruta `PATCH` y su acción son de esta tarea, pero el CRUD del catálogo y su formulario son de `T-032`, que es quien lo montará. Es el mismo reparto que `T-028` hizo con `SpecificationTable`. Mientras tanto el controlador redirige con `back()` y no con una ruta nombrada, porque nombrar una que todavía no existe sería una promesa que hoy no se puede resolver.
+- **El buscador de productos del happy path filtra en el cliente** (`T-031`): el inventario del negocio viaja entero en las props, igual que en el listado de `REQ-BOF-020` RB-9. No abre endpoint ni reutiliza el `scopeSearch` de `REQ-CAT-002`, que está pensado para el catálogo **público** —`FULLTEXT` y orden por relevancia sobre descripciones largas—: aquí lo que se busca es un código que la persona ya conoce.
 
 **Reglas de negocio y precondiciones**
 - RB-1 Relación N:M dentro de la organización: un producto puede pertenecer a varios catálogos del **mismo** negocio. Nunca a un catálogo de otra organización (validado en la `Action`, `REQ-ORG-002` RB-7).
@@ -176,7 +178,7 @@ export interface CatalogView {
 - RB-5 Se pueden añadir productos `draft`: no se renderizan hasta publicarse, lo que permite preparar una campaña completa antes de lanzarla.
 - RB-6 El número de productos por catálogo está limitado por el plan (`max_products_per_catalog`, `REQ-SUB-004` RB-3). El tope se comprueba sobre el total del pivote, incluidos los `draft`.
 - RB-7 Publicar exige al menos un producto **publicado** (`REQ-CAT-022` RB-4).
-- RB-8 El reordenamiento es drag & drop con persistencia explícita ("Guardar orden"), no autoguardado por arrastre.
+- RB-8 El reordenamiento es drag & drop con persistencia explícita ("Guardar orden"), no autoguardado por arrastre. **La librería de *drag & drop* del proyecto entra aquí** (`T-031`, `@dnd-kit`) y vive en un solo sitio, `components/ui/sortable.tsx`: las otras tres listas que se ordenan a mano —categorías, ficha técnica e imágenes— pasan al mismo gesto sin tocar sus endpoints. El `KeyboardSensor` va siempre puesto y los anuncios van en español, porque el arrastre **sustituye** a unos botones que ya funcionaban con el teclado y perder eso sería un retroceso.
 - RB-9 Quitar un producto del catálogo **no** afecta a los apartados originados desde él (`REQ-LAY-002`).
 
 **Happy path**
@@ -185,10 +187,10 @@ export interface CatalogView {
 3. La acción reescribe el pivote en una transacción con posiciones 1..12, conservando el `created_at` de cada uno.
 
 **Sad paths y edge cases**
-- SP-1 `product_id` inexistente, archivado o **de otra organización** → `422` sin aplicar nada (transacción); el de otra organización además no existe bajo el global scope.
+- SP-1 `product_id` inexistente, archivado o **de otra organización** → `422` sin aplicar nada (transacción); el de otra organización además no existe bajo el global scope. **El archivado se niega al entrar y se tolera al quedarse** (`T-031`): `REQ-BOF-024` SP-7 dice que un producto del catálogo que se archiva **sigue en él** —archivar conserva la relación (`REQ-CAT-007` RB-7)— y se marca «no visible». Rechazarlo siempre haría imposible guardar el orden de un catálogo que tenga uno archivado dentro; admitirlo siempre convertiría archivar en una forma silenciosa de seguir componiendo escaparates con lo retirado. Quitarlo sigue permitido: eso es una decisión explícita.
 - SP-2 IDs duplicados en la petición → se deduplican preservando la primera aparición.
 - SP-3 Superar `max_products_per_catalog` → `422` con el plan que lo desbloquea y el número exacto de excedente.
-- SP-4 Dos usuarios reordenando el mismo catálogo → gana el último guardado; la UI muestra la marca de última modificación y su autor.
+- SP-4 Dos usuarios reordenando el mismo catálogo → gana el último guardado; la UI muestra la marca de última modificación y su autor. **La mitad del autor no se puede cumplir todavía** (`T-031`): `catalogs` no tiene columna que registre quién lo tocó por última vez, y `REQ-CAT-023` no la declara en su contrato. Lo que sí hace esta tarea es que componer marque el catálogo como modificado —`updated_at`, aunque el cambio viva en el pivote— para que la marca diga la fecha de la composición y no la del último cambio de nombre. Quien pinta las dos cosas es el formulario de `T-032`; el autor le toca a quien añada la columna, y es el mismo hueco que `REQ-BOF-020` SP-7 dejó abierto para los productos en `T-027`.
 - SP-5 Quitar del catálogo un producto con apartados vigentes → permitido y sin efecto sobre ellos.
 - SP-6 Reordenar un catálogo publicado → efecto inmediato en la vista pública; no genera novedades ni digests (RB-3).
 - SP-7 Guardar con 0 productos en un catálogo publicado → `422`: dejaría el catálogo publicado y vacío. En `Draft` sí se permite.
@@ -201,7 +203,7 @@ export interface CatalogView {
 - Productos destacados dentro del catálogo.
 
 **Gate de validación**
-- Superficie esperada: `app/Actions/Catalog/SyncCatalogProductsAction.php`, `app/Http/Requests/Backoffice/SyncCatalogProductsRequest.php`, `resources/js/features/catalogs/components/CatalogProductSorter.tsx`, `resources/js/features/catalogs/hooks/useSortableProducts.ts`.
-- Tipos esperados: `SyncCatalogProductsAction`, `CatalogProductOrder`, `CrossTenantRelationException`, `PlanLimitReachedException`.
+- Superficie esperada: `app/Actions/Catalog/SyncCatalogProductsAction.php`, `app/Domain/Catalog/CatalogProductOrder.php`, `app/Http/Requests/Backoffice/SyncCatalogProductsRequest.php`, `app/Http/Controllers/Backoffice/CatalogController.php` (solo `products()`; el resto es de `T-032`), `resources/js/features/catalogs/components/CatalogProductSorter.tsx`, `resources/js/features/catalogs/hooks/useSortableProducts.ts`, `resources/js/components/ui/sortable.tsx`.
+- Tipos esperados: `SyncCatalogProductsAction`, `CatalogProductOrder`, `CrossTenantRelationException`, `PlanLimitReachedException` (esta última llega con `T-067`, que inserta el tope de RB-6; ver la nota de RB-6).
 - Anti-`SHALLOW`: `SyncCatalogProductsAction::handle()` (deduplicación, validación de pertenencia al tenant, tope de plan, reescritura de posiciones preservando `created_at`, transacción) supera 4 líneas.
 - Tests: posiciones contiguas desde 1; `created_at` **no** cambia al reordenar (test explícito de RB-3); deduplicación; producto de otra organización rechazado (fuga); tope de plan; `draft` admitido; vaciar un catálogo publicado rechazado; producto en varios catálogos del mismo negocio.

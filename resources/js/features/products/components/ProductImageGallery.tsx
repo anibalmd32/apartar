@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
 import { TextField } from '@/components/ui/text-field';
 import { ImageUploader } from '@/features/products/components/ImageUploader';
 import { type ProductImageView } from '@/types/product';
@@ -26,13 +27,17 @@ import { useEffect, useState } from 'react';
  * funcionando**. Lo mismo con «revisar»: un job que falló (SP-6) deja la
  * imagen utilizable, y lo que se pide es una mirada, no una acción urgente.
  *
- * ## Subir y bajar, no arrastrar
+ * ## Se arrastra, desde `T-031`
  *
- * La misma decisión que `T-026` tomó con las categorías y `T-028` con la ficha
- * técnica: el proyecto no tiene ninguna dependencia de *drag & drop* —llega
- * con `useSortableProducts` en `T-031`— y la API nativa no responde al dedo.
- * Lo que manda el formulario es **la lista entera en su orden**, así que
- * cambiar el gesto no toca el endpoint.
+ * RB-5 pedía arrastre y hasta ahora eran dos botones de subir y bajar, por lo
+ * mismo que en las categorías de `T-026` y la ficha técnica de `T-028`: no
+ * había dependencia de *drag & drop* y la API nativa no responde al dedo. La
+ * dependencia llegó y el gesto cambió; **el endpoint no se enteró**: el
+ * `PATCH .../imagenes/orden` sigue recibiendo la lista entera con su `alt`,
+ * que es lo que RB-6 puso en el mismo guardado.
+ *
+ * Y arrastrar la última foto hasta arriba **es** hacerla principal (RB-2),
+ * como lo era pulsar «subir» cinco veces — solo que ahora es un movimiento.
  */
 
 interface ProductImageGalleryProps {
@@ -66,20 +71,23 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
 
     const byId = new Map(images.map((image) => [image.id, image]));
 
-    const move = (index: number, direction: -1 | 1) => {
+    /**
+     * Mueve una foto de una posición a otra.
+     *
+     * Desde `T-031` el gesto es un arrastre y no dos botones, así que se saca
+     * y se vuelve a meter en lugar de intercambiar dos vecinas: arrastrar la
+     * última hasta arriba es un solo movimiento, no *n* intercambios.
+     */
+    const move = (from: number, to: number) => {
         setOrder((current) => {
             const next = [...current];
-            const target = index + direction;
+            const [moved] = next.splice(from, 1);
 
-            const moved = next[index];
-            const displaced = next[target];
-
-            if (moved === undefined || displaced === undefined) {
+            if (moved === undefined) {
                 return current;
             }
 
-            next[index] = displaced;
-            next[target] = moved;
+            next.splice(to, 0, moved);
 
             return next;
         });
@@ -112,82 +120,75 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
                     </p>
                 ) : (
                     <ul className="flex flex-col gap-3">
-                        {order.map((entry, index) => {
-                            const image = byId.get(entry.id);
+                        <SortableList
+                            ids={order.map((entry) => entry.id)}
+                            onReorder={move}
+                            labelOf={(id) => `la imagen ${order.findIndex((entry) => entry.id === id) + 1}`}
+                        >
+                            {order.map((entry, index) => {
+                                const image = byId.get(entry.id);
 
-                            if (image === undefined) {
-                                return null;
-                            }
+                                if (image === undefined) {
+                                    return null;
+                                }
 
-                            return (
-                                <li key={entry.id} className="border-base-300 grid gap-2 border-b pb-3 last:border-0 sm:grid-cols-12">
-                                    <div className="sm:col-span-2">
-                                        {/* `loading="lazy"` · RB-3. Y el `src`
-                                            es `thumb`, que cae al original
-                                            mientras la conversión no exista:
-                                            nunca un hueco roto. */}
-                                        <img
-                                            src={image.set.thumb}
-                                            alt={image.set.alt}
-                                            loading="lazy"
-                                            className="rounded-box h-24 w-24 object-cover"
-                                        />
-                                    </div>
+                                return (
+                                    <SortableRow key={entry.id} id={entry.id} label={`la imagen ${index + 1}`}>
+                                        {({ containerProps, handleProps }) => (
+                                            <li
+                                                ref={containerProps.ref}
+                                                style={containerProps.style}
+                                                className={`border-base-300 grid gap-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
+                                            >
+                                                <div className="flex items-center gap-1 sm:col-span-2">
+                                                    <SortableHandle handleProps={handleProps} />
+                                                    {/* `loading="lazy"` · RB-3. Y el `src`
+                                                        es `thumb`, que cae al original
+                                                        mientras la conversión no exista:
+                                                        nunca un hueco roto. */}
+                                                    <img
+                                                        src={image.set.thumb}
+                                                        alt={image.set.alt}
+                                                        loading="lazy"
+                                                        className="rounded-box h-24 w-24 object-cover"
+                                                    />
+                                                </div>
 
-                                    <div className="sm:col-span-6">
-                                        <TextField
-                                            label="Texto alternativo"
-                                            name={`images[${index}][alt]`}
-                                            value={entry.alt}
-                                            onChange={(event) => describe(entry.id, event.target.value)}
-                                            hint="Lo que lee quien no ve la imagen. Si lo dejas vacío, volvemos al texto por defecto."
-                                            maxLength={255}
-                                            autoComplete="off"
-                                        />
-                                    </div>
+                                                <div className="sm:col-span-6">
+                                                    <TextField
+                                                        label="Texto alternativo"
+                                                        name={`images[${index}][alt]`}
+                                                        value={entry.alt}
+                                                        onChange={(event) => describe(entry.id, event.target.value)}
+                                                        hint="Lo que lee quien no ve la imagen. Si lo dejas vacío, volvemos al texto por defecto."
+                                                        maxLength={255}
+                                                        autoComplete="off"
+                                                    />
+                                                </div>
 
-                                    <div className="flex flex-wrap items-end gap-1 sm:col-span-4">
-                                        {index === 0 ? <Badge tone="success">Principal</Badge> : null}
+                                                <div className="flex flex-wrap items-end gap-1 sm:col-span-4">
+                                                    {index === 0 ? <Badge tone="success">Principal</Badge> : null}
 
-                                        {image.isProcessing ? <Badge tone="info">Procesando</Badge> : null}
+                                                    {image.isProcessing ? <Badge tone="info">Procesando</Badge> : null}
 
-                                        {image.needsReview ? <Badge tone="warning">Revisar</Badge> : null}
+                                                    {image.needsReview ? <Badge tone="warning">Revisar</Badge> : null}
 
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => move(index, -1)}
-                                            disabled={index === 0}
-                                            aria-label={`Subir la imagen ${index + 1}`}
-                                        >
-                                            ↑
-                                        </Button>
-
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => move(index, 1)}
-                                            disabled={index === order.length - 1}
-                                            aria-label={`Bajar la imagen ${index + 1}`}
-                                        >
-                                            ↓
-                                        </Button>
-
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => remove(entry.id)}
-                                            aria-label={`Quitar la imagen ${index + 1}`}
-                                        >
-                                            ✕
-                                        </Button>
-                                    </div>
-                                </li>
-                            );
-                        })}
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => remove(entry.id)}
+                                                        aria-label={`Quitar la imagen ${index + 1}`}
+                                                    >
+                                                        ✕
+                                                    </Button>
+                                                </div>
+                                            </li>
+                                        )}
+                                    </SortableRow>
+                                );
+                            })}
+                        </SortableList>
                     </ul>
                 )}
 
