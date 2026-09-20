@@ -89,6 +89,44 @@ export interface SpecificationFormRow {
 }
 
 /**
+ * Una imagen de producto en sus tres tamaños (`REQ-CAT-005`).
+ *
+ * Espejo exacto del contrato `ImageSet` del módulo [11] y de
+ * `App\Domain\Catalog\ImageSet`. **Las tres URL siempre apuntan a algo**: si
+ * una conversión todavía no existe —se generan en cola, y a veces fallan— el
+ * servidor devuelve la del original (RB-3). Nunca llega `null` ni una cadena
+ * vacía, así que ninguna pantalla tiene que decidir qué pintar en un hueco.
+ *
+ * El `alt` tampoco viaja vacío: cuando el negocio no lo ha escrito, el
+ * servidor manda el defecto de RB-4.
+ */
+export interface ImageSet {
+    readonly thumb: string;
+    readonly card: string;
+    readonly zoom: string;
+    readonly alt: string;
+}
+
+/**
+ * Una imagen tal como la ve **el negocio** en su galería
+ * (`REQ-BOF-022` RB-3, SP-6).
+ *
+ * Amplía el contrato público con dos banderas que el cliente final no tiene
+ * por qué conocer: si las conversiones se están generando y si alguna falló.
+ * Las dos existen para que la pantalla pueda explicar por qué una foto se ve
+ * distinta —sirve el original— en lugar de dejar al negocio pensando que subió
+ * mal el archivo.
+ */
+export interface ProductImageView {
+    readonly id: number;
+    readonly set: ImageSet;
+    /** Las conversiones aún no están; se está sirviendo el original (RB-3). */
+    readonly isProcessing: boolean;
+    /** El job de conversión falló: la imagen sirve igual, pero conviene mirarla (SP-6). */
+    readonly needsReview: boolean;
+}
+
+/**
  * Una sección de la ficha, tal como se lee (`REQ-CAT-004` RB-2).
  *
  * Espejo de lo que compone `App\Domain\Catalog\SpecificationGroups`. `group`
@@ -128,6 +166,10 @@ export interface ProductFormValues {
     readonly tagIds: readonly number[];
     /** Las filas guardadas, por `position` y a igualdad por `id` (RB-4). */
     readonly specifications: readonly { readonly id: number; readonly group: string | null; readonly label: string; readonly value: string }[];
+    /** Las fotos en su orden: la primera es la principal (`REQ-BOF-022` RB-2). */
+    readonly images: readonly ProductImageView[];
+    /** Tope de fotos por producto, para deshabilitar la subida con su motivo. */
+    readonly maxImages: number;
     /** Publicado: su URL ya circuló y el enlace deja de ser editable (SP-5). */
     readonly slugIsLocked: boolean;
     /** SP-7 · gana el último, y la marca dice cuándo fue. */

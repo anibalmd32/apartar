@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ProductIdentityFields } from '@/features/products/components/ProductIdentityFields';
+import { ProductImageGallery } from '@/features/products/components/ProductImageGallery';
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
 import { SpecificationBuilder } from '@/features/products/components/SpecificationBuilder';
@@ -94,6 +95,17 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                     ) : null}
                 </div>
             </form>
+
+            {/* La galería va **fuera** del formulario y solo al editar, y las
+                dos cosas son consecuencia de RB-8 de `REQ-BOF-022`: las fotos
+                tienen sus propias rutas —subir, ordenar y borrar son
+                operaciones con efecto inmediato, no borradores que esperan a
+                un «Guardar»— y no hay dónde subirlas hasta que el producto
+                existe. Es el orden del happy path de `REQ-BOF-020`: se crea el
+                borrador y luego se completa. */}
+            {product === null ? null : (
+                <ProductImageGallery productId={product.id} images={product.images} maxImages={product.maxImages} errors={errors} />
+            )}
         </BackofficeLayout>
     );
 }

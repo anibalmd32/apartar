@@ -9,6 +9,18 @@ parameters:
     # (ASU-QAX-03). Subirlo es una tarea propia, no un ajuste al vuelo.
     level: 6
 
+    # El contenedor `app` tiene 768 MB (docker-compose.yml) y el script de
+    # `composer analyse` da 1 GB a **cada** proceso: con la paralelización por
+    # defecto —tantos como núcleos— la suma se pasa del techo del contenedor y
+    # el kernel mata un worker con SIGKILL. El síntoma no se parece a quedarse
+    # sin memoria: es «Child process was killed by signal 9», y el análisis
+    # queda incompleto. Dos procesos caben; cuatro no.
+    #
+    # Empezó a morder en `T-029`, al analizar el trait de medialibrary sobre
+    # `Product`, pero el techo estaba sobrevendido desde el principio.
+    parallel:
+        maximumNumberOfProcesses: 2
+
     paths:
         - app
         - config

@@ -50,6 +50,30 @@ final class CrossTenantAccessTest extends TestCase
     use RefreshDatabase;
 
     /**
+     * Parámetros de ruta que son **un identificador y no un modelo**, con su
+     * motivo escrito.
+     *
+     * La presunción del mecanismo es la contraria y así debe seguir: todo
+     * parámetro se presume un recurso enlazado, y el que no lo sea tiene que
+     * justificarse aquí — igual que `GlobalUniqueExceptions` obliga a
+     * justificar cada tabla que se queda fuera del tenant.
+     *
+     * **Quedarse fuera no exime del caso cruzado.** La ruta sigue teniendo que
+     * enlazar al menos un modelo del tenant, y es ese el que se pide desde la
+     * organización vecina; lo que esta lista dice es que *ese otro* parámetro
+     * no describe un recurso que el mecanismo pueda construir.
+     *
+     * @var array<string, string>
+     */
+    private const PLAIN_IDENTIFIERS = [
+        'media' => 'La tabla `media` está declarada fuera del filtro por organización —se ata a su modelo por '
+            .'relación polimórfica ([05 §4])—, así que un binding implícito resolvería la fila del negocio de al '
+            .'lado y la comprobación de pertenencia tendría que hacerla el controlador igualmente. Pedido como '
+            .'identificador, esa comprobación contra la colección del producto es el único camino, y quien '
+            .'sostiene el `404` cruzado de la ruta es su `{product}` (`REQ-BOF-022` SP-9).',
+    ];
+
+    /**
      * El kernel HTTP es quien copia los alias y las prioridades de
      * `bootstrap/app.php` al router. Sin una petición de por medio no se
      * resuelve, y entonces `gatherRouteMiddleware()` devolvería los alias sin
@@ -241,7 +265,7 @@ final class CrossTenantAccessTest extends TestCase
         $uncoverable = [];
 
         foreach ($this->tenantRoutes() as [$route]) {
-            $parameters = $route->parameterNames();
+            $parameters = array_values(array_diff($route->parameterNames(), array_keys(self::PLAIN_IDENTIFIERS)));
 
             if ($parameters === []) {
                 continue;
@@ -270,6 +294,22 @@ final class CrossTenantAccessTest extends TestCase
         }
 
         $this->assertSame([], $uncoverable);
+    }
+
+    /**
+     * Y la lista de excepciones no se vacía de contenido: cada parámetro
+     * declarado como identificador lleva su motivo escrito.
+     *
+     * Sin esto, `PLAIN_IDENTIFIERS` podría crecer con nombres sueltos y el
+     * mecanismo dejaría de mirar rutas sin que nadie hubiera tenido que
+     * explicar por qué.
+     */
+    public function test_every_plain_identifier_declares_its_reason(): void
+    {
+        foreach (self::PLAIN_IDENTIFIERS as $parameter => $reason) {
+            $this->assertNotSame('', trim($reason), "El parámetro {$parameter} no declara su motivo.");
+            $this->assertGreaterThan(80, mb_strlen($reason), "El motivo de {$parameter} no explica nada.");
+        }
     }
 
     /**

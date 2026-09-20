@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Jobs\TranscodeProductImage;
+use App\Support\Media\TenantPathGenerator;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
@@ -15,7 +17,6 @@ use Spatie\MediaLibrary\Conversions\ImageGenerators\Pdf;
 use Spatie\MediaLibrary\Conversions\ImageGenerators\Svg;
 use Spatie\MediaLibrary\Conversions\ImageGenerators\Video;
 use Spatie\MediaLibrary\Conversions\ImageGenerators\Webp;
-use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
 use Spatie\MediaLibrary\Downloaders\DefaultDownloader;
 use Spatie\MediaLibrary\MediaCollections\FileAdder;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -25,7 +26,6 @@ use Spatie\MediaLibrary\ResponsiveImages\TinyPlaceholderGenerator\Blurred;
 use Spatie\MediaLibrary\ResponsiveImages\WidthCalculator\FileSizeOptimizedWidthCalculator;
 use Spatie\MediaLibrary\Support\FileNamer\DefaultFileNamer;
 use Spatie\MediaLibrary\Support\FileRemover\DefaultFileRemover;
-use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 use Spatie\MediaLibraryPro\Models\TemporaryUpload;
 
@@ -142,8 +142,15 @@ return [
 
     /*
      * The class that contains the strategy for determining a media file's path.
+     *
+     * `TenantPathGenerator` y no el del paquete: `REQ-BOF-022` RB-9 exige que
+     * la ruta física lleve el `organization_id`. El aislamiento del resto del
+     * proyecto vive en el global scope, y un archivo en disco no lo tiene; sin
+     * esta línea todos los negocios comparten directorio y «de quién es este
+     * fichero» solo se puede responder mirando una tabla. Se decide aquí, una
+     * vez, para que ninguna colección futura vuelva a decidirlo por su cuenta.
      */
-    'path_generator' => DefaultPathGenerator::class,
+    'path_generator' => TenantPathGenerator::class,
 
     /*
      * The class that contains the strategy for determining how to remove files.
@@ -271,7 +278,14 @@ return [
      * your custom jobs extend the ones provided by the package.
      */
     'jobs' => [
-        'perform_conversions' => PerformConversionsJob::class,
+        /*
+         * `TranscodeProductImage` extiende el del paquete —como pide el
+         * párrafo de arriba— y añade lo único que medialibrary no puede
+         * saber: en qué organización trabaja. Un job de este proyecto no
+         * hereda el tenant de quien lo encoló (`REQ-ORG-002` RB-5), y sin él
+         * la conversión o lanza o trabaja sobre la fila equivocada.
+         */
+        'perform_conversions' => TranscodeProductImage::class,
         'generate_responsive_images' => GenerateResponsiveImagesJob::class,
     ],
 

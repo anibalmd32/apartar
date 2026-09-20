@@ -17,7 +17,10 @@ FROM php:8.3-fpm-alpine AS base
 # Extensiones exigidas por el stack (plan T-002, "Hallazgos de T-001"):
 #   pdo_mysql  MySQL 8.0
 #   bcmath     bcmul escala 8 en la conversión a VES (REQ-FX-004 RB-5)
-#   exif + gd  spatie/laravel-medialibrary (REQ-CAT-005)
+#   exif + gd  spatie/laravel-medialibrary (REQ-CAT-005). **gd con WebP**: las
+#              tres conversiones del catálogo son WebP calidad 82, y sin
+#              `--with-webp` el `imagewebp()` que las escribe no existe y
+#              **todas** las conversiones fallan en el worker (T-029).
 #   zip        maatwebsite/excel (REQ-BOF-043)
 #   intl       formato de números y fechas por locale
 #   pcntl      señales de queue:work (REQ-INF-003 RB-3)
@@ -28,6 +31,7 @@ RUN apk add --no-cache \
         icu-libs \
         libjpeg-turbo \
         libpng \
+        libwebp \
         libzip \
         tzdata \
     && apk add --no-cache --virtual .build-deps \
@@ -36,8 +40,9 @@ RUN apk add --no-cache \
         icu-dev \
         libjpeg-turbo-dev \
         libpng-dev \
+        libwebp-dev \
         libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
         exif \

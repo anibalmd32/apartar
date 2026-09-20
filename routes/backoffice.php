@@ -9,6 +9,7 @@ use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
 use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\ProductController;
+use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
@@ -110,6 +111,46 @@ Route::prefix('backoffice')->group(function (): void {
             */
             Route::post('productos/{product}/archivar', [ProductController::class, 'archive'])
                 ->name('products.archive');
+
+            /*
+            | Imágenes de producto ([05 §7.4], `REQ-BOF-022`).
+            |
+            | Las tres del contrato y ninguna más: subir, borrar y guardar el
+            | orden. El texto alternativo viaja con el orden (RB-6) porque es
+            | lo que la galería edita en el mismo guardado y porque una cuarta
+            | ruta no está en el contrato.
+            |
+            | **Ninguna declara `during-suspension`**, como el resto del
+            | inventario: `REQ-ORG-008` RB-3 conserva cobrar y aprobar
+            | comprobantes, no cargar fotos. La omisión es la declaración, por
+            | el fallo cerrado de `T-012`.
+            |
+            | `imagenes/orden` va antes que `imagenes/{media}` por costumbre de
+            | lectura: son verbos distintos y no compiten.
+            |
+            | El `{product}` llega ya filtrado por el tenant → `404` para el
+            | ajeno (SP-9). El `{media}` **no**: su tabla está declarada fuera
+            | del filtro por organización ([05 §4]), así que quien comprueba
+            | que la imagen es de este producto es el controlador.
+            */
+            Route::post('productos/{product}/imagenes', [ProductImageController::class, 'store'])
+                ->name('products.images.store');
+
+            Route::patch('productos/{product}/imagenes/orden', [ProductImageController::class, 'order'])
+                ->name('products.images.order');
+
+            /*
+            | El `{media}` es un número y **no** un modelo enlazado, a
+            | propósito: `media` está fuera del filtro por organización, así
+            | que un binding implícito resolvería la fila del negocio de al
+            | lado y dejaría la comprobación de pertenencia en manos del
+            | controlador de todas formas. Pidiéndolo como identificador, esa
+            | comprobación es el único camino y no hay una resolución previa
+            | que pueda confundirse con una autorización.
+            */
+            Route::delete('productos/{product}/imagenes/{media}', [ProductImageController::class, 'destroy'])
+                ->whereNumber('media')
+                ->name('products.images.destroy');
 
             /*
             | Taxonomía: categorías y etiquetas ([05 §7.4], `REQ-BOF-023`).

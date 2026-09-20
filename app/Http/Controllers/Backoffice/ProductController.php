@@ -7,12 +7,14 @@ namespace App\Http\Controllers\Backoffice;
 use App\Actions\Product\ChangeProductStatusAction;
 use App\Actions\Product\UpsertProductAction;
 use App\Domain\Catalog\FinancingPlan;
+use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Money\Money;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backoffice\StoreProductImagesRequest;
 use App\Http\Requests\Backoffice\StoreProductRequest;
 use App\Http\Requests\Backoffice\UpdateProductRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
@@ -31,6 +33,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Lo que el negocio vende (`REQ-BOF-020`).
@@ -299,7 +302,7 @@ final class ProductController extends Controller
     {
         $product->loadMissing('tags');
 
-        return $this->specificationRows($product) + [
+        return $this->specificationRows($product) + $this->imageRows($product) + [
             'id' => (int) $product->getKey(),
             'name' => $product->name,
             'sku' => $product->sku,
@@ -324,6 +327,40 @@ final class ProductController extends Controller
             // siendo la acción.
             'slugIsLocked' => $product->status === ProductStatus::Published,
             'updatedAt' => $product->updated_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Las fotos del producto, en su orden (`REQ-BOF-022` RB-2, RB-3).
+     *
+     * La primera es la principal, y eso no es una bandera: es su sitio en la
+     * lista. Cada una trae sus tres tamaños ya resueltos por `ImageSet`, que
+     * **cae al original mientras la conversión no exista** (`REQ-CAT-005`
+     * RB-3), y dos banderas que solo el negocio ve: si aún se está procesando
+     * y si su conversión quedó pendiente de revisión (SP-6).
+     *
+     * @return array{images: list<array<string, mixed>>, maxImages: int}
+     */
+    private function imageRows(Product $product): array
+    {
+        $images = $product->getMedia(Product::IMAGES)
+            ->map(fn (Media $media): array => [
+                'id' => (int) $media->getKey(),
+                'set' => ImageSet::of($media)->toArray(),
+                // RB-3 · «procesando» por imagen hasta que las tres existan.
+                // Se mira la más grande: es la última en terminar.
+                'isProcessing' => ! $media->hasGeneratedConversion('zoom'),
+                'needsReview' => ImageSet::needsReview($media),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'images' => $images,
+            // El tope viaja para que la pantalla deshabilite la subida con su
+            // motivo al lado en vez de dejar que la intenten y reciban un
+            // `422`. Quien manda sigue siendo el `FormRequest`.
+            'maxImages' => StoreProductImagesRequest::MAX_IMAGES,
         ];
     }
 
