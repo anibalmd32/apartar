@@ -526,6 +526,18 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 **Y trae el arrastre que `T-026`, `T-028` y `T-029` dejaron pendiente** (`REQ-BOF-023` RB-2, `REQ-BOF-021` RB-1 y `REQ-BOF-022` RB-5): con `useSortableProducts` escrito, la lista de categorías, las filas de la ficha técnica y la galería de imágenes cambian el gesto —hoy son botones de subir y bajar— **sin tocar sus endpoints ni sus payloads**, que en los tres casos ya viajan enteros en su orden. Son las tres únicas partes de H2 por debajo de la letra, las tres declaradas en sus requisitos, y las tres se cierran aquí de una vez.
 **Aquí también va la guarda de escritura de `catalog_product`** (`REQ-ORG-002` RB-7, SP-5): validar en la `Action` que el producto y el catálogo son de la misma organización, que es lo que sostiene que el pivote no lleve `organization_id`.
 
+**Cerrada** (`7e48a8d`). `REQ-CAT-023` cerrado salvo el tope de plan (`T-067`). Cinco cosas:
+
+**El pivote se escribe con tres operaciones explícitas** —`updateExistingPivot` para las que se quedan, `attach` para las que entran, `detach` para las que salen— y no con un reemplazo. **Corrección a lo que decía el prompt:** `sync()` **sí** preservaría el `created_at` si se le pasara el mapa de atributos por identificador, porque por dentro actualiza lo que ya está. Lo que rompe RB-3 no es `sync()` sino la forma que se escribe sola —desatar el pivote entero y volver a atarlo en el orden pedido—, y que `sync()` esconde cuál de las dos hace. Las tres operaciones explícitas dejan la regla leíble sin saberse ese detalle.
+
+**Un id ajeno y un id inexistente dan la misma excepción y el mismo mensaje**, a propósito: distinguirlos confirmaría que la fila del vecino existe (`REQ-ORG-002` RB-6). Misma forma que usó `T-027` con las etiquetas.
+
+**El archivado se niega al entrar y se tolera al quedarse.** La spec lo pedía en dos sitios con distinta respuesta —`REQ-CAT-023` SP-1 rechaza añadir uno archivado y `REQ-BOF-024` SP-7 dice que el que ya estaba sigue dentro marcado «no visible»—, y rechazar siempre habría dejado al negocio sin poder reordenar un catálogo que tuviera uno. Anotado en SP-1.
+
+**El arrastre de H2 quedó cerrado en las tres listas sin tocar un solo controlador**, que era la afirmación a comprobar: `@dnd-kit` vive en `components/ui/sortable.tsx` y nada más cambió de contrato. Lo que no era gratis y se conservó es el teclado —los botones lo daban de balde—, con el tirador como `<button>`, `KeyboardSensor` y los anuncios en español. Las tres reglas están ahora **cumplidas al pie de la letra** en sus requisitos, y la de las imágenes es `REQ-BOF-022` **RB-2** —el orden— y no RB-5, que es la barra de progreso: el prompt de `T-031` las confundió y la tarea lo corrigió donde tocaba.
+
+**`CatalogProductSorter` nace sin pantalla que lo monte**, como `SpecificationTable` en `T-028`: el formulario del catálogo es de `T-032`, que lo monta en lugar de reescribirlo. Y el buscador de productos filtra **en el cliente** sobre el inventario que ya viaja en las props, sin endpoint nuevo y sin tocar el `scopeSearch` del catálogo público, que es de `REQ-CAT-002`.
+
 **T-032 · Publicación de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-022`, `REQ-BOF-024`*
 `PublishCatalogAction`, `UnpublishCatalogAction`, `UniqueCatalogSlug`, `SlugLockedException`, `ShareLinkField`, CRUD y listado con badge de visibilidad.
 **Hecho cuando:** un test por cada uno de los **6 requisitos de publicación**; slug único global con desambiguación entre organizaciones; slug inmutable tras publicar; despublicar da `404` y expirado `410`; sello de plataforma presente en Free.
@@ -555,6 +567,7 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 **Hecho cuando:** los 3 planes se leen de `plans`; `NULL` se muestra como "ilimitado".
 
 **T-038 · Tablas server-driven** · `B` · 3 pts · *Requisitos: `REQ-BOF-045`*
+**Y cierra el hueco de «quién lo modificó», que está abierto en dos requisitos.** `REQ-BOF-020` SP-7 (`T-027`) y `REQ-CAT-023` SP-4 (`T-031`) piden los dos la marca de última modificación **con su autor**, y ni `products` ni `catalogs` tienen columna que lo registre: las dos tareas dejaron la fecha —`T-031` hace que componer marque el catálogo como modificado, para que la marca hable de la composición y no del último cambio de nombre— y el autor sin resolver. No sale de la auditoría: componer y renombrar no son eventos de la lista cerrada de `REQ-BOF-005` RB-1. Es aquí porque es la tarea que pinta esas columnas en los listados, y son dos `updated_by` con su migración.
 `useServerTable`, `DataTable` (+ 4 subcomponentes), `ResolvesTableState`, `SortWhitelist`.
 **Hecho cuando:** `sort` no permitido cae al default; `perPage` fuera de lista cae a 25; `page` desbordada no da error; recarga parcial pide solo `rows` y `meta`; **URL compartida entre organizaciones muestra los datos de cada una**; ningún componente supera 200 líneas.
 

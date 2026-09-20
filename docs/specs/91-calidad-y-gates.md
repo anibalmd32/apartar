@@ -19,6 +19,10 @@
 **Contratos de datos**
 - `pint.json` (preset `laravel`), `phpstan.neon` (Larastan), `composer.json` con los scripts `lint`, `analyse`, `test`.
 
+> **`composer check` corre `test:coverage`, no `test`, y es por tiempo de sesión.** Encadenar `test` y luego el gate de cobertura aparte recorre la suite **dos veces**, la segunda instrumentada con pcov; una sola pasada con cobertura cuesta un 20-40 % más que la pasada limpia, frente al 100 % que cuesta repetirla. El gate de `REQ-QAX-003` RB-1 sigue invocándose en cada vuelta y en CI, que es lo que lo mantiene vivo. Corregido al medir por qué las sesiones se alargaban conforme crecía la suite.
+>
+> **Hay una inestabilidad conocida al sembrar planes:** un *deadlock* de MySQL que tumba dos o tres tests y desaparece al repetir, visto en `T-030` y en `T-031`. No es un fallo del producto —son los tests de concurrencia, que usan dos conexiones y no pueden usar `RefreshDatabase`, chocando con la siembra— y hasta que se aísle, un fallo de esa forma **se repite antes de investigarlo**; si persiste, no es esto.
+>
 > **`composer analyse` corre con `parallel.maximumNumberOfProcesses: 2`, y el motivo conviene entenderlo antes de subirlo.** El script da `memory_limit=1G` a **cada** proceso y el contenedor `app` tiene 768 MB en total ([90](90-infraestructura-y-entorno.md) RB-6): con la paralelización por defecto —tantos procesos como núcleos— la suma se pasa del techo y el kernel mata un *worker*. El síntoma **no se parece** a quedarse sin memoria: es «Child process was killed by signal 9» y un análisis que termina incompleto, es decir, un gate que pasa por no haber mirado. Empezó a morder en `T-029` al analizar el trait de medialibrary, pero el techo estaba sobrevendido desde el principio: el `memory_limit` es un máximo por proceso y el del contenedor es un total duro, y nadie los había reconciliado. Si vuelve a morder, las salidas son subir el contenedor o bajar el límite por proceso — **no** volver a la paralelización por defecto.
 - Estructura de `app/` según [02-spec-consolidada.md](02-spec-consolidada.md) §6.1.
 

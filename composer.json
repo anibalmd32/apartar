@@ -88,7 +88,7 @@
         "check": [
             "@lint",
             "@analyse",
-            "@test"
+            "@test:coverage"
         ]
     },
     "extra": {
@@ -117,6 +117,6 @@
         "tenancy:audit": "Auditoria estatica del aislamiento: las cinco comprobaciones de REQ-QAX-008 RB-4",
         "tenancy:suite": "Suite de fuga cruzada (tests/Feature/Tenancy)",
         "tenancy": "Gate de aislamiento multi-tenant completo: auditoria estatica + suite (REQ-QAX-008)",
-        "check": "lint + analyse + test"
+        "check": "lint + analyse + test:coverage (una sola pasada de la suite, no dos)"
     }
 }
