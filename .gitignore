@@ -16,6 +16,11 @@
 /public/hot
 /public/storage
 /storage/*.key
+# Directorio de trabajo de medialibrary: los originales y las conversiones a
+# medio hacer viven aquí mientras se procesan. Son artefactos de ejecución —los
+# deja cada subida y cada corrida de la suite— y el volumen `app_storage` es su
+# sitio, no el repositorio (`REQ-INF-001` RB-4).
+/storage/media-library
 /storage/pail
 /vendor
 auth.json
