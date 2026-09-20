@@ -510,6 +510,16 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 
 **El `404` de SP-1 —un `draft` o un `archived` por URL directa— no se verifica aquí**, porque no hay página pública hasta `T-033` y `T-035`. Lo de esta tarea es el mecanismo: `scopePublished()` y que la consulta pública no tenga forma de traerlos. La respuesta HTTP la prueban aquellas dos, cada una en su superficie.
 
+**Cerrada** (`ef4ee33`). `REQ-CAT-007` cerrado salvo el `404` de SP-1, que prueban `T-033` y `T-035`. Lo que trajo:
+
+**La matriz niega un solo paso, `archived → published`** (SP-4), y lo niega con el mensaje que dice por dónde sí —«restáuralo primero»—, porque «transición no permitida» ocultaría que hay camino. Restaurar devuelve a `draft` porque el producto sigue en los catálogos donde estaba (RB-7): volver publicado lo devolvería a la venta sin que nadie haya revisado precio, existencias ni fotos desde que se retiró.
+
+**Repetir un paso ya aplicado no escribe nada**, ni columna ni auditoría, y `publish()` corta **antes** de la completitud para que volver a pulsar sobre un publicado no revalide ni mueva la fecha — que es lo que adelantaría una publicación programada sin querer.
+
+**Cuatro rutas y no una con destino por parámetro**, declaradas en [11](11-catalogo-y-productos.md): el estado al que se va no es un dato que el cliente elija, y un endpoint que aceptara el destino invitaría a pedir el que la matriz niega.
+
+**El límite de los modelos pasa a contar líneas de código** (`REQ-QAX-001` RB-3), y **la corrección es correcta**: dos requisitos cerrados se contradecían —`REQ-CAT-007` exige `scopePublished()` **en `Product`** y el tope en crudo no dejaba sitio ni sin docblocks—, y el que cede es el que medía la cosa equivocada. Contando en crudo, lo que el gate mide es cuánto se explica un archivo, y este proyecto exige explicarlos; el gemelo del frontend ya contaba así desde el principio. **El número se queda en 200 a propósito:** contando solo código, un modelo que se acerque a esa cifra sí tiene lógica de negocio mal puesta, que es lo que SP-3 quiere detectar.
+
 **T-031 · Composición de catálogos** · `B` · 3 pts · *Requisitos: `REQ-CAT-023`*
 `SyncCatalogProductsAction`, `CatalogProductSorter`, `useSortableProducts`.
 **Hecho cuando:** posiciones contiguas desde 1; **`created_at` del pivote NO cambia al reordenar**; deduplicación; producto de otra organización rechazado (fuga); vaciar un catálogo publicado rechazado.
