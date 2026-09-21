@@ -184,26 +184,50 @@ Route::prefix('backoffice')->group(function (): void {
                 ->name('products.images.destroy');
 
             /*
-            | Composición de catálogos ([05 §7.4], `REQ-CAT-023`).
+            | Catálogos ([05 §7.4], `REQ-BOF-024`, `REQ-CAT-022`,
+            | `REQ-CAT-023`).
             |
-            | **Una sola ruta de las cuatro de `REQ-BOF-024`**: qué productos
-            | entran en el catálogo y en qué orden. El CRUD y la publicación
-            | son de `T-032`, y esta se escribe aparte porque tiene su propio
-            | requisito cerrado y su propia acción — meterla en el guardado del
-            | formulario abriría un segundo camino hacia `catalog_product`, que
-            | es exactamente lo que `T-024` evitó al dejar el pivote con un
-            | único escritor.
+            | Las seis del contrato, ya completas: el CRUD (`T-032`), la
+            | composición (`T-031`) y la publicación (`T-032`). Siguen siendo
+            | **tres escrituras separadas hacia tres grupos de columnas
+            | distintos**, y eso no es reparto de tareas sino la regla:
+            | `catalog_product` tiene un solo escritor desde `T-024`, y
+            | `published_at`, `is_listed` y `expires_at` tienen el suyo desde
+            | esta tarea. Un `PUT` que lo guardara todo sería el segundo camino
+            | que se olvida de los seis requisitos de `REQ-CAT-022` RB-4.
+            |
+            | `catalogos/crear` va **antes** que `catalogos/{catalog}/editar`
+            | por costumbre de lectura: los dos son `GET` y no compiten, porque
+            | el segundo lleva un segmento más. Las dos pantallas no están en
+            | el contrato de `REQ-BOF-024`, que enumera los verbos de
+            | escritura; un CRUD con formulario las necesita, y son las mismas
+            | dos que `REQ-BOF-020` sí declara para el producto.
+            |
+            | **`POST` y `DELETE` sobre el mismo `publicar`**: publicar y
+            | despublicar son el mismo recurso —la publicación del catálogo—
+            | creado y borrado, y así lo declara el contrato. Publicar admite
+            | además la visibilidad y la caducidad, porque las tres columnas se
+            | escriben juntas o no se escriben.
             |
             | **De los dos roles**, como el resto del inventario: armar un
             | catálogo es operación diaria (`OrganizationCapability::Products`),
             | y un empleado que carga productos y no puede ponerlos en el
             | escaparate tendría que pedírselo al dueño cada vez.
             |
-            | **No declara `during-suspension`**, como el inventario entero: lo
-            | que `REQ-ORG-008` RB-3 conserva durante una suspensión es cobrar
-            | y aprobar comprobantes, y mover el escaparate no es ninguna de
-            | las dos. La omisión es la declaración, por el fallo cerrado de
-            | `T-012`.
+            | **Ninguna declara `during-suspension`**, como el inventario
+            | entero: lo que `REQ-ORG-008` RB-3 conserva durante una suspensión
+            | es cobrar y aprobar comprobantes, y mover el escaparate no es
+            | ninguna de las dos (RB-11). La omisión es la declaración, por el
+            | fallo cerrado de `T-012`, y en `publicar` coincide además con una
+            | regla escrita: `REQ-CAT-022` SP-9 pide `403`.
+            |
+            | **Despublicar tampoco la declara, y eso sí se pensó.** Retirar
+            | algo de la calle no es crear nada, así que dejarlo abierto sería
+            | defendible; se queda cerrado porque la lista de excepciones de
+            | `REQ-ORG-008` RB-3 es cerrada —cobrar y aprobar comprobantes— y
+            | ampliarla por un caso razonable es cómo esa lista deja de
+            | significar nada. La campaña de un negocio suspendido ya no se ve:
+            | sus catálogos están despublicados por RB-2.
             |
             | El `{catalog}` llega ya filtrado por el tenant → `404` para el
             | ajeno (`REQ-BOF-024` SP-10). Los **productos** de la lista no los
@@ -211,8 +235,21 @@ Route::prefix('backoffice')->group(function (): void {
             | (`REQ-ORG-002` RB-7): es lo que sostiene que el pivote no lleve
             | `organization_id`.
             */
+            Route::get('catalogos', [CatalogController::class, 'index'])->name('catalogs.index');
+            Route::get('catalogos/crear', [CatalogController::class, 'create'])->name('catalogs.create');
+            Route::post('catalogos', [CatalogController::class, 'store'])->name('catalogs.store');
+
+            Route::get('catalogos/{catalog}/editar', [CatalogController::class, 'edit'])->name('catalogs.edit');
+            Route::put('catalogos/{catalog}', [CatalogController::class, 'update'])->name('catalogs.update');
+
             Route::patch('catalogos/{catalog}/productos', [CatalogController::class, 'products'])
                 ->name('catalogs.products');
+
+            Route::post('catalogos/{catalog}/publicar', [CatalogController::class, 'publish'])
+                ->name('catalogs.publish');
+
+            Route::delete('catalogos/{catalog}/publicar', [CatalogController::class, 'unpublish'])
+                ->name('catalogs.unpublish');
 
             /*
             | Taxonomía: categorías y etiquetas ([05 §7.4], `REQ-BOF-023`).

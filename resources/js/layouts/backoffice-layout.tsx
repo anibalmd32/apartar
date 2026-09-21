@@ -41,11 +41,13 @@ interface BackofficeLayoutProps {
  */
 const SECTIONS: NavSection[] = [
     { label: 'Panel', href: '/backoffice', capability: ANY_CAPABILITY },
-    // Inventario (`REQ-BOF-020`, `REQ-BOF-023`): tres secciones y una sola
-    // capacidad. Cargar productos y ordenarlos es operación diaria, así que un
-    // `member` las ve — es lo que le permite trabajar sin pedirle una
-    // categoría al dueño cada vez.
+    // Inventario (`REQ-BOF-020`, `REQ-BOF-023`, `REQ-BOF-024`): cuatro
+    // secciones y una sola capacidad. Cargar productos, ordenarlos y armar la
+    // campaña con la que se venden es operación diaria, así que un `member`
+    // las ve — es lo que le permite trabajar sin pedirle una categoría al
+    // dueño cada vez.
     { label: 'Productos', href: '/backoffice/productos', capability: 'products' },
+    { label: 'Catálogos', href: '/backoffice/catalogos', capability: 'products' },
     { label: 'Categorías', href: '/backoffice/categorias', capability: 'products' },
     { label: 'Etiquetas', href: '/backoffice/etiquetas', capability: 'products' },
     { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
