@@ -163,7 +163,25 @@ final class LimitEnforcer
 
     public function hasFeature(PlanFeature $feature): bool
     {
-        return $this->subscription()->plan->hasFeature($feature);
+        return $this->plan()->hasFeature($feature);
+    }
+
+    /**
+     * El plan vigente de la organización activa, para quien tiene que
+     * preguntarle más de una cosa.
+     *
+     * Lo necesita la vista pública del catálogo (`REQ-CAT-021` RB-9), que pinta
+     * a la vez si se aplica la marca del negocio y si va el sello «Hecho con
+     * Apartar»: son las dos caras de la misma función (`Plan::showsPlatformBadge()`),
+     * y leerlas con dos `hasFeature()` serían dos consultas de la suscripción
+     * para una sola respuesta.
+     *
+     * Lectura, no autorización: para negar algo están `assertHasFeature()` y
+     * `assertCanCreate()`.
+     */
+    public function plan(): Plan
+    {
+        return $this->subscription()->plan;
     }
 
     /**

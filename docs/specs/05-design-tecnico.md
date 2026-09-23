@@ -156,7 +156,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 | 22 | `product_specifications` | `organization_id`, `product_id`, `group?`, `label`, `value`, `position` | `INDEX(product_id, position)` |
 | 23 | `media` | de `spatie/laravel-medialibrary` | — |
 | 24 | `catalogs` | `organization_id`, `name`, `slug`, `description?`, `cover_path?`, `is_listed`, `published_at?`, `expires_at?` | **`UNIQUE(slug)` global**, `INDEX(organization_id, published_at)` |
-| 25 | `catalog_product` | `catalog_id`, `product_id`, `position`, `created_at` | `PRIMARY(catalog_id, product_id)`, `INDEX(catalog_id, created_at)` |
+| 25 | `catalog_product` | `catalog_id`, `product_id`, `position`, `created_at` | `PRIMARY(catalog_id, product_id)`, `INDEX(catalog_id, created_at)`, `INDEX(catalog_id, position)` |
 
 > `catalog_product.created_at` es **funcional, no metadato**: ordena el feed y define qué es novedad (`REQ-CAT-023` RB-3). No se toca al reordenar.
 > `products.category_id` con FK `restrict` (`REQ-BOF-023` RB-4).

@@ -8,6 +8,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantSurface;
 use App\Http\Middleware\DeclaresTenantSurface;
 use App\Http\Middleware\OperatesWithoutTenant;
+use App\Http\Middleware\ResolveCatalogTenant;
 use App\Http\Middleware\ResolveTenant;
 use App\Models\Organization;
 use App\Models\User;
@@ -180,6 +181,8 @@ final class ResolveTenantTest extends TestCase
     {
         $this->assertSame(TenantSurface::Backoffice, ResolveTenant::surface());
         $this->assertSame(TenantSurface::Platform, OperatesWithoutTenant::surface());
+        $this->assertSame(TenantSurface::PublicCatalog, ResolveCatalogTenant::surface());
+        $this->assertInstanceOf(DeclaresTenantSurface::class, app(ResolveCatalogTenant::class));
 
         $this->assertInstanceOf(DeclaresTenantSurface::class, app(ResolveTenant::class));
         $this->assertInstanceOf(DeclaresTenantSurface::class, app(OperatesWithoutTenant::class));
@@ -194,5 +197,6 @@ final class ResolveTenantTest extends TestCase
 
         $this->assertSame(ResolveTenant::class, $aliases['tenant'] ?? null);
         $this->assertSame(OperatesWithoutTenant::class, $aliases['without-tenant'] ?? null);
+        $this->assertSame(ResolveCatalogTenant::class, $aliases['catalog-tenant'] ?? null);
     }
 }

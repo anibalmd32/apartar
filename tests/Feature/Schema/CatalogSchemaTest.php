@@ -172,6 +172,15 @@ it('indexa el pivote por catálogo y fecha de entrada', function (): void {
 });
 
 /**
+ * `REQ-CAT-021` SP-7: la parrilla pública pagina por cursor sobre el orden
+ * curado, y sin este índice cada lote ordenaría en memoria el catálogo entero
+ * para devolver doce productos.
+ */
+it('indexa el pivote por catálogo y posición', function (): void {
+    expect(SchemaInspector::hasIndexOn('catalog_product', 'catalog_id', 'position'))->toBeTrue();
+});
+
+/**
  * Los dos pivotes llevan clave primaria compuesta: un producto aparece una
  * sola vez por catálogo (`REQ-CAT-023` RB-4) y lleva una etiqueta una sola
  * vez.

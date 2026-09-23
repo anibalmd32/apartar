@@ -6,6 +6,7 @@ namespace Tests\Feature\Tenancy;
 
 use App\Domain\Tenancy\TenantResolver;
 use App\Domain\Tenancy\TenantSurface;
+use App\Models\Catalog;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,16 +58,49 @@ final class TenantResolverTest extends TestCase
         $this->assertTrue($organization->is($resolved));
     }
 
-    public function test_the_public_catalog_resolves_from_the_catalog(): void
+    /**
+     * El catálogo llega como **slug**: es el único de los identificadores que
+     * no se puede resolver antes que el tenant, porque `catalogs` lleva el
+     * global scope. Con dos catálogos en dos organizaciones, cada slug da la
+     * suya, y sin ninguna fijada de antemano.
+     */
+    public function test_the_public_catalog_resolves_from_the_catalog_slug(): void
     {
         $organization = Organization::factory()->create();
+        $neighbour = $this->neighbourOrganization();
 
-        $resolved = $this->resolver->resolve(
+        $ours = $this->withinOrganization($organization, fn (): Catalog => Catalog::factory()->create());
+        $theirs = $this->withinOrganization($neighbour, fn (): Catalog => Catalog::factory()->create());
+
+        $this->withoutOrganization();
+
+        $this->assertTrue($organization->is($this->resolver->resolve(TenantSurface::PublicCatalog, $ours->slug)));
+        $this->assertTrue($neighbour->is($this->resolver->resolve(TenantSurface::PublicCatalog, $theirs->slug)));
+    }
+
+    /**
+     * SP-1 de `REQ-CAT-021`: un slug que no existe es el `404` de cualquier
+     * binding fallido.
+     */
+    public function test_an_unknown_catalog_slug_is_not_found(): void
+    {
+        $this->expectException(ModelNotFoundException::class);
+
+        $this->resolver->resolve(TenantSurface::PublicCatalog, 'no-existe');
+    }
+
+    /**
+     * Y una fila suelta ya no vale como fuente de la superficie pública: lo
+     * que viaja es el slug de la URL.
+     */
+    public function test_the_public_catalog_does_not_accept_a_record(): void
+    {
+        $this->expectException(ModelNotFoundException::class);
+
+        $this->resolver->resolve(
             TenantSurface::PublicCatalog,
-            $this->tenantRecordOf($organization),
+            $this->tenantRecordOf(Organization::factory()->create()),
         );
-
-        $this->assertTrue($organization->is($resolved));
     }
 
     public function test_the_portal_resolves_from_the_customer_record(): void

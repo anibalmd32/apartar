@@ -68,3 +68,4 @@ Route::middleware(['guest', 'outside-tenancy'])->group(function (): void {
 require __DIR__.'/backoffice.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/catalog.php';

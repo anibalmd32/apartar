@@ -13,14 +13,13 @@ namespace App\Support;
  * la que hay entre copiar algo que funciona y copiar algo que hay que
  * completar de memoria.
  *
- * ## Se compone y no se enruta, todavía
+ * ## Se enruta desde `T-033`
  *
- * `GET /c/{catalog:slug}` la registra `T-033`, que es quien escribe la vista
- * pública. Hasta entonces `route()` no tiene a qué apuntar, así que el enlace
- * se compone sobre `APP_URL` — que es la misma base que `route()` usará
- * después—. Vive en su propia clase justamente por eso: el día que la ruta
- * exista, el cambio es de una línea y no hay tres `.tsx` concatenando
- * cadenas.
+ * Hasta que existió la vista pública, el enlace se componía sobre `APP_URL`
+ * porque `route()` no tenía a qué apuntar. Ahora sale de la ruta con nombre,
+ * que es la misma que el backoffice ofrece para copiar y la que las etiquetas
+ * Open Graph anuncian como canónica: si algún día cambiara la forma de la URL,
+ * cambiaría en los tres sitios a la vez.
  *
  * El prefijo `/c/` no es arbitrario ni se puede mover: es uno de los doce
  * segmentos reservados de [05 §7.2] precisamente para que ninguna vitrina de
@@ -34,10 +33,15 @@ final class CatalogShareLink
     public const PREFIX = 'c';
 
     /**
+     * Nombre de la ruta de la vista pública (`routes/catalog.php`).
+     */
+    public const ROUTE = 'catalog.show';
+
+    /**
      * El enlace que se copia y se difunde.
      */
     public static function of(string $slug): string
     {
-        return url(self::PREFIX.'/'.$slug);
+        return route(self::ROUTE, ['catalog' => $slug]);
     }
 }

@@ -44,6 +44,37 @@ final class PlansAreDataTest extends TestCase
      */
     private const DECLARATION_SITE = 'app/Actions/Subscription/StartFreeSubscriptionAction.php';
 
+    /**
+     * Homónimos: la misma palabra que un código de plan, y ninguna comparación.
+     *
+     * Se descuenta **la forma exacta**, no el archivo ni la palabra: excluir
+     * `'business' =>` a secas dejaría pasar un `match` sobre el código del
+     * plan, que es exactamente la comparación que esta regla busca. Cada
+     * entrada lleva su motivo.
+     *
+     * @var array<string, string>
+     */
+    private const HOMONYMS = [
+        "'business' => OrganizationBrand::of(" => 'El campo `business` del contrato `CatalogView` de [12] '
+            .'(REQ-CAT-021): es la identidad del negocio que publica el catálogo, no el plan Business.',
+    ];
+
+    /**
+     * Los homónimos no abren un agujero: la exclusión es de una forma exacta,
+     * así que un `match` sobre el código con esa misma palabra sigue contando
+     * como comparación.
+     */
+    public function test_a_homonym_does_not_hide_a_real_comparison(): void
+    {
+        $comparison = "match (\$plan->code) { 'business' => 10 };";
+
+        $this->assertSame(1, preg_match("/(['\"])business\\1/", str_replace(array_keys(self::HOMONYMS), '', $comparison)));
+
+        foreach (self::HOMONYMS as $form => $reason) {
+            $this->assertGreaterThan(60, mb_strlen($reason), "El homónimo «{$form}» no explica por qué lo es.");
+        }
+    }
+
     public function test_no_application_code_compares_against_a_plan_code(): void
     {
         $offenders = [];
@@ -55,7 +86,7 @@ final class PlansAreDataTest extends TestCase
                 continue;
             }
 
-            $code = $this->codeOf($file);
+            $code = str_replace(array_keys(self::HOMONYMS), '', $this->codeOf($file));
 
             foreach (self::PLAN_CODES as $planCode) {
                 if (preg_match('/([\'"])'.$planCode.'\1/', $code) === 1) {

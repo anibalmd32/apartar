@@ -323,6 +323,23 @@ final class LimitEnforcerTest extends TestCase
     }
 
     /**
+     * `plan()` devuelve el de la organización activa, no el de la vecina,
+     * que tiene el suyo propio en este escenario. Es lo que lee la vista
+     * pública del catálogo para decidir a la vez la marca y el sello
+     * (`REQ-CAT-021` RB-9).
+     */
+    public function test_the_plan_is_the_active_organizations(): void
+    {
+        $plan = Plan::factory()->withEveryFeature()->create(['code' => 'pro-p']);
+        $this->subscribeTo(plan: $plan);
+
+        $this->withinOrganization($this->organization, function (): void {
+            $this->assertSame('pro-p', $this->enforcer()->plan()->code);
+            $this->assertFalse($this->enforcer()->plan()->showsPlatformBadge());
+        });
+    }
+
+    /**
      * `REQ-ORG-002` RB-1 · el enforcer no pregunta por la organización: la
      * recibe del global scope. Los tres usuarios de la vecina no cuentan para
      * nuestro plan, y nuestro plan no se aplica al suyo.

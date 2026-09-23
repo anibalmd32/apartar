@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Money\CurrencyDisplay;
 use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\PlanFeatureUnavailableException;
@@ -18,13 +19,17 @@ use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\OperatesWithoutTenant;
 use App\Http\Middleware\OutsideTenancy;
+use App\Http\Middleware\ResolveCatalogTenant;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -62,11 +67,19 @@ return Application::configure(basePath: dirname(__DIR__))
         // —el global scope lanza— pero sería un 500 en lugar del 404 que la
         // regla exige, y con él la confirmación de que el recurso ajeno
         // existe.
+        //
+        // La superficie pública tiene el mismo problema y la misma solución,
+        // y con más motivo: allí el modelo del binding **es** la fuente del
+        // tenant (`{catalog:slug}`), así que sin la prioridad no habría forma
+        // de resolverlo. Correr antes que el binding la deja también por
+        // delante de `HandleInertiaRequests`, que es lo que hace que la tasa y
+        // la zona horaria compartidas sean las del negocio del catálogo.
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenant::class);
+        $middleware->prependToPriorityList(SubstituteBindings::class, ResolveCatalogTenant::class);
 
         // Cada superficie declara de dónde sale su tenant (REQ-ORG-002 RB-4).
-        // `ResolveCatalogTenant` y `ResolvePortalTenant` entran con su hito,
-        // cuando existan `Catalog` y `Customer`.
+        // `catalog-tenant` lo saca del slug del catálogo (`T-033`);
+        // `ResolvePortalTenant` entra con H3, cuando exista `Customer`.
         //
         // `outside-tenancy` no resuelve nada: declara que la ruta no
         // pertenece a ninguna superficie. La suite de REQ-QAX-008 exige que
@@ -83,6 +96,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // declara queda bloqueado (REQ-ORG-008 RB-3).
         $middleware->alias([
             'tenant' => ResolveTenant::class,
+            'catalog-tenant' => ResolveCatalogTenant::class,
             'without-tenant' => OperatesWithoutTenant::class,
             'outside-tenancy' => OutsideTenancy::class,
             'owner' => EnsureIsOwner::class,
@@ -93,6 +107,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // REQ-CAT-021 SP-3: el catálogo expirado es una **página**, no un
+        // error. Quien la ve pulsó un enlace bueno que llegó tarde, y el `410`
+        // lo dice sin hacerle creer que lo copió mal. El porqué del código
+        // está escrito en la clase.
+        $exceptions->render(function (CatalogExpiredException $exception, Request $request): SymfonyResponse {
+            return Inertia::render('catalog/CatalogExpired', $exception->toArray())
+                ->toResponse($request)
+                ->setStatusCode(CatalogExpiredException::STATUS);
+        });
+
         // REQ-ORG-003 SP-2: quedarse sin el último owner es 422 y no 403. El
         // intento es legítimo y está bien formado —suele hacerlo el propio
         // owner, que lo puede todo—; lo que no se puede es aceptarlo. El

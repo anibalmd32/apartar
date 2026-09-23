@@ -584,19 +584,30 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 
 **Aquí se enchufa el refresco de cinco minutos de la tasa** (`ASU-FX-03`, `REQ-FX-002` RB-5). El endpoint `GET /api/tasa` existe desde `T-020` y **no tiene llamante**: `T-022` no lo cableó porque `@tanstack/react-query` sondeando cada cinco minutos en un backoffice sin precios es maquinaria sin consumidor, y esta es la primera página donde una pestaña abierta se queda con una tasa vieja delante de un precio. Lo que el refresco actualiza es **el sello**, no los importes: vienen formateados del servidor y se reproyectan en la siguiente navegación Inertia (`REQ-FX-004` SP-4).
 
+**Cerrada.** `REQ-CAT-021` cerrado salvo RB-5 (`T-034`), RB-8 (`T-075`), RB-11 (`T-084`) y el enlace a la vitrina de SP-3 (`T-036`); `REQ-ORG-002` queda pendiente solo de `ResolvePortalTenant` (H3). Tres cosas:
+
+**El tenant sale del slug leyendo una sola columna.** `TenantResolver` resuelve `PublicCatalog` desde el **slug** —no desde una fila, que no se puede cargar sin tenant— con `DB::table('catalogs')->where('slug')->value('organization_id')`: la clave del tenant por la clave global que `GlobalUniqueExceptions` declara para esto, sin `withoutTenantScope()` y sin leer ningún dato del catálogo. `ResolveCatalogTenant` lleva la misma prioridad que `ResolveTenant` y queda por delante del binding **y** de `HandleInertiaRequests`, que es lo que da a la página la tasa y la zona del negocio; `CrossTenantAccessTest` fija los dos órdenes sobre la ruta real.
+
+**El cursor de Laravel no se defiende de un cursor editado** —un JSON válido con otra forma es un aviso de PHP, un `500`— y pasarle `null` hace que **vuelva a leer la petición**. `CatalogCursor` acepta solo la forma que emite la parrilla, y la primera página se pide con la cadena vacía.
+
+**Dos campos del contrato `CatalogView` no viajan y uno de `ProductCard` sí**, con motivo: `productsCount` es el `count(*)` por visita que SP-7 prohíbe, `subscription` es de `T-075`, y `lastInstallmentAmount` evita enseñar en la card una cuota que no se cobra. **Y el refresco del sello** convive con importes calculados con la tasa anterior hasta la siguiente navegación: la página lo dice y ofrece recargar, en vez de multiplicar en el navegador o callarlo.
+
 **T-034 · Filtros y búsqueda del catálogo** · `B` · 3 pts · *Requisitos: `REQ-CAT-002`, `REQ-CAT-006`*
 `FullTextTerm`, scopes `scopeSearch`/`scopeInCatalog`, `useCatalogFilters`, `SearchInput`.
 **Hecho cuando:** las facetas son solo las presentes en el catálogo; filtro OR de etiquetas; escapa operadores booleanos; **un producto de otro catálogo no aparece**; `sort` inválido cae a `curated`; **no existe ruta de categoría fuera del catálogo** (assert de rutas).
+**Lo que `T-033` deja montado para esta tarea:** `CatalogFacetsQuery::forCatalog()` con sus tests y **sin panel ni prop** —la página no recibe `facets` ni `filters` todavía—; SP-6 (ocultar la categoría si todas las cards son de la misma) es de quien pinta. El «Cargar más» es `useCursorPages`, que **sustituye** la lista en toda llegada de la prop que no haya pedido él: los filtros entran por ahí sin concatenar resultados de dos consultas. El orden y el cursor viven en `CatalogCursor::COLUMNS`, que es la forma exacta que el cursor acepta; un `sort` distinto del curado necesita su propio juego de columnas en el cursor, o `from()` devolverá la primera página.
 
 **T-035 · Ficha de producto pública** · `B` · 3 pts · *Requisitos: `REQ-CAT-003`*
 `ProductShowController`, `ProductDetailResource`, página `catalog/ProductShow.tsx` con galería, ficha técnica, desglose del plan y **cuentas de cobro**.
 **Hecho cuando:** la cuota mostrada **coincide con el cronograma real que generaría el apartado**; producto fuera del catálogo `404`; **`draft` y `archived` por URL directa dan `404`** (`REQ-CAT-007` SP-1, que `T-030` deja probado como mecanismo y aquí como respuesta); cuentas de cobro activas visibles y las inactivas no; sin ficha técnica no se renderiza la sección.
 **Y monta lo que `T-028` y `T-029` dejaron listos:** `ProductDetailResource` llama a `SpecificationGroups` y a `ImageSet`; ninguna de las dos se reescribe aquí.
 **Depende de:** T-041 (`ScheduleGenerator`, para que el cálculo mostrado sea el real y no una copia).
+**De `T-033`:** la card de la parrilla (`CatalogProductCard`) **no es un enlace todavía**, a propósito; esta tarea la enlaza con la ruta. `CrossTenantAccessTest` ya sabe situarse en la superficie pública: `{catalog}` es el ancla y todo otro modelo del tenant de la ruta se siembra en la vecina y exige `404`, así que `/c/{catalog:slug}/p/{product:slug}` entra en el gate sin tocarlo.
 
 **T-036 · Vitrina de la organización** · `B` · 2 pts · *Requisitos: `REQ-ORG-006`*
 `OrganizationStorefrontController`, página con los catálogos listados.
 **Hecho cuando:** lista solo los propios y solo `Listed`; desactivada por defecto; slug reservado no colisiona.
+**Y cierra la última frase de `REQ-CAT-021` SP-3:** la página del `410` (`catalog/CatalogExpired`) enlaza la vitrina «si está activada». `T-033` no la enlazó porque apuntaría a una página que no existe, y `CatalogShowTest::test_the_storefront_link_of_the_gone_page_is_still_pending()` **se pone rojo** en cuanto aparezca una ruta `{organization…}`.
 
 **T-037 · Marketing y precios** · `B` · 2 pts · *Requisitos: `REQ-SUB-001`*
 Landing, `/precios` renderizado **desde la BD**, páginas legales.
@@ -774,6 +785,7 @@ La inmutabilidad del snapshot y el cierre del requisito: nada actualiza `rate_ap
 **T-071 · Impago, gracia y suspensión** · `B` · 3 pts · *Requisitos: `REQ-SUB-007`, `REQ-ORG-008`*
 `ProcessSubscriptionDunning`, `SuspendOrganizationAction`, `CloseOrganizationAction`, `InvoiceOverdueNotification`.
 **Hecho cuando:** la secuencia completa de estados por fechas; **cinco tests explícitos de que `suspended` no afecta a apartados, portal, comprobantes, chat ni recordatorios**; comprobante en revisión congela la gracia; pagar levanta la suspensión sin republicar; cierre con apartados activos rechazado.
+**De `T-033`:** el `404` público de una organización suspendida (`REQ-CAT-021` SP-5) sale de que sus catálogos quedan en borrador, sin rama propia en el controlador; hoy el test lo **simula** vaciando `published_at`. `CatalogShowTest::test_the_suspension_that_unpublishes_is_still_pending()` se pone rojo cuando exista `SuspendOrganizationAction`, para que el caso pase a suspender por la acción. Ojo con `REQ-ORG-008` SP-1, que dice `410` para lo mismo: el catálogo despublicado es `Draft`, y `Draft` es `404` (`REQ-CAT-021` SP-2, SP-5). Las dos reglas se contradicen y manda la de la vista pública.
 
 **T-072 · Degradación no destructiva** · `B` · 2 pts · *Requisitos: `REQ-SUB-008`*
 `ApplyDowngradeAction`, `DowngradeOutcome`, `ApplyScheduledDowngrades`.
@@ -852,6 +864,7 @@ Servicio `reverb`, `config/reverb.php`, `routes/channels.php` con los 3 canales,
 **Hecho cuando:** un test por evento con su payload; **el cliente no puede inyectar un `organization_id`**; el endpoint no escribe en BD; el buffer dispara por los 3 disparadores; **lote multi-organización se atribuye correctamente y el tenant se limpia entre eventos**; permanencia < 5 s no emite; **la vinculación a `customer_id` está acotada por organización y la de `account_id` no**.
 
 **Hay emisores esperándote desde hitos anteriores, y el primero es `currency_toggled`.** `useCurrencyDisplay` existe desde `T-022` (H1) y cambia la moneda sin emitir nada, a propósito: el bus no existía y un emisor de mentira no se distingue de uno conectado (`REQ-FX-004` RB-7, con su nota en [13](13-bimoneda-y-tasa-de-cambio.md)). El «test por evento» de esta tarea es lo que obliga a recorrer los quince y encontrar a los que ya tienen sitio donde vivir.
+El segundo es **`catalog_viewed`** (`REQ-CAT-021` RB-11), cuyo sitio es `CatalogShowController` desde `T-033`, y con él **`AssignVisitorId`**, que [05 §7.2] monta en el grupo de `routes/catalog.php` y que hoy no está porque no había nada que atribuir al identificador.
 
 **T-085 · Privacidad, retención y analítica** · `B` · 3 pts · *Requisitos: `REQ-TLM-005`*
 `IpHasher`, `CookieConsent`, `useConsent`, `PurgeTelemetry`, `TelemetryMonthlyAggregate`, `CatalogAnalyticsQuery`, `AnalyticsController`.

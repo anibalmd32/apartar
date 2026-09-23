@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Tenancy;
 
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantSurface;
 use App\Http\Middleware\DeclaresNoTenantSurface;
 use App\Http\Middleware\DeclaresTenantSurface;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ResolveCatalogTenant;
 use App\Http\Middleware\ResolveTenant;
+use App\Models\Catalog;
 use App\Models\Organization;
 use App\Models\User;
 use Closure;
@@ -208,6 +212,7 @@ final class CrossTenantAccessTest extends TestCase
 
         $this->assertContains('GET /backoffice', $tenant);
         $this->assertContains('PATCH /settings/profile', $tenant);
+        $this->assertContains('GET /c/{catalog}', $tenant);
 
         $outside = array_map(
             fn (Route $route): string => $this->describe($route),
@@ -340,6 +345,31 @@ final class CrossTenantAccessTest extends TestCase
         $this->assertLessThan($bindings, $tenant, 'El binding se resolvería sin tenant fijado.');
     }
 
+    /**
+     * El mismo orden en la superficie pública, sobre la ruta real: allí el
+     * modelo del binding **es** la fuente del tenant, así que al revés no
+     * habría forma de resolverlo. Y por delante de `HandleInertiaRequests`,
+     * que es lo que hace que la tasa y la zona compartidas sean las del
+     * negocio del catálogo.
+     */
+    public function test_the_catalog_tenant_is_resolved_before_the_route_binding(): void
+    {
+        $route = $this->router()->getRoutes()->getByName('catalog.show');
+        $this->assertInstanceOf(Route::class, $route);
+
+        $middleware = array_values(array_filter($this->router()->gatherRouteMiddleware($route), 'is_string'));
+
+        $tenant = array_search(ResolveCatalogTenant::class, $middleware, true);
+        $bindings = array_search(SubstituteBindings::class, $middleware, true);
+        $inertia = array_search(HandleInertiaRequests::class, $middleware, true);
+
+        $this->assertIsInt($tenant, 'ResolveCatalogTenant no está en el stack de la ruta pública.');
+        $this->assertIsInt($bindings);
+        $this->assertIsInt($inertia);
+        $this->assertLessThan($bindings, $tenant, 'El catálogo se resolvería sin tenant fijado.');
+        $this->assertLessThan($inertia, $tenant, 'Las props compartidas se calcularían sin el negocio del catálogo.');
+    }
+
     // -------------------------------------------------------------------
     // El caso generado
     // -------------------------------------------------------------------
@@ -351,6 +381,12 @@ final class CrossTenantAccessTest extends TestCase
      */
     private function assertCrossTenantAccessIsNotFound(Route $route, TenantSurface $surface): void
     {
+        if ($surface === TenantSurface::PublicCatalog) {
+            $this->assertPublicCatalogRouteIsIsolated($route);
+
+            return;
+        }
+
         $neighbour = $this->neighbourOrganization();
         $own = Organization::factory()->create();
 
@@ -382,11 +418,76 @@ final class CrossTenantAccessTest extends TestCase
     }
 
     /**
+     * El caso generado de la superficie pública (`REQ-CAT-021` RB-3).
+     *
+     * Aquí no hay «organización propia» desde la que pedir lo ajeno: quien
+     * mira es anónimo y **el catálogo de la URL es la fuente del tenant**.
+     * Así que el caso se construye al revés que en el backoffice: el
+     * `{catalog}` es el ancla —publicado, de una organización con datos— y
+     * todo **otro** modelo del tenant de la ruta se siembra en la vecina y se
+     * exige `404` (una ficha `/c/{catalog}/p/{product}` con el producto de otro
+     * negocio). Una ruta que solo enlaza el catálogo no tiene nada ajeno que
+     * pedir; su caso es que el tenant fijado sea **el del catálogo** y no otro.
+     *
+     * Y una ruta pública sin `{catalog}` falla en voz alta: no sabría de dónde
+     * sale su tenant.
+     */
+    private function assertPublicCatalogRouteIsIsolated(Route $route): void
+    {
+        $models = $this->boundModels($route);
+        $anchor = ResolveCatalogTenant::PARAMETER;
+
+        if (($models[$anchor] ?? null) !== Catalog::class) {
+            $this->fail(sprintf('%s es de la superficie pública y no enlaza {%s}: no hay de dónde sacar su tenant.', $this->describe($route), $anchor));
+        }
+
+        $neighbour = $this->neighbourOrganization();
+        $own = Organization::factory()->create();
+
+        $parameters = [$anchor => $this->withinOrganization($own, fn (): Catalog => Catalog::factory()->published()->create())];
+        $foreign = [];
+
+        foreach ($models as $name => $model) {
+            if ($name === $anchor) {
+                continue;
+            }
+
+            $organization = $this->usesTenantTrait($model) ? $neighbour : $own;
+            $parameters[$name] = $this->withinOrganization($organization, fn (): Model => Factory::factoryForModel($model)->createOne());
+
+            if ($organization === $neighbour) {
+                $foreign[] = $name;
+            }
+        }
+
+        $this->withoutOrganization();
+
+        $response = $this->call($this->methodOf($route), $this->urlFor($route, $parameters));
+
+        if ($foreign !== []) {
+            $this->assertSame(404, $response->getStatusCode(), sprintf(
+                '%s devolvió %d con {%s} de otra organización que la del catálogo; REQ-ORG-002 RB-6 exige 404.',
+                $this->describe($route),
+                $response->getStatusCode(),
+                implode('}, {', $foreign),
+            ));
+
+            return;
+        }
+
+        $this->assertNotSame(500, $response->getStatusCode(), $this->describe($route).' no supo resolver su tenant.');
+        $this->assertTrue($own->is(app(TenantContext::class)->organization()), sprintf(
+            '%s fijó un tenant que no es el de su catálogo.',
+            $this->describe($route),
+        ));
+    }
+
+    /**
      * Quién pide el recurso ajeno, según la superficie.
      *
-     * Solo el backoffice tiene hoy con qué autenticarse. Las demás superficies
-     * llegan con sus hitos —el portal necesita `Customer`, la pública se
-     * resuelve por catálogo— y hasta entonces **fallan en voz alta** en lugar de
+     * Solo el backoffice tiene hoy con qué autenticarse; la pública no lo
+     * necesita y tiene su propio caso más arriba. El portal llega con H3
+     * —necesita `Customer`— y hasta entonces **falla en voz alta** en lugar de
      * omitir el caso: enseñarle al mecanismo a situarse en una superficie nueva
      * es parte de añadirla.
      */
