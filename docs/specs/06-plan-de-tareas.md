@@ -592,7 +592,20 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 
 **Dos campos del contrato `CatalogView` no viajan y uno de `ProductCard` sí**, con motivo: `productsCount` es el `count(*)` por visita que SP-7 prohíbe, `subscription` es de `T-075`, y `lastInstallmentAmount` evita enseñar en la card una cuota que no se cobra. **Y el refresco del sello** convive con importes calculados con la tasa anterior hasta la siguiente navegación: la página lo dice y ofrece recargar, en vez de multiplicar en el navegador o callarlo.
 
+**Cerrada** (`f49881d`). `REQ-CAT-021` cerrado en lo suyo, y **media deuda de `REQ-ORG-002` saldada**: queda `ResolvePortalTenant`, en H3. Lo que conviene no perder:
+
+**El tenant se resuelve del *slug* sin leer el catálogo.** `TenantResolver` toma la columna de la organización con una sola lectura sobre la clave única global —que `GlobalUniqueExceptions` ya declaraba para esto— y **sin `withoutTenantScope()`**; solo después el binding resuelve `{catalog:slug}` ya filtrado. El middleware lleva la misma prioridad explícita que `ResolveTenant`, y por delante también de `HandleInertiaRequests`, que es lo que hace que la tasa y la zona compartidas sean las del negocio del catálogo y no las de nadie.
+
+**El gate de aislamiento aprendió la superficie pública:** `{catalog}` es el ancla y cualquier otro modelo de la ruta se siembra en la organización vecina y tiene que dar `404`. La ficha de `T-035` entra en el gate sin tocarlo, que es la diferencia entre un gate que crece solo y uno que hay que acordarse de ampliar.
+
+**Dos correcciones de contrato, ya aplicadas en sus módulos:** `productsCount` sale de `CatalogView` —era el `count(*)` por visita que SP-7 prohíbe— y `ProductCard` gana `lastInstallmentAmount`, para no enseñar una cuota que no se cobra cuando el reparto deja residuo en la última.
+
+**Y una contradicción de la spec resuelta**: `REQ-ORG-008` SP-1 decía `410` para el catálogo de una organización suspendida y `REQ-CAT-021` SP-5 dice `404`. Manda la vista pública, y el porqué está escrito en [04](04-tenancy-y-organizaciones.md). Lo implementa `T-071`, con el test de `T-033` esperándola en rojo.
+
+**El aviso de «catálogo publicado y vacío» sí tiene dueño**, aunque ningún prompt lo dijera: es uno de los siete `warnings` de `REQ-BOF-044` RB-4, y los cierra `T-065`.
+
 **T-034 · Filtros y búsqueda del catálogo** · `B` · 3 pts · *Requisitos: `REQ-CAT-002`, `REQ-CAT-006`*
+**`CatalogFacetsQuery` llega escrita y probada de `T-033`**, sin panel y sin prop: cuenta solo los productos publicados del catálogo y deja fuera las facetas vacías. Esta tarea la monta; no la reescribe.
 `FullTextTerm`, scopes `scopeSearch`/`scopeInCatalog`, `useCatalogFilters`, `SearchInput`.
 **Hecho cuando:** las facetas son solo las presentes en el catálogo; filtro OR de etiquetas; escapa operadores booleanos; **un producto de otro catálogo no aparece**; `sort` inválido cae a `curated`; **no existe ruta de categoría fuera del catálogo** (assert de rutas).
 **Lo que `T-033` deja montado para esta tarea:** `CatalogFacetsQuery::forCatalog()` con sus tests y **sin panel ni prop** —la página no recibe `facets` ni `filters` todavía—; SP-6 (ocultar la categoría si todas las cards son de la misma) es de quien pinta. El «Cargar más» es `useCursorPages`, que **sustituye** la lista en toda llegada de la prop que no haya pedido él: los filtros entran por ahí sin concatenar resultados de dos consultas. El orden y el cursor viven en `CatalogCursor::COLUMNS`, que es la forma exacta que el cursor acepta; un `sort` distinto del curado necesita su propio juego de columnas en el cursor, o `from()` devolverá la primera página.

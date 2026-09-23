@@ -21,6 +21,8 @@ enum CatalogVisibility: string
 }
 ```
 
+> **`productsCount` sale del contrato** (`T-033`): es exactamente el `count(*)` por visita que `REQ-CAT-021` SP-7 prohíbe, y estaba pedido para pintar un número que nadie mira sobre un catálogo que puede tener quinientos productos. La paginación es por cursor justamente para no contar. Si algún día hace falta una cifra, será aproximada y cacheada, no una cuenta exacta en cada visita. **`subscription` sigue en el contrato pero viaja `null` hasta `T-075`**, que es quien trae las cuentas de consumidor.
+>
 > **El orden de evaluación es parte del contrato** (fijado en `T-025`, `Catalog::visibility()`), porque los tres criterios se solapan: `published_at` nulo da `Draft` **aunque `expires_at` ya haya pasado** —lo que nunca se publicó no caducó, y su enlace nunca circuló, así que la respuesta es `404` y no `410`—; después la expiración, por delante de `is_listed`; y solo entonces `is_listed` decide entre `Listed` y `Unlisted`. Es derivado y **no hay columna `visibility`**: una columna que dijera `listed` mientras las fechas dicen `expired` seguiría vendiendo una campaña terminada.
 >
 > **Y un `published_at` futuro cuenta como publicado, al revés que en un producto.** `REQ-CAT-022` deja la programación de la publicación fuera de alcance —solo se programa la expiración— y `Draft` está definido como «`published_at` es null», sin más; `PublishCatalogAction` fija la fecha al publicar, así que una fecha futura no la produce el producto normal. En cambio `REQ-CAT-007` RB-5 **sí** trata el `published_at` futuro del producto como publicación programada, evaluada en la consulta. La asimetría es real y es de las que se copian mal de un lado al otro: cada una tiene su test.
@@ -34,7 +36,6 @@ export interface CatalogView {
   readonly business: OrganizationBrand;
   readonly shareUrl: string;
   readonly expiresAt: string | null;
-  readonly productsCount: number;
   /** Estado de la suscripción de la cuenta activa, si hay sesión de cuenta. */
   readonly subscription: { readonly isSubscribed: boolean; readonly subscribersCount: number } | null;
   /** true en plan Free: se renderiza el sello "Hecho con Apartar". */

@@ -453,7 +453,7 @@ final readonly class RegisterOrganizationData
 3. El `owner` paga, la organización se reactiva y él elige republicar dos catálogos.
 
 **Sad paths y edge cases**
-- SP-1 Cliente final intentando apartar en un catálogo de una organización suspendida → el catálogo no está publicado, así que da `410`; sus apartados previos siguen accesibles.
+- SP-1 Cliente final intentando apartar en un catálogo de una organización suspendida → el catálogo no está publicado, así que da **`404`**; sus apartados previos siguen accesibles. **Corregido en `T-033`**, que encontró la contradicción al escribir la vista pública: esta regla decía `410` y `REQ-CAT-021` SP-5 dice `404`, y manda la de la superficie que responde. Suspender **despublica**, y un catálogo despublicado es `Draft`, que es `404` (`REQ-CAT-021` SP-2). El `410` está reservado a `Expired` porque significa «existió y se acabó», y una suspensión no es eso: el negocio paga y vuelve. Decir `410` además anunciaría al mundo un cambio de estado comercial del negocio, que no es asunto de quien abre el enlace. Lo implementa `T-071`.
 - SP-2 Cierre solicitado con apartados activos → `422` con la lista.
 - SP-3 Equipo intentando crear productos en `suspended` → `403` con el mensaje de regularización y el enlace de pago.
 - SP-4 Reactivación tras meses → catálogos con `expires_at` pasado quedan `Expired` y el `owner` debe renovar la fecha para republicarlos.

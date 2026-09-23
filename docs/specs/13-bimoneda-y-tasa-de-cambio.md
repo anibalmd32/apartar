@@ -270,7 +270,9 @@ final readonly class Money
 - SP-1 `localStorage` bloqueado (modo privado) → se usa solo la cookie; si tampoco, el toggle funciona en memoria durante la sesión.
 - SP-2 Sin tasa disponible → el toggle se deshabilita con tooltip y todo se muestra en USD (`REQ-FX-005`).
 - SP-3 Cookie con valor corrupto → se descarta y se aplica el default sin error.
-- SP-4 Tasa actualizada mientras el usuario navega → los importes se reproyectan en la siguiente navegación Inertia o en el refresco de 5 minutos; **no** se reproyectan los importes ya conciliados.
+- SP-4 Tasa actualizada mientras el usuario navega → los importes se reproyectan en la siguiente navegación Inertia; **no** se reproyectan los importes ya conciliados.
+
+> **El refresco de cinco minutos actualiza el sello, no los importes, y la diferencia se enseña.** Esta regla decía «o en el refresco de 5 minutos», y eso era imposible sin romper RB-6: los importes llegan **formateados del servidor** y reproyectarlos en el navegador exigiría multiplicar allí, que es lo que todo el diseño monetario evita. Pero dejar solo el sello actualizado sería peor —la página enseñaría dos tasas a la vez, que es justo lo que `CurrentRate` existe para impedir—, así que `T-033` lo resolvió **diciéndolo**: el sello se actualiza, la página avisa de que los precios se calcularon con la tasa anterior y ofrece recargar. La cifra vieja nunca se presenta como si fuera la nueva. Consecuencia de la misma familia, y admitida: «Cargar más» puede traer un lote proyectado con una tasa más reciente que la de los lotes ya pintados.
 - SP-5 Importes en emails y exportaciones → siempre en **ambas** monedas explícitas, sin depender del toggle.
 
 **Fuera de alcance inmediato**

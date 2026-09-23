@@ -28,6 +28,8 @@ export interface ProductCard {
   readonly compareAtPrice: MoneyView | null;
   readonly downPayment: MoneyView;
   readonly installmentAmount: MoneyView;
+  /** Última cuota, que absorbe el residuo del reparto (`REQ-FX-001` RB-4). */
+  readonly lastInstallmentAmount: MoneyView;
   readonly installmentsCount: number;
   readonly frequencyDays: number;
   readonly image: ImageSet | null;
