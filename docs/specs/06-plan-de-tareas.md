@@ -37,7 +37,7 @@ Convenciones del plan:
 
 | Hito | Tareas | Puntos | Cierra |
 |---|---|---|---|
-| H0 · Cimientos | T-001…T-016 (+ `T-013b`) | 41 | 16 req. |
+| H0 · Cimientos | T-001…T-016 (+ `T-013b`, `T-003b`) | 43 | 16 req. |
 | H1 · Aritmética y tasa | T-017…T-022 | 14 | 5 req. |
 | H2 · Catálogo | T-024…T-038 | 43 | 19 req. |
 | H3 · Apartado | T-039…T-053 | 41 | 23 req. |
@@ -47,7 +47,7 @@ Convenciones del plan:
 | H7 · Comunicación | T-079…T-083 | 17 | 10 req. |
 | H8 · Datos y plataforma | T-084…T-086 | 16 | 11 req. |
 | H9 · Producción | T-087 | 5 | 3 req. |
-| | **88** | **252** | **118** |
+| | **89** | **254** | **118** |
 
 ---
 
@@ -85,6 +85,16 @@ Sobre `REQ-QAX-003` y `REQ-QAX-007`: son **normativos y transversales**, no func
 - **Sin baseline de PHPStan.** `REQ-QAX-002` SP-5 solo lo admite para una dependencia sin tipos, con fecha y motivo. El código es todavía pequeño: lo que no tipe hoy queda tipado, no archivado.
 
 ### Tenancy
+
+**T-003b · Suite rápida y aislada** · `AB` · 2 pts · *Requisitos: `REQ-QAX-003` (RB-1), `REQ-QAX-004`*
+`pest --parallel` con los tests de concurrencia en su propio *testsuite* secuencial, MySQL de test sobre `tmpfs`, caché de PHPStan persistente, y el orden de gates escrito donde se lee.
+**Hecho cuando:** la verificación final baja de **17 min** a menos de 6, con la misma cuenta de tests y el mismo umbral de cobertura; los tests de concurrencia siguen pasando y **no** corren en paralelo; `tenancy:audit` y la suite de tenancy intactos; CI en verde con el mismo reparto de jobs.
+
+**Se abre en `T-032` y se ejecuta entre `T-032` y `T-033`**, con la medida delante y no a ojo: la verificación final de `T-032` tardó **17 min 40 s** en una sola pasada de 2024 tests, y quedan más de cincuenta tareas a ese precio. No es una mejora de comodidad — es que a ese coste por sesión, cada tarea paga un peaje que se lleva más tiempo que buena parte del trabajo.
+
+**Lo que ya está medido y no hay que volver a descubrir**, todo anotado en [91](91-calidad-y-gates.md): la suite corre **una sola vez** desde que `check` encadena `test:coverage`; `composer check` y `npm run check` **no pueden correr a la vez** —`vite build` escribe en `public/` mientras `Storage::fake('public')` borra directorios, y salen veinticinco fallos que no son del código—; los gates baratos van primero, porque `tests/Feature/Quality` tarda medio minuto y contiene reglas estructurales que descubiertas al final cuestan la pasada entera; y hay un *deadlock* intermitente al sembrar planes que esta tarea es la que puede quitar de en medio.
+
+**El riesgo es uno y está localizado:** los tests de concurrencia **no pueden usar `RefreshDatabase`** —un bloqueo entre conexiones solo es observable sobre filas confirmadas— y limpian a mano las tablas que tocan. En paralelo se pisarían entre procesos. Van a un *testsuite* propio que corre en serie, y esa separación es la parte de esta tarea que hay que hacer bien: lo demás es configuración.
 
 **T-004 · Migraciones bloque 1: plataforma** · `AB` · 2 pts
 Las 6 tablas de [05 §4 bloque 1](05-design-tecnico.md): `platform_users`, `plans`, `organizations`, `exchange_rates`, `accounts`, `platform_settings`.
@@ -552,6 +562,8 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 **El relevo de `REQ-ORG-006` SP-5 quedó probado de punta a punta**, y la diferencia con el test de `T-014` es la que importa: aquel sustituía `PublishedCatalogs` por uno que responde `true`, y habría pasado en verde durante las ocho tareas en las que el colaborador real no podía responder `true` nunca. Este publica por HTTP y **produce** el `true`.
 
 **El cupo del plan que no se implementó lleva un test que se pondrá rojo cuando llegue** (ver la convención nueva de «Cómo leer este plan»).
+
+> **Entre `T-032` y `T-033` se ejecuta `T-003b` · Suite rápida y aislada**, abierta con la medida de `T-032` delante: 17 min 40 s de verificación final por sesión, con más de cincuenta tareas por delante. Su entrada está junto a `T-003`, que es su tarea hermana.
 
 **T-033 · Vista pública del catálogo** · `B` · 5 pts · *Requisitos: `REQ-CAT-021`*
 `CatalogShowController`, `CatalogViewResource`, `CatalogFacetsQuery`, página `catalog/CatalogShow.tsx`, `CatalogLayout`, paginación por cursor, OG tags.
