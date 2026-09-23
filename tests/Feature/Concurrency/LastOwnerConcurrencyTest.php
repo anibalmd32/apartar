@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Organization;
+namespace Tests\Feature\Concurrency;
 
 use App\Domain\Tenancy\LastOwnerException;
 use App\Domain\Tenancy\LastOwnerGuard;
@@ -45,6 +45,15 @@ use Tests\TestCase;
  * segunda conexión no vería siquiera la organización. A cambio, este archivo
  * se limpia lo suyo: siembra con un `slug` reconocible y lo borra antes y
  * después de cada caso, para no dejar filas que hagan fallar a los demás.
+ *
+ * **Y por eso vive en `tests/Feature/Concurrency`** (`T-003b`): es el
+ * *testsuite* que corre **en serie**, aparte de los demás. Confirmar de verdad
+ * y barrer por patrón es incompatible con compartir base de datos con nadie, y
+ * lo que produce no es un fallo aquí sino **un fallo en otro archivo**, que es
+ * la peor forma de romperse: intermitente y ajeno. El resto de la suite corre
+ * en paralelo, con una base por proceso, y estos dos se quedan fuera de esa
+ * ronda. Quien escriba el siguiente test de concurrencia lo pone en esta misma
+ * carpeta, y si lo deja fuera se lo dice `ConcurrencyTestsAreIsolatedTest`.
  */
 final class LastOwnerConcurrencyTest extends TestCase
 {

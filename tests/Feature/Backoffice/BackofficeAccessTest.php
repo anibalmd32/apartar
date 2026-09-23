@@ -143,15 +143,25 @@ final class BackofficeAccessTest extends TestCase
 
     /**
      * SP-7 · una contraseña comprometida se rechaza también aquí.
+     *
+     * El servicio de filtraciones se falsea (`REQ-QAX-003` RB-9): hasta
+     * `T-003b` este caso salía a Internet, y cuando la red fallaba el
+     * verificador daba la contraseña por limpia — es decir, el test pasaba a
+     * verde por el motivo contrario al que comprueba. El porqué entero está en
+     * `FakesPwnedPasswords`.
      */
     public function test_a_compromised_password_is_refused_in_the_forced_change(): void
     {
+        $this->fakePwnedPassword('Password123456');
+
         $actor = $this->teamMember(['must_change_password' => true]);
 
         $this->actingAs($actor)->post('/backoffice/cambiar-contrasena', [
             'password' => 'Password123456',
             'password_confirmation' => 'Password123456',
         ])->assertSessionHasErrors('password');
+
+        $this->assertPwnedServiceWasAsked('Password123456');
     }
 
     /**

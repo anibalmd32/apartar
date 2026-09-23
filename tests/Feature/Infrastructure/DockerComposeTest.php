@@ -8,8 +8,31 @@ use Tests\Support\ComposeFile;
  * Topología del stack local (REQ-INF-001).
  */
 it('declara los siete servicios de la tabla de contratos', function (): void {
-    expect(ComposeFile::merged()->keys('services'))
+    expect(ComposeFile::read('docker-compose.yml')->keys('services'))
         ->toEqualCanonicalizing(['app', 'nginx', 'mysql', 'redis', 'queue', 'reverb', 'node']);
+});
+
+/**
+ * Y el octavo vive **solo en el override**, que es lo que lo mantiene fuera del
+ * despliegue (`T-003b`).
+ *
+ * `mysql_test` es el MySQL de la suite, con su `datadir` en `tmpfs`. En
+ * producción no se corren tests, así que declararlo en el archivo base lo
+ * habría embarcado en cada despliegue — y con él un servidor de base de datos
+ * en memoria sin nadie que lo use. La comprobación es sobre **dónde** está
+ * declarado, porque ahí es donde se rompería.
+ */
+it('deja el MySQL de la suite solo en el override de desarrollo', function (): void {
+    expect(ComposeFile::read('docker-compose.yml')->keys('services'))->not->toContain('mysql_test');
+    expect(ComposeFile::read('docker-compose.override.yml')->keys('services'))->toContain('mysql_test');
+
+    // `tmpfs` y su tope, que son las dos mitades de RB-6: la primera hace la
+    // base rápida y volátil, la segunda impide que se coma la memoria del
+    // host.
+    expect(ComposeFile::read('docker-compose.override.yml')->service('mysql_test'))
+        ->toContain('tmpfs:')
+        ->toContain('/var/lib/mysql:size=1g')
+        ->toContain('mem_limit:');
 });
 
 it('declara los tres volúmenes nombrados', function (): void {
@@ -110,13 +133,15 @@ it('comparte app_storage entre app, queue y nginx', function (string $service): 
 /**
  * REQ-INF-001 RB-7 y SP-3: ningún servicio migra desde su comando; la decisión
  * es del entrypoint y depende del rol.
+ *
+ * **Se mira lo que `docker compose` interpreta, no los comentarios**, y esto
+ * era un fallo del test que `T-003b` destapó: un comentario que dice «el
+ * `migrate` del entrypoint sigue yendo al mysql de siempre» no es una
+ * migración, y sin embargo ponía el gate en rojo. Un gate que se rompe al
+ * explicar algo enseña a no explicar nada.
  */
 it('no migra desde el comando de ningún servicio', function (): void {
-    $compose = ComposeFile::merged();
-
-    foreach ($compose->keys('services') as $service) {
-        expect($compose->service($service))->not->toContain('migrate');
-    }
+    expect(composeDirectives())->not->toContain('migrate');
 });
 
 it('da a cada servicio de la imagen propia su rol', function (string $service, string $role): void {

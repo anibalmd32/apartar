@@ -47,8 +47,33 @@ return [
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
+
+            /*
+             * En `testing` la base vive en otro servidor (`T-003b`).
+             *
+             * `mysql_test` guarda su `datadir` en `tmpfs` y se recrea con el
+             * stack, que es lo que hace barato el `migrate:fresh` por proceso
+             * que la suite paga al correr en paralelo. La de desarrollo se
+             * queda donde está, con sus datos sembrados intactos.
+             *
+             * **La condición es sobre el entorno y no sobre la variable**, y
+             * es deliberado: sin ella, un `DB_TEST_HOST` declarado en el
+             * contenedor desviaría también el `migrate` del entrypoint y todo
+             * lo que la aplicación hace de verdad — y el síntoma sería una
+             * aplicación que arranca vacía cada mañana sin que nada falle.
+             *
+             * **No declararla es válido**, y es lo que hace CI: allí el MySQL
+             * de los tests es el único que hay, así que cae a `DB_HOST` y el
+             * workflow no necesita saber que esto existe.
+             */
+            'host' => env('APP_ENV') === 'testing'
+                ? env('DB_TEST_HOST', env('DB_HOST', '127.0.0.1'))
+                : env('DB_HOST', '127.0.0.1'),
+
+            'port' => env('APP_ENV') === 'testing'
+                ? env('DB_TEST_PORT', env('DB_PORT', '3306'))
+                : env('DB_PORT', '3306'),
+
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),

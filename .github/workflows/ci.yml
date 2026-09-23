@@ -25,8 +25,13 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # RB-3: dependencias con caché → pint --test → phpstan → migrate → pest con
-  # el umbral de cobertura del dominio.
+  # RB-3: dependencias con caché → pint --test → reglas estructurales → phpstan
+  # → migrate → suite con el umbral de cobertura del dominio.
+  #
+  # Desde T-003b la suite corre en paralelo, con una base de datos por proceso
+  # (`apartar_testing_test_1`, `_test_2`…). El usuario de MySQL de este job es
+  # `root`, así que puede crearlas; el `migrate` de abajo deja lista la base
+  # base, que es la que usa la ronda de concurrencia, que corre en serie.
   # ---------------------------------------------------------------------------
   backend:
     name: backend
@@ -83,8 +88,31 @@ jobs:
       - name: Preparar entorno
         run: cp .env.ci .env
 
+      # T-003b · las cachés de PHPStan y de Pint cruzan ejecuciones. El
+      # análisis frío cuesta unas tres veces lo que caliente, y las dos cachés
+      # llevan dentro el contenido de cada archivo: una que no corresponda no
+      # se reutiliza, se reconstruye. `restore-keys` deja partir de la anterior
+      # aunque el código haya cambiado, que es el caso normal y donde más se
+      # ahorra.
+      - name: Caché del análisis estático
+        uses: actions/cache@v4
+        with:
+          path: |
+            storage/framework/phpstan
+            storage/framework/pint.cache
+          key: static-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('app/**', 'config/**', 'database/**', 'routes/**', 'tests/**', 'phpstan.neon', 'pint.json') }}
+          restore-keys: |
+            static-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
       - name: Pint
         run: composer run lint
+
+      # T-003b · los gates baratos van primero. Son reglas estructurales que no
+      # se adivinan —entre ellas que cada clase de app/Domain y app/Actions
+      # tenga su <Clase>Test— y descubrirlas al final de la suite cuesta la
+      # pasada entera.
+      - name: Reglas estructurales
+        run: composer run test:quality
 
       - name: PHPStan nivel 6
         run: composer run analyse

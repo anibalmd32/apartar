@@ -1,19 +1,53 @@
 # Apartar — desarrollo local (REQ-INF-001 RB-0, REQ-INF-004 RB-3).
 #
 # Docker Compose lo aplica solo por encima de docker-compose.yml. Aquí viven
-# las dos cosas que el archivo base deja fuera a propósito:
+# las tres cosas que el archivo base deja fuera a propósito:
 #
 #   1. Los puertos publicados al host. En producción `nginx` y `reverb` se
 #      publican por Traefik y `mysql`/`redis` no se publican en absoluto
 #      (RB-2 y RB-3); T-087 traerá ese archivo.
 #   2. El código montado desde el host, para que un cambio se vea sin
 #      reconstruir la imagen.
+#   3. **El MySQL de la suite** (`mysql_test`, `T-003b`), que es de desarrollo
+#      por definición: en producción no se corren tests, y declararlo en el
+#      archivo base lo habría embarcado en el despliegue.
 #
 # La aplicación queda en http://localhost:8080, sin TLS y sin DNS comodín:
 # las URL públicas son por ruta (/c/{slug}), no por subdominio.
 
 services:
   app:
+    # El techo de producción son 768 MB (RB-6 de
+    # [90](docs/specs/90-infraestructura-y-entorno.md)) y es el correcto para
+    # servir peticiones. **Aquí dentro no se sirven peticiones: se corren las
+    # herramientas**, y las herramientas no caben — PHPStan pide 1 GB por
+    # proceso y la suite en paralelo levanta un proceso por núcleo, cada uno
+    # con su recolector de cobertura.
+    #
+    # Sin esto el síntoma no se parece a quedarse sin memoria: es un
+    # «Exit Code: 137» de un worker cualquiera, o un «killed by signal 9» de
+    # PHPStan, y el análisis o la suite terminan incompletos sin decir por qué.
+    # Se midió con 20 procesos recolectando cobertura en `T-003b`; en `T-029`
+    # había pasado lo mismo con PHPStan.
+    #
+    # **Solo desarrollo.** El contenedor que se despliega sigue con su 768 MB,
+    # porque allí no corre ninguna de las dos cosas.
+    mem_limit: 3g
+    environment:
+      # Dónde vive la base de la suite (`T-003b`). Solo la lee
+      # `config/database.php` cuando `APP_ENV=testing`, así que el `migrate`
+      # del entrypoint y todo lo que se haga contra la aplicación siguen
+      # yendo al `mysql` de siempre.
+      #
+      # **No declararla es válido y es lo que hace CI**, donde el MySQL de
+      # los tests es el único que hay: la variable cae a `DB_HOST`.
+      DB_TEST_HOST: mysql_test
+    depends_on:
+      # Para que `docker compose up -d && composer check` no dependa de quién
+      # arrancó antes: sin esto, la primera ejecución tras levantar el stack
+      # falla con una conexión rechazada que parece un problema de la suite.
+      mysql_test:
+        condition: service_healthy
     volumes:
       - .:/var/www/html
       # El volumen nombrado gana al bind mount: los comprobantes viven en
@@ -28,6 +62,68 @@ services:
     # Puerto no estándar para no chocar con un MySQL instalado en el host.
     ports:
       - "3307:3306"
+
+  # ---------------------------------------------------------------------------
+  # MySQL de la suite, en memoria (`T-003b`, `REQ-QAX-003` RB-8).
+  #
+  # **Aparte y no un `tmpfs` colgado del `mysql` de siempre**, y esa es toda la
+  # decisión: `tmpfs` es memoria, o sea rápido y volátil. Para una base que
+  # `RefreshDatabase` borra entera en cada ejecución eso es exactamente lo que
+  # se quiere; para la de desarrollo sería perder en cada reinicio los datos
+  # sembrados con los que se mira la aplicación en http://localhost:8080.
+  #
+  # El techo está declarado dos veces y las dos hacen falta (RB-6 de
+  # [90](docs/specs/90-infraestructura-y-entorno.md)): `size=` acota lo que el
+  # `datadir` puede ocupar en RAM y `mem_limit` acota el contenedor entero
+  # —incluidas esas páginas, que el cgroup cuenta—. Sin el primero, un
+  # `datadir` que creciera se comería la memoria del host; sin el segundo,
+  # competiría con `app`, que ya se quedó corto una vez con PHPStan y respondió
+  # con un SIGKILL que no se parecía a falta de memoria.
+  #
+  # Los cuatro ajustes de `command` son legítimos **porque la base es
+  # desechable** y por ningún otro motivo: no se está aflojando la durabilidad
+  # de nada que alguien vaya a echar de menos.
+  # ---------------------------------------------------------------------------
+  mysql_test:
+    image: mysql:8.0
+    restart: unless-stopped
+    mem_limit: 1536m
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # Un `fsync` por commit sobre una base que se recrea es pagar durabilidad
+      # que nadie va a cobrar. Perder la última transacción aquí no le importa
+      # a nadie; esperarla en cada `INSERT` de la suite se nota en cada
+      # ejecución.
+      - --innodb-flush-log-at-trx-commit=2
+      - --skip-innodb-doublewrite
+      # El redo por defecto reserva cientos de megas de `tmpfs` que la suite no
+      # usa: son memoria del host apartada para nada.
+      - --innodb-redo-log-capacity=67108864
+      - --innodb-buffer-pool-size=268435456
+      # Ni se consulta ni se perfila nada aquí, y son ~200 MB.
+      - --performance-schema=OFF
+    environment:
+      MYSQL_DATABASE: apartar_testing
+      MYSQL_USER: "${DB_USERNAME:-apartar}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
+    tmpfs:
+      - /var/lib/mysql:size=1g,mode=1777
+    volumes:
+      - ./docker/mysql-test/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # Tercer puerto libre de la serie, para poder abrir la base de la suite
+      # con un cliente cuando un test falla por lo que dejó escrito.
+      - "3308:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - apartar
 
   redis:
     ports:

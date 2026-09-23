@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\FakesPwnedPasswords;
 use Tests\TestCase;
 
 /**
@@ -22,7 +23,7 @@ use Tests\TestCase;
  */
 final class RegisterOrganizationTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPwnedPasswords, RefreshDatabase;
 
     /**
      * @var array<string, string>
@@ -192,17 +193,28 @@ final class RegisterOrganizationTest extends TestCase
         $this->assertSame(0, Organization::query()->count());
     }
 
+    /**
+     * `Password123456` cumple longitud, mayúsculas y números, así que es la
+     * regla de filtraciones —y solo ella— la que la rechaza.
+     *
+     * **El servicio se falsea** (`REQ-QAX-003` RB-9): hasta `T-003b` este caso
+     * salía a `api.pwnedpasswords.com` de verdad en cada ejecución, y lo que
+     * lo destapó fue poner la suite en paralelo. La regla se sigue ejercitando
+     * entera —calcula el hash, lo parte y busca su sufijo—; lo único que
+     * cambia es quién sirve la respuesta, y `assertPwnedServiceWasAsked()`
+     * comprueba que se le llegó a preguntar.
+     */
     public function test_a_compromised_password_is_refused(): void
     {
-        // `Password123456` aparece en las filtraciones que consulta
-        // `uncompromised()`; cumple longitud, mayúsculas y números, así que es
-        // la regla de filtraciones —y solo ella— la que la rechaza.
+        $this->fakePwnedPassword('Password123456');
+
         $this->post('/registro', [
             ...self::VALID,
             'owner_password' => 'Password123456',
             'owner_password_confirmation' => 'Password123456',
         ])->assertSessionHasErrors('owner_password');
 
+        $this->assertPwnedServiceWasAsked('Password123456');
         $this->assertSame(0, Organization::query()->count());
     }
 

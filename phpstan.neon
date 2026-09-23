@@ -9,6 +9,18 @@ parameters:
     # (ASU-QAX-03). Subirlo es una tarea propia, no un ajuste al vuelo.
     level: 6
 
+    # La caché vive en el árbol del proyecto y no en el /tmp del contenedor
+    # (T-003b). No es cosmético: `/tmp` se va con el contenedor, así que un
+    # `docker compose up --build` —o cualquier recreación— dejaba el análisis
+    # frío, y frío cuesta unas tres veces lo que caliente. En `storage/` está
+    # bajo el bind mount del host, así que sobrevive a reinicios, a
+    # reconstrucciones y a cambiar de contenedor.
+    #
+    # La invalida PHPStan solo: la clave incluye la configuración, la versión y
+    # el contenido de cada archivo analizado. Borrarla a mano nunca hace falta;
+    # si hiciera falta, es `rm -rf storage/framework/phpstan`.
+    tmpDir: storage/framework/phpstan
+
     # El contenedor `app` tiene 768 MB (docker-compose.yml) y el script de
     # `composer analyse` da 1 GB a **cada** proceso: con la paralelización por
     # defecto —tantos como núcleos— la suma se pasa del techo del contenedor y

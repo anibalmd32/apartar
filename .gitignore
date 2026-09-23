@@ -28,3 +28,11 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+
+# Artefactos de las recetas (T-003b). Las dos cachés las invalidan sus
+# herramientas solas —llevan dentro el contenido de cada archivo analizado— y
+# el cerrojo lo sueltan `composer check` y `npm run check` al terminar. La
+# caché de PHPStan tiene su propio .gitignore dentro, para que la carpeta
+# exista en un clon recién hecho.
+/storage/framework/gate.lock
+/storage/framework/pint.cache

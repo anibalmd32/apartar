@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Subscription;
+namespace Tests\Feature\Concurrency;
 
 use App\Actions\Organization\InviteTeamMemberAction;
 use App\Domain\Subscription\LimitEnforcer;
@@ -57,6 +57,12 @@ use Tests\TestCase;
  * es observable sobre filas confirmadas; dentro de la transacción de test la
  * segunda conexión no vería siquiera la organización. A cambio, este archivo
  * barre lo que siembra en `setUp` y en `tearDown`.
+ *
+ * **Y por eso vive en `tests/Feature/Concurrency`** (`T-003b`): es el
+ * *testsuite* que corre **en serie**, fuera de la ronda paralela. El motivo
+ * entero está escrito en `LastOwnerConcurrencyTest` y en `phpunit.xml`; lo
+ * corto es que confirmar de verdad no se lleva bien con compartir base con
+ * nadie, y que el síntoma no aparece aquí sino en otro archivo.
  */
 final class LimitEnforcerConcurrencyTest extends TestCase
 {

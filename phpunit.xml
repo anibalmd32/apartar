@@ -18,9 +18,43 @@
                  (REQ-QAX-004 RB-4b): su fallo tiene que ser inequívoco y no
                  quedar sepultado entre cientos de tests de negocio. -->
             <exclude>tests/Feature/Tenancy</exclude>
+            <!-- Y la concurrencia tiene su propia ronda, en serie: ver abajo. -->
+            <exclude>tests/Feature/Concurrency</exclude>
         </testsuite>
         <testsuite name="Tenancy">
             <directory>tests/Feature/Tenancy</directory>
+        </testsuite>
+
+        <!--
+            T-003b · los tests que **no pueden correr en paralelo**.
+
+            Todo lo demás corre en paralelo (`composer test:parallel`), que da
+            a cada proceso su propia base de datos (`apartar_testing_test_1`,
+            `_test_2`…).
+            Estos dos no caben en ese esquema, y el motivo no es que sean
+            lentos:
+
+              - **no pueden usar `RefreshDatabase`**, porque abren dos
+                conexiones para provocar un bloqueo real y un bloqueo entre
+                conexiones solo es observable sobre filas **confirmadas**;
+              - al confirmar, limpian a mano lo que siembran, con un barrido
+                por patrón (`concurrencia-…`);
+              - y bajan `innodb_lock_wait_timeout` a un segundo en su sesión
+                para convertir la espera en un error observable.
+
+            Nada de eso convive con que otro proceso esté trabajando contra la
+            misma base al mismo tiempo, y lo que produce **no es un fallo aquí
+            sino en otro archivo**: intermitente, ajeno y carísimo de
+            diagnosticar. Es lo que estaba detrás del `deadlock` al sembrar
+            planes que se veía desde `T-030`.
+
+            **Quien escriba el siguiente test de concurrencia lo pone en esta
+            carpeta** —`T-044` tiene el de la reserva de la última unidad— y no
+            tiene que acordarse: `ConcurrencyTestsAreIsolatedTest` recorre la
+            suite y se pone rojo si aparece uno fuera.
+        -->
+        <testsuite name="Concurrency">
+            <directory>tests/Feature/Concurrency</directory>
         </testsuite>
     </testsuites>
 

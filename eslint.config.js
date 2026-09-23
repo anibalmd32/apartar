@@ -90,6 +90,19 @@ export default [
         },
     },
     {
+        // Los scripts de las recetas (`T-003b`) corren en Node, no en el
+        // navegador: `process`, `console` y los módulos de `node:` son sus
+        // globales legítimas. Sin esto, `no-undef` los señala uno por uno
+        // como si fueran errores, que es la forma de que alguien acabe
+        // apagando la regla entera.
+        files: ['scripts/**/*.mjs'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
+    {
         ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'storage', 'docker'],
     },
     prettier, // Turn off all rules that might conflict with Prettier

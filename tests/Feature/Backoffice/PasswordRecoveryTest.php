@@ -148,9 +148,15 @@ final class PasswordRecoveryTest extends TestCase
     /**
      * RB-6 · la contraseña nueva cumple la misma regla que en todas las
      * puertas del producto, incluida la de filtraciones.
+     *
+     * El servicio se falsea (`REQ-QAX-003` RB-9): es la tercera de las tres
+     * puertas que salían a Internet hasta `T-003b`. El porqué está en
+     * `FakesPwnedPasswords`.
      */
     public function test_a_compromised_password_is_refused(): void
     {
+        $this->fakePwnedPassword('Password123456');
+
         $user = $this->teamMember();
         $token = $this->issueToken($user);
 
@@ -160,6 +166,8 @@ final class PasswordRecoveryTest extends TestCase
             'password' => 'Password123456',
             'password_confirmation' => 'Password123456',
         ])->assertSessionHasErrors('password');
+
+        $this->assertPwnedServiceWasAsked('Password123456');
     }
 
     /**
