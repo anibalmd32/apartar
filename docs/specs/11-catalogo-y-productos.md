@@ -122,6 +122,8 @@ export interface ImageSet {
 - Props `{ product: ProductDetail, related: ProductCard[], catalog, business, rate }`.
 - `ProductDetailResource` calcula `installmentAmount` con `Money::allocateEvenly()` y adjunta las cuentas de cobro activas.
 
+> **De dónde sale la cuota, y qué de aquí no es de `T-035`.** El gate de abajo nombra `ScheduleGenerator` en la superficie esperada, y eso se lee al revés: la cuota de RB-2 la reparte **`FinancingPlan`** (`app/Domain/Catalog`, de `T-027`), que es la misma cuenta que ya enseñan la previsualización del backoffice y cada card de la parrilla. `ScheduleGenerator` es `REQ-LAY-004`, llega en `T-041`, y lo que le toca entonces es **probar que las dos cuentas coinciden hasta el céntimo**, no recalcular esta. Del resto del requisito, tres piezas tienen otro dueño: el motivo de indisponibilidad por límite de plan de RB-7 lo inserta `T-067` (`REQ-SUB-004` RB-4), `product_viewed` y la permanencia de RB-8 son de `T-084`, y el chat que SP-6 ofrece cuando no hay cuentas de cobro es de `T-080` —hasta entonces, el texto sin enlace—.
+
 **Reglas de negocio y precondiciones**
 - RB-1 El producto se resuelve **dentro del contexto del catálogo**: la URL lleva ambos slugs, y un producto que no pertenece a ese catálogo da `404`. No hay ficha de producto fuera de un catálogo.
 - RB-2 La cuota mostrada es `(price − down_payment) / installments_count`, calculada en centavos con el residuo en la última cuota (`REQ-FX-005`); la UI indica "última cuota: $X" cuando difiere.
