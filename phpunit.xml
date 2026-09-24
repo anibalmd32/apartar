@@ -31,8 +31,12 @@
             Todo lo demás corre en paralelo (`composer test:parallel`), que da
             a cada proceso su propia base de datos (`apartar_testing_test_1`,
             `_test_2`…).
-            Estos dos no caben en ese esquema, y el motivo no es que sean
-            lentos:
+            Estos no caben en ese esquema, y el motivo no es que sean lentos.
+            Lo que tienen en común es que **confirman de verdad**: los de
+            concurrencia por lo de abajo, y `CatalogFullTextSearchTest`
+            (`T-034`) porque InnoDB solo indexa en `FULLTEXT` lo confirmado, y
+            dentro de la transacción de `RefreshDatabase` todo `MATCH` da cero.
+            Los de concurrencia, además:
 
               - **no pueden usar `RefreshDatabase`**, porque abren dos
                 conexiones para provocar un bloqueo real y un bloqueo entre

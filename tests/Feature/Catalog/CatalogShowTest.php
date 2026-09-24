@@ -256,9 +256,14 @@ final class CatalogShowTest extends TestCase
         );
         $this->assertCount(CatalogCursor::PER_PAGE + 1, array_unique($slugs));
 
+        // Los únicos conteos son los de las facetas (`REQ-CAT-006` RB-3, desde
+        // `T-034`): cuántos productos tiene **cada** categoría y etiqueta,
+        // una consulta agrupada por cada mitad del panel. Ninguno es el total
+        // de la parrilla que SP-7 prohíbe.
         $counts = array_filter(
             DB::getQueryLog(),
-            fn (array $query): bool => str_contains(strtolower((string) $query['query']), 'count('),
+            fn (array $query): bool => str_contains(strtolower((string) $query['query']), 'count(')
+                && ! preg_match('/^select `(categories|tags)`\.\*, \(select count\(\*\)/', (string) $query['query']),
         );
         $this->assertSame([], array_values($counts), 'La parrilla no puede contar filas (SP-7).');
     }
@@ -420,8 +425,7 @@ final class CatalogShowTest extends TestCase
 
         $this->visit($catalog)->assertInertia(fn (AssertableInertia $page) => $page
             ->missing('catalog.subscription')
-            ->missing('catalog.productsCount')
-            ->missing('facets'));
+            ->missing('catalog.productsCount'));
     }
 
     public function test_the_share_link_is_the_public_route(): void

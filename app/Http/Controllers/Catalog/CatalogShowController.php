@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Catalog;
 
 use App\Domain\Catalog\CatalogExpiredException;
+use App\Domain\Catalog\CatalogFilters;
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Subscription\LimitEnforcer;
@@ -13,9 +14,10 @@ use App\Http\Resources\CatalogViewResource;
 use App\Http\Resources\ProductCardResource;
 use App\Models\Catalog;
 use App\Models\Product;
+use App\Queries\CatalogFacetsQuery;
+use App\Queries\CatalogProductsQuery;
 use App\Support\CatalogCursor;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -24,7 +26,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * El enlace que un desconocido abre: la vista pública del catálogo
- * (`REQ-CAT-021`).
+ * (`REQ-CAT-021`), con su búsqueda, sus filtros y su orden (`REQ-CAT-002`,
+ * `REQ-CAT-006`).
  *
  * Es la primera superficie del proyecto sin sesión y sin backoffice, y la que
  * sostiene el modelo multi-tenant en la cara pública (RB-3). Cuando este
@@ -45,18 +48,30 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * El `match` no lleva `default`: un quinto estado de visibilidad tiene que
  * decidir aquí su respuesta, no heredar una por descuido.
  *
+ * ## Cuatro props, y quién pide cada una
+ *
+ * La primera carga las lleva todas. Después, la navegación entre filtros es
+ * una recarga parcial de `products` y `filters` (`REQ-CAT-006` RB-7), y
+ * «Cargar más» solo de `products`: ni el catálogo ni las facetas se vuelven a
+ * mandar, porque no dependen de lo que se filtre. Las facetas **sí** se leen
+ * en toda petición que traiga categoría o etiquetas, aunque no viajen: son la
+ * lista de lo que se acepta (`CatalogFilters::restrictedTo()`), y lo que el
+ * panel no ofrece no se aplica.
+ *
  * ## Qué no hace, todavía
  *
- * Búsqueda, filtros y orden son `T-034` (`REQ-CAT-002`, `REQ-CAT-006`): la
- * parrilla sale en el **orden curado**, que es el defecto de RB-5, y las
- * facetas ya tienen su consulta (`CatalogFacetsQuery`) esperando el panel.
- * `catalog_viewed` (RB-11) lo emite `T-084` con el bus de telemetría, y el CTA
- * de seguir (RB-8) llega con las cuentas de H6. Ni un emisor que trague eventos
- * ni un botón que no haga nada.
+ * `catalog_viewed` (RB-11), `search_performed` (`REQ-CAT-002` RB-5) y
+ * `product_list_filtered` (`REQ-CAT-006` RB-8) los emite `T-084` con el bus de
+ * telemetría, y el CTA de seguir (RB-8) llega con las cuentas de H6. Ni un
+ * emisor que trague eventos ni un botón que no haga nada.
  */
 final class CatalogShowController extends Controller
 {
-    public function __construct(private readonly LimitEnforcer $limits) {}
+    public function __construct(
+        private readonly LimitEnforcer $limits,
+        private readonly CatalogProductsQuery $products,
+        private readonly CatalogFacetsQuery $facets,
+    ) {}
 
     /**
      * @throws ModelNotFoundException<Catalog> si el catálogo es un borrador (SP-2, SP-5)
@@ -70,24 +85,35 @@ final class CatalogShowController extends Controller
             CatalogVisibility::Listed, CatalogVisibility::Unlisted => null,
         };
 
-        // Cerrados para que la recarga parcial de «Cargar más» —que pide solo
-        // `products`— no vuelva a leer el plan ni la portada. Y memorizado,
-        // porque en la primera carga lo leen a la vez las props y Open Graph.
-        $resolved = null;
-        $view = function () use (&$resolved, $catalog, $request): array {
-            return $resolved ??= $this->catalogView($catalog, $request);
+        // Cerradas, para que cada recarga parcial evalúe solo lo que pide, y
+        // memorizadas, porque hay dos que se leen dos veces: las facetas, por
+        // el panel y por los filtros; la vista, por las props y por Open Graph.
+        $facets = null;
+        $filters = null;
+        $view = null;
+
+        $readFacets = function () use (&$facets, $catalog): array {
+            return $facets ??= $this->facets->forCatalog($catalog);
+        };
+        $readFilters = function () use (&$filters, $request, $readFacets): CatalogFilters {
+            return $filters ??= $this->filters($request, $readFacets);
+        };
+        $readView = function () use (&$view, $catalog, $request): array {
+            return $view ??= $this->catalogView($catalog, $request);
         };
 
         $response = Inertia::render('catalog/CatalogShow', [
-            'catalog' => $view,
-            'products' => fn (): array => $this->products($catalog, $request),
+            'catalog' => $readView,
+            'products' => fn (): array => $this->grid($catalog, $readFilters(), $request),
+            'filters' => fn (): array => $readFilters()->toArray(),
+            'facets' => $readFacets,
         ]);
 
         // Open Graph (RB-10) solo en la primera carga, que es la única que
         // llega como HTML: el rastreador de WhatsApp no ejecuta JavaScript,
         // así que unas etiquetas puestas desde React no las vería nadie.
         return $request->header('X-Inertia') === null
-            ? $response->withViewData(['meta' => $this->openGraph($view(), $catalog->organization->name)])
+            ? $response->withViewData(['meta' => $this->openGraph($readView(), $catalog->organization->name)])
             : $response;
     }
 
@@ -103,55 +129,57 @@ final class CatalogShowController extends Controller
     }
 
     /**
-     * Un lote de la parrilla, en el orden curado (RB-4, RB-6, SP-7, SP-9).
+     * Los filtros de la query string, restringidos a lo que el panel ofrece
+     * (`REQ-CAT-006` SP-1, SP-4, SP-5).
      *
-     * Lo que se consulta, entero: los productos del catálogo **publicados**
-     * —`scopePublished()`, de `T-030`, que deja fuera `draft`, `archived` y
-     * programados—, ordenados por `catalog_product.position` y desempatados
-     * por `id`, doce a partir del cursor. Con la categoría, las etiquetas y las
-     * fotos cargadas de una vez, para que doce cards no sean doce consultas.
+     * Sin categoría ni etiquetas en la petición, las facetas no se leen para
+     * esto: una búsqueda o un cambio de orden no paga por comprobar nada.
      *
-     * Los omitidos **conservan su relación** con el catálogo: el filtro está
-     * en esta consulta y no en `Catalog::products()`, que no filtra a
-     * propósito (`REQ-CAT-007` RB-7). Desarchivar uno lo devuelve a su sitio
-     * sin recomponer nada.
+     * @param  callable(): array{categories: list<array{slug: string, name: string, count: int}>, tags: list<array{slug: string, name: string, count: int}>}  $facets
+     */
+    private function filters(Request $request, callable $facets): CatalogFilters
+    {
+        $filters = CatalogFilters::fromRequest($request);
+
+        if ($filters->category === null && $filters->tags === []) {
+            return $filters;
+        }
+
+        $present = $facets();
+
+        return $filters->restrictedTo(
+            array_column($present['categories'], 'slug'),
+            array_column($present['tags'], 'slug'),
+        );
+    }
+
+    /**
+     * Un lote de la parrilla con los filtros aplicados (RB-4 a RB-6, SP-7,
+     * SP-9).
      *
-     * Sin `count(*)`: la paginación por cursor no necesita el total, y el
-     * cliente solo necesita saber si hay más —`nextCursor`— para ofrecer el
-     * botón.
+     * Qué se consulta lo decide `CatalogProductsQuery`; aquí solo se pinta:
+     * doce cards con su categoría, sus etiquetas y sus fotos ya cargadas, y el
+     * cursor del lote siguiente si lo hay. Sin `count(*)`: el cliente solo
+     * necesita saber si hay más para ofrecer el botón.
      *
      * @return array{data: list<array<string, mixed>>, nextCursor: string|null}
      */
-    private function products(Catalog $catalog, Request $request): array
+    private function grid(Catalog $catalog, CatalogFilters $filters, Request $request): array
     {
-        $query = $this->visibleProducts($catalog)->with(['category', 'tags', 'media']);
-
-        foreach (CatalogCursor::COLUMNS as $column) {
-            $query->orderBy($column);
-        }
-
-        $page = $query->cursorPaginate(
-            CatalogCursor::PER_PAGE,
-            ['*'],
-            CatalogCursor::NAME,
-            CatalogCursor::from($request->query(CatalogCursor::NAME)) ?? CatalogCursor::FIRST_PAGE,
-        );
-
-        /** @var list<Product> $items */
-        $items = array_values($page->items());
+        $page = $this->products->page($catalog, $filters, $request->query(CatalogCursor::NAME));
 
         return [
             'data' => array_map(
                 fn (Product $product): array => (new ProductCardResource($product, $catalog))->resolve($request),
-                $items,
+                $page['items'],
             ),
-            'nextCursor' => $page->nextCursor()?->encode(),
+            'nextCursor' => $page['nextCursor'],
         ];
     }
 
     /**
-     * La foto del primer producto visible, para el catálogo sin portada
-     * (`REQ-BOF-024` SP-9).
+     * La foto del primer producto visible en el orden curado, para el catálogo
+     * sin portada (`REQ-BOF-024` SP-9).
      *
      * Solo se consulta cuando hace falta: con portada propia no se toca.
      */
@@ -161,24 +189,15 @@ final class CatalogShowController extends Controller
             return null;
         }
 
-        $first = $this->visibleProducts($catalog)
+        $first = $this->products->visible($catalog)
             ->with('media')
-            ->orderBy(CatalogCursor::COLUMNS[0])
+            ->orderBy('catalog_position')
+            ->orderBy('products.id')
             ->first();
 
         $media = $first?->getFirstMedia(Product::IMAGES);
 
         return $media instanceof Media ? ImageSet::of($media) : null;
-    }
-
-    /**
-     * Los productos del catálogo que el público puede ver.
-     *
-     * @return BelongsToMany<Product, Catalog>
-     */
-    private function visibleProducts(Catalog $catalog): BelongsToMany
-    {
-        return $catalog->products()->published();
     }
 
     /**

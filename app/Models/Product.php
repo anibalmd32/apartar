@@ -7,9 +7,11 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Catalog\SearchMode;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Rules\RealMimeType;
+use App\Support\FullTextTerm;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\JoinClause;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -27,9 +30,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  *
  * Tabla del tenant y la pieza central de H2. El modelo es anémico a propósito
  * (`REQ-QAX-001` RB-3): las transiciones de estado son de
- * `ChangeProductStatusAction` y la búsqueda del catálogo de `T-034`. Lo que sí
- * vive aquí es **leer** —`scopePublished()`, `isScheduled()`, `hasImages()`—,
- * porque son preguntas sobre la fila y no decisiones sobre ella.
+ * `ChangeProductStatusAction`, y decidir cómo se busca, de
+ * `CatalogProductsQuery`. Lo que sí vive aquí es **leer** —`scopePublished()`,
+ * `scopeInCatalog()`, `scopeSearch()`, `isScheduled()`, `hasImages()`—, porque
+ * son preguntas sobre la fila y no decisiones sobre ella.
  *
  * ## El dinero sale como `Money`, no como `int`
  *
@@ -226,10 +230,72 @@ class Product extends Model implements HasMedia
      */
     public function scopePublished(Builder $query): Builder
     {
+        // Cualificadas: esta consulta va unida a `catalog_product` en la
+        // parrilla y dentro de los conteos de las facetas (`T-034`).
         return $query
-            ->where('status', ProductStatus::Published)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
+            ->where($this->qualifyColumn('status'), ProductStatus::Published)
+            ->whereNotNull($this->qualifyColumn('published_at'))
+            ->where($this->qualifyColumn('published_at'), '<=', now());
+    }
+
+    /**
+     * Los productos que están en ese catálogo (`REQ-CAT-002` RB-1,
+     * `REQ-CAT-021` RB-5).
+     *
+     * Un `JOIN` con `catalog_product` y **sin tocar el `SELECT`**, a
+     * propósito: es la misma acotación en la parrilla, que necesita las
+     * columnas del pivote para ordenar, y dentro del `withCount()` de
+     * `CatalogFacetsQuery`, donde un `select()` sustituiría el `count(*)` por
+     * otra cosa. Que las dos pasen por aquí es lo que impide que el panel
+     * cuente un conjunto y la parrilla filtre otro.
+     *
+     * No acota la organización, ni lo necesita: el catálogo ya es del tenant, y
+     * un producto ajeno enlazado a él a mano en el pivote lo sigue dejando
+     * fuera el *global scope* de `products`.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeInCatalog(Builder $query, Catalog $catalog): Builder
+    {
+        return $query->join('catalog_product', function (JoinClause $join) use ($catalog): void {
+            $join->on('catalog_product.product_id', '=', $this->qualifyColumn('id'))
+                ->where('catalog_product.catalog_id', '=', $catalog->getKey());
+        });
+    }
+
+    /**
+     * Los productos que responden al término, en el modo que se pida
+     * (`REQ-CAT-002` RB-2, RB-7).
+     *
+     * El término llega ya saneado —`FullTextTerm` es quien garantiza que no
+     * lleva operadores—, y el modo lo elige quien sabe si el índice encontró
+     * algo, que es `CatalogProductsQuery`. `FullText` busca en las tres
+     * columnas del índice; `Like` exige cada palabra en el nombre **o** en el
+     * SKU, y es el que encuentra «tv» o «ladro».
+     *
+     * Los acentos coinciden en los dos modos por la *collation*
+     * `utf8mb4_unicode_ci` de las columnas (SP-4), no por nada que se haga
+     * aquí.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeSearch(Builder $query, FullTextTerm $term, SearchMode $mode): Builder
+    {
+        $boolean = $term->booleanQuery();
+
+        if ($mode === SearchMode::FullText && $boolean !== null) {
+            return $query->whereFullText(FullTextTerm::COLUMNS, $boolean, ['mode' => 'boolean']);
+        }
+
+        foreach ($term->likePatterns() as $pattern) {
+            $query->where(fn (Builder $word): Builder => $word
+                ->where($this->qualifyColumn('name'), 'like', $pattern)
+                ->orWhere($this->qualifyColumn('sku'), 'like', $pattern));
+        }
+
+        return $query;
     }
 
     /**

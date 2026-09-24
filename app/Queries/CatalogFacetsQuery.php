@@ -39,12 +39,18 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * ## Quién la monta
  *
- * `T-034`, con el panel y los filtros que la usan. Se entrega antes y sin
- * panel a propósito: un panel pintado que no filtra enseñaría una función que
- * no existe, y una consulta probada no enseña nada hasta que alguien la
- * necesita. Lo que **no** decide esta clase es cuándo ocultar un filtro por
- * inútil —todas las cards de la misma categoría (SP-6)—: eso es de quien
- * pinta, que es quien sabe qué hay seleccionado.
+ * `CatalogShowController` (`T-034`), dos veces: como prop `facets` del panel y
+ * como **lista de lo que se acepta** en la query string
+ * (`CatalogFilters::restrictedTo()`). Lo que el panel no ofrece no se aplica,
+ * y así una categoría borrada, de otra organización o sin productos aquí se
+ * ignora por el mismo camino. Lo que **no** decide esta clase es cuándo
+ * ocultar un filtro por inútil —todas las cards de la misma categoría
+ * (SP-6)—: eso es de quien pinta.
+ *
+ * Los conteos son **del catálogo**, no de la combinación de filtros activa:
+ * «Taladros (4)» son los cuatro taladros visibles del catálogo, y pulsarla sin
+ * más filtros da esos cuatro. Por eso no dependen de la petición y la recarga
+ * parcial no los vuelve a pedir.
  */
 final class CatalogFacetsQuery
 {
@@ -89,17 +95,20 @@ final class CatalogFacetsQuery
     }
 
     /**
-     * Los productos publicados de ese catálogo, como la parrilla.
+     * Los productos publicados de ese catálogo, **con los mismos dos scopes
+     * que la parrilla** (`CatalogProductsQuery::visible()`, `T-034`).
+     *
+     * Hasta `T-034` esto era un `whereHas('catalogs')` y la parrilla un
+     * `JOIN`: el mismo conjunto escrito dos veces. Ahora las dos mitades pasan
+     * por `scopeInCatalog()`, y el número de la faceta y el resultado de
+     * pulsarla no tienen forma de discrepar.
      *
      * @param  Builder<Product>  $products
      * @return Builder<Product>
      */
     private function shownIn(Builder $products, Catalog $catalog): Builder
     {
-        return $products->published()->whereHas(
-            'catalogs',
-            fn (Builder $catalogs): Builder => $catalogs->whereKey($catalog->getKey()),
-        );
+        return $products->published()->inCatalog($catalog);
     }
 
     /**

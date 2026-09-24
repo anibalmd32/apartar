@@ -74,6 +74,8 @@ export interface ImageSet {
 - Índice `FULLTEXT(name, description, sku)` en `products`.
 - Scope `Product::scopeSearch(string $term)`, combinado con `scopeInCatalog(Catalog $catalog)`.
 
+> **Cómo quedó (`T-034`).** `scopeSearch(FullTextTerm $term, SearchMode $mode)`: el término llega saneado y el modo lo decide `CatalogProductsQuery`, que es quien puede preguntar si el índice encontró algo. Tres lecturas de las reglas de abajo que conviene no reinterpretar: **el `LIKE` de RB-2 exige cada palabra** en el nombre o el SKU, y no el término entero —si no, «taladro media-pulgada» no encontraría «Taladro de media pulgada»—; **sin `MATCH` no hay relevancia** que ordenar, así que una búsqueda degradada sin `sort` sale en el orden curado (RB-4); y **RB-7 se cumple por lista blanca**: el término se parte en palabras de letras y cifras, y los únicos operadores de la expresión son el `+` y el `*` que pone `FullTextTerm`. Las palabras vacías (las del índice y las del español más comunes) se quitan de los dos modos, que es lo que da sentido a SP-1.
+
 **Reglas de negocio y precondiciones**
 - RB-1 La búsqueda está **acotada al catálogo** que se está viendo y al tenant de su organización. No existe búsqueda global de productos ni entre catálogos (`REQ-ACC-003` RB-5 explica por qué tampoco en el feed).
 - RB-2 `FULLTEXT` de MySQL 8 en modo booleano; con término de menos de 3 caracteres o sin resultados, se degrada a `LIKE %term%` sobre `name` y `sku`.
@@ -261,6 +263,8 @@ export interface ImageSet {
 - Entidades `Category` (`organization_id`, `name`, `slug`, `position`) y `Tag` (`organization_id`, `name`, `slug`), ambas con `UNIQUE(organization_id, slug)`.
 - Filtros dentro de `GET /c/{catalog:slug}`: `category`, `tags[]`, `sort`, `q`, `cursor`.
 - `CatalogFilters` (TS y PHP).
+
+> **Cómo quedó (`T-034`).** `CatalogFilters` es `{ q, category, tags, sort, ignored }` **tal como se aplicó**, no como llegó: `ignored` dice que se quitó algo del enlace, que es el «aviso» de SP-1. Lo que se acepta es exactamente lo que ofrece el panel (`CatalogFacetsQuery`), y eso resuelve SP-1, SP-4 y SP-5 por el mismo camino. **SP-3 se lee como «un `sort` inválido cuenta como ausente»**: sin término cae a `curated`, y con término a la relevancia, porque un valor que no existe no es una elección del usuario que RB-4 tenga que respetar. `recent` ordena por `catalog_product.created_at`, la entrada **a este catálogo**. Y la recarga parcial de RB-7 es de `products` y `filters`: las facetas cuentan el catálogo entero, no la combinación activa, así que no cambian al filtrar y no se vuelven a pedir.
 
 **Reglas de negocio y precondiciones**
 - RB-1 **La taxonomía pertenece a cada organización.** Cada negocio define sus propias categorías y etiquetas; no hay taxonomía compartida en la plataforma. Es la razón por la que el feed no filtra por categoría (`REQ-ACC-003` RB-5): "Motores" de un negocio no es comparable con el de otro.

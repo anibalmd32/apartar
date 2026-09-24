@@ -75,10 +75,49 @@ export interface Paginated<T> {
     readonly nextCursor: string | null;
 }
 
+/**
+ * Los órdenes que se eligen (`REQ-CAT-006` RB-5). Espejo de los cinco casos
+ * de `CatalogSort` que admite `whitelist()`: la relevancia no está porque no se
+ * pide, se deduce de que haya término (`REQ-CAT-002` RB-4).
+ */
+export type CatalogSort = 'curated' | 'recent' | 'price_asc' | 'price_desc' | 'name';
+
+/**
+ * Los filtros **tal como se aplicaron** (contrato `CatalogFilters`), espejo de
+ * `App\Domain\Catalog\CatalogFilters::toArray()`.
+ *
+ * No son lo que pedía la URL, sino lo que quedó: la categoría que ya no está
+ * en el catálogo no llega, y `ignored` dice que se quitó algo (SP-1).
+ */
+export interface CatalogFilters {
+    /** El término saneado, o `null` si no hay o no quedó nada que buscar. */
+    readonly q: string | null;
+    readonly category: string | null;
+    readonly tags: readonly string[];
+    /** El orden **explícito**; `null` es el de defecto (relevancia con término, curado sin él). */
+    readonly sort: CatalogSort | null;
+    readonly ignored: boolean;
+}
+
+/** Una categoría o una etiqueta presente en el catálogo, con sus productos visibles. */
+export interface Facet {
+    readonly slug: string;
+    readonly name: string;
+    readonly count: number;
+}
+
+/** Lo que ofrece el panel: solo lo presente en este catálogo (`REQ-CAT-006` RB-3). */
+export interface CatalogFacets {
+    readonly categories: readonly Facet[];
+    readonly tags: readonly Facet[];
+}
+
 /** Las props de `catalog/CatalogShow`. */
 export interface CatalogShowProps {
     readonly catalog: CatalogView;
     readonly products: Paginated<ProductCard>;
+    readonly filters: CatalogFilters;
+    readonly facets: CatalogFacets;
 }
 
 /** Las props de `catalog/CatalogExpired`, el `410` de SP-3. */

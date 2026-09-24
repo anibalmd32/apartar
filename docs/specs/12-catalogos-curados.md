@@ -55,6 +55,8 @@ export interface CatalogView {
 - Middleware `ResolveCatalogTenant`: **el catálogo es la fuente del tenant** en toda la superficie pública (`REQ-ORG-002` RB-4).
 - `CatalogShowController`, `CatalogFacetsQuery` (`REQ-CAT-006`).
 
+> **La relevancia no se pagina por cursor** (`T-034`), y es la única excepción a RB-6: su orden es la puntuación de `MATCH`, un flotante calculado que un cursor tendría que comparar por igualdad. Se pagina por desplazamiento, con techo de cien lotes y sin `count(*)`, y no cuesta más: MySQL calcula el conjunto `FULLTEXT` entero en cada consulta. Todos los demás órdenes siguen por cursor, cada uno con su forma (`CatalogSort::keyset()`).
+
 **Reglas de negocio y precondiciones**
 - RB-1 Es **la única superficie de descubrimiento** del cliente final. No hay índice global de catálogos ni de productos; se llega por el enlace que comparte el negocio, o por su vitrina si la tiene activada (`REQ-ORG-006` RB-6).
 - RB-2 Accesible **sin autenticación** para catálogos `Listed` y `Unlisted`. Sin contraseña de acceso.

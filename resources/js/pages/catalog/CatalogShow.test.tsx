@@ -1,7 +1,7 @@
 import { RATE_REFRESH_MS } from '@/features/catalog/hooks/useLiveRate';
 import { centsUsd } from '@/lib/money';
 import CatalogShow from '@/pages/catalog/CatalogShow';
-import { type CatalogView, type ProductCard } from '@/types/catalog-view';
+import { type CatalogFacets, type CatalogFilters, type CatalogView, type ProductCard } from '@/types/catalog-view';
 import { type RateView } from '@/types/exchange';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,11 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * montada y el refresco de cinco minutos de la tasa.
  */
 
-const { usePage, reload } = vi.hoisted(() => ({ usePage: vi.fn(), reload: vi.fn() }));
+const { usePage, reload, get } = vi.hoisted(() => ({ usePage: vi.fn(), reload: vi.fn(), get: vi.fn() }));
 
 vi.mock('@inertiajs/react', () => ({
     usePage,
-    router: { reload },
+    router: { reload, get },
     Head: () => null,
 }));
 
@@ -60,10 +60,17 @@ function catalog(overrides: Partial<CatalogView> = {}): CatalogView {
     };
 }
 
+const NO_FILTERS: CatalogFilters = { q: null, category: null, tags: [], sort: null, ignored: false };
+
+/** Las facetas de un catálogo con esos productos: sin productos, sin facetas. */
+function facetsFor(products: ProductCard[]): CatalogFacets {
+    return { categories: products.length > 0 ? [{ slug: 'herramientas', name: 'Herramientas', count: products.length }] : [], tags: [] };
+}
+
 function renderPage(rate: RateView, products: ProductCard[] = [card()], nextCursor: string | null = null, view = catalog()) {
     usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate } } });
 
-    return render(<CatalogShow catalog={view} products={{ data: products, nextCursor }} />);
+    return render(<CatalogShow catalog={view} products={{ data: products, nextCursor }} filters={NO_FILTERS} facets={facetsFor(products)} />);
 }
 
 beforeEach(() => {
@@ -153,7 +160,7 @@ it('ofrece cargar más solo si queda', () => {
     const { rerender } = renderPage(BCV, [card()], 'abc');
     expect(screen.getByRole('button', { name: 'Cargar más' })).toBeInTheDocument();
 
-    rerender(<CatalogShow catalog={catalog()} products={{ data: [card()], nextCursor: null }} />);
+    rerender(<CatalogShow catalog={catalog()} products={{ data: [card()], nextCursor: null }} filters={NO_FILTERS} facets={facetsFor([card()])} />);
     expect(screen.queryByRole('button', { name: 'Cargar más' })).toBeNull();
 });
 
@@ -163,6 +170,8 @@ it('sin productos enseña el estado vacío que invita a escribir al negocio', ()
 
     expect(container.textContent).toContain('no tiene productos disponibles');
     expect(container.textContent).toContain('escríbele a Ferretería Oriente');
+    // Sin nada que buscar, ni buscador ni panel.
+    expect(screen.queryByRole('searchbox')).toBeNull();
 });
 
 it('marca el producto agotado', () => {
