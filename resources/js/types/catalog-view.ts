@@ -1,6 +1,7 @@
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type MoneyView } from '@/types/money';
-import { type ImageSet } from '@/types/product';
+import { type PaymentAccountView } from '@/types/payment';
+import { type ImageSet, type SpecificationGroupView } from '@/types/product';
 
 /**
  * La cara pública del catálogo (`REQ-CAT-021`).
@@ -60,6 +61,50 @@ export interface ProductCard {
     /** Si queda alguna unidad; la cifra no viaja (RB-7). */
     readonly inStock: boolean;
     readonly catalogSlug: string;
+}
+
+/**
+ * El producto en su ficha (contrato `ProductDetail` del módulo [11],
+ * `REQ-CAT-003`), espejo de `ProductDetailResource`.
+ *
+ * Extiende la card con los mismos importes calculados igual —la cuota la
+ * reparte `FinancingPlan` en el servidor, y aquí no llega nada con lo que
+ * dividir—. Dos diferencias con el contrato, escritas bajo `REQ-CAT-003`:
+ *
+ *  - **sin `business`**: la identidad del negocio es la del catálogo y viaja
+ *    en `catalog.business`; dos copias del mismo dato pueden discrepar;
+ *  - **`installmentAmount` puede ser `null`**: solo si las condiciones de pago
+ *    no dan un plan (SP-7), y entonces `canBeReserved` es `false` y
+ *    `unavailableReason` lo explica.
+ */
+export interface ProductDetail extends Omit<ProductCard, 'image' | 'installmentAmount'> {
+    readonly installmentAmount: MoneyView | null;
+    readonly description: string;
+    readonly sku: string;
+    /** Todas las fotos, en el orden del negocio; vacía, y la página pinta la inicial (SP-4). */
+    readonly images: readonly ImageSet[];
+    /** Vacía, y la sección no se pinta (SP-5). */
+    readonly specificationGroups: readonly SpecificationGroupView[];
+    /** `min(stock, 10)` (RB-10): el tope del formulario de apartado. */
+    readonly maxQuantity: number;
+    /** Solo las activas (RB-5); vacía, y la página manda a consultar al negocio (SP-6). */
+    readonly paymentAccounts: readonly PaymentAccountView[];
+    readonly canBeReserved: boolean;
+    /** El motivo escrito, ya para leer; `null` si se puede apartar. Nunca nombra el plan del negocio. */
+    readonly unavailableReason: string | null;
+}
+
+/**
+ * Las props de `catalog/ProductShow`.
+ *
+ * Sin `business` ni `rate`, que el contrato de [11] añadía: el negocio está en
+ * `catalog.business`, y la tasa viaja sola en cada respuesta
+ * (`CurrencyPageProps`), la misma con la que se proyectó cada importe.
+ */
+export interface ProductShowProps {
+    readonly catalog: CatalogView;
+    readonly product: ProductDetail;
+    readonly related: readonly ProductCard[];
 }
 
 /**

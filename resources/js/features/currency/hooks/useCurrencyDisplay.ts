@@ -1,7 +1,7 @@
 import { type CurrencyPageProps } from '@/types/exchange';
 import { type CurrencyDisplay } from '@/types/money';
 import { usePage } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Qué moneda va primero, y cómo se recuerda (`REQ-FX-004` RB-3, RB-4, RB-6).
@@ -13,6 +13,22 @@ import { useCallback, useState } from 'react';
  * Si se leyera aquí, la página abriría en dólares y saltaría a bolívares un
  * instante después **en cada visita** de todo el que eligiera bolívares, que
  * es el parpadeo que `ASU-FX-08` existe para evitar.
+ *
+ * Con una excepción que no parpadea: **la cookie que ya escribió este toggle**
+ * gana a la prop, leída de forma síncrona en el primer render. Es la primera
+ * regla de RB-5 —la que el servidor aplica igual— y hace falta en el cliente
+ * porque la prop puede estar vieja: una recarga parcial (`Cargar más`, un
+ * filtro) no trae las props compartidas, y las cards nuevas arrancarían con
+ * la moneda de la primera carga al lado de las que ya se cambiaron.
+ *
+ * ## Todas las cifras de la página cambian a la vez (`T-035`)
+ *
+ * Cada `MoneyLabel` tiene su instancia de este hook. Hasta `T-035` cada una
+ * guardaba su estado por separado, y el toggle solo cambiaba **el propio
+ * botón**: ningún importe se reproyectaba. Ahora el cambio se difunde con un
+ * evento de `window` a todas las instancias montadas, sin contexto que haya
+ * que acordarse de montar en cada layout y sin estado de módulo que viva entre
+ * tests.
  *
  * ## Se guarda en dos sitios, y ninguno es obligatorio
  *
@@ -60,6 +76,24 @@ function isCurrencyDisplay(value: unknown): value is CurrencyDisplay {
  * puede impedir que la cookie se escriba, porque la cookie es la que hace
  * correcto el primer render del servidor.
  */
+/** El evento con el que una instancia avisa a las demás de la moneda elegida. */
+export const CURRENCY_EVENT = 'apartar:currency-display';
+
+/**
+ * La cookie de este toggle, si es válida. Dentro de `try` por lo mismo que la
+ * escritura: un navegador que no deja leerla no puede romper la página.
+ */
+function rememberedCookie(): CurrencyDisplay | null {
+    try {
+        const match = document.cookie.match(new RegExp(`(?:^|; )${CURRENCY_COOKIE}=([^;]*)`));
+        const value = match?.[1];
+
+        return isCurrencyDisplay(value) ? value : null;
+    } catch {
+        return null;
+    }
+}
+
 function remember(display: CurrencyDisplay): void {
     try {
         window.localStorage.setItem(CURRENCY_STORAGE_KEY, display);
@@ -94,22 +128,34 @@ export interface CurrencyDisplayState {
 export function useCurrencyDisplay(): CurrencyDisplayState {
     const { currency } = usePage<{ currency: CurrencyPageProps }>().props;
 
-    const [display, setLocalDisplay] = useState<CurrencyDisplay>(isCurrencyDisplay(currency?.display) ? currency.display : 'usd_primary');
+    const [display, setLocalDisplay] = useState<CurrencyDisplay>(
+        () => rememberedCookie() ?? (isCurrencyDisplay(currency?.display) ? currency.display : 'usd_primary'),
+    );
+
+    // Lo que elija otra instancia —el toggle— lo aplica esta también.
+    useEffect(() => {
+        const follow = (event: Event) => {
+            const next: unknown = (event as CustomEvent<unknown>).detail;
+
+            if (isCurrencyDisplay(next)) {
+                setLocalDisplay(next);
+            }
+        };
+
+        window.addEventListener(CURRENCY_EVENT, follow);
+
+        return () => window.removeEventListener(CURRENCY_EVENT, follow);
+    }, []);
 
     const setDisplay = useCallback((next: CurrencyDisplay) => {
         setLocalDisplay(next);
         remember(next);
+        window.dispatchEvent(new CustomEvent(CURRENCY_EVENT, { detail: next }));
     }, []);
 
     const toggle = useCallback(() => {
-        setLocalDisplay((current) => {
-            const next: CurrencyDisplay = current === 'usd_primary' ? 'ves_primary' : 'usd_primary';
-
-            remember(next);
-
-            return next;
-        });
-    }, []);
+        setDisplay(display === 'usd_primary' ? 'ves_primary' : 'usd_primary');
+    }, [display, setDisplay]);
 
     return {
         display,

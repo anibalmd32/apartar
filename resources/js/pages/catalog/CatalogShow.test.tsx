@@ -1,6 +1,7 @@
 import { RATE_REFRESH_MS } from '@/features/catalog/hooks/useLiveRate';
 import { centsUsd } from '@/lib/money';
 import CatalogShow from '@/pages/catalog/CatalogShow';
+import { fakeRoute } from '@/test/fakes';
 import { type CatalogFacets, type CatalogFilters, type CatalogView, type ProductCard } from '@/types/catalog-view';
 import { type RateView } from '@/types/exchange';
 import { render, screen } from '@testing-library/react';
@@ -13,10 +14,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { usePage, reload, get } = vi.hoisted(() => ({ usePage: vi.fn(), reload: vi.fn(), get: vi.fn() }));
 
-vi.mock('@inertiajs/react', () => ({
+vi.mock('@inertiajs/react', async () => ({
     usePage,
     router: { reload, get },
     Head: () => null,
+    Link: (await import('@/test/fakes')).FakeLink,
 }));
 
 const BCV: RateView = { rate: 40, source: 'bcv', sourceLabel: 'BCV', publishedAt: '2026-09-18T09:00:00-04:00', isStale: false };
@@ -76,6 +78,7 @@ function renderPage(rate: RateView, products: ProductCard[] = [card()], nextCurs
 beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.stubGlobal('fetch', vi.fn());
+    vi.stubGlobal('route', fakeRoute);
 });
 
 afterEach(() => {
@@ -172,6 +175,13 @@ it('sin productos enseña el estado vacío que invita a escribir al negocio', ()
     expect(container.textContent).toContain('escríbele a Ferretería Oriente');
     // Sin nada que buscar, ni buscador ni panel.
     expect(screen.queryByRole('searchbox')).toBeNull();
+});
+
+/** `T-035` · la card lleva a la ficha, dentro de este catálogo. */
+it('enlaza cada card con su ficha en este catálogo', () => {
+    renderPage(BCV);
+
+    expect(screen.getByRole('link', { name: /Taladro percutor/ })).toHaveAttribute('href', '/c/ofertas/p/taladro');
 });
 
 it('marca el producto agotado', () => {

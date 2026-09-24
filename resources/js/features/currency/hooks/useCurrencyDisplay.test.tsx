@@ -171,3 +171,31 @@ describe('al cambiar de organización', () => {
         expect(document.cookie).toContain(`${CURRENCY_COOKIE}=ves_primary`);
     });
 });
+
+/**
+ * `T-035` · cada `MoneyLabel` tiene su instancia del hook, y el toggle tiene
+ * que moverlas todas: antes solo cambiaba el propio botón.
+ */
+describe('todas las cifras de la página', () => {
+    it('cambian a la vez cuando una instancia elige', () => {
+        pageWith('usd_primary');
+
+        const toggle = renderHook(() => useCurrencyDisplay());
+        const label = renderHook(() => useCurrencyDisplay());
+
+        act(() => toggle.result.current.toggle());
+
+        expect(label.result.current.display).toBe('ves_primary');
+    });
+
+    it('una instancia nueva sigue lo elegido aunque la prop sea de la primera carga', () => {
+        pageWith('usd_primary');
+        const first = renderHook(() => useCurrencyDisplay());
+        act(() => first.result.current.toggle());
+
+        // La recarga parcial de «Cargar más» no trae las props compartidas.
+        const late = renderHook(() => useCurrencyDisplay());
+
+        expect(late.result.current.display).toBe('ves_primary');
+    });
+});

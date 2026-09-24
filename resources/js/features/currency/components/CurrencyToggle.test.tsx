@@ -24,6 +24,9 @@ function pageWith(display: 'usd_primary' | 'ves_primary', rate: number | null): 
 
 beforeEach(() => {
     localStorage.clear();
+    // Desde `T-035` la cookie que escribe el toggle gana a la prop al montar:
+    // la que dejó el test anterior no puede decidir el siguiente.
+    document.cookie = 'currency_display=; path=/; max-age=0';
 });
 
 it('cambia la moneda al pulsarlo, sin recargar', () => {

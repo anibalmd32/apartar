@@ -6,8 +6,7 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Catalog\CatalogFilters;
-use App\Domain\Catalog\CatalogVisibility;
-use App\Domain\Catalog\ImageSet;
+use App\Domain\Catalog\PublicCatalogAccess;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CatalogViewResource;
@@ -22,7 +21,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * El enlace que un desconocido abre: la vista pública del catálogo
@@ -36,17 +34,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * las consultas de aquí escribe un `where organization_id`, y ninguna lo
  * necesita.
  *
- * ## Tres respuestas, y las decide `visibility()`
+ * ## Tres respuestas, y las decide `PublicCatalogAccess`
  *
- *  - `Draft` → `404`: nunca existió para el público, aunque se conozca el slug
- *    (SP-2). Una organización suspendida tiene sus catálogos despublicados, así
- *    que cae aquí sin rama propia (SP-5, `REQ-ORG-008` RB-2).
- *  - `Expired` → `410`: existió y terminó (SP-3). Ver `CatalogExpiredException`.
- *  - `Listed` y `Unlisted` → la página. `is_listed` **no** controla el acceso
- *    (`REQ-CAT-022` RB-3): solo si aparece en la vitrina.
- *
- * El `match` no lleva `default`: un quinto estado de visibilidad tiene que
- * decidir aquí su respuesta, no heredar una por descuido.
+ * `Draft` → `404` (SP-2, SP-5), `Expired` → `410` (SP-3), `Listed` y
+ * `Unlisted` → la página. Desde `T-035` es una clase y no un `match` aquí,
+ * porque la ficha de producto tiene que responder exactamente lo mismo, y
+ * antes de mirar su producto.
  *
  * ## Cuatro props, y quién pide cada una
  *
@@ -79,11 +72,7 @@ final class CatalogShowController extends Controller
      */
     public function __invoke(Request $request, Catalog $catalog): Response
     {
-        match ($catalog->visibility()) {
-            CatalogVisibility::Draft => throw (new ModelNotFoundException)->setModel(Catalog::class, [$catalog->slug]),
-            CatalogVisibility::Expired => throw CatalogExpiredException::of($catalog),
-            CatalogVisibility::Listed, CatalogVisibility::Unlisted => null,
-        };
+        PublicCatalogAccess::ensureOpen($catalog);
 
         // Cerradas, para que cada recarga parcial evalúe solo lo que pide, y
         // memorizadas, porque hay dos que se leen dos veces: las facetas, por
@@ -124,8 +113,7 @@ final class CatalogShowController extends Controller
      */
     private function catalogView(Catalog $catalog, Request $request): array
     {
-        return (new CatalogViewResource($catalog, $this->limits->plan(), $this->fallbackCover($catalog)))
-            ->resolve($request);
+        return CatalogViewResource::forVisitor($catalog, $this->limits->plan(), $this->products)->resolve($request);
     }
 
     /**
@@ -175,29 +163,6 @@ final class CatalogShowController extends Controller
             ),
             'nextCursor' => $page['nextCursor'],
         ];
-    }
-
-    /**
-     * La foto del primer producto visible en el orden curado, para el catálogo
-     * sin portada (`REQ-BOF-024` SP-9).
-     *
-     * Solo se consulta cuando hace falta: con portada propia no se toca.
-     */
-    private function fallbackCover(Catalog $catalog): ?ImageSet
-    {
-        if ($catalog->cover_path !== null && $catalog->cover_path !== '') {
-            return null;
-        }
-
-        $first = $this->products->visible($catalog)
-            ->with('media')
-            ->orderBy('catalog_position')
-            ->orderBy('products.id')
-            ->first();
-
-        $media = $first?->getFirstMedia(Product::IMAGES);
-
-        return $media instanceof Media ? ImageSet::of($media) : null;
     }
 
     /**

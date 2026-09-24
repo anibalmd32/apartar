@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Catalog\CatalogShowController;
+use App\Http\Controllers\Catalog\ProductShowController;
 use App\Support\CatalogShareLink;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +23,8 @@ use Illuminate\Support\Facades\Route;
 | `AssignVisitorId`, que [05 §7.2] monta en este grupo, llega con la
 | telemetría (`T-084`): hoy no hay nada que atribuir a ese identificador.
 |
-| Las que faltan —ficha, apartado, seguir, chat— entran con su tarea. Y
+| La ficha entra con `T-035`; las que faltan —apartado, seguir, chat— entran
+| con su tarea. Y
 | `/{organization:slug}`, cuando llegue con `T-036`, va **al final** del
 | archivo: es un comodín de un segmento y debe ceder ante toda ruta literal.
 */
@@ -31,4 +33,9 @@ Route::middleware('catalog-tenant')
     ->prefix(CatalogShareLink::PREFIX)
     ->group(function (): void {
         Route::get('{catalog:slug}', CatalogShowController::class)->name(CatalogShareLink::ROUTE);
+
+        // La ficha solo existe dentro de un catálogo (REQ-CAT-003 RB-1): el
+        // producto lo resuelve `Catalog::resolveChildRouteBinding()`, que mira
+        // antes el catálogo (SP-3) y después la pertenencia y el estado.
+        Route::get('{catalog:slug}/p/{product:slug}', ProductShowController::class)->name(CatalogShareLink::PRODUCT_ROUTE);
     });

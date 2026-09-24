@@ -1,8 +1,9 @@
 import { centsUsd } from '@/lib/money';
 import CatalogShow from '@/pages/catalog/CatalogShow';
+import { fakeRoute } from '@/test/fakes';
 import { type CatalogFacets, type CatalogFilters, type CatalogView, type ProductCard } from '@/types/catalog-view';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 /**
  * El panel de filtros, el buscador y los estados vacíos de la vista pública
@@ -11,7 +12,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const { usePage, reload, get } = vi.hoisted(() => ({ usePage: vi.fn(), reload: vi.fn(), get: vi.fn() }));
 
-vi.mock('@inertiajs/react', () => ({ usePage, router: { reload, get }, Head: () => null }));
+vi.mock('@inertiajs/react', async () => ({ usePage, router: { reload, get }, Head: () => null, Link: (await import('@/test/fakes')).FakeLink }));
 
 const NONE: CatalogFilters = { q: null, category: null, tags: [], sort: null, ignored: false };
 
@@ -61,7 +62,12 @@ beforeEach(() => {
     const rate = { rate: null, source: 'bcv', sourceLabel: 'BCV', publishedAt: null, isStale: false };
     usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate } } });
     window.history.replaceState(null, '', '/c/ofertas');
+    vi.stubGlobal('route', fakeRoute);
     get.mockClear();
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });
 
 it('ofrece las categorías y etiquetas presentes con su conteo, y marca lo aplicado', () => {

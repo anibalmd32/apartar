@@ -38,6 +38,13 @@ final class CatalogShareLink
     public const ROUTE = 'catalog.show';
 
     /**
+     * Nombre de la ruta de la ficha de producto, que solo existe dentro de un
+     * catálogo (`REQ-CAT-003` RB-1). La card de la parrilla la pide por este
+     * nombre con Ziggy, así que la forma de la URL se escribe una vez.
+     */
+    public const PRODUCT_ROUTE = 'catalog.product';
+
+    /**
      * El enlace que se copia y se difunde.
      */
     public static function of(string $slug): string

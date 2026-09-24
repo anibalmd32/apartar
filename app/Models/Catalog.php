@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Catalog\CatalogVisibility;
+use App\Domain\Catalog\PublicCatalogAccess;
 use App\Domain\Tenancy\BelongsToOrganization;
 use Database\Factories\CatalogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -144,5 +145,47 @@ class Catalog extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withPivot('position', 'created_at');
+    }
+
+    /**
+     * El `{product:slug}` de la ficha pública, resuelto **dentro de este
+     * catálogo** (`REQ-CAT-003` RB-1, SP-1 a SP-3, SP-9).
+     *
+     * Es el gancho de Laravel para un *binding* anidado con clave propia, y
+     * aquí hace tres cosas en este orden:
+     *
+     *  1. **el catálogo primero** (SP-3): borrador `404`, caducado `410`, antes
+     *     de consultar el producto. Lo que caducó es el enlace entero, exista o
+     *     no el producto de la URL;
+     *  2. **el producto por la relación**, así que uno publicado de otro
+     *     catálogo del mismo negocio no está (SP-1), y el de otra organización
+     *     tampoco, por el *global scope* de `products` (`REQ-ORG-002` RB-6);
+     *  3. **solo los publicados** (`scopePublished()`): un `draft`, un
+     *     archivado o uno programado no están (SP-2).
+     *
+     * Un *slug* que ya no existe (SP-9) cae con los demás: los cuatro motivos
+     * dan el mismo `404` y ninguno dice cuál fue. Decir «existe pero en
+     * borrador» le contaría a cualquiera con la URL que el negocio prepara
+     * algo, y distinguir «no está en este catálogo» de «no existe» permitiría
+     * recorrer los catálogos del vecino probando *slugs*.
+     *
+     * Cualquier otro hijo sigue el camino de Laravel.
+     *
+     * @param  string  $childType
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveChildRouteBinding($childType, $value, $field): ?Model
+    {
+        if ($childType !== 'product') {
+            return parent::resolveChildRouteBinding($childType, $value, $field);
+        }
+
+        PublicCatalogAccess::ensureOpen($this);
+
+        return $this->products()
+            ->published()
+            ->where((new Product)->qualifyColumn($field ?? 'slug'), $value)
+            ->first();
     }
 }

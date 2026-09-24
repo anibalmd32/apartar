@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { type ProductCard } from '@/types/catalog-view';
+import { Link } from '@inertiajs/react';
 
 /**
  * Un producto en la parrilla del catálogo (`REQ-CAT-021` RB-7).
@@ -11,11 +12,13 @@ import { type ProductCard } from '@/types/catalog-view';
  * ni guiones (`REQ-FX-005` RB-4), porque es `MoneyLabel` quien lo decide y no
  * esta card.
  *
- * ## Todavía no es un enlace
+ * ## Es un enlace a la ficha, dentro de este catálogo
  *
- * La ficha del producto es `T-035`. Una card que lleva a un `404` es peor que
- * una que todavía no lleva a ninguna parte, así que el enlace entra con la
- * página a la que apunta.
+ * Desde `T-035`: la card entera lleva a `/c/{catálogo}/p/{producto}`, que es
+ * la única ficha que existe (`REQ-CAT-003` RB-1). La URL la compone Ziggy con
+ * el nombre de la ruta y el `catalogSlug` que trae la card —«el catálogo en
+ * cuyo contexto se está mostrando»—, así que la forma de la URL solo está
+ * escrita en `routes/catalog.php`.
  *
  * La foto va con `loading="lazy"` (`REQ-CAT-005` RB-3): es una parrilla que se
  * abre desde un móvil con datos contados, y solo se descargan las que se ven.
@@ -31,43 +34,48 @@ function frequencyLabel(days: number): string {
 
 export function CatalogProductCard({ product }: CatalogProductCardProps) {
     return (
-        <article className="card bg-base-100 shadow-sm">
-            <figure className="bg-base-200 aspect-square">
-                {product.image !== null ? (
-                    <img src={product.image.card} alt={product.image.alt} loading="lazy" className="h-full w-full object-cover" />
-                ) : null}
-            </figure>
+        <Link
+            href={route('catalog.product', { catalog: product.catalogSlug, product: product.slug })}
+            className="rounded-box focus-visible:outline-primary block h-full focus-visible:outline-2"
+        >
+            <article className="card bg-base-100 h-full shadow-sm transition-shadow hover:shadow-md">
+                <figure className="bg-base-200 aspect-square">
+                    {product.image !== null ? (
+                        <img src={product.image.card} alt={product.image.alt} loading="lazy" className="h-full w-full object-cover" />
+                    ) : null}
+                </figure>
 
-            <div className="card-body gap-2 p-4">
-                <div className="flex items-start justify-between gap-2">
-                    <h2 className="card-title text-base leading-snug">{product.name}</h2>
-                    {!product.inStock ? <Badge tone="warning">Agotado</Badge> : null}
+                <div className="card-body gap-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                        <h2 className="card-title text-base leading-snug">{product.name}</h2>
+                        {!product.inStock ? <Badge tone="warning">Agotado</Badge> : null}
+                    </div>
+
+                    {product.categoryName !== '' ? <p className="text-xs opacity-60">{product.categoryName}</p> : null}
+
+                    <p>
+                        <MoneyLabel money={product.price} className="text-lg font-semibold" />
+                        {product.compareAtPrice !== null ? (
+                            <span className="ml-2 text-sm line-through opacity-60">
+                                <MoneyLabel money={product.compareAtPrice} />
+                            </span>
+                        ) : null}
+                    </p>
+
+                    <p className="text-sm">
+                        Inicial <MoneyLabel money={product.downPayment} className="font-medium" /> y {product.installmentsCount}{' '}
+                        {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de{' '}
+                        <MoneyLabel money={product.installmentAmount} className="font-medium" /> {frequencyLabel(product.frequencyDays)}
+                        {product.lastInstallmentAmount !== null ? (
+                            <>
+                                {' '}
+                                (la última, <MoneyLabel money={product.lastInstallmentAmount} />)
+                            </>
+                        ) : null}
+                        .
+                    </p>
                 </div>
-
-                {product.categoryName !== '' ? <p className="text-xs opacity-60">{product.categoryName}</p> : null}
-
-                <p>
-                    <MoneyLabel money={product.price} className="text-lg font-semibold" />
-                    {product.compareAtPrice !== null ? (
-                        <span className="ml-2 text-sm line-through opacity-60">
-                            <MoneyLabel money={product.compareAtPrice} />
-                        </span>
-                    ) : null}
-                </p>
-
-                <p className="text-sm">
-                    Inicial <MoneyLabel money={product.downPayment} className="font-medium" /> y {product.installmentsCount}{' '}
-                    {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de <MoneyLabel money={product.installmentAmount} className="font-medium" />{' '}
-                    {frequencyLabel(product.frequencyDays)}
-                    {product.lastInstallmentAmount !== null ? (
-                        <>
-                            {' '}
-                            (la última, <MoneyLabel money={product.lastInstallmentAmount} />)
-                        </>
-                    ) : null}
-                    .
-                </p>
-            </div>
-        </article>
+            </article>
+        </Link>
     );
 }

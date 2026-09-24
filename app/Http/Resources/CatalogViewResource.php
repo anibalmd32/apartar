@@ -10,10 +10,13 @@ use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationBrand;
 use App\Models\Catalog;
 use App\Models\Plan;
+use App\Models\Product;
+use App\Queries\CatalogProductsQuery;
 use App\Support\CatalogShareLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * El catálogo tal como lo ve quien abre su enlace: el contrato `CatalogView`
@@ -58,6 +61,43 @@ final class CatalogViewResource extends JsonResource
         private readonly ?ImageSet $fallbackCover,
     ) {
         parent::__construct($catalog);
+    }
+
+    /**
+     * El `CatalogView` que ve quien abre un enlace público, con la portada de
+     * respaldo ya buscada.
+     *
+     * Lo usan la vista del catálogo y la ficha de producto (`T-035`), y es
+     * **una** construcción para las dos: si cada página buscara la portada a
+     * su manera, el mismo catálogo tendría una cara en la parrilla y otra en
+     * la ficha.
+     */
+    public static function forVisitor(Catalog $catalog, Plan $plan, CatalogProductsQuery $products): self
+    {
+        return new self($catalog, $plan, self::fallbackCoverOf($catalog, $products));
+    }
+
+    /**
+     * La foto del primer producto visible en el orden curado, para el catálogo
+     * sin portada (`REQ-BOF-024` SP-9).
+     *
+     * Solo se consulta cuando hace falta: con portada propia no se toca.
+     */
+    private static function fallbackCoverOf(Catalog $catalog, CatalogProductsQuery $products): ?ImageSet
+    {
+        if ($catalog->cover_path !== null && $catalog->cover_path !== '') {
+            return null;
+        }
+
+        $first = $products->visible($catalog)
+            ->with('media')
+            ->orderBy('catalog_position')
+            ->orderBy('products.id')
+            ->first();
+
+        $media = $first?->getFirstMedia(Product::IMAGES);
+
+        return $media instanceof Media ? ImageSet::of($media) : null;
     }
 
     /**
