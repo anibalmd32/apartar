@@ -706,6 +706,11 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 **T-040 · Identidad: VOs y validación** · `B` · 3 pts · *Requisitos: `REQ-IDN-007`*
 `DocumentNumber`, `DocumentKind`, `PhoneNumber`, sus reglas y `identity-format.ts`.
 **Hecho cuando:** **12 variantes de escritura de cédula** → misma forma canónica; RIF con y sin prefijo con el `kind` correcto; **ceros a la izquierda preservados**; 6 variantes de teléfono → E.164; rechazos esperados.
+**Cerrada**, salvo «búsqueda normalizada encuentra al cliente», que necesita `CustomerDirectoryQuery` y es de `T-065` (`REQ-BOF-040`): la normalización está lista en `DocumentNumber::tryFromInput()` y `PhoneNumber::tryFromInput()`, y el test de que `12.345.678` y `V12345678` dan la misma clave ya existe. Lo que conviene no perder:
+- **Dos puertas.** `fromInput()` lanza con un mensaje para la persona (el formulario, el `422`); `tryFromInput()` devuelve `null` (la búsqueda, que degrada a `LIKE` en SP-6). La segunda delega en la primera, como `FinancingPlan::tryFrom()`, y la búsqueda de `T-065` **no** envuelve la primera en un `try`.
+- **El separador se lee con `/[\s.\p{Pd}]+/u`, no con `[ .-]`.** El espacio duro y la raya tipográfica llegan al copiar de un PDF o con el autocorrector, y una lista escrita a mano los rechaza; `\s` sin la `u` tampoco ve el espacio duro (medido).
+- **La cédula de más dígitos de la cuenta sugiere la `J`**: es el aspecto de un RIF escrito sin letra (SP-3), y el mensaje da la salida en vez de dejar a la persona probando.
+- **Decisión pendiente antes de `T-045`: los prefijos móviles `0422` y `0415`**, que existen y RB-4 no lista. Ver la nota bajo `REQ-IDN-007` en [10](10-identidad-y-autenticacion.md).
 
 **T-041 · Dominio del cronograma** · `B` · 3 pts · *Requisitos: `REQ-LAY-004`*
 `LayawayTerms`, `ScheduledInstallment`, `AmortizationSchedule`, `ScheduleGenerator`, `InvalidScheduleException`.

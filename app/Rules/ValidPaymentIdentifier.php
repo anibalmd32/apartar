@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Domain\Payment\PaymentMethod;
+use App\Support\PhoneNumber;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
@@ -51,9 +52,6 @@ use Illuminate\Translation\PotentiallyTranslatedString;
  */
 final readonly class ValidPaymentIdentifier implements ValidationRule
 {
-    /** Prefijos de operadora móvil venezolana, sin el cero inicial. */
-    private const MOBILE_PREFIXES = ['412', '414', '416', '424', '426'];
-
     /** Dígitos de una cuenta bancaria nacional. */
     private const ACCOUNT_DIGITS = 20;
 
@@ -132,7 +130,7 @@ final readonly class ValidPaymentIdentifier implements ValidationRule
             return false;
         }
 
-        return in_array(substr($digits, 0, 3), self::MOBILE_PREFIXES, true);
+        return in_array(substr($digits, 0, 3), PhoneNumber::MOBILE_PREFIXES, true);
     }
 
     /**

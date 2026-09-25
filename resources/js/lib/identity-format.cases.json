@@ -1,0 +1,21 @@
+{
+    "$comment": "Tabla compartida de REQ-IDN-007: la recorren identity-format.test.ts (la máscara) y tests/Unit/Support/IdentityFormatCasesTest.php (DocumentNumber::formatted y PhoneNumber::formatted). Cada entrada es una escritura completa y válida y la presentación que las dos suites tienen que dar. Es lo que impide que la máscara y el servidor opinen distinto sobre qué letra es un RIF.",
+    "documents": [
+        { "input": "V12345678", "formatted": "V-12.345.678" },
+        { "input": "v-12.345.678", "formatted": "V-12.345.678" },
+        { "input": "E 84 123 456", "formatted": "E-84.123.456" },
+        { "input": "V-0012345", "formatted": "V-0.012.345" },
+        { "input": "V123456", "formatted": "V-123.456" },
+        { "input": "V123456789", "formatted": "V-123.456.789" },
+        { "input": "J-12345678-9", "formatted": "J-12345678-9" },
+        { "input": "j123456789", "formatted": "J-12345678-9" },
+        { "input": "G-20000123-4", "formatted": "G-20000123-4" },
+        { "input": "J12345678", "formatted": "J-12345678" },
+        { "input": "J1234567890", "formatted": "J-123456789-0" }
+    ],
+    "phones": [
+        { "input": "04141234567", "formatted": "0414-1234567" },
+        { "input": "0412-123.45.67", "formatted": "0412-1234567" },
+        { "input": "(0212) 555 1234", "formatted": "0212-5551234" }
+    ]
+}
