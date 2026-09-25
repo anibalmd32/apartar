@@ -78,10 +78,10 @@ final class UpsertCatalogAction
         Gate::forUser($actor)->authorize('manageProducts', $this->context->organization());
 
         if (! $catalog instanceof Catalog) {
-            return $this->create($data);
+            return $this->create($data, $actor);
         }
 
-        return $this->update($catalog, $data);
+        return $this->update($catalog->editedBy($actor), $data);
     }
 
     /**
@@ -91,17 +91,23 @@ final class UpsertCatalogAction
      * publicarlo es un paso aparte con sus seis requisitos delante. Un alta
      * que publicara de golpe se saltaría los seis.
      */
-    private function create(CatalogData $data): Catalog
+    private function create(CatalogData $data, User $actor): Catalog
     {
-        return $this->slugs->generate($data->slug ?? $data->name, fn (string $slug): Catalog => Catalog::query()->create([
-            'name' => $data->name,
-            'slug' => $slug,
-            'description' => $data->description,
-            'cover_path' => $data->cover instanceof UploadedFile ? $this->storeCover($data->cover) : null,
-            'is_listed' => true,
-            'published_at' => null,
-            'expires_at' => null,
-        ]));
+        return $this->slugs->generate($data->slug ?? $data->name, function (string $slug) use ($data, $actor): Catalog {
+            $catalog = (new Catalog)->editedBy($actor)->forceFill([
+                'name' => $data->name,
+                'slug' => $slug,
+                'description' => $data->description,
+                'cover_path' => $data->cover instanceof UploadedFile ? $this->storeCover($data->cover) : null,
+                'is_listed' => true,
+                'published_at' => null,
+                'expires_at' => null,
+            ]);
+
+            $catalog->save();
+
+            return $catalog;
+        });
     }
 
     /**

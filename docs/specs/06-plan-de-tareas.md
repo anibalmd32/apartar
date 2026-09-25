@@ -673,6 +673,18 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 `useServerTable`, `DataTable` (+ 4 subcomponentes), `ResolvesTableState`, `SortWhitelist`.
 **Hecho cuando:** `sort` no permitido cae al default; `perPage` fuera de lista cae a 25; `page` desbordada no da error; recarga parcial pide solo `rows` y `meta`; **URL compartida entre organizaciones muestra los datos de cada una**; ningún componente supera 200 líneas.
 
+**Cerrada.** `REQ-BOF-045` cerrado, y con él la mitad del autor de `REQ-BOF-020` SP-7 y `REQ-CAT-023` SP-4. Cinco cosas:
+
+**`Paginated<T>` es el de las tablas y `CursorPage<T>` el del cursor.** Estaba declarado dos veces con dos formas; la decisión está escrita en [32] junto al contrato, y [12] y [15] ya nombran `CursorPage`. Los filtros resueltos y los ignorados viajan **dentro de `meta`**, que es la única forma de que la recarga parcial siga pidiendo solo `rows` y `meta`.
+
+**La auditoría le dio dos requisitos al *concern*.** Una tabla **sin orden elegible** —el registro va siempre del más reciente al más antiguo— y los filtros **devueltos resueltos, no crudos**, que el audit ya hacía a mano. Los dos están en `ResolvesTableState` y `TableState::filter()`, y el audit ganó de paso el aviso de SP-4 que no tenía: un actor de otro negocio o una fecha ilegible ahora se ignoran **y se dicen**. Su página sigue siendo la suya, leyendo `rows` y `meta`; no se pasó a `DataTable` porque no lo pedía la tarea.
+
+**`updated_by` cuenta la historia de `updated_at` porque lo decide el modelo** (`RecordsLastEditor`): la acción declara `editedBy($actor)` y el autor solo se escribe si el guardado escribe algo, así que repetir un paso ya aplicado no mueve ni la fecha ni el autor. Componer usa `touchedBy()`, que asigna siempre: con la fecha en segundos, tocar en el mismo segundo que la última escritura no tenía nada que guardar y el autor se perdía — lo encontró el test del listado de catálogos. El `UPDATE` masivo de la reasignación de categoría lo escribe a mano, porque ahí no hay eventos. Un caso por escritor en `LastEditorTest`.
+
+**Los resolutores entregan al binding la fila que ya leyeron** y la guarda de orden de middlewares sigue mirando el parámetro al entrar. `TenantResolver::publicCatalog()` hidrata el catálogo de la misma lectura por slug y le deja la organización cargada; `TenantResolverQueriesTest` fija una lectura de cada tabla por petición en las tres superficies, que es lo que el resolutor del portal de H3 tiene que copiar.
+
+**El inventario suma el filtro por etiqueta**, que `REQ-BOF-019` RB-9 pedía y el listado de `T-027` no tenía, y valida categoría y etiqueta contra el tenant: la del vecino se ignora y se avisa como una borrada, sin distinguirlas.
+
 **Cierre de H2:** el enlace de un catálogo funciona de punta a punta · 19 requisitos cerrados.
 
 ---

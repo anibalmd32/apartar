@@ -71,6 +71,16 @@ export default function CatalogsIndex({ catalogs }: CatalogsPageProps) {
                                         difundirlo. */}
                                     <span className="font-mono text-xs break-all opacity-70">{catalog.shareUrl}</span>
 
+                                    {/* `REQ-CAT-023` SP-4 · la última
+                                        modificación con su autor, que incluye
+                                        la composición (`T-031`, `T-038`). */}
+                                    {catalog.updatedAt !== null ? (
+                                        <span className="text-xs opacity-70">
+                                            Modificado {catalog.updatedAt}
+                                            {catalog.updatedBy !== null ? ` · ${catalog.updatedBy}` : null}
+                                        </span>
+                                    ) : null}
+
                                     {catalog.expiresAt === null ? null : (
                                         <span className="text-xs opacity-70">
                                             {catalog.visibility === 'expired' ? 'Caducó el ' : 'Caduca el '}

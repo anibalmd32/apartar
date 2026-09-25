@@ -296,12 +296,11 @@ final class CatalogController extends Controller
         // `catalogRow()` publica `productsCount`, que en el listado lo pone el
         // `withCount`. Aquí hay que cargarlo: sin esto la cabecera diría cero
         // productos sobre un catálogo lleno, y el cero se lee como un dato.
-        $catalog->loadCount('products');
+        $catalog->loadCount('products')->load('editor:id,name');
 
         return $this->catalogRow($catalog) + [
             'description' => $catalog->description,
             'coverUrl' => $this->coverUrl($catalog),
-            'updatedAt' => $catalog->updated_at?->toIso8601String(),
         ];
     }
 
@@ -317,6 +316,7 @@ final class CatalogController extends Controller
     {
         return Catalog::query()
             ->withCount('products')
+            ->with('editor:id,name')
             ->orderByDesc('id')
             ->get()
             ->map(fn (Catalog $catalog): array => $this->catalogRow($catalog))
@@ -356,6 +356,15 @@ final class CatalogController extends Controller
             // motivo al lado. Quien manda sigue siendo la acción.
             'slugIsLocked' => $visibility !== CatalogVisibility::Draft,
             'productsCount' => (int) $catalog->getAttribute('products_count'),
+            // `REQ-CAT-023` SP-4 · la marca de última modificación con su
+            // autor. La fecha incluye la composición (`T-031` toca el catálogo
+            // al componer) y el autor cuenta lo mismo (`RecordsLastEditor`):
+            // quien añadió el último producto, no quien lo renombró. En la zona
+            // del negocio, como el resto de fechas del backoffice.
+            'updatedAt' => $catalog->updated_at
+                ?->setTimezone($this->context->organization()->timezone)
+                ->isoFormat('lll'),
+            'updatedBy' => $catalog->editor?->name,
         ];
     }
 

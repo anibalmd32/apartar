@@ -79,15 +79,21 @@ final class ReassignCategoryProductsAction
             return 0;
         }
 
-        return DB::transaction(function () use ($from, $to): int {
+        return DB::transaction(function () use ($from, $to, $actor): int {
             // **Un solo `UPDATE`** y no un recorrido con un `save()` por
             // producto: una categoría con cuatrocientos productos son
-            // cuatrocientas consultas, cuatrocientos `updated_at` movidos y
-            // una transacción abierta mientras tanto. Lo que la regla pide es
-            // que cambie la columna, no que cada producto se entere.
+            // cuatrocientas consultas y una transacción abierta mientras
+            // tanto. Lo que la regla pide es que cambie la columna, no que
+            // cada producto se entere.
+            //
+            // El `UPDATE` masivo de Eloquent mueve `updated_at` de todas las
+            // filas, así que mueve también su autor: sin esto, la marca de
+            // última modificación (`REQ-BOF-020` SP-7) enseñaría la fecha de
+            // la reasignación con el nombre de quien editó antes. Aquí no hay
+            // eventos de modelo que lo hagan solos.
             return Product::withTrashed()
                 ->where('category_id', $from->getKey())
-                ->update(['category_id' => $to->getKey()]);
+                ->update(['category_id' => $to->getKey(), 'updated_by' => $actor->getKey()]);
         });
     }
 }

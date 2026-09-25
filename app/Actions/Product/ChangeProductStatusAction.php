@@ -336,7 +336,7 @@ final class ChangeProductStatusAction
 
             $before = ['status' => $product->status->value] + $this->valuesOf($product, $columns);
 
-            $product->forceFill(['status' => $status] + $extra)->save();
+            $product->editedBy($actor)->forceFill(['status' => $status] + $extra)->save();
 
             $this->audit(
                 AuditEvent::ProductStatusChanged,

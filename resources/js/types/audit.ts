@@ -71,24 +71,14 @@ export interface AuditActorOption {
     readonly isActive: boolean;
 }
 
-/** Filtros aplicados, ya resueltos por el servidor. */
+/**
+ * Filtros aplicados, ya resueltos por el servidor, tal como vuelven a la query
+ * string (`meta.filters`, `REQ-BOF-045`). Uno que no se pudo aplicar vuelve a
+ * `null` y su clave aparece en `meta.ignoredFilters`.
+ */
 export interface AuditFilters {
     readonly event: string | null;
-    readonly actor: number | null;
+    readonly actor: string | null;
     readonly from: string | null;
     readonly to: string | null;
-}
-
-/**
- * Paginación por servidor (RB-9).
- *
- * El registro de un negocio con un año de operación son decenas de miles de
- * filas: traerlas para filtrar en el navegador sería mandar por la red justo lo
- * que más cuidado pide.
- */
-export interface AuditPageMeta {
-    readonly page: number;
-    readonly perPage: number;
-    readonly total: number;
-    readonly lastPage: number;
 }

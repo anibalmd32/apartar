@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Tenancy;
 
+use App\Models\Catalog;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -97,43 +98,61 @@ final class TenantResolver
     }
 
     /**
-     * Organización del catálogo público `/c/{slug}` (`REQ-CAT-021` RB-3).
+     * El catálogo público `/c/{slug}`, con su organización ya puesta
+     * (`REQ-CAT-021` RB-3).
      *
-     * ## Se lee la clave del tenant, y nada más
+     * ## La fila que da el tenant es la fila del binding
      *
      * El catálogo es la fuente del tenant, pero es también una tabla **del**
      * tenant: `Catalog::query()` sin organización fijada lanza, y es correcto
      * que lance. La salida no es `withoutTenantScope()` —cerrado a la lista de
-     * `REQ-QAX-008` RB-4b, y aquí no pinta nada— sino preguntar solo lo que
-     * hace falta para fijarlo: **qué organización tiene ese slug**. Una
-     * columna de una fila, por una clave que es única en toda la plataforma
-     * precisamente para esto: `catalogs.slug` es una de las tres excepciones
-     * de `GlobalUniqueExceptions`, las «claves que hay que poder resolver
-     * antes de saber en qué organización estamos».
+     * `REQ-QAX-008` RB-4b, y aquí no pinta nada— sino una lectura por la
+     * clave que es única en toda la plataforma precisamente para esto:
+     * `catalogs.slug` es una de las tres excepciones de
+     * `GlobalUniqueExceptions`, las «claves que hay que poder resolver antes de
+     * saber en qué organización estamos».
      *
-     * No es el `DB::table()` que filtra el tenant a mano y que
-     * `tenancy:audit` existe para que nadie escriba: aquí no sale ningún dato
-     * del catálogo. Todo lo demás —el propio catálogo, sus productos, su
-     * tasa— se consulta **después**, con la organización ya fijada y el
-     * global scope puesto, empezando por el *route binding* de
-     * `{catalog:slug}`.
+     * Hasta `T-038` esa lectura se quedaba solo con `organization_id` y el
+     * *binding* volvía a pedir la misma fila con el global scope puesto: dos
+     * consultas para una fila, y otra más para la organización cuando la
+     * página preguntaba `$catalog->organization`. La fila es **la misma** —el
+     * slug es único y la organización que se fija es la suya—, así que se lee
+     * una vez, se hidrata y se entrega con su relación ya cargada; el
+     * middleware la pone en el parámetro de la ruta y el *binding* la respeta.
+     * Lo que no cambia es el orden: el modelo **no sale de aquí** a nadie más
+     * que al middleware que fija su propio tenant antes de dejar pasar la
+     * petición.
+     *
+     * No es el `DB::table()` que filtra el tenant a mano y que `tenancy:audit`
+     * existe para que nadie escriba: no se filtra por ninguna organización, se
+     * **descubre** cuál es.
      *
      * Un slug que no existe da el mismo `404` que cualquier binding fallido
      * (`REQ-CAT-021` SP-1): no dice nada que la URL no dijera ya.
      *
      * @throws ModelNotFoundException<Organization>
      */
-    private function forCatalogSlug(string $slug): Organization
+    public function publicCatalog(string $slug): Catalog
     {
-        $organizationId = $slug === ''
-            ? null
-            : DB::table('catalogs')->where('slug', $slug)->value(TenantScope::COLUMN);
+        $row = $slug === '' ? null : DB::table('catalogs')->where('slug', $slug)->first();
+        $organizationId = $row === null ? null : ($row->{TenantScope::COLUMN} ?? null);
 
         if (! is_numeric($organizationId)) {
             throw (new ModelNotFoundException)->setModel(Organization::class, ['el catálogo público']);
         }
 
-        return $this->forOrganizationId((int) $organizationId);
+        $catalog = (new Catalog)->newFromBuilder((array) $row);
+        $catalog->setRelation('organization', $this->forOrganizationId((int) $organizationId));
+
+        return $catalog;
+    }
+
+    /**
+     * @throws ModelNotFoundException<Organization>
+     */
+    private function forCatalogSlug(string $slug): Organization
+    {
+        return $this->publicCatalog($slug)->organization;
     }
 
     /**

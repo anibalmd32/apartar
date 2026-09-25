@@ -1,5 +1,5 @@
 import { type CursorPages, useCursorPages } from '@/features/catalog/hooks/useCursorPages';
-import { type CatalogFilters, type CatalogSort, type Paginated } from '@/types/catalog-view';
+import { type CatalogFilters, type CatalogSort, type CursorPage } from '@/types/catalog-view';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -84,7 +84,7 @@ function queryOf(selection: Selection): Record<string, string | string[]> {
  * @param products el lote de la parrilla que llega en las props
  * @param filters los filtros aplicados que llegan en las props
  */
-export function useCatalogFilters<T>(products: Paginated<T>, filters: CatalogFilters): CatalogFilterControls<T> {
+export function useCatalogFilters<T>(products: CursorPage<T>, filters: CatalogFilters): CatalogFilterControls<T> {
     const pages = useCursorPages(products, 'products');
     const [query, setQueryText] = useState(filters.q ?? '');
     const typed = useRef(filters.q ?? '');

@@ -78,10 +78,15 @@ final readonly class ResolveCatalogTenant implements DeclaresTenantSurface
 
         // Un slug que no existe lanza `ModelNotFoundException`, que es el
         // `404` de SP-1 sin rama propia: el mismo que daría el binding.
-        $organization = $this->resolver->resolve(self::surface(), $slug)
-            ?? throw new LogicException('La superficie pública exige tenant y TenantResolver no devolvió ninguno.');
+        $catalog = $this->resolver->publicCatalog($slug);
 
-        $this->context->setOrganization($organization);
+        $this->context->setOrganization($catalog->organization);
+
+        // La fila que dio el tenant **es** la del binding (`T-038`): se deja en
+        // el parámetro y `SubstituteBindings`, que salta los parámetros que ya
+        // son un modelo, no la vuelve a pedir. La guarda de arriba no cambia:
+        // mira el parámetro al entrar, antes de este punto.
+        $request->route()?->setParameter(self::PARAMETER, $catalog);
 
         return $next($request);
     }

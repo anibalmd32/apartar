@@ -114,13 +114,16 @@ final class UpsertProductAction
                 'slug' => $this->resolveSlug($data, $product),
             ];
 
+            // `editedBy()` · la marca de última modificación con su autor
+            // (SP-7), que solo cambia si el guardado escribe algo.
             if ($product instanceof Product) {
-                $product->forceFill($attributes)->save();
+                $product->editedBy($actor)->forceFill($attributes)->save();
             } else {
                 // Nace en borrador (`REQ-CAT-007` happy path): publicarlo es
                 // una transición explícita con su lista de requisitos, y un
                 // alta que entregara el producto publicado escondería ese paso.
-                $product = Product::query()->create($attributes + ['status' => ProductStatus::Draft]);
+                $product = (new Product)->editedBy($actor)->forceFill($attributes + ['status' => ProductStatus::Draft]);
+                $product->save();
             }
 
             // `sync` y no `attach`: la lista que llega es la lista completa, y

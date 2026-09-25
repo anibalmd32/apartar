@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Catalog\PublicCatalogAccess;
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\RecordsLastEditor;
 use Database\Factories\CatalogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,11 +40,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property bool $is_listed aparece en la vitrina del negocio; no controla el acceso
  * @property \Illuminate\Support\Carbon|null $published_at nulo = borrador
  * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $updated_at incluye la composición (`T-031`)
+ * @property int|null $updated_by quién lo modificó por última vez (`REQ-CAT-023` SP-4); ver `RecordsLastEditor`
  */
 class Catalog extends Model
 {
     /** @use HasFactory<CatalogFactory> */
-    use BelongsToOrganization, HasFactory;
+    use BelongsToOrganization, HasFactory, RecordsLastEditor;
 
     /**
      * `organization_id` queda fuera: lo rellena el trait (`REQ-ORG-002` RB-2).

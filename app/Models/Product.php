@@ -10,6 +10,7 @@ use App\Domain\Catalog\ProductStatus;
 use App\Domain\Catalog\SearchMode;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\RecordsLastEditor;
 use App\Rules\RealMimeType;
 use App\Support\FullTextTerm;
 use Database\Factories\ProductFactory;
@@ -64,11 +65,13 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property ProductStatus $status
  * @property \Illuminate\Support\Carbon|null $published_at futuro = publicación programada (RB-5)
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $updated_by quién lo modificó por última vez (`REQ-BOF-020` SP-7); ver `RecordsLastEditor`
  */
 class Product extends Model implements HasMedia
 {
     /** @use HasFactory<ProductFactory> */
-    use BelongsToOrganization, HasFactory, InteractsWithMedia, SoftDeletes;
+    use BelongsToOrganization, HasFactory, InteractsWithMedia, RecordsLastEditor, SoftDeletes;
 
     /** La única colección de medios del producto: sus fotos. */
     public const IMAGES = 'images';

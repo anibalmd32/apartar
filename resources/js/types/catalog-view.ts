@@ -114,8 +114,14 @@ export interface ProductShowProps {
  * SP-7 prohíbe, y lo único que la pantalla necesita saber es si hay más.
  * `nextCursor` es opaco —lo compone y lo valida el servidor— y `null` quiere
  * decir que no queda nada que cargar.
+ *
+ * **Se llamó `Paginated<T>` hasta `T-038`**, y ese nombre es ahora el de las
+ * tablas del backoffice (`REQ-BOF-045`, `types/data-table.ts`), que tienen
+ * página, total y orden. Dos formas con el mismo nombre en dos ficheros eran
+ * un import equivocado esperando a pasar el compilador por casualidad; con dos
+ * nombres, pasar una por la otra es un error de tipos.
  */
-export interface Paginated<T> {
+export interface CursorPage<T> {
     readonly data: readonly T[];
     readonly nextCursor: string | null;
 }
@@ -160,7 +166,7 @@ export interface CatalogFacets {
 /** Las props de `catalog/CatalogShow`. */
 export interface CatalogShowProps {
     readonly catalog: CatalogView;
-    readonly products: Paginated<ProductCard>;
+    readonly products: CursorPage<ProductCard>;
     readonly filters: CatalogFilters;
     readonly facets: CatalogFacets;
 }

@@ -1,5 +1,5 @@
 import { FILTER_PROPS, SEARCH_DEBOUNCE_MS, useCatalogFilters } from '@/features/catalog/hooks/useCatalogFilters';
-import { type CatalogFilters, type Paginated } from '@/types/catalog-view';
+import { type CatalogFilters, type CursorPage } from '@/types/catalog-view';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
@@ -14,11 +14,11 @@ vi.mock('@inertiajs/react', () => ({ router: { get, reload } }));
 
 const NONE: CatalogFilters = { q: null, category: null, tags: [], sort: null, ignored: false };
 
-function page(data: string[], nextCursor: string | null = null): Paginated<string> {
+function page(data: string[], nextCursor: string | null = null): CursorPage<string> {
     return { data, nextCursor };
 }
 
-function hook(filters: CatalogFilters = NONE, products: Paginated<string> = page(['a'], 'cursor-del-lote-2')) {
+function hook(filters: CatalogFilters = NONE, products: CursorPage<string> = page(['a'], 'cursor-del-lote-2')) {
     return renderHook(({ current, applied }) => useCatalogFilters(current, applied), { initialProps: { current: products, applied: filters } });
 }
 

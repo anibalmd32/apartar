@@ -208,7 +208,7 @@ export interface FeedItem {
 > Como comprador, quiero ver en un solo lugar lo nuevo de los negocios que sigo, para descubrir qué puedo apartar sin revisar enlaces uno por uno.
 
 **Contratos de datos**
-- Ruta `GET /mi-cuenta/novedades`. Props `{ items: Paginated<FeedItem>, subscriptions: SubscriptionRow[], filters }`.
+- Ruta `GET /mi-cuenta/novedades`. Props `{ items: CursorPage<FeedItem>, subscriptions: SubscriptionRow[], filters }`.
 - `FeedQuery::forAccount(Account $account, FeedFilters $filters): CursorPaginator`.
 - Tipos `FeedItem`, `FeedFilters` (`catalogSlug?`, `q?`).
 
@@ -248,7 +248,7 @@ export interface FeedItem {
 
 **Gate de validación**
 - Superficie esperada: `app/Domain/Account/FeedQuery.php`, `app/Http/Controllers/Portal/FeedController.php`, `app/Http/Resources/FeedItemResource.php`, `resources/js/pages/portal/Feed.tsx`, `resources/js/features/account/components/FeedList.tsx`, `resources/js/features/account/hooks/useFeed.ts`.
-- Tipos esperados: `FeedQuery`, `FeedItem`, `FeedFilters`, `Paginated<FeedItem>`.
+- Tipos esperados: `FeedQuery`, `FeedItem`, `FeedFilters`, `CursorPage<FeedItem>`.
 - Anti-`SHALLOW`: `FeedQuery::forAccount()` (acotado por catálogos seguidos, deduplicación por organización, orden cronológico, filtros, cursor) supera 4 líneas junto a `FeedFilters`.
 - Tests: solo aparecen productos de catálogos seguidos (test de fuga: un producto de un catálogo no seguido nunca aparece); deduplicación dentro de una organización y no entre organizaciones; `isNew` en el límite de 14 días; sin suscripciones muestra el vacío correcto; despublicar saca el producto; proyección con la fuente de tasa de cada organización; sesión acotada no accede; sin `count(*)` en la paginación.
 

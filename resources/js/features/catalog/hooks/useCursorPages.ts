@@ -1,4 +1,4 @@
-import { type Paginated } from '@/types/catalog-view';
+import { type CursorPage } from '@/types/catalog-view';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -35,7 +35,7 @@ export interface CursorPages<T> {
  * @param page el lote que llega en las props
  * @param prop el nombre de esa prop, que es lo único que se recarga
  */
-export function useCursorPages<T>(page: Paginated<T>, prop: string): CursorPages<T> {
+export function useCursorPages<T>(page: CursorPage<T>, prop: string): CursorPages<T> {
     const [items, setItems] = useState<readonly T[]>(page.data);
     const [loading, setLoading] = useState(false);
     const appending = useRef(false);

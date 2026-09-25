@@ -67,10 +67,15 @@ final readonly class ResolveStorefrontTenant implements DeclaresTenantSurface
             ));
         }
 
-        $organization = $this->resolver->resolve(self::surface(), $slug)
-            ?? throw new LogicException('La vitrina exige tenant y TenantResolver no devolvió ninguno.');
+        $organization = $this->resolver->forOrganizationSlug($slug);
 
         $this->context->setOrganization($organization);
+
+        // La organización que fija el tenant **es** la del binding (`T-038`):
+        // se deja en el parámetro y `SubstituteBindings` no la vuelve a pedir.
+        // La guarda de arriba mira el parámetro al entrar, así que sigue
+        // detectando un reordenado de los middlewares.
+        $request->route()?->setParameter(self::PARAMETER, $organization);
 
         return $next($request);
     }

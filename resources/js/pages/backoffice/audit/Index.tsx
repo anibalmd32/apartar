@@ -1,7 +1,9 @@
+import { Alert } from '@/components/ui/alert';
 import { AuditEntryRow } from '@/features/tenancy/components/AuditEntryRow';
 import { AuditFilters } from '@/features/tenancy/components/AuditFilters';
 import BackofficeLayout from '@/layouts/backoffice-layout';
-import { type AuditActorOption, type AuditEntry, type AuditEventGroup, type AuditPageMeta, type AuditFilters as Filters } from '@/types/audit';
+import { type AuditActorOption, type AuditEntry, type AuditEventGroup, type AuditFilters as Filters } from '@/types/audit';
+import { type Paginated } from '@/types/data-table';
 import { router } from '@inertiajs/react';
 
 /**
@@ -21,16 +23,15 @@ import { router } from '@inertiajs/react';
  * cuando la respuesta hay que enseñársela a alguien.
  */
 
-interface AuditPageProps {
-    entries: AuditEntry[];
-    meta: AuditPageMeta;
-    filters: Filters;
+interface AuditPageProps extends Paginated<AuditEntry> {
     events: AuditEventGroup[];
     actors: AuditActorOption[];
     timezone: string;
 }
 
-export default function AuditIndex({ entries, meta, filters, events, actors, timezone }: AuditPageProps) {
+export default function AuditIndex({ rows: entries, meta, events, actors, timezone }: AuditPageProps) {
+    const filters = meta.filters as unknown as Filters;
+
     const goToPage = (page: number) =>
         router.get('/backoffice/auditoria', { ...cleanFilters(filters), page }, { preserveState: false, preserveScroll: true });
 
@@ -44,6 +45,10 @@ export default function AuditIndex({ entries, meta, filters, events, actors, tim
                     <h2 className="card-title text-base">Filtrar</h2>
 
                     <AuditFilters filters={filters} events={events} actors={actors} />
+
+                    {meta.ignoredFilters.length > 0 ? (
+                        <Alert tone="info">Algún filtro del enlace no se pudo aplicar y se muestra el resto.</Alert>
+                    ) : null}
                 </div>
             </section>
 
@@ -81,7 +86,7 @@ export default function AuditIndex({ entries, meta, filters, events, actors, tim
                         </div>
                     )}
 
-                    {meta.lastPage > 1 ? (
+                    {(meta.lastPage ?? 1) > 1 ? (
                         <nav className="join self-center" aria-label="Paginación del registro">
                             <button type="button" className="join-item btn btn-sm" disabled={meta.page <= 1} onClick={() => goToPage(meta.page - 1)}>
                                 Anterior
@@ -91,12 +96,7 @@ export default function AuditIndex({ entries, meta, filters, events, actors, tim
                                 {meta.page} de {meta.lastPage}
                             </span>
 
-                            <button
-                                type="button"
-                                className="join-item btn btn-sm"
-                                disabled={meta.page >= meta.lastPage}
-                                onClick={() => goToPage(meta.page + 1)}
-                            >
+                            <button type="button" className="join-item btn btn-sm" disabled={!meta.hasMore} onClick={() => goToPage(meta.page + 1)}>
                                 Siguiente
                             </button>
                         </nav>

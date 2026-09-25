@@ -268,7 +268,7 @@ final class PublishCatalogAction
             // contador bloqueado dentro de esta misma transacción, que es lo
             // que impide que dos publicaciones simultáneas gasten un solo
             // hueco ([05 §5]).
-            $catalog->forceFill($attributes)->save();
+            $catalog->editedBy($actor)->forceFill($attributes)->save();
 
             $after = $this->snapshotOf($catalog);
 

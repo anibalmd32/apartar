@@ -213,12 +213,23 @@ export interface ProductListItem {
     readonly catalogsCount: number;
     /** Publicado con fecha futura: desde cuándo se verá, ya formateado (SP-5). */
     readonly scheduledFor: string | null;
+    /** La última modificación, ya formateada en la zona del negocio (SP-7). */
+    readonly updatedAt: string | null;
+    /** Quién la hizo; `null` en lo que se tocó antes de que existiera la columna. */
+    readonly updatedBy: string | null;
 }
 
-/** Los filtros del listado, tal como viajan en la URL (RB-9). */
+/**
+ * Los filtros del listado, tal como viajan en la URL (RB-9).
+ *
+ * Llegan en `meta.filters` **ya resueltos** por el servidor (`REQ-BOF-045`
+ * SP-4): uno que no se pudo aplicar vuelve a `null` y su clave aparece en
+ * `meta.ignoredFilters`.
+ */
 export interface ProductFilters {
-    readonly status: ProductStatus | null;
-    readonly category: number | null;
-    readonly lowStock: boolean;
-    readonly search: string | null;
+    readonly status: string | null;
+    readonly category: string | null;
+    readonly tag: string | null;
+    readonly low_stock: string | null;
+    readonly q: string | null;
 }

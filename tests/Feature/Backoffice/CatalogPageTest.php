@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Backoffice;
 
+use App\Actions\Catalog\CatalogData;
+use App\Actions\Catalog\SyncCatalogProductsAction;
+use App\Actions\Catalog\UpsertCatalogAction;
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Catalog;
@@ -320,6 +323,44 @@ final class CatalogPageTest extends TestCase
 
             return $catalog;
         });
+    }
+
+    /**
+     * `REQ-CAT-023` SP-4 · la marca de última modificación **con su autor**,
+     * en el listado y en la cabecera del formulario (`T-038`). Componer cuenta
+     * como modificar: quien añade un producto pasa a ser el autor.
+     */
+    public function test_the_listing_and_the_form_name_the_last_editor(): void
+    {
+        $owner = $this->owner();
+        $composer = $this->inTenant(fn (): User => User::factory()->owner()->create(['name' => 'Quien compuso']));
+
+        $catalog = $this->inTenant(function () use ($owner, $composer): Catalog {
+            // Las dos escrituras en el mismo segundo, a propósito: es el caso en
+            // que `touch()` no tiene nada que guardar y el autor se perdería.
+            $catalog = app(UpsertCatalogAction::class)->handle(
+                new CatalogData(name: 'Ofertas', slug: null, description: null, cover: null),
+                $owner,
+            );
+
+            app(SyncCatalogProductsAction::class)->handle($catalog, [(int) Product::factory()->create()->getKey()], $composer);
+
+            return $catalog;
+        });
+
+        $this->withoutOrganization();
+
+        $this->actingAs($owner)
+            ->get('/backoffice/catalogos')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('catalogs.0.updatedBy', 'Quien compuso')
+                ->where('catalogs.0.updatedAt', fn (mixed $at): bool => is_string($at) && $at !== ''));
+
+        $this->withoutOrganization();
+
+        $this->actingAs($owner)
+            ->get("/backoffice/catalogos/{$catalog->getKey()}/editar")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('catalog.updatedBy', 'Quien compuso'));
     }
 
     private function publishUrl(Catalog $catalog): string

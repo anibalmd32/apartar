@@ -7,10 +7,12 @@ namespace App\Http\Controllers\Backoffice;
 use App\Domain\Auditing\AuditArea;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Tenancy\TenantContext;
+use App\Http\Controllers\Concerns\ResolvesTableState;
 use App\Http\Controllers\Controller;
 use App\Models\AuditEntry;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Support\TableState;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -41,23 +43,32 @@ use Inertia\Response;
  */
 final class AuditLogController extends Controller
 {
-    /** Entradas por página. */
-    private const PER_PAGE = 25;
+    use ResolvesTableState;
 
     public function __construct(private readonly TenantContext $context) {}
 
+    /**
+     * El registro, paginado por `ResolvesTableState` (`REQ-BOF-045`).
+     *
+     * Fue la primera tabla paginada del proyecto y resolvía a mano su página y
+     * sus filtros; desde `T-038` usa el mismo *concern* que las demás, y la
+     * forma de sus props es la del contrato —`rows` y `meta`, con los filtros
+     * resueltos y los ignorados dentro de `meta`—. **No tiene orden elegible**:
+     * un registro se lee del más reciente al más antiguo, y ordenarlo por otra
+     * cosa convertiría «qué pasó el martes» en una búsqueda.
+     */
     public function index(Request $request): Response
     {
         $organization = $this->context->organization();
 
         Gate::forUser($request->user())->authorize('viewAuditLog', $organization);
 
-        $entries = $this->query($request)->paginate(self::PER_PAGE)->withQueryString();
+        $state = $this->tableState($request);
+        $entries = $this->paginateTable($this->query($request, $state), $state);
 
         return Inertia::render('backoffice/audit/Index', [
-            'entries' => $this->rows($entries),
-            'meta' => $this->meta($entries),
-            'filters' => $this->appliedFilters($request),
+            'rows' => $this->rows($entries),
+            'meta' => $this->tableMeta($entries, $state),
             'events' => $this->events(),
             'actors' => $this->actors(),
 
@@ -70,36 +81,58 @@ final class AuditLogController extends Controller
     }
 
     /**
-     * La consulta, con sus filtros aplicados.
+     * La consulta, con sus filtros aplicados y anotados en el estado.
      *
      * Sin un solo `where` de organización: el global scope de `AuditEntry` ya
      * filtra (`REQ-ORG-002` RB-1), que es lo que hace cierto SP-6 sin depender
-     * de que nadie se acuerde.
+     * de que nadie se acuerde. Un filtro que no se entiende —un evento que no
+     * es de la lista, un actor que no es del equipo, una fecha ilegible— se
+     * ignora **y se avisa** (`REQ-BOF-045` SP-4) en lugar de reventar: es un
+     * filtro, no un dato que se guarde.
      *
+     * @param  TableState<*>  $state
      * @return Builder<AuditEntry>
      */
-    private function query(Request $request): Builder
+    private function query(Request $request, TableState $state): Builder
     {
         $query = AuditEntry::query()->audited()->latest('created_at')->latest('id');
 
-        $event = AuditEvent::tryFrom((string) $request->string('event'));
+        $event = $state->filter('event', $request->query('event'), fn (mixed $raw): ?AuditEvent => is_string($raw) ? AuditEvent::tryFrom($raw) : null);
 
         if ($event instanceof AuditEvent) {
             $query->ofEvent($event);
         }
 
-        $actor = $request->integer('actor');
+        $actor = $state->filter('actor', $request->query('actor'), fn (mixed $raw): ?int => $this->teamMemberId($raw));
 
-        if ($actor > 0) {
+        if ($actor !== null) {
             // Por tipo **y** por identificador: sin el tipo, el `3` de un
             // `User` traería también lo que hiciera el `PlatformUser` número 3
             // el día que H8 exista.
             $query->where('causer_type', (new User)->getMorphClass())->where('causer_id', $actor);
         }
 
-        $this->applyDateRange($query, $request);
+        $this->applyDateRange($query, $request, $state);
 
         return $query;
+    }
+
+    /**
+     * El identificador si es de alguien del equipo, incluidos los
+     * desactivados; `null` si no.
+     *
+     * Con el global scope de `User` puesto: el miembro de otro negocio no
+     * existe aquí, y se ignora igual que uno inventado.
+     */
+    private function teamMemberId(mixed $raw): ?int
+    {
+        if (! is_string($raw) || ! ctype_digit($raw) || strlen($raw) > 18) {
+            return null;
+        }
+
+        $id = User::query()->whereKey((int) $raw)->value('id');
+
+        return is_numeric($id) ? (int) $id : null;
     }
 
     /**
@@ -111,18 +144,20 @@ final class AuditLogController extends Controller
      * se deja fuera el día entero.
      *
      * @param  Builder<AuditEntry>  $query
+     * @param  TableState<*>  $state
      */
-    private function applyDateRange(Builder $query, Request $request): void
+    private function applyDateRange(Builder $query, Request $request, TableState $state): void
     {
         $timezone = $this->context->organization()->timezone;
+        $asDate = fn (Carbon $date): string => $date->toDateString();
 
-        $from = $this->dateFrom($request, 'from');
+        $from = $state->filter('from', $request->query('from'), fn (mixed $raw): ?Carbon => $this->dateFrom($raw), $asDate);
 
         if ($from instanceof Carbon) {
             $query->where('created_at', '>=', $from->setTimezone($timezone)->startOfDay()->utc());
         }
 
-        $to = $this->dateFrom($request, 'to');
+        $to = $state->filter('to', $request->query('to'), fn (mixed $raw): ?Carbon => $this->dateFrom($raw), $asDate);
 
         if ($to instanceof Carbon) {
             $query->where('created_at', '<=', $to->setTimezone($timezone)->endOfDay()->utc());
@@ -130,11 +165,11 @@ final class AuditLogController extends Controller
     }
 
     /**
-     * Una fecha del `query string`, o `null` si no la hay o no se entiende.
+     * Una fecha del `query string`, o `null` si no se entiende.
      */
-    private function dateFrom(Request $request, string $key): ?Carbon
+    private function dateFrom(mixed $raw): ?Carbon
     {
-        $value = trim((string) $request->string($key));
+        $value = is_string($raw) ? trim($raw) : '';
 
         if ($value === '') {
             return null;
@@ -143,8 +178,6 @@ final class AuditLogController extends Controller
         try {
             return Carbon::parse($value);
         } catch (\Throwable) {
-            // Una fecha ilegible se ignora en lugar de reventar: es un filtro,
-            // no un dato que se guarde.
             return null;
         }
     }
@@ -158,10 +191,10 @@ final class AuditLogController extends Controller
      * con un `causer_type` que todavía no tiene modelo —el `PlatformUser` de
      * H8—, y por eso se resuelve con cuidado en vez de con un `->causer->name`.
      *
-     * @param  LengthAwarePaginator<int, AuditEntry>  $entries
+     * @param  Paginator<int, AuditEntry>  $entries
      * @return list<array<string, mixed>>
      */
-    private function rows(LengthAwarePaginator $entries): array
+    private function rows(Paginator $entries): array
     {
         $names = $this->teamMemberNames($entries->items());
 
@@ -251,41 +284,6 @@ final class AuditLogController extends Controller
         $event = AuditEvent::tryFrom((string) $entry->event);
 
         return $event instanceof AuditEvent ? $event->label() : (string) $entry->description;
-    }
-
-    /**
-     * @param  LengthAwarePaginator<int, AuditEntry>  $entries
-     * @return array<string, mixed>
-     */
-    private function meta(LengthAwarePaginator $entries): array
-    {
-        return [
-            'page' => $entries->currentPage(),
-            'perPage' => $entries->perPage(),
-            'total' => $entries->total(),
-            'lastPage' => $entries->lastPage(),
-        ];
-    }
-
-    /**
-     * Lo que el usuario pidió, para que el formulario se repinte con ello.
-     *
-     * Se devuelve el valor **ya resuelto** y no el crudo: un `event=inventado`
-     * vuelve vacío, que es lo que la lista está mostrando de verdad. Devolver
-     * el crudo dejaría el desplegable enseñando un filtro que no se aplicó.
-     *
-     * @return array<string, mixed>
-     */
-    private function appliedFilters(Request $request): array
-    {
-        $actor = $request->integer('actor');
-
-        return [
-            'event' => AuditEvent::tryFrom((string) $request->string('event'))?->value,
-            'actor' => $actor > 0 ? $actor : null,
-            'from' => $this->dateFrom($request, 'from')?->toDateString(),
-            'to' => $this->dateFrom($request, 'to')?->toDateString(),
-        ];
     }
 
     /**

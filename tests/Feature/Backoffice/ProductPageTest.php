@@ -62,10 +62,10 @@ final class ProductPageTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('backoffice/products/Index')
-                ->has('products', 1)
-                ->where('products.0.name', 'Taladro')
-                ->where('products.0.categoryName', 'Herramientas')
-                ->where('products.0.catalogsCount', 0)
+                ->has('rows', 1)
+                ->where('rows.0.name', 'Taladro')
+                ->where('rows.0.categoryName', 'Herramientas')
+                ->where('rows.0.catalogsCount', 0)
                 ->has('statuses', 3));
     }
 
@@ -83,11 +83,11 @@ final class ProductPageTest extends TestCase
 
         $this->actingAs($owner)
             ->get('/backoffice/productos?status=published')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('products', 1)->where('products.0.name', 'Taladro'));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('rows', 1)->where('rows.0.name', 'Taladro'));
 
         $this->actingAs($owner)
             ->get('/backoffice/productos?q=MAK')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('products', 1)->where('products.0.name', 'Sierra'));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('rows', 1)->where('rows.0.name', 'Sierra'));
     }
 
     /**
@@ -523,12 +523,12 @@ final class ProductPageTest extends TestCase
         $this->actingAs($this->owner())
             ->get('/backoffice/productos')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('products', 2)
+                ->has('rows', 2)
                 // El listado va por `id` descendente: el publicado entró después.
-                ->where('products.0.name', 'Publicado')
-                ->where('products.0.scheduledFor', null)
-                ->where('products.1.name', 'Programado')
-                ->where('products.1.scheduledFor', fn (mixed $date): bool => is_string($date) && $date !== ''));
+                ->where('rows.0.name', 'Publicado')
+                ->where('rows.0.scheduledFor', null)
+                ->where('rows.1.name', 'Programado')
+                ->where('rows.1.scheduledFor', fn (mixed $date): bool => is_string($date) && $date !== ''));
     }
 
     /**

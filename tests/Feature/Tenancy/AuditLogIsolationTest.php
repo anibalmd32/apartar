@@ -105,8 +105,8 @@ final class AuditLogIsolationTest extends TestCase
             ->get('/backoffice/auditoria')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('entries', 1)
-                ->where('entries.0.description', 'Ajuste mío'));
+                ->has('rows', 1)
+                ->where('rows.0.description', 'Ajuste mío'));
     }
 
     /**

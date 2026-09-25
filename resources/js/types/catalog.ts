@@ -61,6 +61,13 @@ export interface CatalogListItem {
     /** Tras la primera publicación el enlace es inmutable (RB-2, SP-5). */
     readonly slugIsLocked: boolean;
     readonly productsCount: number;
+    /**
+     * La última modificación, ya formateada en la zona del negocio
+     * (`REQ-CAT-023` SP-4). Incluye la composición: añadir un producto la mueve.
+     */
+    readonly updatedAt: string | null;
+    /** Quién la hizo; `null` en lo que se tocó antes de que existiera la columna (`T-038`). */
+    readonly updatedBy: string | null;
 }
 
 /**
@@ -69,7 +76,6 @@ export interface CatalogListItem {
 export interface CatalogFormValues extends CatalogListItem {
     readonly description: string | null;
     readonly coverUrl: string | null;
-    readonly updatedAt: string | null;
 }
 
 /**

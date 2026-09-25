@@ -84,7 +84,7 @@ final class UnpublishCatalogAction
                 'published_at' => $catalog->published_at?->toIso8601String(),
             ];
 
-            $catalog->forceFill(['published_at' => null])->save();
+            $catalog->editedBy($actor)->forceFill(['published_at' => null])->save();
 
             $this->audit(
                 AuditEvent::CatalogUnpublished,

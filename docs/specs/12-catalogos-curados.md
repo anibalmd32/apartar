@@ -51,7 +51,7 @@ export interface CatalogView {
 > Como cliente que recibió un enlace por WhatsApp, quiero abrirlo y explorar todo lo que ese negocio ofrece, con búsqueda y filtros, para elegir qué apartar sin registrarme.
 
 **Contratos de datos**
-- Ruta `GET /c/{catalog:slug}`. Props `{ catalog: CatalogView, products: Paginated<ProductCard>, filters, facets, business, rate }`.
+- Ruta `GET /c/{catalog:slug}`. Props `{ catalog: CatalogView, products: CursorPage<ProductCard>, filters, facets, business, rate }`.
 - Middleware `ResolveCatalogTenant`: **el catálogo es la fuente del tenant** en toda la superficie pública (`REQ-ORG-002` RB-4).
 - `CatalogShowController`, `CatalogFacetsQuery` (`REQ-CAT-006`).
 

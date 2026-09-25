@@ -151,11 +151,11 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 |---|---|---|---|
 | 18 | `categories` | `organization_id`, `name`, `slug`, `position` | `UNIQUE(organization_id, slug)`, `UNIQUE(organization_id, name)`, `INDEX(organization_id, position)` |
 | 19 | `tags` | `organization_id`, `name`, `slug` | `UNIQUE(organization_id, slug)`, `UNIQUE(organization_id, name)` |
-| 20 | `products` | `organization_id`, `category_id`, `sku`, `name`, `slug`, `description`, `price_cents`, `compare_at_price_cents?`, `down_payment_cents`, `installments_count`, `frequency_days`, `stock`, `status`, `published_at?`, `deleted_at?` | `UNIQUE(organization_id, sku)`, `UNIQUE(organization_id, slug)`, `INDEX(organization_id, status)`, `INDEX(organization_id, category_id)`, `FULLTEXT(name, description, sku)` |
+| 20 | `products` | `organization_id`, `category_id`, `sku`, `name`, `slug`, `description`, `price_cents`, `compare_at_price_cents?`, `down_payment_cents`, `installments_count`, `frequency_days`, `stock`, `status`, `published_at?`, `deleted_at?`, `updated_by?` | `UNIQUE(organization_id, sku)`, `UNIQUE(organization_id, slug)`, `INDEX(organization_id, status)`, `INDEX(organization_id, category_id)`, `FULLTEXT(name, description, sku)` |
 | 21 | `product_tag` | `product_id`, `tag_id` | `PRIMARY(product_id, tag_id)` |
 | 22 | `product_specifications` | `organization_id`, `product_id`, `group?`, `label`, `value`, `position` | `INDEX(product_id, position)` |
 | 23 | `media` | de `spatie/laravel-medialibrary` | — |
-| 24 | `catalogs` | `organization_id`, `name`, `slug`, `description?`, `cover_path?`, `is_listed`, `published_at?`, `expires_at?` | **`UNIQUE(slug)` global**, `INDEX(organization_id, published_at)` |
+| 24 | `catalogs` | `organization_id`, `name`, `slug`, `description?`, `cover_path?`, `is_listed`, `published_at?`, `expires_at?`, `updated_by?` | **`UNIQUE(slug)` global**, `INDEX(organization_id, published_at)` |
 | 25 | `catalog_product` | `catalog_id`, `product_id`, `position`, `created_at` | `PRIMARY(catalog_id, product_id)`, `INDEX(catalog_id, created_at)`, `INDEX(catalog_id, position)` |
 
 > `catalog_product.created_at` es **funcional, no metadato**: ordena el feed y define qué es novedad (`REQ-CAT-023` RB-3). No se toca al reordenar.

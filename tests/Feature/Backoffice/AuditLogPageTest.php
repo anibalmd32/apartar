@@ -60,7 +60,7 @@ final class AuditLogPageTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('backoffice/audit/Index')
-                ->has('entries', 3)
+                ->has('rows', 3)
                 ->has('events', 6)
                 ->where('events.3.area', 'organization')
                 ->where('meta.total', 3)
@@ -82,13 +82,13 @@ final class AuditLogPageTest extends TestCase
         $this->actingAs($owner)
             ->get('/backoffice/auditoria')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('entries', 25)
+                ->has('rows', 25)
                 ->where('meta.total', 30)
                 ->where('meta.lastPage', 2));
 
         $this->actingAs($owner)
             ->get('/backoffice/auditoria?page=2')
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('entries', 5)->where('meta.page', 2));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('rows', 5)->where('meta.page', 2));
     }
 
     public function test_the_type_filter_narrows_the_listing(): void
@@ -101,8 +101,8 @@ final class AuditLogPageTest extends TestCase
         $this->actingAs($owner)
             ->get('/backoffice/auditoria?event='.AuditEvent::IdentityUpdated->value)
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('entries', 1)
-                ->where('filters.event', AuditEvent::IdentityUpdated->value));
+                ->has('rows', 1)
+                ->where('meta.filters.event', AuditEvent::IdentityUpdated->value));
     }
 
     public function test_the_actor_filter_narrows_the_listing(): void
@@ -115,7 +115,7 @@ final class AuditLogPageTest extends TestCase
 
         $this->actingAs($owner)
             ->get('/backoffice/auditoria?actor='.$other->getKey())
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('entries', 3)->where('meta.total', 3));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('rows', 3)->where('meta.total', 3));
     }
 
     public function test_the_date_range_narrows_the_listing(): void
@@ -132,7 +132,7 @@ final class AuditLogPageTest extends TestCase
 
         $this->actingAs($owner)
             ->get('/backoffice/auditoria?from='.now()->subWeek()->toDateString())
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('entries', 2));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('rows', 2));
     }
 
     /**
@@ -151,9 +151,32 @@ final class AuditLogPageTest extends TestCase
             ->get('/backoffice/auditoria?event=no-existe&from=manzana')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('entries', 2)
-                ->where('filters.event', null)
-                ->where('filters.from', null));
+                ->has('rows', 2)
+                ->where('meta.filters.event', null)
+                ->where('meta.filters.from', null)
+                // `REQ-BOF-045` SP-4 · y se dice, desde que la auditoría usa
+                // `ResolvesTableState` (`T-038`).
+                ->where('meta.ignoredFilters', ['event', 'from']));
+    }
+
+    /**
+     * El actor tiene que ser del equipo: el de otro negocio no existe aquí, y
+     * se ignora igual que uno inventado.
+     */
+    public function test_an_actor_from_another_organization_is_ignored(): void
+    {
+        $owner = $this->owner();
+        $this->writeEntries($owner, 2);
+
+        $foreign = $this->withinOrganization($this->neighbourOrganization(), fn (): User => User::factory()->owner()->create());
+
+        $this->actingAs($owner)
+            ->get('/backoffice/auditoria?actor='.$foreign->getKey())
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('rows', 2)
+                ->where('meta.filters.actor', null)
+                ->where('meta.ignoredFilters', ['actor']));
     }
 
     /**

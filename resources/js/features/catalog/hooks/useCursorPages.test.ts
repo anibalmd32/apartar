@@ -1,5 +1,5 @@
 import { useCursorPages } from '@/features/catalog/hooks/useCursorPages';
-import { type Paginated } from '@/types/catalog-view';
+import { type CursorPage } from '@/types/catalog-view';
 import { act, renderHook } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
@@ -11,7 +11,7 @@ const { reload } = vi.hoisted(() => ({ reload: vi.fn() }));
 
 vi.mock('@inertiajs/react', () => ({ router: { reload } }));
 
-function page(data: string[], nextCursor: string | null): Paginated<string> {
+function page(data: string[], nextCursor: string | null): CursorPage<string> {
     return { data, nextCursor };
 }
 

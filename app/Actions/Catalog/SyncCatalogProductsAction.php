@@ -100,7 +100,7 @@ final class SyncCatalogProductsAction
     {
         Gate::forUser($actor)->authorize('manageProducts', $this->context->organization());
 
-        DB::transaction(function () use ($catalog, $productIds): void {
+        DB::transaction(function () use ($catalog, $productIds, $actor): void {
             $requested = $this->order->deduplicate($productIds);
 
             $this->assertEveryProductIsAddable($catalog, $requested);
@@ -117,8 +117,9 @@ final class SyncCatalogProductsAction
             // cuando dos personas componen el mismo catálogo. La composición
             // es del catálogo aunque viva en otra tabla, así que cambiarla lo
             // cambia a él; sin esto, la marca diría la fecha del último cambio
-            // de nombre.
-            $catalog->touch();
+            // de nombre. Y el autor es quien compuso, por lo mismo
+            // (`RecordsLastEditor`, `T-038`).
+            $catalog->touchedBy($actor);
         });
     }
 

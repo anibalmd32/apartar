@@ -133,12 +133,12 @@ export default function CatalogForm({ catalog, products, availableProducts, bloc
 
                         {/* `REQ-CAT-023` SP-4 · dos personas componiendo el
                             mismo catálogo: gana el último que guarde, y la
-                            marca es lo que permite darse cuenta. Quién fue es
-                            el hueco que sigue abierto, porque `catalogs` no
-                            tiene columna que lo registre. */}
+                            marca —con su autor desde `T-038`— es lo que
+                            permite darse cuenta. */}
                         {catalog?.updatedAt ? (
                             <p className="ml-auto self-center text-xs opacity-70">
-                                Última modificación: {new Date(catalog.updatedAt).toLocaleString('es-VE')}
+                                Última modificación: {catalog.updatedAt}
+                                {catalog.updatedBy !== null ? `, por ${catalog.updatedBy}` : null}
                             </p>
                         ) : null}
                     </div>

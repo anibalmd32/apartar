@@ -354,7 +354,23 @@ export interface ServerTableState {
   readonly sort: string | null;      // "due_date" | "-due_date"
   readonly filters: Readonly<Record<string, string | string[] | null>>;
 }
+
+/** Lo que la recarga parcial devuelve junto a las filas (RB-2). */
+export interface TableMeta extends ServerTableState {
+  readonly total: number | null;     // null en la paginación simple (RB-6): no se contó
+  readonly lastPage: number | null;
+  readonly hasMore: boolean;
+  readonly ignoredFilters: readonly string[]; // SP-4
+}
+
+/** Las page props de una tabla: las dos que pide la recarga parcial. */
+export interface Paginated<T> {
+  readonly rows: readonly T[];
+  readonly meta: TableMeta;
+}
 ```
+
+> **`Paginated<T>` es solo esto, y la cara pública no lo usa** (`T-038`). Hasta esta tarea el mismo nombre estaba declarado dos veces con dos formas: aquí, y en `resources/js/types/catalog-view.ts` como `{ data, nextCursor }` para el «Cargar más» del catálogo público (`REQ-CAT-021`) y del feed (`REQ-ACC-003`). Son dos paginaciones distintas —esta con página, orden y, en las tablas pequeñas, total; aquella por cursor, sin total ni número de página, porque en la superficie pública el `count(*)` está prohibido— y con el mismo nombre cualquier import equivocado compilaba. La del cursor **se llama `CursorPage<T>`** desde `T-038`, y los contratos de [12] y [15] lo dicen así. Los filtros aplicados viajan **resueltos** dentro de `meta.filters`, con el texto que vuelve a la query string, y no en una prop aparte: la recarga parcial pide `rows` y `meta` y nada más.
 
 **Reglas de negocio y precondiciones**
 - RB-1 `@tanstack/react-table` en **modo manual**: `manualPagination`, `manualSorting`, `manualFiltering`. El cliente **nunca** ordena ni filtra el conjunto completo.

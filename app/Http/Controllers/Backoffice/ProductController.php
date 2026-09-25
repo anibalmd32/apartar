@@ -9,11 +9,13 @@ use App\Actions\Product\UpsertProductAction;
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\IncompleteProductException;
+use App\Domain\Catalog\InventorySort;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Money\Money;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
+use App\Http\Controllers\Concerns\ResolvesTableState;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\PublishProductRequest;
 use App\Http\Requests\Backoffice\StoreProductImagesRequest;
@@ -27,7 +29,8 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Queries\SpecificationGroupsQuery;
 use App\Support\Settings;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use App\Support\TableState;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -57,11 +60,14 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * dónde vivir, y lo que hace que el cliente no pueda dividir por su cuenta: no
  * recibe las cuotas como número, las recibe como texto ya formateado.
  *
- * ## El listado es una lista, todavía
+ * ## El listado es una tabla server-driven
  *
- * Con sus filtros de RB-9 y su columna de en cuántos catálogos está cada
- * producto (`REQ-CAT-007` RB-6), pero sin la tabla genérica de
- * `REQ-BOF-045`: esa la trae `T-038`.
+ * Desde `T-038` (`REQ-BOF-045`): pagina, ordena y filtra **en el servidor**
+ * con `ResolvesTableState`, y ya no se trae el inventario entero en cada
+ * visita —un negocio de plan Business puede tener dos mil productos—. Lleva
+ * los filtros de RB-9 (estado, categoría, etiqueta, stock bajo y búsqueda),
+ * la columna de en cuántos catálogos está cada producto (`REQ-CAT-007` RB-6) y
+ * la marca de última modificación con su autor (SP-7).
  *
  * ## Y es donde se pulsan las cuatro transiciones
  *
@@ -80,7 +86,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 final class ProductController extends Controller
 {
-    use ProjectsMoney;
+    use ProjectsMoney, ResolvesTableState;
 
     /**
      * Existencias por debajo de las cuales el listado avisa (RB-9).
@@ -91,6 +97,12 @@ final class ProductController extends Controller
      */
     private const LOW_STOCK = 5;
 
+    /**
+     * Caracteres de la búsqueda que se usan; lo que pase se recorta sin error.
+     * Un SKU o un nombre no llegan ni a la mitad.
+     */
+    private const MAX_SEARCH = 100;
+
     public function __construct(
         private readonly TenantContext $context,
         private readonly Settings $settings,
@@ -98,17 +110,28 @@ final class ProductController extends Controller
     ) {}
 
     /**
-     * El listado con sus filtros (RB-9).
+     * El listado con sus filtros (RB-9), como tabla server-driven.
+     *
+     * `rows` y `meta` son lo único que pide la recarga parcial de la tabla
+     * (`REQ-BOF-045` RB-2), así que van cerrados y comparten una sola
+     * consulta: las opciones de los filtros no se vuelven a leer al cambiar de
+     * página.
      */
     public function index(Request $request): Response
     {
         $this->authorizeInventory($request);
 
+        $page = null;
+        $listing = function () use (&$page, $request): array {
+            return $page ??= $this->listing($request);
+        };
+
         return Inertia::render('backoffice/products/Index', [
-            'products' => $this->listing($request),
-            'filters' => $this->filters($request),
-            'categories' => $this->categories(),
-            'statuses' => $this->statuses(),
+            'rows' => fn (): array => $listing()['rows'],
+            'meta' => fn (): array => $listing()['meta'],
+            'categories' => fn (): array => $this->categories(),
+            'tags' => fn (): array => $this->tags(),
+            'statuses' => fn (): array => $this->statuses(),
         ]);
     }
 
@@ -481,83 +504,144 @@ final class ProductController extends Controller
     }
 
     /**
-     * El listado, ya filtrado (RB-9).
+     * Un lote del listado, ya filtrado y ordenado (RB-9, `REQ-BOF-045`).
      *
      * La consulta no lleva un solo `where` de organización: el global scope ya
-     * filtra (`REQ-ORG-002` RB-1). `withCount('catalogs')` es la columna de
-     * «en cuántos catálogos está», que es lo que permite al backoffice avisar
-     * de un producto publicado y en cero catálogos (`REQ-CAT-007` RB-6).
+     * filtra (`REQ-ORG-002` RB-1), y es lo que hace que la misma URL enseñe a
+     * cada equipo lo suyo (`REQ-BOF-045` SP-8). `withCount('catalogs')` es la
+     * columna de «en cuántos catálogos está» (`REQ-CAT-007` RB-6); `editor` es
+     * el autor de la última modificación (SP-7), cargado de una vez para la
+     * página y no fila a fila.
      *
-     * @return list<array<string, mixed>>
+     * Paginación **completa**: un inventario tiene techo —el del plan— y
+     * contarlo es barato; `REQ-BOF-045` RB-6 reserva la simple para las tablas
+     * que crecen sin él.
+     *
+     * @return array{rows: list<array<string, mixed>>, meta: array<string, mixed>}
      */
     private function listing(Request $request): array
     {
-        $filters = $this->filters($request);
+        $state = $this->tableState($request, InventorySort::whitelist(), InventorySort::Created, descendingByDefault: true);
 
-        $query = Product::query()->with('category')->withCount('catalogs');
+        $query = Product::query()->with(['category', 'editor:id,name'])->withCount('catalogs');
 
-        if ($filters['status'] !== null) {
-            $query->where('status', $filters['status']);
+        $this->applyFilters($query, $request, $state);
+
+        /** @var InventorySort $sort */
+        $sort = $state->sort;
+        $query->orderBy($sort->column(), $state->direction())->orderBy('products.id', $state->direction());
+
+        $page = $this->paginateTable($query, $state);
+
+        /** @var list<Product> $products */
+        $products = array_values($page->items());
+
+        return [
+            'rows' => array_map(fn (Product $product): array => $this->listRow($product), $products),
+            'meta' => $this->tableMeta($page, $state),
+        ];
+    }
+
+    /**
+     * Los cinco filtros de RB-9, cada uno resuelto contra lo que existe.
+     *
+     * Un valor que no se puede usar —un estado inventado, la categoría o la
+     * etiqueta de otra organización, un identificador que ya no existe— **se
+     * ignora y se avisa** (`REQ-BOF-045` SP-4). La categoría y la etiqueta se
+     * buscan con el global scope puesto, así que la de otro negocio no existe
+     * aquí y no se distingue de una borrada: distinguirlas confirmaría que la
+     * del vecino existe.
+     *
+     * @param  Builder<Product>  $query
+     * @param  TableState<InventorySort>  $state
+     */
+    private function applyFilters(Builder $query, Request $request, TableState $state): void
+    {
+        $status = $state->filter('status', $request->query('status'), fn (mixed $raw): ?ProductStatus => is_string($raw) ? ProductStatus::tryFrom($raw) : null);
+
+        if ($status instanceof ProductStatus) {
+            $query->where('products.status', $status);
         }
 
-        if ($filters['category'] !== null) {
-            $query->where('category_id', $filters['category']);
+        $category = $state->filter('category', $request->query('category'), fn (mixed $raw): ?int => $this->existingId(Category::query(), $raw));
+
+        if ($category !== null) {
+            $query->where('products.category_id', $category);
         }
 
-        if ($filters['lowStock']) {
-            $query->where('stock', '<=', self::LOW_STOCK);
+        $tag = $state->filter('tag', $request->query('tag'), fn (mixed $raw): ?int => $this->existingId(Tag::query(), $raw));
+
+        if ($tag !== null) {
+            $query->whereHas('tags', fn (Builder $tags): Builder => $tags->whereKey($tag));
         }
 
-        if ($filters['search'] !== null) {
+        $lowStock = $state->filter('low_stock', $request->query('low_stock'), fn (mixed $raw): ?bool => $raw === '1' ? true : null);
+
+        if ($lowStock === true) {
+            $query->where('products.stock', '<=', self::LOW_STOCK);
+        }
+
+        $search = $state->filter('q', $request->query('q'), fn (mixed $raw): ?string => is_string($raw) && trim($raw) !== ''
+            ? mb_substr(trim($raw), 0, self::MAX_SEARCH)
+            : null);
+
+        if (is_string($search)) {
             // La búsqueda del backoffice es por nombre y SKU (RB-9), con
             // `LIKE` y no con el `FULLTEXT` de la tabla: aquel está pensado
             // para la búsqueda del catálogo público, que ordena por relevancia
             // sobre textos largos (`REQ-CAT-002`). Aquí lo que se busca es un
-            // código que la persona ya conoce.
-            $search = $filters['search'];
+            // código que la persona ya conoce. Los comodines de `LIKE` que
+            // escriba se buscan como texto.
+            $like = '%'.addcslashes($search, '%_\\').'%';
 
-            $query->where(function (Builder $nested) use ($search): void {
-                $nested->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('sku', 'like', '%'.$search.'%');
+            $query->where(function (Builder $nested) use ($like): void {
+                $nested->where('products.name', 'like', $like)->orWhere('products.sku', 'like', $like);
             });
         }
-
-        return $query
-            ->orderByDesc('id')
-            ->get()
-            ->map(fn (Product $product): array => [
-                'id' => (int) $product->getKey(),
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'status' => $product->status->value,
-                'stock' => $product->stock,
-                'price' => $this->money($product->price_cents),
-                'categoryName' => $product->category?->name,
-                'catalogsCount' => (int) $product->getAttribute('catalogs_count'),
-                'scheduledFor' => $this->scheduledFor($product),
-            ])
-            ->values()
-            ->all();
     }
 
     /**
-     * Los filtros aplicados, tal como viajan en la URL (RB-9).
+     * El identificador si es de una fila de la organización activa, o `null`.
      *
-     * @return array{status: string|null, category: int|null, lowStock: bool, search: string|null}
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
      */
-    private function filters(Request $request): array
+    private function existingId(Builder $query, mixed $raw): ?int
     {
-        $status = $request->query('status');
-        $category = $request->query('category');
-        $search = $request->query('q');
+        if (! is_string($raw) || ! ctype_digit($raw) || strlen($raw) > 18) {
+            return null;
+        }
 
+        $id = $query->whereKey((int) $raw)->value('id');
+
+        return is_numeric($id) ? (int) $id : null;
+    }
+
+    /**
+     * Un producto tal como lo pinta la tabla.
+     *
+     * @return array<string, mixed>
+     */
+    private function listRow(Product $product): array
+    {
         return [
-            'status' => is_string($status) && ProductStatus::tryFrom($status) instanceof ProductStatus
-                ? $status
-                : null,
-            'category' => is_numeric($category) ? (int) $category : null,
-            'lowStock' => $request->boolean('low_stock'),
-            'search' => is_string($search) && trim($search) !== '' ? trim($search) : null,
+            'id' => (int) $product->getKey(),
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'status' => $product->status->value,
+            'stock' => $product->stock,
+            'price' => $this->money($product->price_cents),
+            'categoryName' => $product->category?->name,
+            'catalogsCount' => (int) $product->getAttribute('catalogs_count'),
+            'scheduledFor' => $this->scheduledFor($product),
+            // SP-7 · la marca de última modificación con su autor, en la zona
+            // del negocio. `updated_by` es nulo en lo que se tocó antes de que
+            // existiera la columna: la fecha se sabe y el autor no.
+            'updatedAt' => $product->updated_at
+                ?->setTimezone($this->context->organization()->timezone)
+                ->isoFormat('lll'),
+            'updatedBy' => $product->editor?->name,
         ];
     }
 

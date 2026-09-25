@@ -108,8 +108,8 @@ final class ProductIsolationTest extends TestCase
         $this->actingAs($this->owner())
             ->get('/backoffice/productos')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('products', 1)
-                ->where('products.0.name', 'Mío'));
+                ->has('rows', 1)
+                ->where('rows.0.name', 'Mío'));
 
         $this->assertTrue($this->hasNeighbourOrganization());
     }
