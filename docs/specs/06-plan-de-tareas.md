@@ -727,6 +727,8 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 
 **T-042 · Máquina de estados** · `B` · 3 pts · *Requisitos: `REQ-LAY-005`*
 `LayawayStatus` con sus 4 métodos, `InstallmentStatus`, `LayawayStateMachine`, eventos de dominio, `IllegalLayawayTransitionException`.
+**`T-042` adelanta el modelo `Layaway` en su forma mínima, como `T-024` hizo con `Catalog`.** `LayawayStateMachine::transition()` recibe un `Layaway`, lo bloquea con `lockForUpdate` (SP-3) y le escribe el estado y su marca; sin modelo no hay tarea. Viene con lo justo —tabla, `BelongsToOrganization`, los *casts* del estado y de las fechas, y nada más—, y **`T-045` lo termina** con sus relaciones, sus accesores y `LayawayCode`. La alternativa era escribir la transición contra `DB::table()`, que es la línea que `tenancy:audit` existe para que nadie escriba.
+**El contador de `active_layaways` sí se ajusta aquí, y no espera a `T-066`.** `UsageMetric::ActiveLayaways` ya existe y `usage_counters` también; lo que falta hasta `T-066` es `LimitEnforcer::measure()` para ese caso —la reconciliación—, no el movimiento incremental. `T-045` lo incrementa al crear y esta tarea lo baja en cada transición a terminal (RB-6), **en la misma transacción**. Lo que `T-066` añade después es el recálculo que corrige la deriva, no la cuenta.
 **Hecho cuando:** **matriz 6×6** de transiciones válidas e inválidas; `acceptsPayments()` y `countsTowardPlanLimit()` por estado; concurrencia bloquea; `completed` prevalece sobre `overdue`; fallo de listener no revierte.
 
 **T-043 · Ficha de cliente** · `B` · 2 pts · *Requisitos: `REQ-IDN-001`*
