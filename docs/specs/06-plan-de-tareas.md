@@ -653,11 +653,14 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 
 **El gate de `REQ-QAX-008` aprendió la vitrina:** su `{organization}` no es un recurso del tenant sino el tenant, así que su caso afirma que el tenant fijado es el del slug —con la vecina también encendida— y que una vitrina apagada es `404` sin tenant fijado.
 
+**Y deja medida una redundancia que no es suya sola:** de las cinco consultas de la vitrina, **la segunda sobra**. El resolutor carga la organización por su *slug* para fijar el tenant, y `SubstituteBindings` la vuelve a cargar para `{organization:slug}`. No es del comodín ni de esta página: es del patrón, y las tres superficies públicas lo pagan —el catálogo y la ficha cargan dos veces el catálogo por lo mismo—. La arregla `T-038` antes de que H3 lo copie una cuarta vez con el portal.
+
 **T-037 · Marketing y precios** · `B` · 2 pts · *Requisitos: `REQ-SUB-001`*
 Landing, `/precios` renderizado **desde la BD**, páginas legales.
 **Hecho cuando:** los 3 planes se leen de `plans`; `NULL` se muestra como "ilimitado".
 
 **T-038 · Tablas server-driven** · `B` · 3 pts · *Requisitos: `REQ-BOF-045`*
+**Y cierra la redundancia del patrón de resolución de tenant, que `T-036` dejó medida.** Los resolutores de superficie cargan el modelo del *slug* para fijar la organización, y `SubstituteBindings` lo carga otra vez para el *binding*: una consulta de más en la vitrina y otra en cada catálogo y cada ficha. Se arregla donde nace —el middleware entrega al parámetro de ruta el modelo que ya tiene, y el *binding* lo respeta— sin tocar la guarda que cada resolutor lleva para detectar que alguien reordenó los middlewares, porque esa mira el parámetro **al entrar**. Es aquí y no más tarde por una razón de calendario: **H3 abre el portal del cliente con un cuarto resolutor**, y lo que se copie de un patrón con una consulta de sobra la lleva también.
 **Y cierra el hueco de «quién lo modificó», que está abierto en dos requisitos.** `REQ-BOF-020` SP-7 (`T-027`) y `REQ-CAT-023` SP-4 (`T-031`) piden los dos la marca de última modificación **con su autor**, y ni `products` ni `catalogs` tienen columna que lo registre: las dos tareas dejaron la fecha —`T-031` hace que componer marque el catálogo como modificado, para que la marca hable de la composición y no del último cambio de nombre— y el autor sin resolver. No sale de la auditoría: componer y renombrar no son eventos de la lista cerrada de `REQ-BOF-005` RB-1. Es aquí porque es la tarea que pinta esas columnas en los listados, y son dos `updated_by` con su migración.
 `useServerTable`, `DataTable` (+ 4 subcomponentes), `ResolvesTableState`, `SortWhitelist`.
 **Hecho cuando:** `sort` no permitido cae al default; `perPage` fuera de lista cae a 25; `page` desbordada no da error; recarga parcial pide solo `rows` y `meta`; **URL compartida entre organizaciones muestra los datos de cada una**; ningún componente supera 200 líneas.
