@@ -204,19 +204,6 @@ final class ProductShowTest extends TestCase
             ->where('currency.rate.rate', 42.5));
     }
 
-    /**
-     * Lo que sigue sin probar, y no es de aquí: que `FinancingPlan` y el
-     * cronograma reparten igual. El día que exista `ScheduleGenerator`, este
-     * caso se pone rojo para que `T-041` escriba el suyo.
-     */
-    public function test_the_agreement_with_the_schedule_is_still_pending(): void
-    {
-        $this->assertFileDoesNotExistAnywhere('ScheduleGenerator.php',
-            'ScheduleGenerator ya existe (T-041): escribe el caso que construye FinancingPlan y el cronograma con las '
-            .'mismas condiciones y compara importe a importe, incluido el residuo de la última cuota, y borra este.',
-        );
-    }
-
     // ------------------------------------------------------------------
     // Cuentas de cobro (RB-5, SP-6)
     // ------------------------------------------------------------------

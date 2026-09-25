@@ -28,12 +28,14 @@ use InvalidArgumentException;
  *
  * ## Y no es `ScheduleGenerator`
  *
- * El cronograma real —con sus fechas, sus vencimientos y su persistencia— lo
- * genera `ScheduleGenerator` en `T-041`, y no existe todavía. Lo que esta
- * clase aporta es **los importes**, que son la mitad que ya se puede calcular
- * y la única que la previsualización necesita. Cuando llegue aquel, las cuotas
- * saldrán de la misma llamada a `allocateEvenly()`: lo que no puede pasar es
- * que salgan de dos divisiones escritas en sitios distintos.
+ * El cronograma real —con sus fechas y sus vencimientos— lo genera
+ * `ScheduleGenerator` (`T-041`), y **sus importes salen de esta clase**:
+ * `LayawayTerms::financingPlan()` construye un `FinancingPlan` del apartado
+ * entero y el generador toma sus `installments()`. Hay un solo reparto en el
+ * sistema, y `ScheduleGeneratorTest` afirma que con una unidad la cuota de la
+ * ficha y la del cronograma coinciden al céntimo. Lo que esta clase **no**
+ * hace es multiplicar: con varias unidades, el plan es el del total, no el de
+ * una unidad por la cantidad (ver `LayawayTerms`).
  *
  * Las fechas no se calculan aquí a propósito. `frequency_days` viaja porque la
  * frase de RB-7 la nombra —«cada 15 días»— pero convertirla en vencimientos

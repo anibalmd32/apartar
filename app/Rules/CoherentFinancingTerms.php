@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\Domain\Layaway\ScheduleGenerator;
 use App\Domain\Money\Money;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
@@ -60,15 +61,20 @@ final class CoherentFinancingTerms implements DataAwareRule, ValidationRule, Val
     /** Tope del precio, en céntimos de dólar: un millón. */
     public const MAX_PRICE_CENTS = 100_000_000;
 
-    /** Cuotas mínimas y máximas de un plan. */
-    public const MIN_INSTALLMENTS = 1;
+    /**
+     * Cuotas y días entre cuotas, mínimos y máximos (`REQ-LAY-004` RB-7).
+     *
+     * Son los de `ScheduleGenerator` y no una copia: si el backoffice dejara
+     * guardar un plan que el cronograma no admite, el producto se vendería y
+     * el apartado no se podría crear.
+     */
+    public const MIN_INSTALLMENTS = ScheduleGenerator::MIN_INSTALLMENTS;
 
-    public const MAX_INSTALLMENTS = 36;
+    public const MAX_INSTALLMENTS = ScheduleGenerator::MAX_INSTALLMENTS;
 
-    /** Días entre cuotas, mínimo y máximo. */
-    public const MIN_FREQUENCY_DAYS = 1;
+    public const MIN_FREQUENCY_DAYS = ScheduleGenerator::MIN_FREQUENCY_DAYS;
 
-    public const MAX_FREQUENCY_DAYS = 90;
+    public const MAX_FREQUENCY_DAYS = ScheduleGenerator::MAX_FREQUENCY_DAYS;
 
     /**
      * Los datos completos de la petición, que es lo que hace posible cruzar

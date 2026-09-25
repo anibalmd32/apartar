@@ -272,7 +272,7 @@ final class ScheduleGenerator
      * El importe financiado se reparte en partes iguales; el residuo de la
      * división entera se acumula en la última cuota.
      *
-     * @throws InvalidScheduleException
+     * No lanza por rangos: `InvalidScheduleException` sale de `new LayawayTerms(…)`.
      */
     public function generate(
         LayawayTerms $terms,
@@ -281,6 +281,12 @@ final class ScheduleGenerator
     ): AmortizationSchedule { /* … */ }
 }
 ```
+
+> **Reparte el total, nunca multipliques un reparto (fijado en `T-041`).** `Money::allocateEvenly()` reparte con división entera y deja el resto en la última parte, así que **no es lineal**: $50 financiados por unidad en 3 cuotas son `1666, 1666, 1668`, y por dos unidades daría `3332, 3332, 3336`; los $100 del apartado en 3 cuotas son `3333, 3333, 3334`. Un importe repartido es un resultado, no un ingrediente. **En ningún sitio puede existir una cuota por unidad multiplicada por la cantidad y presentada como la cuota real** —ni en el formulario de `T-045` cuando el cliente elige cantidad, ni en el correo, ni en el portal—: la cuota con cantidad se pide a `LayawayTerms::financingPlan()` con la cantidad puesta. La ficha del producto sí enseña el plan de **una** unidad, porque ahí la cantidad aún no se ha elegido, y es correcto que con `quantity > 1` difiera del cronograma.
+>
+> **`LayawayTerms` y `FinancingPlan` no reparten dos veces.** `LayawayTerms::financingPlan()` construye el `FinancingPlan` del **apartado entero** —total e inicial ya multiplicados— y de él salen `financedAmount()` y las cuotas de `ScheduleGenerator`, así que en el sistema hay una sola resta y un solo reparto, los de `FinancingPlan`. Con `quantity = 1` las entradas son las del producto y el resultado es idéntico por construcción; `ScheduleGeneratorTest` lo afirma importe a importe, residuo incluido, sobre 200 condiciones al azar (el caso que `T-035` dejó diferido). `FinancingPlan` es un plan que se puede pintar y exige financiado mayor que cero; `LayawayTerms` son condiciones que se pueden congelar, incluidas las de SP-2, y ahí `financingPlan()` devuelve `null` y el cronograma sale vacío.
+>
+> **Los rangos de RB-7 se comprueban al congelar las condiciones, no al generar.** El contrato de arriba ponía `@throws InvalidScheduleException` en `generate()`, pero el cronograma se genera al aprobar la inicial, días después de crear el apartado: comprobar ahí dejaría crear un apartado imposible, cobrar su inicial y fallar con el dinero ya dentro. `new LayawayTerms(…)` lanza `InvalidScheduleException` con el rango en el mensaje, lo que adelanta el fallo a `CreateLayawayAction` (`T-045`), donde todavía es un `422`, y `generate()` no puede recibir unas condiciones fuera de rango. **El censo de los rangos vive en `ScheduleGenerator`** (`MIN_INSTALLMENTS`…`MAX_FREQUENCY_DAYS`), y `CoherentFinancingTerms` (`T-027`), que llevaba su copia, lee desde `T-041` esas constantes.
 
 **Reglas de negocio y precondiciones**
 - RB-1 El cronograma se **materializa al activar** el apartado, no al crearlo.
