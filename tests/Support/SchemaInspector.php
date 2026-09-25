@@ -84,6 +84,30 @@ final class SchemaInspector
     }
 
     /**
+     * Clave foránea de una columna: a qué tabla apunta y qué hace al borrar,
+     * o `null` si la columna no tiene ninguna.
+     *
+     * `on_delete` se devuelve en minúsculas —`restrict`, `cascade`,
+     * `set null`— porque MySQL lo informa en mayúsculas y el motivo de la
+     * aserción es la regla, no la grafía.
+     *
+     * @return array{foreign_table: string, on_delete: string}|null
+     */
+    public static function foreignKey(string $table, string $column): ?array
+    {
+        foreach (Schema::getForeignKeys($table) as $key) {
+            if ($key['columns'] === [$column]) {
+                return [
+                    'foreign_table' => $key['foreign_table'],
+                    'on_delete' => strtolower((string) $key['on_delete']),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Tablas de las que somos dueños, excluidas las del framework y las que
      * publican los paquetes.
      *

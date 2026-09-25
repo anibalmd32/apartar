@@ -260,7 +260,7 @@ export interface LayawayFormValues {
 > Como cliente, quiero conocer las fechas y el importe exacto de cada cuota desde el principio, para organizar mis pagos.
 
 **Contratos de datos**
-- Entidad `Installment` (`installments`): `organization_id`, `layaway_id`, `number`, `due_date`, `amount_cents`, `paid_cents`, `status`, `paid_at?`, `UNIQUE(layaway_id, number)`.
+- Entidad `Installment` (`installments`): `organization_id`, `layaway_id`, `number`, `due_date`, `amount_cents`, `paid_cents`, `status`, `paid_at?`, `UNIQUE(organization_id, layaway_id, number)` (con el tenant delante desde `T-039`, [05 §4] bloque 7).
 - `ScheduleGenerator` (dominio puro), `AmortizationSchedule`, `ScheduledInstallment`.
 
 ```php
@@ -302,7 +302,7 @@ final class ScheduleGenerator
 - SP-2 Financiado 0 (inicial = precio total) → el apartado pasa directamente a `completed` al aprobar la inicial, sin generar cuotas.
 - SP-3 `installmentsCount = 1` → una sola cuota con todo el financiado.
 - SP-4 Vencimiento en 29 de febrero o fin de mes → sin problema: la frecuencia es en días, no en meses, y así se documenta.
-- SP-5 Reintento del job de activación → idempotente por `UNIQUE(layaway_id, number)`.
+- SP-5 Reintento del job de activación → idempotente por `UNIQUE(organization_id, layaway_id, number)`.
 - SP-6 Cronograma ya existente al activar → la acción aborta con excepción y no duplica.
 - SP-7 Organización en otra zona horaria → las fechas se calculan en la suya, no en UTC ni en la del servidor.
 - SP-8 Cambio del `default_frequency_days` de la organización tras activar → irrelevante: el apartado usa su snapshot (`REQ-LAY-002`).

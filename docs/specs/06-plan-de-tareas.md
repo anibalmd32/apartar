@@ -697,6 +697,10 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 `customers`, `customer_login_tokens`, `layaways`, `installments`; verificar que `customers` **no tiene `password`**.
 **Antes de escribirla se corrigió el índice de `customer_login_tokens`**, que [05 §4] declaraba como `UNIQUE(token_hash)` global: habría sido la **cuarta** entrada de `GlobalUniqueExceptions`, y `tenancy:audit` falla con la cuarta. El proyecto ya resolvió esta forma exacta en `T-013` con la invitación de equipo —el token lleva delante el identificador de su organización y el índice se compone—, y `REQ-IDN-003` RB-3 lo hace natural: cada enlace está acotado a **una** organización desde que se emite. Queda `UNIQUE(organization_id, token_hash)`, escrito en [05 §4] bloque 4 y en [10](10-identidad-y-autenticacion.md) bajo `REQ-IDN-003`. **`layaways.code` sí es global y sigue en la lista de tres**: de él se resuelve la organización sin tenant previo, que es lo que lo hace servir de credencial.
 **De esta tarea son cuatro tablas, no los dos bloques enteros:** `account_identities` (bloque 4) es de H6 con las cuentas, y `receipts`, `payments` y `payment_allocations` (bloque 7) son de `T-054`, que es también donde entran las columnas de snapshot de tasa que `T-023` fue a buscar. `accounts` ya existe desde H0, así que la FK de `customers.account_id` tiene a dónde apuntar.
+**Cerrada.** Lo que conviene no perder:
+- **El único de `installments` quedó `(organization_id, layaway_id, number)` y no `(layaway_id, number)`.** La forma de [05 §4] contradecía `REQ-ORG-002` RB-3 y `tenancy:audit` la rechazaba (comprobado); se antepuso la columna en lugar de abrir una cuarta excepción, y la corrección está escrita en [05 §4] bloque 7. **`payments.receipt_id` (`T-054`) y `notification_dispatches` tienen la misma forma y se resuelven igual.**
+- **`due_date` y `next_due_date` son `DATE`.** «Vencida» es una comparación de días contra el «hoy» de la zona de la organización, calculado en PHP y pasado como parámetro; nunca `CURDATE()` ni `NOW()` de MySQL, que responden en la zona de la sesión.
+- **`remaining_cents` no tiene valor por defecto** —el único correcto sería `total_cents`—: lo siembra `CreateLayawayAction` (`T-045`) y lo mantiene solo `LayawayBalanceRecalculator` (`T-057`).
 
 **T-040 · Identidad: VOs y validación** · `B` · 3 pts · *Requisitos: `REQ-IDN-007`*
 `DocumentNumber`, `DocumentKind`, `PhoneNumber`, sus reglas y `identity-format.ts`.
@@ -727,7 +731,7 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 
 **T-046 · Activación y cronograma materializado** · `B` · 2 pts · *Requisitos: `REQ-LAY-004`*
 `ActivateLayawayAction`.
-**Hecho cuando:** genera N cuotas con `next_due_date` correcto; idempotente por `UNIQUE(layaway_id, number)`; cronograma existente aborta sin duplicar.
+**Hecho cuando:** genera N cuotas con `next_due_date` correcto; idempotente por `UNIQUE(organization_id, layaway_id, number)`; cronograma existente aborta sin duplicar.
 
 **T-047 · Expiración por falta de inicial** · `B` · 2 pts · *Requisitos: `REQ-LAY-006`*
 `ExpireLayawaysAction`, `ExpireLayawaysJob`, `LayawayExpiringNotification`.
