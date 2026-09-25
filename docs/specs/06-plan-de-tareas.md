@@ -659,6 +659,14 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 Landing, `/precios` renderizado **desde la BD**, páginas legales.
 **Hecho cuando:** los 3 planes se leen de `plans`; `NULL` se muestra como "ilimitado".
 
+**Cerrada.** `REQ-SUB-001` cerrado salvo `GET /backoffice/suscripcion`, que es de `T-067`. Tres cosas:
+
+**`null` no se traduce en PHP.** `PricingController` manda cada límite como `int|null` y la palabra «ilimitado» la pone `formatLimit()` de `lib/plan.ts`, que ya estaba probada: un único sitio decide cómo se dice «sin techo». Los productos por catálogo van por `Plan::maxProductsPerCatalog()` porque no son una `UsageMetric`.
+
+**Los nombres de las funciones viven en el controlador, con un `match` sin `default`.** Por la convención de «una lista de casos es una propiedad del tipo» deberían ser `PlanFeature::label()`, pero el enum es de `T-011` y esta tarea no lo toca; PHPStan obliga a nombrar aquí una séptima función el día que exista. Si otra pantalla necesita los nombres, se suben al enum entonces.
+
+**Las legales están montadas y no redactadas** (ver la nota de `T-045`), y el precio «Gratis» de los planes de pago está marcado para que no se despliegue en silencio (ver la de `T-069`).
+
 **T-038 · Tablas server-driven** · `B` · 3 pts · *Requisitos: `REQ-BOF-045`*
 **Y cierra la redundancia del patrón de resolución de tenant, que `T-036` dejó medida.** Los resolutores de superficie cargan el modelo del *slug* para fijar la organización, y `SubstituteBindings` lo carga otra vez para el *binding*: una consulta de más en la vitrina y otra en cada catálogo y cada ficha. Se arregla donde nace —el middleware entrega al parámetro de ruta el modelo que ya tiene, y el *binding* lo respeta— sin tocar la guarda que cada resolutor lleva para detectar que alguien reordenó los middlewares, porque esa mira el parámetro **al entrar**. Es aquí y no más tarde por una razón de calendario: **H3 abre el portal del cliente con un cuarto resolutor**, y lo que se copie de un patrón con una consulta de sobra la lleva también.
 **Y cierra el hueco de «quién lo modificó», que está abierto en dos requisitos.** `REQ-BOF-020` SP-7 (`T-027`) y `REQ-CAT-023` SP-4 (`T-031`) piden los dos la marca de última modificación **con su autor**, y ni `products` ni `catalogs` tienen columna que lo registre: las dos tareas dejaron la fecha —`T-031` hace que componer marque el catálogo como modificado, para que la marca hable de la composición y no del último cambio de nombre— y el autor sin resolver. No sale de la auditoría: componer y renombrar no son eventos de la lista cerrada de `REQ-BOF-005` RB-1. Es aquí porque es la tarea que pinta esas columnas en los listados, y son dos `updated_by` con su migración.
@@ -701,6 +709,7 @@ Landing, `/precios` renderizado **desde la BD**, páginas legales.
 **T-045 · Creación del apartado** · `B` · 5 pts · *Requisitos: `REQ-LAY-001`, `REQ-LAY-002`, `REQ-IDN-005`*
 `CreateLayawayAction` con la secuencia de [05 §5.1](05-design-tecnico.md), `LayawayCode`, `StoreLayawayRequest`, formulario con `react-form`, página de gracias con el código visible, email de confirmación, `TermsConsentField`.
 **Hecho cuando:** crea cliente + apartado + reserva en una transacción; **el apartado hereda la organización del catálogo**; producto de otro catálogo rechazado; stock insuficiente no persiste nada; **doble POST con la misma `idempotencyKey` devuelve el mismo `code`**; sin email funciona; rollback completo; cambiar el precio del producto no altera el apartado; `code` sin caracteres ambiguos.
+**De `T-037`: las dos páginas que `TermsConsentField` enlaza existen y no están redactadas.** `/terminos` y `/privacidad` responden, con la marca `drafted: false` en `LegalController` y un aviso de «pendiente de redacción» en la página, más la lista de lo que la spec les exige cubrir. **No se puede pedir a nadie que acepte un texto que no existe**: antes de cablear la casilla, o se redactan —y `MarketingPagesTest` se pone rojo al cambiar la marca—, o esta tarea decide qué pasa con la casilla mientras tanto. No lo decidió `T-037` porque no es una decisión técnica.
 
 **T-046 · Activación y cronograma materializado** · `B` · 2 pts · *Requisitos: `REQ-LAY-004`*
 `ActivateLayawayAction`.
@@ -825,6 +834,7 @@ La inmutabilidad del snapshot y el cierre del requisito: nada actualiza `rate_ap
 **T-069 · Facturación por comprobante** · `B` · 3 pts · *Requisitos: `REQ-SUB-006`*
 `subscription_invoices`, `subscription_receipts`, `IssueInvoiceAction`, `ApproveSubscriptionReceiptAction`, `IssueRenewalInvoices`, historial de facturas.
 **Hecho cuando:** renovación 7 días antes; Free no genera facturas; factura inmutable; aprobación extiende el período y levanta la suspensión; **duplicado bloqueado reutilizando el colaborador de `REQ-PAY-003`**; la factura usa la fuente de tasa de **plataforma**.
+**De `T-037`: facturar exige que Pro y Business tengan precio (`REQ-SUB-001` RB-3b), y `/precios` hoy dice «Gratis» en los tres**, que es la verdad de la base. `PricingPageTest::test_the_paid_plans_are_still_unpriced()` afirma ese estado y se pone rojo cuando la cifra entre en `PlanSeeder`; su mensaje pide revisar cómo lo dice la página —periodo, moneda, facturación—. Un precio fijado solo con un `UPDATE` en producción no lo dispara, así que la cifra tiene que llegar también al seeder, que es donde la matriz se coteja.
 
 **T-070 · Exportación a Excel** · `B` · 3 pts · *Requisitos: `REQ-BOF-043`*
 `ExportJob`, `GenerateExport`, los 3 `Export`, `PurgeExpiredExports`, `ExportController`.

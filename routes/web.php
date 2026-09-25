@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\AcceptInvitationController;
+use App\Http\Controllers\Marketing\HomeController;
+use App\Http\Controllers\Marketing\LegalController;
+use App\Http\Controllers\Marketing\PricingController;
 use App\Http\Controllers\Marketing\RegisterController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 | Cada ruta declara su superficie de tenancy (REQ-ORG-002 RB-4), y la suite de
@@ -14,9 +16,21 @@ use Inertia\Inertia;
 | backoffice y resuelve su organización desde la sesión.
 */
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->middleware('outside-tenancy')->name('home');
+/*
+| Marketing ([05 §7.1], T-037): la portada, los precios y las dos legales.
+| Fuera del modelo de tenancy —hablan de la plataforma, no de un negocio— y
+| sin `guest`: quien ya tiene cuenta también puede mirar los precios.
+|
+| Registrarlas antes o después de la vitrina da igual: el comodín
+| `/{organization:slug}` no admite ningún segmento de `ReservedSlugs`, y
+| `precios`, `terminos` y `privacidad` están en esa lista (T-036).
+*/
+Route::middleware('outside-tenancy')->group(function (): void {
+    Route::get('/', HomeController::class)->name('home');
+    Route::get('precios', PricingController::class)->name('pricing');
+    Route::get('terminos', [LegalController::class, 'terms'])->name('legal.terms');
+    Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
+});
 
 /*
 | Registro (REQ-ORG-001). Fuera del modelo de tenancy, y no por comodidad: la
