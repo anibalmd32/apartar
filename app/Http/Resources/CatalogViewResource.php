@@ -133,10 +133,22 @@ final class CatalogViewResource extends JsonResource
      */
     private function cover(Catalog $catalog): ?ImageSet
     {
+        return self::ownCoverOf($catalog) ?? $this->fallbackCover;
+    }
+
+    /**
+     * La portada que subió el negocio, o `null` si no subió ninguna.
+     *
+     * La usa también la vitrina (`T-036`), que enseña cada catálogo con su
+     * portada propia y **sin** la de respaldo: buscar la foto del primer
+     * producto de cada catálogo serían dos consultas por card.
+     */
+    public static function ownCoverOf(Catalog $catalog): ?ImageSet
+    {
         $path = $catalog->cover_path;
 
         if ($path === null || $path === '') {
-            return $this->fallbackCover;
+            return null;
         }
 
         $url = Storage::disk(UpsertCatalogAction::COVER_DISK)->url($path);

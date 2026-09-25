@@ -486,7 +486,7 @@ Esta sección no es documental: **`REQ-QAX-008` deriva sus tests de fuga de aqu�
 | POST · DELETE | `/c/{catalog:slug}/seguir` | `Catalog\CatalogSubscriptionController` | T |
 | POST | `/c/{catalog:slug}/chat` | `Catalog\ChatController` | T |
 
-> `/{organization:slug}` va **al final** del archivo de rutas: es un comodín de un segmento y debe ceder ante toda ruta literal. La lista negra de `ReservedSlugs` (`registro`, `precios`, `backoffice`, `plataforma`, `c`, `mi-cuenta`, `api`, `archivos`, `terminos`, `privacidad`, `invitacion`, `cuenta`) lo protege en el registro y en el renombrado.
+> `/{organization:slug}` va **al final** del archivo de rutas: es un comodín de un segmento y debe ceder ante toda ruta literal. Desde `T-036` además **no admite ningún slug reservado** (`->where('organization', ReservedSlugs::routePattern())`), para que un segmento reservado sin ruta propia todavía —`/precios` antes de `T-037`— no caiga en la vitrina de nadie. La lista negra de `ReservedSlugs` (`registro`, `precios`, `backoffice`, `plataforma`, `c`, `mi-cuenta`, `api`, `archivos`, `terminos`, `privacidad`, `invitacion`, `cuenta`) lo protege en el registro y en el renombrado.
 
 ### 7.3 Portal del cliente — `routes/portal.php`, prefijo `/mi-cuenta`
 

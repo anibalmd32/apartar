@@ -117,7 +117,7 @@ final class TenantResolverTest extends TestCase
 
     public function test_the_storefront_resolves_from_the_organization_slug(): void
     {
-        $organization = Organization::factory()->create();
+        $organization = Organization::factory()->create(['storefront_enabled' => true]);
         $this->neighbourOrganization();
 
         $resolved = $this->resolver->resolve(TenantSurface::Storefront, $organization->slug);
@@ -167,6 +167,19 @@ final class TenantResolverTest extends TestCase
         $this->resolver->forOrganizationSlug('un-negocio-que-no-existe');
     }
 
+    /**
+     * `T-036` · la vitrina apagada no es una vitrina: la misma consulta sin
+     * fila, y la misma excepción, que un slug que no existe.
+     */
+    public function test_a_storefront_that_is_switched_off_is_not_found_like_an_unknown_slug(): void
+    {
+        $organization = Organization::factory()->create(['storefront_enabled' => false]);
+
+        $this->expectException(ModelNotFoundException::class);
+
+        $this->resolver->resolve(TenantSurface::Storefront, $organization->slug);
+    }
+
     public function test_a_surface_without_its_source_is_not_found(): void
     {
         $this->expectException(ModelNotFoundException::class);
@@ -188,7 +201,7 @@ final class TenantResolverTest extends TestCase
      */
     public function test_resolving_does_not_set_the_tenant(): void
     {
-        $organization = Organization::factory()->create();
+        $organization = Organization::factory()->create(['storefront_enabled' => true]);
 
         $this->resolver->resolve(TenantSurface::Storefront, $organization->slug);
 

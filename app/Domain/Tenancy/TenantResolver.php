@@ -71,13 +71,23 @@ final class TenantResolver
     }
 
     /**
-     * Organización de la vitrina `/{org-slug}`.
+     * Organización de la vitrina `/{org-slug}`, **solo si la tiene activada**
+     * (`REQ-ORG-006` RB-6).
+     *
+     * La vitrina apagada y el slug que no es de nadie son **la misma
+     * consulta sin fila**, y por tanto la misma excepción con los mismos datos
+     * y el mismo `404` (`T-036`). Se decide aquí, antes de fijar el tenant, y
+     * no en el controlador: una vez fijado, la respuesta de error ya llevaría
+     * cosas del negocio —su zona horaria, su tasa en las props compartidas— y
+     * dejaría de ser idéntica. Si la vitrina apagada se distinguiera en algo,
+     * bastaría probar slugs en la barra de direcciones para saber qué negocios
+     * existen en la plataforma.
      *
      * @throws ModelNotFoundException<Organization>
      */
     public function forOrganizationSlug(string $slug): Organization
     {
-        $organization = Organization::query()->where('slug', $slug)->first();
+        $organization = Organization::query()->where('slug', $slug)->where('storefront_enabled', true)->first();
 
         if (! $organization instanceof Organization) {
             throw (new ModelNotFoundException)->setModel(Organization::class, [$slug]);

@@ -14,7 +14,6 @@ use App\Support\CatalogCursor;
 use App\Support\CatalogShareLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -147,17 +146,23 @@ final class CatalogShowTest extends TestCase
     }
 
     /**
-     * SP-3 pide que el `410` enlace la vitrina «si está activada», y la
-     * vitrina es de `T-036`. Cuando su ruta aparezca, este caso se pone rojo
-     * para que la página del `410` la enlace.
+     * SP-3 · el `410` enlaza la vitrina del negocio **si está activada**
+     * (`T-036`), y con ella apagada no enlaza nada: llevaría a un `404`.
      */
-    public function test_the_storefront_link_of_the_gone_page_is_still_pending(): void
+    public function test_the_gone_page_links_the_storefront_only_when_it_is_on(): void
     {
-        $storefront = collect(Route::getRoutes()->getRoutes())
-            ->filter(fn ($route): bool => str_starts_with($route->uri(), '{organization'));
+        $catalog = $this->catalogWith(1, ['published_at' => now()->subMonth(), 'expires_at' => now()->subDay()]);
 
-        $this->assertCount(0, $storefront, 'La vitrina ya existe (T-036): enlázala desde catalog/CatalogExpired '
-            .'cuando storefront_enabled esté activo (REQ-CAT-021 SP-3) y borra este caso.');
+        $this->visit($catalog)->assertStatus(410)->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('storefrontUrl', null));
+
+        $this->organization->update(['storefront_enabled' => true]);
+
+        $this->visit($catalog)->assertStatus(410)->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('storefrontUrl', CatalogShareLink::storefrontOf($this->organization->slug)));
+
+        $this->withoutOrganization();
+        $this->get(parse_url(CatalogShareLink::storefrontOf($this->organization->slug), PHP_URL_PATH) ?: '/')->assertOk();
     }
 
     // ------------------------------------------------------------------

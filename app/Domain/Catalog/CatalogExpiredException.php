@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Catalog;
 
 use App\Models\Catalog;
+use App\Support\CatalogShareLink;
 use RuntimeException;
 
 /**
@@ -28,11 +29,11 @@ use RuntimeException;
  * viaje aquí lo ve cualquiera que tenga el enlace, y eso descarta fechas
  * internas, identificadores y estado del plan.
  *
- * El enlace a la vitrina que pide SP-3 «si está activada» **no** está todavía:
- * la vitrina la construye `T-036`, y enlazar hoy a una página que no existe
- * sería mandar a quien ya llegó tarde a un segundo callejón.
- * `CatalogShowTest` lo marca con un caso que se pone rojo cuando la ruta
- * aparezca.
+ * Y, desde `T-036`, **el enlace a la vitrina del negocio si la tiene
+ * activada** (SP-3): quien llegó tarde a una campaña puede ver las que siguen.
+ * Con la vitrina apagada el enlace no viaja —`null`—, porque llevaría a un
+ * `404`, y es el mismo `storefront_enabled` que decide si la vitrina existe:
+ * la página del `410` no puede ofrecer una vitrina que la ruta niega.
  */
 final class CatalogExpiredException extends RuntimeException
 {
@@ -44,6 +45,7 @@ final class CatalogExpiredException extends RuntimeException
     private function __construct(
         public readonly string $catalogName,
         public readonly string $businessName,
+        public readonly ?string $storefrontUrl = null,
     ) {
         parent::__construct(sprintf(
             'La campaña «%s» de %s ya terminó.',
@@ -57,19 +59,26 @@ final class CatalogExpiredException extends RuntimeException
      */
     public static function of(Catalog $catalog): self
     {
-        return new self($catalog->name, $catalog->organization->name);
+        $organization = $catalog->organization;
+
+        return new self(
+            $catalog->name,
+            $organization->name,
+            $organization->storefront_enabled ? CatalogShareLink::storefrontOf($organization->slug) : null,
+        );
     }
 
     /**
      * Lo que recibe la página del `410`.
      *
-     * @return array{catalogName: string, businessName: string}
+     * @return array{catalogName: string, businessName: string, storefrontUrl: string|null}
      */
     public function toArray(): array
     {
         return [
             'catalogName' => $this->catalogName,
             'businessName' => $this->businessName,
+            'storefrontUrl' => $this->storefrontUrl,
         ];
     }
 }

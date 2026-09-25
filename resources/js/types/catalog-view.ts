@@ -169,4 +169,30 @@ export interface CatalogShowProps {
 export interface CatalogExpiredProps {
     readonly catalogName: string;
     readonly businessName: string;
+    /** La vitrina del negocio si la tiene activada (SP-3, `T-036`); `null` si no. */
+    readonly storefrontUrl: string | null;
+}
+
+/**
+ * Un catálogo en la vitrina del negocio (`REQ-ORG-006` RB-6).
+ *
+ * Solo los `Listed` llegan aquí. La portada es **la propia** o ninguna: la de
+ * respaldo costaría dos consultas por card.
+ */
+export interface StorefrontCatalog {
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string | null;
+    readonly cover: ImageSet | null;
+    /** La URL completa del catálogo, la misma que el negocio difunde. */
+    readonly url: string;
+    readonly expiresAt: string | null;
+}
+
+/** Las props de `catalog/OrganizationStorefront`. */
+export interface OrganizationStorefrontProps {
+    readonly business: OrganizationBrand;
+    /** `true` en plan Free: se pinta el sello «Hecho con Apartar» y no la marca. */
+    readonly showsPlatformBadge: boolean;
+    readonly catalogs: readonly StorefrontCatalog[];
 }

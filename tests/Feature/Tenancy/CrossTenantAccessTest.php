@@ -11,9 +11,12 @@ use App\Http\Middleware\DeclaresNoTenantSurface;
 use App\Http\Middleware\DeclaresTenantSurface;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveCatalogTenant;
+use App\Http\Middleware\ResolveStorefrontTenant;
 use App\Http\Middleware\ResolveTenant;
 use App\Models\Catalog;
 use App\Models\Organization;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use Closure;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
@@ -213,6 +216,7 @@ final class CrossTenantAccessTest extends TestCase
         $this->assertContains('GET /backoffice', $tenant);
         $this->assertContains('PATCH /settings/profile', $tenant);
         $this->assertContains('GET /c/{catalog}', $tenant);
+        $this->assertContains('GET /{organization}', $tenant);
 
         $outside = array_map(
             fn (Route $route): string => $this->describe($route),
@@ -239,6 +243,13 @@ final class CrossTenantAccessTest extends TestCase
         $covered = 0;
 
         foreach ($this->tenantRoutes() as [$route, $surface]) {
+            if ($surface === TenantSurface::Storefront) {
+                $this->assertStorefrontRouteIsIsolated($route);
+                $covered++;
+
+                continue;
+            }
+
             if ($this->boundTenantModels($route) === []) {
                 continue;
             }
@@ -269,8 +280,14 @@ final class CrossTenantAccessTest extends TestCase
     {
         $uncoverable = [];
 
-        foreach ($this->tenantRoutes() as [$route]) {
+        foreach ($this->tenantRoutes() as [$route, $surface]) {
             $parameters = array_values(array_diff($route->parameterNames(), array_keys(self::PLAIN_IDENTIFIERS)));
+
+            // La vitrina tiene su caso propio (`assertStorefrontRouteIsIsolated`):
+            // su `{organization}` no es un recurso del tenant, **es** el tenant.
+            if ($surface === TenantSurface::Storefront && $this->isAnchoredStorefront($route)) {
+                continue;
+            }
 
             if ($parameters === []) {
                 continue;
@@ -368,6 +385,29 @@ final class CrossTenantAccessTest extends TestCase
         $this->assertIsInt($inertia);
         $this->assertLessThan($bindings, $tenant, 'El catálogo se resolvería sin tenant fijado.');
         $this->assertLessThan($inertia, $tenant, 'Las props compartidas se calcularían sin el negocio del catálogo.');
+    }
+
+    /**
+     * Y en la vitrina (`T-036`): el tenant sale del slug de la organización
+     * antes del binding y antes de las props compartidas, que son las de ese
+     * negocio.
+     */
+    public function test_the_storefront_tenant_is_resolved_before_the_route_binding(): void
+    {
+        $route = $this->router()->getRoutes()->getByName('storefront');
+        $this->assertInstanceOf(Route::class, $route);
+
+        $middleware = array_values(array_filter($this->router()->gatherRouteMiddleware($route), 'is_string'));
+
+        $tenant = array_search(ResolveStorefrontTenant::class, $middleware, true);
+        $bindings = array_search(SubstituteBindings::class, $middleware, true);
+        $inertia = array_search(HandleInertiaRequests::class, $middleware, true);
+
+        $this->assertIsInt($tenant, 'ResolveStorefrontTenant no está en el stack de la vitrina.');
+        $this->assertIsInt($bindings);
+        $this->assertIsInt($inertia);
+        $this->assertLessThan($bindings, $tenant, 'La organización se resolvería antes de comprobar su vitrina.');
+        $this->assertLessThan($inertia, $tenant, 'Las props compartidas se calcularían sin el negocio de la vitrina.');
     }
 
     // -------------------------------------------------------------------
@@ -480,6 +520,52 @@ final class CrossTenantAccessTest extends TestCase
             '%s fijó un tenant que no es el de su catálogo.',
             $this->describe($route),
         ));
+    }
+
+    /**
+     * El caso de la vitrina (`REQ-ORG-006` RB-6, `T-036`).
+     *
+     * Aquí el parámetro de la URL no es un recurso del tenant sino **el
+     * tenant**, así que no hay «recurso de la vecina» que pedir. Lo que se
+     * afirma es lo que puede torcerse: que el tenant fijado es el del slug de
+     * la URL —y no otro— aunque la vecina también tenga la vitrina encendida,
+     * y que una vitrina apagada es `404` sin haber fijado ninguno.
+     */
+    private function assertStorefrontRouteIsIsolated(Route $route): void
+    {
+        if (! $this->isAnchoredStorefront($route)) {
+            $this->fail(sprintf('%s es de la vitrina y no enlaza {%s} a Organization: no hay de dónde sacar su tenant.', $this->describe($route), ResolveStorefrontTenant::PARAMETER));
+        }
+
+        $this->neighbourOrganization()->update(['storefront_enabled' => true]);
+        $own = Organization::factory()->create(['storefront_enabled' => true]);
+        $off = Organization::factory()->create(['storefront_enabled' => false]);
+        $this->withinOrganization($own, fn () => Subscription::factory()->forPlan(Plan::factory()->create())->create());
+
+        $this->withoutOrganization();
+        $response = $this->call($this->methodOf($route), $this->urlFor($route, [ResolveStorefrontTenant::PARAMETER => $own]));
+
+        $this->assertSame(200, $response->getStatusCode(), $this->describe($route).' no abrió una vitrina encendida.');
+        $this->assertTrue($own->is(app(TenantContext::class)->organization()), sprintf(
+            '%s fijó un tenant que no es el de su slug.',
+            $this->describe($route),
+        ));
+
+        $this->withoutOrganization();
+        $response = $this->call($this->methodOf($route), $this->urlFor($route, [ResolveStorefrontTenant::PARAMETER => $off]));
+
+        $this->assertSame(404, $response->getStatusCode(), $this->describe($route).' abrió una vitrina apagada.');
+        $this->assertFalse(app(TenantContext::class)->hasOrganization(), $this->describe($route).' fijó el tenant de una vitrina apagada.');
+    }
+
+    /**
+     * Si la ruta es la vitrina con su ancla: `{organization}` enlazado a
+     * `Organization` y ningún otro parámetro.
+     */
+    private function isAnchoredStorefront(Route $route): bool
+    {
+        return $this->boundModels($route) === [ResolveStorefrontTenant::PARAMETER => Organization::class]
+            && $route->parameterNames() === [ResolveStorefrontTenant::PARAMETER];
     }
 
     /**
@@ -757,8 +843,8 @@ final class CrossTenantAccessTest extends TestCase
     {
         $covered = 0;
 
-        foreach ($this->tenantRoutes() as [$route]) {
-            if ($this->boundTenantModels($route) !== []) {
+        foreach ($this->tenantRoutes() as [$route, $surface]) {
+            if ($surface === TenantSurface::Storefront || $this->boundTenantModels($route) !== []) {
                 $covered++;
             }
         }

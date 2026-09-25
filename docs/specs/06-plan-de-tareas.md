@@ -645,6 +645,14 @@ medialibrary con las 3 conversiones, `TranscodeProductImage`, `SyncImageOrderAct
 **Hecho cuando:** lista solo los propios y solo `Listed`; desactivada por defecto; slug reservado no colisiona.
 **Y cierra la última frase de `REQ-CAT-021` SP-3:** la página del `410` (`catalog/CatalogExpired`) enlaza la vitrina «si está activada». `T-033` no la enlazó porque apuntaría a una página que no existe, y `CatalogShowTest::test_the_storefront_link_of_the_gone_page_is_still_pending()` **se pone rojo** en cuanto aparezca una ruta `{organization…}`.
 
+**Cerrada.** `REQ-ORG-006` cerrado entero y `REQ-CAT-021` SP-3 también: el `410` lleva `storefrontUrl` cuando la vitrina está encendida, y el caso diferido de `CatalogShowTest` es ahora el de verdad. Lo que conviene no perder:
+
+**La vitrina apagada se decide en `TenantResolver`, antes de fijar el tenant.** La superficie `Storefront` solo encuentra la organización con `storefront_enabled`, así que la apagada y el slug que no es de nadie son la misma consulta sin fila y la misma excepción; un test compara los dos cuerpos byte a byte. Decidirlo en el controlador, con el tenant ya fijado, habría dejado en la respuesta de error rastros del negocio —su zona, su tasa— y la habría hecho distinguible.
+
+**El comodín no depende del orden de los ficheros.** Su parámetro lleva `->where()` con `ReservedSlugs::routePattern()`, así que `/precios` no puede llegar a la vitrina aunque `T-037` registre su ruta después o todavía no exista. `StorefrontRoutingTest` pregunta al router adónde va cada segmento reservado y cada ruta literal de un segmento, y ensaya el caso de `T-037` registrando `/precios` detrás de la vitrina.
+
+**El gate de `REQ-QAX-008` aprendió la vitrina:** su `{organization}` no es un recurso del tenant sino el tenant, así que su caso afirma que el tenant fijado es el del slug —con la vecina también encendida— y que una vitrina apagada es `404` sin tenant fijado.
+
 **T-037 · Marketing y precios** · `B` · 2 pts · *Requisitos: `REQ-SUB-001`*
 Landing, `/precios` renderizado **desde la BD**, páginas legales.
 **Hecho cuando:** los 3 planes se leen de `plans`; `NULL` se muestra como "ilimitado".

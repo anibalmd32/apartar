@@ -43,3 +43,20 @@ it('reconoce el reservado venga como venga escrito', function (string $slug): vo
 it('mantiene la lista corta y consultable', function (): void {
     expect(ReservedSlugs::all())->toHaveCount(14);
 });
+
+/**
+ * `T-036` · la restricción de la ruta de la vitrina: ningún reservado pasa,
+ * un slug de negocio sí, aunque empiece por una palabra reservada.
+ */
+it('excluye de la ruta de la vitrina todos los reservados y nada más', function (): void {
+    $pattern = '#^'.ReservedSlugs::routePattern().'$#';
+
+    foreach (ReservedSlugs::all() as $slug) {
+        expect(preg_match($pattern, $slug))->toBe(0, $slug);
+    }
+
+    expect(preg_match($pattern, 'ferreteria-el-tornillo'))->toBe(1)
+        ->and(preg_match($pattern, 'precios-bajos'))->toBe(1)
+        ->and(preg_match($pattern, 'cuentas'))->toBe(1)
+        ->and(preg_match($pattern, 'Precios'))->toBe(0);
+});

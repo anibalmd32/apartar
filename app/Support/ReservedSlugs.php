@@ -80,4 +80,24 @@ final class ReservedSlugs
     {
         return [...self::APPLICATION, ...self::FRAMEWORK];
     }
+
+    /**
+     * La restricción del parámetro `{organization}` de la vitrina
+     * (`T-036`): un slug con forma de slug que **no** es ninguno de estos.
+     *
+     * La ruta de la vitrina es un comodín de un segmento en la raíz, y el
+     * orden de los ficheros de rutas solo la protege mientras nadie los
+     * reordene y mientras toda ruta reservada exista ya. Hoy no existen
+     * `/precios`, `/terminos` ni `/c` a secas, así que sin esta restricción
+     * esas URL caerían en la vitrina de nadie. Con ella, un segmento reservado
+     * **no puede** llegar a la vitrina, esté donde esté la ruta que lo ocupe o
+     * aunque todavía no exista. El mismo censo sirve al registro, al renombrado
+     * y al router: una sola lista.
+     */
+    public static function routePattern(): string
+    {
+        $reserved = implode('|', array_map(fn (string $slug): string => preg_quote($slug, '#'), self::all()));
+
+        return '(?!(?:'.$reserved.')$)[a-z0-9]+(?:-[a-z0-9]+)*';
+    }
 }

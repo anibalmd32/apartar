@@ -21,12 +21,15 @@ it('responde 410 y no 404', function (): void {
     expect(CatalogExpiredException::STATUS)->toBe(410);
 });
 
-it('lleva la campaña y el negocio, y nada más', function (): void {
+it('lleva la campaña, el negocio y su vitrina si la tiene, y nada más', function (): void {
     $exception = CatalogExpiredException::of(expiredCatalog());
 
+    // Sin vitrina activada, no hay enlace a ella (SP-3, `T-036`); con ella, lo
+    // prueba `CatalogShowTest` contra la ruta de verdad.
     expect($exception->toArray())->toBe([
         'catalogName' => 'Ofertas de septiembre',
         'businessName' => 'Ferretería Oriente',
+        'storefrontUrl' => null,
     ]);
 });
 

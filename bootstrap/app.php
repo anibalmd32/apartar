@@ -20,6 +20,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\OperatesWithoutTenant;
 use App\Http\Middleware\OutsideTenancy;
 use App\Http\Middleware\ResolveCatalogTenant;
+use App\Http\Middleware\ResolveStorefrontTenant;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -76,9 +77,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // la zona horaria compartidas sean las del negocio del catálogo.
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenant::class);
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveCatalogTenant::class);
+        $middleware->prependToPriorityList(SubstituteBindings::class, ResolveStorefrontTenant::class);
 
         // Cada superficie declara de dónde sale su tenant (REQ-ORG-002 RB-4).
         // `catalog-tenant` lo saca del slug del catálogo (`T-033`);
+        // `storefront-tenant`, del de la organización, y solo si su vitrina
+        // está activada (`T-036`);
         // `ResolvePortalTenant` entra con H3, cuando exista `Customer`.
         //
         // `outside-tenancy` no resuelve nada: declara que la ruta no
@@ -97,6 +101,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'catalog-tenant' => ResolveCatalogTenant::class,
+            'storefront-tenant' => ResolveStorefrontTenant::class,
             'without-tenant' => OperatesWithoutTenant::class,
             'outside-tenancy' => OutsideTenancy::class,
             'owner' => EnsureIsOwner::class,

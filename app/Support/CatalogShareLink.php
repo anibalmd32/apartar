@@ -45,6 +45,20 @@ final class CatalogShareLink
     public const PRODUCT_ROUTE = 'catalog.product';
 
     /**
+     * Nombre de la ruta de la vitrina del negocio, `apartar.store/{slug}`
+     * (`REQ-ORG-006` RB-6).
+     */
+    public const STOREFRONT_ROUTE = 'storefront';
+
+    /**
+     * El enlace de la vitrina, el que el negocio pone en su bio.
+     */
+    public static function storefrontOf(string $organizationSlug): string
+    {
+        return route(self::STOREFRONT_ROUTE, ['organization' => $organizationSlug]);
+    }
+
+    /**
      * El enlace que se copia y se difunde.
      */
     public static function of(string $slug): string

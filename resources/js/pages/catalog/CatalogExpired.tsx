@@ -8,11 +8,12 @@ import { Head } from '@inertiajs/react';
  * con esas palabras —existió, y ya no está— en lugar de un «no encontrado»
  * que le haría pensar que lo copió mal.
  *
- * El enlace a la vitrina del negocio que SP-3 pide «si está activada» entra con
- * la vitrina (`T-036`): hoy apuntaría a una página que no existe.
+ * Y si el negocio tiene la vitrina activada, la enlaza (`T-036`): quien llegó
+ * tarde a una campaña puede ver las que siguen. Sin vitrina no hay enlace,
+ * porque llevaría a un `404`.
  */
 
-export default function CatalogExpired({ catalogName, businessName }: CatalogExpiredProps) {
+export default function CatalogExpired({ catalogName, businessName, storefrontUrl }: CatalogExpiredProps) {
     return (
         <div className="bg-base-200 flex min-h-screen items-center justify-center px-4">
             <Head title={`${catalogName} terminó`} />
@@ -23,6 +24,12 @@ export default function CatalogExpired({ catalogName, businessName }: CatalogExp
                     El enlace es correcto: «{catalogName}» de {businessName} estuvo disponible, pero su plazo terminó. Si te interesaba algo,
                     pregúntale al negocio: puede que tenga una campaña nueva.
                 </p>
+
+                {storefrontUrl !== null ? (
+                    <a href={storefrontUrl} className="btn btn-primary mt-6">
+                        Ver los catálogos de {businessName}
+                    </a>
+                ) : null}
             </div>
         </div>
     );
