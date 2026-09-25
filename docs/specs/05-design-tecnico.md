@@ -141,9 +141,10 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 |---|---|---|---|
 | 15 | `account_identities` | `account_id`, `provider`, `provider_id`, `email` | `UNIQUE(provider, provider_id)` |
 | 16 | `customers` | `organization_id`, `document_number`, `document_kind`, `full_name`, `phone`, `email?`, `account_id?`, `terms_accepted_at?`, `terms_ip_address?`, `last_login_at?` | `UNIQUE(organization_id, document_number)`, `UNIQUE(organization_id, account_id)`, `INDEX(organization_id, phone)` |
-| 17 | `customer_login_tokens` | `organization_id`, `customer_id`, `token_hash`, `expires_at`, `consumed_at?`, `requested_ip` | `UNIQUE(token_hash)`, `INDEX(customer_id, expires_at)` |
+| 17 | `customer_login_tokens` | `organization_id`, `customer_id`, `token_hash`, `expires_at`, `consumed_at?`, `requested_ip` | `UNIQUE(organization_id, token_hash)`, `INDEX(customer_id, expires_at)` |
 
 > `customers` **no tiene columna `password`** (`REQ-IDN-001` RB-5). `accounts` **no tiene documento ni teléfono** (`REQ-ACC-001` RB-2). Ambas ausencias son verificables por test de esquema.
+> **El índice de `customer_login_tokens.token_hash` es `(organization_id, token_hash)` y no global, corregido antes de `T-039`.** La tabla declaraba `UNIQUE(token_hash)`, que habría sido la **cuarta** entrada de `GlobalUniqueExceptions` —una lista cerrada en tres, y `tenancy:audit` falla con la cuarta (§4.1)—. No hace falta: `REQ-IDN-003` RB-3 dice que una misma solicitud emite **un enlace por organización**, así que el token ya tiene que saber a cuál pertenece, y la ruta `/mi-cuenta/acceso/enlace/{token}` no lo sabe por el camino. Se resuelve como ya se resolvió la invitación de equipo en `T-013`: el token lleva delante el identificador de su organización (`7.a8f3…`), el tenant se fija con ese prefijo **antes** de consultar la tabla, y el índice queda compuesto. Es la misma forma y el mismo motivo; lo que no se repite es la excepción global. `layaways.code` sí es global y sigue siéndolo: es la credencial del portal y de ella se resuelve la organización sin tenant previo (`REQ-IDN-008` RB-3), que es justo lo que un enlace por organización no necesita.
 
 ### Bloque 5 — Catálogo
 

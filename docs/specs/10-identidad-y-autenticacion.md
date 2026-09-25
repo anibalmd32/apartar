@@ -174,9 +174,11 @@ final readonly class CustomerContactData
 > Como cliente que dejó su correo, quiero recibir un enlace para entrar a mi cuenta del negocio, para no tener que buscar el código de mi apartado.
 
 **Contratos de datos**
-- Entidad `CustomerLoginToken` (`customer_login_tokens`): `organization_id`, `customer_id`, `token_hash` (`UNIQUE`), `expires_at`, `consumed_at?`, `requested_ip`.
+- Entidad `CustomerLoginToken` (`customer_login_tokens`): `organization_id`, `customer_id`, `token_hash`, `expires_at`, `consumed_at?`, `requested_ip`.
 - `IssueLoginLinkAction`, `ConsumeLoginTokenAction`.
 - Rutas `GET|POST /mi-cuenta/acceso/enlace`, `GET|POST /mi-cuenta/acceso/enlace/{token}`.
+
+> **El token lleva delante el identificador de su organización, y su índice es `(organization_id, token_hash)`.** El contrato decía `UNIQUE(token_hash)` a secas, y eso habría sido la cuarta excepción de `GlobalUniqueExceptions`, que es una lista cerrada en tres ([05 §4.1]). Sobra: RB-3 ya obliga a que cada enlace esté acotado a **una** organización, así que el token puede decir a cuál —como el de la invitación de equipo desde `T-013`, con el mismo formato `7.a8f3…`—, el tenant se fija con ese prefijo antes de tocar la tabla, y el índice se compone. Dos consecuencias para quien lo implemente: SP-2 sigue en pie —un token inexistente, uno caducado y uno con un prefijo que no es de ninguna organización dan **el mismo `404`**, sin distinguirse—, y la comparación del hash se hace **dentro** de la organización ya fijada, que es donde RB-5 invalida los previos del mismo cliente.
 
 **Reglas de negocio y precondiciones**
 - RB-1 Es una vía **secundaria** (`Q2`): solo funciona para fichas que tengan email. La vía universal es documento + código (`REQ-IDN-008`).
