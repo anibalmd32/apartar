@@ -337,6 +337,17 @@ final class ScheduleGenerator
 - `LayawayStateMachine::transition(Layaway $layaway, LayawayStatus $to): void`.
 - Campos `activated_at`, `completed_at`, `cancelled_at`, `expires_at`, `delivered_at`.
 
+> **Cómo se impide escribir el estado fuera de la máquina (decidido en `T-042`).** RB-2 no se queda en una frase: está impedido en **dos capas**, y cada una cubre lo que la otra no ve.
+>
+> 1. **La guarda del modelo `Layaway`.** Un `saving` que **lanza** si se guarda un apartado con `status` cambiado, o si se crea en un estado que no sea `pending_down_payment` (`REQ-LAY-001` RB-7). Cubre `save()`, `forceFill()->save()` y la asignación directa; `status` además **no es asignable en masa**, y `LayawayStateMachineTest` lo afirma para que `T-045`, al declarar `$fillable`, no lo incluya.
+> 2. **`LayawayStatusWritesTest`**, en `tests/Feature/Quality` —el gate más barato—: lo que no pasa por un modelo (`update()` del *query builder*, `DB::table('layaways')`, SQL escrito a mano) no dispara eventos de Eloquent, así que un test de arquitectura recorre `app/` y rechaza cualquier escritura de `status` en un archivo que hable de apartados, salvo en `LayawayStateMachine`. El detector lleva sus propios casos positivos y negativos, para no pasar en verde sobre un conjunto vacío.
+>
+> La máquina escribe por el *query builder* precisamente porque es la única escritura que la primera capa no rechaza y la única que la segunda admite. Si alguien escribe el estado en otro sitio, se pone rojo el test de arquitectura (*query builder*) o lanza `LogicException` en el primer test que ejercite ese código (modelo).
+>
+> **Qué viaja con cada transición**, todo dentro de `transition()` y en una transacción con la fila bloqueada: el estado; la marca —`activated_at` **solo al salir de `pending_down_payment`** (la vuelta desde `overdue` no reescribe la fecha de activación), `completed_at` y `cancelled_at`—; el cupo; y el evento. Entrar en mora, salir de ella y expirar no tienen columna en [05 §4]: su instante queda en `updated_at` y en el `occurredAt` del evento, y `expires_at` —que es el **plazo** de la inicial, no el momento en que expiró— no se toca. Los eventos son seis, uno por transición y todos `ShouldDispatchAfterCommit`: `LayawayActivated`, `LayawayBecameOverdue`, `LayawayCaughtUp` (la vuelta de RB-4), `LayawayCompleted`, `LayawayCancelled` y `LayawayExpired`, con identificadores y no el modelo, para que un listener encolado no tenga que rehidratarlo sin tenant.
+>
+> **El cupo se mueve con `LimitEnforcer::adjust()`**, que bloquea la fila de `usage_counters` dentro de la transacción, **nunca la deja negativa** y, si lo que se libera no estaba contado, la deja en cero y registra `usage_counter.below_zero` sin impedir la transición (SP-7, `REQ-SUB-003` RB-8). No pregunta por la suscripción (RB-9). Es el mismo método con el que `T-045` subirá el contador al crear.
+
 **Reglas de negocio y precondiciones**
 - RB-1 Transiciones permitidas:
   | Desde | Hacia |

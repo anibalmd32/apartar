@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use App\Models\UsageCounter;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use LogicException;
 
 /**
@@ -93,7 +94,7 @@ final class LimitEnforcer
      */
     public function assertCanCreate(UsageMetric $metric, int $amount = 1): void
     {
-        $this->assertInsideTransaction($metric);
+        $this->assertInsideTransaction('assertCanCreate', $metric);
 
         $subscription = $this->subscription();
 
@@ -248,6 +249,66 @@ final class LimitEnforcer
         return $measured;
     }
 
+    /**
+     * Mueve el contador de una métrica **incremental** en `$delta` unidades,
+     * y devuelve el valor que queda escrito.
+     *
+     * Es el movimiento de `REQ-SUB-003` RB-3 para las métricas que `measure()`
+     * todavía no sabe contar: `active_layaways` la suben la creación del
+     * apartado (`T-045`) y la baja `LayawayStateMachine` al pasar a un
+     * terminal (`REQ-LAY-005` RB-6). La reconciliación que corrige la deriva
+     * es de `T-066`; esto es la cuenta del día a día.
+     *
+     * Con la fila **bloqueada y dentro de la transacción** de la mutación, por
+     * lo mismo que `assertCanCreate()`: dos movimientos simultáneos leerían el
+     * mismo valor y uno de los dos se perdería. Fuera de una transacción lanza.
+     *
+     * **Nunca deja el contador negativo** (`REQ-SUB-003` RB-8, `REQ-LAY-005`
+     * SP-7). Liberar con el contador en cero no es un error del que liberó
+     * —el cupo se liberó—, es una deriva de quien no lo subió, así que queda
+     * en cero, se registra la anomalía con cuánto faltaba, y la operación
+     * sigue: un apartado no puede dejar de completarse porque un contador esté
+     * descuadrado.
+     *
+     * **No pregunta por la suscripción.** Mover lo que ya se consumió no es
+     * crear: una organización suspendida sigue completando y cancelando
+     * apartados (`REQ-SUB-007` RB-3), y su contador tiene que seguirlos.
+     *
+     * @throws LogicException si no hay transacción abierta, o la métrica es derivada
+     */
+    public function adjust(UsageMetric $metric, int $delta): int
+    {
+        $this->assertInsideTransaction('adjust', $metric);
+
+        // `storage_mb` se agrega, no se incrementa (RB-5): lo mueven
+        // conversiones y purgas asíncronas y un incremento se desincronizaría.
+        if ($metric->isDerived()) {
+            throw new LogicException(sprintf(
+                'adjust(%s): esa métrica es derivada y se recalcula por agregación (REQ-SUB-003 RB-5), no por incremento.',
+                $metric->value,
+            ));
+        }
+
+        $counter = $this->counterFor($metric, locked: true);
+        $wanted = $counter->value + $delta;
+        $value = max(0, $wanted);
+
+        if ($wanted < 0) {
+            Log::warning('usage_counter.below_zero', [
+                'metric' => $metric->value,
+                'organization_id' => $counter->organization_id,
+                'previous' => $counter->value,
+                'delta' => $delta,
+            ]);
+        }
+
+        if ($value !== $counter->value) {
+            $counter->forceFill(['value' => $value, 'computed_at' => now()])->save();
+        }
+
+        return $value;
+    }
+
     // -------------------------------------------------------------------
     // El contador
     // -------------------------------------------------------------------
@@ -398,17 +459,18 @@ final class LimitEnforcer
     /**
      * @throws LogicException si se comprueba un límite fuera de una transacción
      */
-    private function assertInsideTransaction(UsageMetric $metric): void
+    private function assertInsideTransaction(string $operation, UsageMetric $metric): void
     {
         if (DB::transactionLevel() > 0) {
             return;
         }
 
         throw new LogicException(sprintf(
-            'assertCanCreate(%s) se llamó fuera de una transacción. El contador se lee BLOQUEADO '
-            .'dentro de la transacción que crea ([05 §5]): comprobar en una transacción y escribir '
-            .'en otra deja pasar dos creaciones simultáneas con un solo cupo. Envuelve la acción '
+            '%s(%s) se llamó fuera de una transacción. El contador se lee BLOQUEADO '
+            .'dentro de la transacción que lo mueve ([05 §5]): comprobar o mover en una transacción y escribir '
+            .'en otra deja pasar dos operaciones simultáneas con un solo cupo. Envuelve la acción '
             .'en DB::transaction().',
+            $operation,
             $metric->value,
         ));
     }
