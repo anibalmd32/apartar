@@ -111,7 +111,7 @@ export interface AuthenticatedTeamMember {
 - RB-1 Eventos auditados (lista cerrada):
   - **Cobranza:** aprobación y rechazo de comprobantes; registro y reasignación de pagos; cancelación y reprogramación de apartados; marcado de entrega.
   - **Catálogo:** cambios de precio, inicial, cuotas o frecuencia de un producto; cambio de estado; publicación, despublicación y expiración de catálogos.
-  - **Clientes:** fusión de fichas; conflicto de identidad detectado; vinculación de una cuenta de consumidor (`REQ-ACC-004` RB-6).
+  - **Clientes:** fusión de fichas; conflicto de identidad detectado; **actualización del contacto al reutilizar una ficha** (`REQ-IDN-001` RB-4, añadido antes de `T-043`); vinculación de una cuenta de consumidor (`REQ-ACC-004` RB-6).
   - **Organización:** cambios de ajustes, identidad y branding; alta, edición y desactivación de cuentas de cobro; invitación, revocación, cambio de rol, activación y desactivación de miembros.
   - **Suscripción:** cambio de plan, emisión y pago de facturas, aplicación de degradación, suspensión y reactivación.
   - **Plataforma:** **concesión y revocación de un acceso de soporte** (`REQ-PLT-005` RB-4) y cualquier acción que la plataforma ejecute sobre la suscripción del negocio (`REQ-PLT-004` RB-7).
@@ -124,6 +124,8 @@ export interface AuthenticatedTeamMember {
 - RB-7 El actor puede ser un `User` de la organización, un `PlatformUser` (marcado como tal) o el sistema (`causer` nulo, con el nombre del proceso en la descripción).
 - RB-8 Retención indefinida en v1; la purga queda documentada como extensión.
 - RB-9 La vista es de solo lectura, paginada por servidor y exclusiva del `owner`.
+
+> **La lista crece a 36 con `customer.contact_updated`, y el motivo es el que RB-1 existe para cubrir.** `REQ-IDN-001` RB-4 reutiliza la ficha cuando el documento ya existe en esa organización y **sobrescribe nombre, teléfono y correo** con los del formulario. Ese formulario es el del apartado: una superficie **pública y sin sesión**, donde lo único que acredita identidad es saberse el número de documento. Es decir, quien conozca la cédula de un cliente puede cambiar el teléfono y el correo con los que ese negocio lo contacta, y las notificaciones de su apartado dejan de llegarle. No se bloquea —SP-3 es explícito en que la venta no se detiene, y un cliente que se mudó o cambió de número es el caso normal—, así que **la auditoría es la única mitigación que queda**, y por eso no puede ser silenciosa. No se reutiliza `customer.identity_conflict` para esto: ese evento señala un nombre radicalmente distinto y debe seguir siendo raro; dispararlo en cada cambio de teléfono lo convertiría en ruido y dejaría de avisar de lo que avisa. Añadir el evento es el procedimiento que la propia RB-1 prescribe —entrada en la spec, no una constante suelta—, y `AuditEventTest` recorre el enum, así que el emisor tiene que declararse.
 
 **Happy path**
 1. Un `member` aprueba un comprobante.
