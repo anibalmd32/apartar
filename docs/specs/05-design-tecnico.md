@@ -177,7 +177,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 | # | Tabla | Columnas clave | Índices |
 |---|---|---|---|
-| 28 | `layaways` | `organization_id`, `code`, `customer_id`, `product_id`, `catalog_id?`, `quantity`, `unit_price_cents`, `down_payment_cents`, `installments_count`, `frequency_days`, `product_name_snapshot`, `product_sku_snapshot`, `total_cents`, `paid_cents`, `remaining_cents`, `status`, `expires_at?`, `extended_at?`, `activated_at?`, `next_due_date?`, `completed_at?`, `cancelled_at?`, `cancellation_reason?`, `delivered_at?`, `stock_released_at?` | **`UNIQUE(code)` global**, `INDEX(organization_id, status, next_due_date)`, `INDEX(organization_id, customer_id)` |
+| 28 | `layaways` | `organization_id`, `code`, `idempotency_key`, `customer_id`, `product_id`, `catalog_id?`, `quantity`, `unit_price_cents`, `down_payment_cents`, `installments_count`, `frequency_days`, `product_name_snapshot`, `product_sku_snapshot`, `total_cents`, `paid_cents`, `remaining_cents`, `status`, `expires_at?`, `extended_at?`, `activated_at?`, `next_due_date?`, `completed_at?`, `cancelled_at?`, `cancellation_reason?`, `delivered_at?`, `stock_released_at?` | **`UNIQUE(code)` global**, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, status, next_due_date)`, `INDEX(organization_id, customer_id)` |
 | 29 | `installments` | `organization_id`, `layaway_id`, `number`, `due_date`, `amount_cents`, `paid_cents`, `status`, `paid_at?` | `UNIQUE(organization_id, layaway_id, number)`, `INDEX(organization_id, status, due_date)` |
 | 30 | `receipts` | `organization_id`, `layaway_id`, `customer_id`, `payment_account_id?`, `payment_method`, `bank?`, `reference?`, `paid_at`, `declared_amount`, `declared_currency`, `note?`, `file_path`, `file_hash`, `file_mime`, `file_size`, `status`, `reviewed_by?`, `reviewed_at?`, `rejection_reason_code?`, `rejection_reason?`, `replaces_receipt_id?` | `UNIQUE(organization_id, file_hash)`, `UNIQUE(organization_id, bank, reference)`, `INDEX(organization_id, status, created_at)` |
 | 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `INDEX(organization_id, settled_at)` |
@@ -394,18 +394,25 @@ ApproveReceiptAction / RegisterManualPaymentAction
 Y en creación:
 
 ```
-CreateLayawayAction
+CreateLayawayAction                                    (tenant = el del catálogo, RB-1)
+  ├─ ¿existe ya la idempotencyKey? → lo devuelve        ← RB-12, sin transacción
+  ├─ valida catálogo accesible y producto en el catálogo ← lecturas FUERA de la transacción
   └─ DB::transaction
-       ├─ valida catálogo accesible y producto en el catálogo
-       ├─ lockForUpdate() sobre el Product              ← orden canónico: producto, luego cliente
-       ├─ LimitEnforcer::assertCanCreate(ActiveLayaways)
+       ├─ ProductLock::acquire() sobre el Product       ← orden canónico: producto, luego todo lo demás
+       ├─ ¿existe ya la idempotencyKey? → lo devuelve   ← RB-12, ya bajo el bloqueo
+       ├─ estado publicado y stock >= quantity          ← sobre la fila bloqueada
+       ├─ LimitEnforcer::assertCanCreate(ActiveLayaways) → NotAcceptingLayawaysException (neutro)
+       ├─ organización activa
        ├─ ResolveCustomerAction                         → Customer
-       ├─ congela LayawayTerms → crea Layaway
+       ├─ congela LayawayTerms → LayawayCode::claim() → crea Layaway
        ├─ ReserveStockAction
-       ├─ UsageCalculator incrementa active_layaways
-       └─ LinkAccountAction + SubscribeToCatalogAction (si hay sesión de cuenta)
-  └─ afterCommit → email de confirmación + telemetría
+       ├─ LimitEnforcer::adjust(ActiveLayaways, +1)
+       └─ LinkAccountAction + SubscribeToCatalogAction (si hay sesión de cuenta — H6)
+  ├─ colisión en UNIQUE(organization_id, idempotency_key) → deshace todo y devuelve el que ganó
+  └─ afterCommit → email de confirmación (T-045b) + telemetría (T-084)
 ```
+
+> **Por qué las lecturas de validación van fuera de la transacción** (`T-045`). En `REPEATABLE READ`, la primera lectura normal fija la foto de toda la transacción. Si el catálogo se leyera dentro y antes del bloqueo del producto, la foto sería anterior a que confirmase otro envío con la misma clave que esperaba ese mismo bloqueo, y la segunda comprobación de la clave no lo vería: devolvería un `422` de stock en vez del apartado. El `FOR UPDATE` no fija la foto; la primera lectura normal después de él, sí, y ya ve lo confirmado.
 
 ---
 

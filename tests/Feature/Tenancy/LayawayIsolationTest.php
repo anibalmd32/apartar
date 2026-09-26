@@ -35,7 +35,7 @@ final class LayawayIsolationTest extends TestCase
         $theirs = $this->neighbourOrganization();
 
         $neighbours = $this->layawayIn($theirs, LayawayStatus::Active);
-        $this->withinOrganization($theirs, fn () => UsageCounter::factory()->forMetric(UsageMetric::ActiveLayaways, 7)->create());
+        $this->withinOrganization($theirs, fn () => UsageCounter::query()->updateOrCreate(['metric' => UsageMetric::ActiveLayaways], ['value' => 7, 'computed_at' => now()]));
 
         try {
             $this->withinOrganization($ours, fn () => app(LayawayStateMachine::class)->transition($neighbours, LayawayStatus::Cancelled));

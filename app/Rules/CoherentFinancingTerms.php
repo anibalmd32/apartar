@@ -6,6 +6,7 @@ namespace App\Rules;
 
 use App\Domain\Layaway\ScheduleGenerator;
 use App\Domain\Money\Money;
+use App\Domain\Money\MoneyFormatter;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -15,10 +16,10 @@ use Illuminate\Validation\Validator;
 use InvalidArgumentException;
 
 /**
- * Las seis reglas cruzadas que hacen que un producto se pueda financiar
+ * Las siete reglas cruzadas que hacen que un producto se pueda financiar
  * (`REQ-BOF-020` RB-1).
  *
- * No son seis validaciones sueltas: son **un contrato**, y cada una impide un
+ * No son siete validaciones sueltas: son **un contrato**, y cada una impide un
  * producto distinto que el sistema aceptaría y luego no sabría cobrar. El
  * síntoma de relajar cualquiera no aparece aquí, aparece en H3 cuando
  * `ScheduleGenerator` intente convertir esas cifras en un cronograma.
@@ -35,11 +36,15 @@ use InvalidArgumentException;
  *  - **`price` mayor que cero y hasta un millón** y **`stock` no negativo**:
  *    los límites que hacen que el resto de las cuentas quepan donde tienen que
  *    caber.
+ *  - **Al menos un céntimo por cuota** (la séptima, desde `T-045`): un
+ *    financiado menor que el número de cuotas reparte exacto y deja cuotas de
+ *    $0,00, que la cobranza trataría como vencidas. El mensaje dice cuántas
+ *    caben, y va sobre `installments_count`, que es lo que se corrige.
  *
  * ## Por qué cada error aterriza en **su** campo
  *
  * Una regla de Laravel solo puede hablar del atributo al que se ata, y estas
- * seis hablan de cinco campos distintos. Devolver los seis mensajes sobre
+ * siete hablan de cinco campos distintos. Devolver los siete mensajes sobre
  * `price` pondría «la inicial no puede superar al precio» encima del precio,
  * que es el campo correcto en cero de los dos casos. Por eso la regla es
  * además `ValidatorAwareRule` y escribe en el bolsín de errores con el nombre
@@ -52,7 +57,7 @@ use InvalidArgumentException;
  *
  * La previsualización del plan (RB-7) necesita saber si los términos son
  * coherentes **antes** de calcular, y tiene que preguntárselo a esta lista y
- * no a una copia suya: dos listas de las mismas seis reglas acaban
+ * no a una copia suya: dos listas de las mismas siete reglas acaban
  * discrepando, y la que se quede corta pintará una cuota de un plan que el
  * formulario va a rechazar.
  */
@@ -87,7 +92,7 @@ final class CoherentFinancingTerms implements DataAwareRule, ValidationRule, Val
     private Validator $validator;
 
     /**
-     * Las seis reglas, en crudo y sin Laravel de por medio.
+     * Las siete reglas, en crudo y sin Laravel de por medio.
      *
      * @param  Money|null  $compareAtPrice  el precio tachado, si lo hay
      * @return array<string, string> campo => motivo; vacío si los términos son coherentes
@@ -129,6 +134,23 @@ final class CoherentFinancingTerms implements DataAwareRule, ValidationRule, Val
                 'El número de cuotas tiene que estar entre %d y %d.',
                 self::MIN_INSTALLMENTS,
                 self::MAX_INSTALLMENTS,
+            );
+        }
+
+        $financed = $price->cents - $downPayment->cents;
+
+        if (! isset($violations['installments_count']) && ! isset($violations['down_payment_cents'])
+            && $financed > 0 && $financed < $installmentsCount) {
+            // La séptima (`T-045`, razonada bajo `T-041`) · un financiado menor
+            // que el número de cuotas reparte exacto y deja cuotas de $0,00
+            // —`$0,05` en 36—, que la cobranza trataría como vencidas y
+            // notificaría a un cliente que no debe nada. Va aquí y no en el
+            // apartado para que el rechazo lo vea el negocio al guardar, y no
+            // el cliente al comprar.
+            $violations['installments_count'] = sprintf(
+                'Con %s por financiar caben como mucho %d cuotas: cada cuota tiene que ser de al menos un céntimo.',
+                MoneyFormatter::format(new Money($financed)),
+                $financed,
             );
         }
 
@@ -180,7 +202,7 @@ final class CoherentFinancingTerms implements DataAwareRule, ValidationRule, Val
             // Falta algo, o un importe no es un decimal de dos cifras. De eso
             // ya hablan `required` y `decimal` con su mensaje junto al campo, y
             // añadir aquí un segundo mensaje haría que un solo error pareciera
-            // dos problemas distintos. Con el campo corregido, las seis reglas
+            // dos problemas distintos. Con el campo corregido, las siete reglas
             // vuelven a correr enteras.
             return;
         }

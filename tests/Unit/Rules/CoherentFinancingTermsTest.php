@@ -89,6 +89,36 @@ it('acota el número de cuotas entre 1 y 36', function (int $installments, bool 
     'negativa' => [-1, false],
 ]);
 
+/**
+ * La séptima (`T-045`) · cada cuota de al menos un céntimo. Un financiado
+ * menor que las cuotas deja cuotas de $0,00, que la cobranza trataría como
+ * vencidas; el mensaje dice cuántas caben, sobre el campo que se corrige.
+ */
+it('exige al menos un céntimo por cuota', function (int $price, int $down, int $installments, bool $valid): void {
+    $violations = terms(price: $price, down: $down, installments: $installments);
+
+    expect(array_key_exists('installments_count', $violations))->toBe(! $valid);
+})->with([
+    '$0,05 en 36' => [105, 100, 36, false],
+    'un céntimo por cuota, justo' => [136, 100, 36, true],
+    'un céntimo de menos' => [135, 100, 36, false],
+    'un céntimo en una cuota' => [101, 100, 1, true],
+]);
+
+it('dice cuántas cuotas caben como mucho', function (): void {
+    expect(terms(price: 105, down: 100, installments: 36)['installments_count'] ?? null)
+        ->toBe('Con $0.05 por financiar caben como mucho 5 cuotas: cada cuota tiene que ser de al menos un céntimo.');
+});
+
+/**
+ * Con la inicial o las cuotas ya mal, la séptima no añade un segundo mensaje
+ * sobre la misma causa.
+ */
+it('no repite el aviso cuando la inicial o las cuotas ya están mal', function (): void {
+    expect(terms(price: 105, down: 105, installments: 36))->not->toHaveKey('installments_count');
+    expect(terms(price: 105, down: 100, installments: 37)['installments_count'] ?? null)->toStartWith('El número de cuotas tiene que estar entre');
+});
+
 it('acota los días entre cuotas entre 1 y 90', function (int $frequency, bool $valid): void {
     expect(array_key_exists('frequency_days', terms(frequency: $frequency)))->toBe(! $valid);
 })->with([

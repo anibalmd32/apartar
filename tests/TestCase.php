@@ -7,6 +7,7 @@ namespace Tests;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Http;
 use Tests\Concerns\CreatesNeighbourOrganization;
+use Tests\Concerns\FailsOnCounterDrift;
 use Tests\Concerns\FakesPwnedPasswords;
 
 /**
@@ -23,7 +24,7 @@ use Tests\Concerns\FakesPwnedPasswords;
  */
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesNeighbourOrganization, FakesPwnedPasswords;
+    use CreatesNeighbourOrganization, FailsOnCounterDrift, FakesPwnedPasswords;
 
     protected function setUp(): void
     {
@@ -47,5 +48,16 @@ abstract class TestCase extends BaseTestCase
         Http::preventStrayRequests();
 
         $this->fakeUncompromisedPasswordService();
+
+        // `T-045` · un `below_zero` del contador del plan es una deriva real;
+        // el porqué está en `FailsOnCounterDrift`.
+        $this->watchCounterDrift();
+    }
+
+    protected function assertPostConditions(): void
+    {
+        parent::assertPostConditions();
+
+        $this->assertNoCounterDrift();
     }
 }

@@ -93,6 +93,15 @@ final readonly class LayawayTerms
                 .'y las cuotas también; CoherentFinancingTerms lo impide al guardar el producto.'
             );
         }
+
+        // La séptima regla de `CoherentFinancingTerms`, como guarda: cada
+        // cuota de al menos un céntimo. Sin ella, `$0,05` en 36 cuotas daría
+        // 31 de $0,00 que la cobranza trataría como vencidas.
+        $financed = $this->total()->cents - $this->totalDownPayment()->cents;
+
+        if ($financed > 0 && $financed < $installmentsCount) {
+            throw InvalidScheduleException::installmentBelowOneCent($financed, $installmentsCount);
+        }
     }
 
     /**

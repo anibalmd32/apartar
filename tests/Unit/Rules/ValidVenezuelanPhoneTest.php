@@ -37,9 +37,18 @@ it('falla con un teléfono de otro país (SP-5)', function (): void {
     expect(phoneFailure('+1 305 555 0199'))->toStartWith('Por ahora solo aceptamos teléfonos de Venezuela');
 });
 
-it('falla con un código de área inválido (SP-7)', function (): void {
-    expect(phoneFailure('0250-1234567'))->toStartWith('El código 0250 no es de ninguna operadora móvil');
+it('falla con un código que no tiene forma de teléfono venezolano', function (): void {
+    expect(phoneFailure('0500-1234567'))->toStartWith('El código 0500 no es de un teléfono de Venezuela');
 });
+
+/**
+ * Desde `T-045` se valida la forma, no el censo (`REQ-IDN-007`): un prefijo
+ * fuera del censo que empieza por `2` o `4` pasa, y el aviso que no bloquea
+ * es del formulario.
+ */
+it('deja pasar un prefijo fuera del censo con forma de teléfono venezolano', function (string $value): void {
+    expect(phoneFailure($value))->toBeNull();
+})->with(['0250-1234567', '0413-1234567']);
 
 /**
  * `REQ-IDN-001` RB-2: el teléfono es obligatorio, y un campo ausente que

@@ -19,31 +19,52 @@ namespace App\Support;
  * `null` para la búsqueda, donde lo que no es un teléfono se degrada a `LIKE`
  * (SP-6) en vez de romper.
  *
- * ## Qué es un código válido
+ * ## Qué es un código válido: la forma, no el censo
  *
- * Los cinco prefijos móviles de RB-4 y los códigos geográficos del plan de
- * numeración venezolano. **Los censos viven solo aquí**: la máscara del
- * frontend no los conoce, porque una máscara no rechaza (ver
- * `identity-format.ts`), y `ValidPaymentIdentifier` lee `MOBILE_PREFIXES` de
- * esta clase en vez de llevar su copia.
+ * **Desde `T-045`, la aceptación valida la forma** (decidido bajo
+ * `REQ-IDN-007`, supersede RB-4 en lo que tiene de «válidos» y SP-7): `+58`,
+ * diez dígitos, y el código empezando por `2` —fijo— o por `4` —móvil—. El
+ * censo de prefijos es el plan de numeración de CONATEL, que cambia sin
+ * avisarnos y en la dirección que nos rompe —los rangos se asignan, no se
+ * retiran—, y como puerta fallaba hacia el lado caro: rechazar un `0422` real
+ * deja a un cliente sin poder apartar y no deja rastro en ningún log; aceptar
+ * un rango sin asignar guarda una errata que se nota al llamar.
+ *
+ * Los censos **se quedan**, pero como etiqueta: `isMobile()` decide si se
+ * ofrece WhatsApp o SMS, e `isRecognised()` deja que el formulario avise sin
+ * bloquear («no reconocemos ese prefijo, ¿es correcto?», `T-045b`). Viven solo
+ * aquí: la máscara del frontend no los conoce, porque una máscara no rechaza
+ * (ver `identity-format.ts`), y `ValidPaymentIdentifier` lee `MOBILE_PREFIXES`
+ * de esta clase en vez de llevar su copia.
  */
 final readonly class PhoneNumber
 {
     public const COUNTRY_CODE = '58';
 
     /**
-     * Operadoras móviles de RB-4, sin el cero nacional.
+     * Operadoras móviles, sin el cero nacional: las cinco de RB-4 más `415` y
+     * `422`, que entraron con `T-045` (Digitel opera también el `0422`).
+     *
+     * Ya no deciden qué se acepta, sino qué es un móvil: `isMobile()`.
      *
      * @var non-empty-list<string>
      */
-    public const MOBILE_PREFIXES = ['412', '414', '416', '424', '426'];
+    public const MOBILE_PREFIXES = ['412', '414', '415', '416', '422', '424', '426'];
 
     /**
-     * Códigos geográficos del plan de numeración, sin el cero nacional (SP-7).
+     * Primer dígito de un código nacional válido: `2` los fijos, `4` los
+     * móviles. Es la forma que se valida.
      *
-     * `260` y `270` son las zonas binacionales de la frontera con Colombia, y
-     * están porque son números venezolanos: rechazar el fijo de un cliente de
-     * San Antonio o de Paraguachón costaría la venta por la geografía.
+     * @var non-empty-list<string>
+     */
+    private const ACCEPTED_LEADING_DIGITS = ['2', '4'];
+
+    /**
+     * Códigos geográficos del plan de numeración, sin el cero nacional.
+     *
+     * Solo responden `isRecognised()`: un fijo con un código que no está aquí
+     * se acepta igual si empieza por `2`. `260` y `270` son las zonas
+     * binacionales de la frontera con Colombia.
      *
      * @var list<string>
      */
@@ -78,10 +99,9 @@ final readonly class PhoneNumber
             throw InvalidPhoneNumberException::notE164($value);
         }
 
-        $areaCode = substr($matches[1], 0, 3);
-
-        if (! in_array($areaCode, self::MOBILE_PREFIXES, true) && ! in_array($areaCode, self::LANDLINE_AREA_CODES, true)) {
-            throw InvalidPhoneNumberException::unknownAreaCode($areaCode, self::MOBILE_PREFIXES);
+        // La forma, no el censo: ver el bloque de la clase.
+        if (! in_array($matches[1][0], self::ACCEPTED_LEADING_DIGITS, true)) {
+            throw InvalidPhoneNumberException::unknownAreaCode(substr($matches[1], 0, 3));
         }
     }
 
@@ -169,6 +189,16 @@ final readonly class PhoneNumber
     public function isMobile(): bool
     {
         return in_array($this->areaCode(), self::MOBILE_PREFIXES, true);
+    }
+
+    /**
+     * Si el código está en el censo —una operadora móvil o una zona del
+     * país—. **No decide si se acepta**: eso lo decide la forma. Es la pregunta
+     * del aviso que no bloquea de `T-045b`.
+     */
+    public function isRecognised(): bool
+    {
+        return $this->isMobile() || in_array($this->areaCode(), self::LANDLINE_AREA_CODES, true);
     }
 
     /**

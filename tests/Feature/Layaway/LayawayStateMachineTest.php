@@ -381,8 +381,10 @@ final class LayawayStateMachineTest extends TestCase
         $suspended = Organization::factory()->suspended()->create();
         $this->withinOrganization($suspended, fn () => Subscription::factory()->forPlan(Plan::factory()->create())->suspended()->create());
 
+        // Sembrarlo ya sube el cupo, como lo haría `CreateLayawayAction`; se
+        // fija en 2 para ver que baja uno y no que llega a cero.
         $layaway = $this->layawayIn($suspended);
-        $this->withinOrganization($suspended, fn () => UsageCounter::factory()->forMetric(UsageMetric::ActiveLayaways, 2)->create());
+        $this->withinOrganization($suspended, fn () => UsageCounter::query()->updateOrCreate(['metric' => UsageMetric::ActiveLayaways], ['value' => 2, 'computed_at' => now()]));
 
         $this->withinOrganization($suspended, function () use ($layaway): void {
             app(LayawayStateMachine::class)->transition($layaway, LayawayStatus::Active);

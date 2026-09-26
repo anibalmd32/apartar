@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Layaway\AmortizationSchedule;
+use App\Domain\Layaway\InvalidScheduleException;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Layaway\ScheduledInstallment;
 use App\Domain\Layaway\ScheduleGenerator;
@@ -222,8 +223,9 @@ it('coincide al céntimo con la cuota de la ficha cuando se aparta una unidad', 
  *    propiedad no se pruebe solo sobre lo raro;
  *  - **varias unidades**: donde vive la trampa de multiplicar un reparto;
  *  - **financiados primos**: donde vive el residuo;
- *  - **financiado menor que las cuotas**: cuotas de cero y la última con todo,
- *    que es donde una suma se pierde sin que se note;
+ *  - **financiado igual a las cuotas**: un céntimo por cuota, el borde de la
+ *    séptima regla (`T-045`). Por debajo —cuotas de cero— ya no se puede
+ *    construir un `LayawayTerms`, y eso lo afirma el caso siguiente;
  *  - **inicial igual al precio**: el cronograma vacío de SP-2.
  */
 it('cumple la invariante de la suma con 500 condiciones al azar', function (): void {
@@ -248,8 +250,8 @@ it('cumple la invariante de la suma con 500 condiciones al azar', function (): v
     }
 
     for ($i = 0; $i < 60; $i++) {
-        $financed = mt_rand(1, 35);
-        $cases[] = [$financed + 100, 100, 1, mt_rand($financed + 1, ScheduleGenerator::MAX_INSTALLMENTS)];
+        $financed = mt_rand(ScheduleGenerator::MIN_INSTALLMENTS, ScheduleGenerator::MAX_INSTALLMENTS);
+        $cases[] = [$financed + 100, 100, 1, $financed];
     }
 
     for ($i = 0; $i < 40; $i++) {
@@ -291,6 +293,21 @@ it('cumple la invariante de la suma con 500 condiciones al azar', function (): v
         }
     }
 });
+
+/**
+ * La séptima regla como guarda (`T-045`): un financiado menor que el número
+ * de cuotas dejaría cuotas de $0,00, que la cobranza trataría como vencidas.
+ * `CoherentFinancingTerms` lo impide al guardar el producto; aquí no se puede
+ * ni construir.
+ */
+it('no congela unas condiciones con cuotas de cero', function (int $financed, int $count): void {
+    expect(fn () => new LayawayTerms(new Money($financed + 100), new Money(100), 1, $count, 15))
+        ->toThrow(InvalidScheduleException::class, 'alguna saldría de $0,00');
+})->with([
+    '$0,05 en 36' => [5, 36],
+    'un céntimo de menos' => [35, 36],
+    '$0,01 en 2' => [1, 2],
+]);
 
 /**
  * §8.4: dominio puro. Con el reloj congelado en dos fechas que no se parecen,

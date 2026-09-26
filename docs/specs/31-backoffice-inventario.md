@@ -79,7 +79,8 @@ export interface SpecificationFormRow {
   - `installments_count` entre 1 y 36;
   - `frequency_days` entre 1 y 90;
   - `compare_at_price`, si existe, **mayor** que `price`;
-  - `stock >= 0`.
+  - `stock >= 0`;
+  - **al menos un céntimo por cuota**: `price − down_payment >= installments_count` (la séptima, añadida en `T-045` y razonada bajo `T-041`). Un financiado menor que el número de cuotas reparte exacto y deja cuotas de $0,00 —`$0,05` en 36—, que la cobranza trataría como vencidas y notificaría a un cliente que no debe nada. El error va sobre `installments_count` y dice cuántas caben como mucho; `LayawayTerms` repite la regla como guarda de construcción.
 - RB-2 Los importes se introducen en USD con dos decimales y se persisten en centavos (`REQ-FX-001`).
 - RB-3 `sku` y `slug` son únicos **por organización** (`UNIQUE(organization_id, …)`): dos negocios pueden usar el mismo SKU sin interferir. El `slug` se autogenera del nombre y es editable mientras el producto no esté publicado.
 - RB-4 Los valores por defecto de `installments_count` y `frequency_days` vienen de `organization_settings` (`REQ-ORG-006`), para que el negocio no los reescriba en cada producto.
@@ -118,7 +119,7 @@ export interface SpecificationFormRow {
 **Gate de validación**
 - Superficie esperada: `app/Actions/Product/UpsertProductAction.php`, `app/Http/Requests/Backoffice/StoreProductRequest.php`, `app/Http/Requests/Backoffice/UpdateProductRequest.php`, `app/Http/Controllers/Backoffice/ProductController.php`, `app/Rules/CoherentFinancingTerms.php`, `resources/js/pages/backoffice/products/Form.tsx`, `resources/js/features/products/hooks/useProductForm.ts`.
 - Tipos esperados: `ProductData`, `ProductFormValues`, `ProductStatus`, `CoherentFinancingTerms`, `IncompleteProductException`, `PlanLimitReachedException`.
-- Anti-`SHALLOW`: `UpsertProductAction::handle()` (comprobación de límite, transacción con producto, etiquetas y especificaciones, auditoría) y `CoherentFinancingTerms::validate()` (seis reglas cruzadas) superan 4 líneas.
+- Anti-`SHALLOW`: `UpsertProductAction::handle()` (comprobación de límite, transacción con producto, etiquetas y especificaciones, auditoría) y `CoherentFinancingTerms::validate()` (siete reglas cruzadas desde `T-045`) superan 4 líneas.
 - Tests: matriz de coherencia financiera con casos límite; publicar incompleto rechazado; **SKU duplicado en otra organización permitido** (test de tenancy); slug inmutable tras publicar; más de dos decimales rechazado; cambio de precio no afecta apartados y se audita; límite del plan bloquea y archivar libera; defaults de la organización aplicados; producto ajeno da `404`; `suspended` bloquea la creación.
 
 ---

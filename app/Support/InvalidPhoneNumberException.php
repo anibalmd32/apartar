@@ -48,16 +48,15 @@ final class InvalidPhoneNumberException extends InvalidArgumentException
     }
 
     /**
-     * SP-7: ni operadora móvil ni zona del país.
-     *
-     * @param  list<string>  $mobilePrefixes
+     * Un código que no tiene forma de teléfono venezolano: ni empieza por `2`
+     * ni por `4` (`0500`, `0800`). Desde `T-045` es la forma lo que se
+     * rechaza, no la ausencia en el censo (ver `PhoneNumber`).
      */
-    public static function unknownAreaCode(string $areaCode, array $mobilePrefixes): self
+    public static function unknownAreaCode(string $areaCode): self
     {
         return new self(sprintf(
-            'El código 0%s no es de ninguna operadora móvil (%s) ni de ninguna zona del país.',
+            'El código 0%s no es de un teléfono de Venezuela: los móviles empiezan por 04 y los fijos por 02.',
             $areaCode,
-            implode(', ', array_map(fn (string $prefix): string => '0'.$prefix, $mobilePrefixes)),
         ));
     }
 

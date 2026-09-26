@@ -91,12 +91,18 @@ final readonly class CreateLayawayData
         public Product $product,
         public int $quantity,
         public CustomerContactData $contact,
-        public bool $termsAccepted,
-        public ?Account $account,         // sesión de cuenta, si la hay
-        public string $idempotencyKey,
+        public TermsConsent $consent,     // T-043: la evidencia, no un booleano
+        public string $idempotencyKey,    // UUID del formulario
+        // ?Account $account llega con H6 (RB-4)
     ) {}
 }
 ```
+
+> **El contrato de `CreateLayawayData` cambió en dos campos al escribirlo (`T-045`).** `bool $termsAccepted` pasa a ser **`TermsConsent $consent`**: `T-043` decidió que la evidencia —instante e IP— viaja como un objeto que no se construye sin ella, y un booleano diría «aceptó» sin decir cuándo ni desde dónde (razonado bajo `REQ-IDN-001`). `StoreLayawayRequest` (`T-045b`) valida `accepted` y construye el objeto con `TermsConsent::acceptedNowFrom()`. Y **`?Account $account` no está todavía**, porque `Account` es de H6: el enganche está nombrado en `CreateLayawayAction` donde irán `LinkAccountAction` y `SubscribeToCatalogAction`, y `CreateLayawayActionTest` tiene un caso que se pone rojo el día que alguno de los tres exista. El constructor comprueba lo que se puede comprobar sin la base: cantidad entre 1 y 10 (el tope de `stock` de RB-5 solo es cierto bajo el bloqueo) y clave con forma de UUID.
+
+> **Dónde vive la clave de RB-12, y qué pasa con dos envíos a la vez** (decidido en `T-045`). La spec no lo fijaba. Es una **columna, `layaways.idempotency_key`, con `UNIQUE(organization_id, idempotency_key)`**, y no una caché: el caso secuencial lo resuelve cualquier registro, pero el simultáneo solo lo resuelve algo que la base haga cumplir **dentro** de la transacción. Con el tenant delante (`REQ-ORG-002` RB-3), así que no es una cuarta excepción de `GlobalUniqueExceptions`. Los tres casos: **uno detrás de otro**, el segundo sale antes de abrir transacción con el mismo apartado; **a la vez y del mismo producto**, el segundo espera el bloqueo del producto y encuentra el apartado ya confirmado —también si era la última unidad: devuelve el apartado, no un `422` de stock—; **a la vez con otro producto** (formulario manipulado), choca el índice, la transacción del segundo se deshace entera —ficha, reserva, cupo— y se devuelve el del primero, releído con `FOR UPDATE` porque la foto de quien llama puede ser anterior (medido en `CreateLayawayConcurrencyTest`). En los tres, el apartado devuelto tiene `wasRecentlyCreated` a `false`, que es lo que `T-045b` mira para no mandar el correo dos veces.
+
+> **Los rechazos de RB-6, con su tipo** (`T-045`). Catálogo despublicado o caducado, y organización suspendida (SP-3, SP-5): `CatalogUnavailableException`, `422`, una sola frase para todos los motivos. Producto fuera de ese catálogo, de otra organización, sin publicar o archivado mientras tanto (SP-4): `ProductNotAvailableException`. Stock (SP-1): `InsufficientStockException` con `available`. Cupo del plan o suscripción suspendida (SP-2): **`NotAcceptingLayawaysException`**, con el mensaje neutro de `REQ-SUB-004` RB-4 y el `PlanLimitReachedException` real como `getPrevious()`, para el aviso del dashboard (`T-065`). `PlanLimitReachedException` sigue en los tipos esperados porque es lo que viaja dentro; al cliente no le llega nunca.
 
 ```ts
 export interface LayawayFormValues {
@@ -185,6 +191,8 @@ export interface LayawayFormValues {
 - RB-6 `layaways.product_id` se conserva para navegación, pero es informativo; la FK es `restrict` para impedir el borrado físico del producto.
 - RB-7 `layaways.catalog_id` es el catálogo de origen y **también es informativo**: si el catálogo se despublica, se expira o el producto se quita de él, el apartado **no se altera** en absoluto.
 - RB-8 Ninguna acción modifica estos campos después de la creación; solo `RescheduleInstallmentAction` toca fechas de cuotas, nunca importes (`REQ-LAY-011`).
+
+> **RB-1 y RB-8, impedidos y no solo pedidos** (`T-045`). `Layaway::terms()` reconstruye `LayawayTerms` **desde la fila** y es la única fuente de las cifras del apartado; `CreateLayawayAction` congela las condiciones **del producto bloqueado**, que es la versión que de verdad se vende. Y la guarda `saving` del modelo, la misma que protege el estado, **lanza** si se guarda un apartado con cualquiera de `Layaway::SNAPSHOT_COLUMNS` cambiada: las ocho del snapshot, más `code`, `idempotency_key` y `product_id`. `customer_id` queda fuera porque la fusión de fichas lo mueve (`REQ-IDN-006`), y `catalog_id` porque lo anula la base si el catálogo desaparece (SP-4). El test de RB-4 crea un apartado de dos unidades, **sube el precio y la inicial, cambia cuotas y frecuencia, renombra y archiva** el producto, y afirma que `terms()` sigue diciendo precio $200, inicial $50, 2 unidades, 5 cuotas cada 15 días, total $400, inicial total $100 y financiado $300, con el nombre y el SKU originales.
 
 **Happy path**
 1. Se crea un apartado de un producto de $200 con inicial de $50 en 5 cuotas.

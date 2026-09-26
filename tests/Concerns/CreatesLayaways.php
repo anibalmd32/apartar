@@ -7,10 +7,13 @@ namespace Tests\Concerns;
 use App\Actions\Layaway\ReserveStockAction;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Subscription\LimitEnforcer;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Support\LayawayCode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -27,9 +30,14 @@ use Illuminate\Support\Str;
  * camino más corto de RB-1. No hay atajo por el *query builder*: un apartado
  * `completed` de test es uno que pasó por `active`, igual que uno de verdad.
  *
- * **Y reserva su unidad** con `ReserveStockAction` (`T-044`), como hará
- * `CreateLayawayAction`: sin eso, expirar o cancelar un apartado sembrado
- * devolvería al stock una unidad que nunca salió de él.
+ * **Y reserva su unidad** con `ReserveStockAction` (`T-044`) y **sube el cupo
+ * del plan** (`T-045`), como `CreateLayawayAction`: sin lo primero, expirar o
+ * cancelar un apartado sembrado devolvería al stock una unidad que nunca salió
+ * de él; sin lo segundo, liberaría cupo que nunca se contó.
+ *
+ * Sigue sin pasar por `CreateLayawayAction` a propósito: aquí lo que se quiere
+ * es un apartado en un estado concreto, sin catálogo ni ficha de verdad ni sus
+ * precondiciones de por medio.
  */
 trait CreatesLayaways
 {
@@ -64,6 +72,12 @@ trait CreatesLayaways
 
             app(ReserveStockAction::class)->handle($product, $quantity);
 
+            // Y sube el cupo del plan, como `CreateLayawayAction` (`T-045`): sin
+            // esto, cada liberación de un apartado sembrado registraba
+            // `usage_counter.below_zero`, y desde `T-045` ese aviso hace fallar
+            // el test (`FailsOnCounterDrift`).
+            app(LimitEnforcer::class)->adjust(UsageMetric::ActiveLayaways, 1);
+
             $customerId = DB::table('customers')->insertGetId([
                 'organization_id' => $organization->getKey(),
                 'document_number' => 'V'.random_int(10_000_000, 99_999_999),
@@ -76,7 +90,8 @@ trait CreatesLayaways
 
             $layaway = new Layaway;
             $layaway->forceFill([
-                'code' => 'AP-'.Str::upper(Str::random(8)),
+                'code' => LayawayCode::generate(),
+                'idempotency_key' => (string) Str::uuid(),
                 'customer_id' => $customerId,
                 'product_id' => $product->getKey(),
                 'quantity' => $quantity,

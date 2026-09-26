@@ -201,20 +201,29 @@ final class ResolveCustomerAction
      * consentimiento se escribiera aparte en cada uno, el día que alguien
      * tocara la reutilización podría olvidarlo sin que nada lo notara.
      *
-     * El correo nulo **sobrescribe** el que hubiera: RB-4 dice «con los valores
-     * nuevos», y queda en el antes de la entrada.
+     * **Un correo ausente no borra el almacenado** (corrección de RB-4, hecha en
+     * `T-045`): este formulario es el único camino de escritura de la ficha, así
+     * que un nulo es siempre una omisión y nunca una decisión, y borrarlo le
+     * quitaría al cliente el enlace de acceso de `REQ-IDN-003`, que pide
+     * documento **y** correo. Ausente no es vacío: el día que exista una
+     * superficie que permita borrarlo, mandará una señal propia.
      *
      * @return array<string, mixed>
      */
     private function contactAttributes(CustomerContactData $contact, TermsConsent $consent): array
     {
-        return [
+        $attributes = [
             'full_name' => $contact->fullName,
             'phone' => $contact->phone->value,
-            'email' => $contact->email,
             'terms_accepted_at' => $consent->acceptedAt,
             'terms_ip_address' => $consent->ipAddress,
         ];
+
+        if ($contact->email !== null) {
+            $attributes['email'] = $contact->email;
+        }
+
+        return $attributes;
     }
 
     /**

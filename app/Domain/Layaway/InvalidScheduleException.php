@@ -30,6 +30,21 @@ final class InvalidScheduleException extends InvalidArgumentException
         ));
     }
 
+    /**
+     * Un financiado menor que el número de cuotas deja cuotas de $0,00
+     * (`T-045`, razonado bajo `T-041`): `CoherentFinancingTerms` lo rechaza al
+     * guardar el producto, y esto es la misma regla como guarda.
+     */
+    public static function installmentBelowOneCent(int $financedCents, int $installmentsCount): self
+    {
+        return new self(sprintf(
+            'Con %d céntimos por financiar no caben %d cuotas: alguna saldría de $0,00. '
+            .'CoherentFinancingTerms lo impide al guardar el producto.',
+            $financedCents,
+            $installmentsCount,
+        ));
+    }
+
     public static function frequencyOutOfRange(int $frequencyDays): self
     {
         return new self(sprintf(

@@ -19,6 +19,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionMethod;
 use ReflectionNamedType;
 use Tests\TestCase;
@@ -198,19 +199,38 @@ final class ResolveCustomerActionTest extends TestCase
     }
 
     /**
-     * RB-4 dice «con los valores nuevos», y un correo omitido es un valor
-     * nuevo: se sobrescribe, y lo que había queda en el antes.
+     * **Ausente no es vacío** (corrección de RB-4, `T-045`): un correo omitido
+     * no borra el almacenado. Borrarlo le quitaría al cliente el enlace de
+     * acceso de `REQ-IDN-003`, que pide documento y correo, sin que él lo
+     * hubiera pedido. Tampoco aparece en el diff: no cambió.
      */
-    public function test_a_returning_customer_without_email_clears_it_and_the_audit_keeps_it(): void
+    #[DataProvider('omittedEmails')]
+    public function test_a_returning_customer_without_email_keeps_the_stored_one(?string $omitted): void
     {
         $customer = $this->resolve($this->contact(email: 'maria@ejemplo.test'));
-        $this->resolve($this->contact(email: null));
+        $this->resolve($this->contact(phone: '0424-7654321', email: $omitted));
 
-        $this->assertNull($customer->fresh()?->email);
-        $this->assertEquals(
-            ['before' => 'maria@ejemplo.test', 'after' => null],
-            $this->changedIn($this->onlyEntryOf(AuditEvent::CustomerContactUpdated))['email'],
-        );
+        $this->assertSame('maria@ejemplo.test', $customer->fresh()?->email);
+        $this->assertArrayNotHasKey('email', $this->changedIn($this->onlyEntryOf(AuditEvent::CustomerContactUpdated)));
+    }
+
+    /**
+     * @return array<string, array{0: string|null}>
+     */
+    public static function omittedEmails(): array
+    {
+        return ['nulo' => [null], 'en blanco' => ['']];
+    }
+
+    /**
+     * Y un correo nuevo sí sustituye al anterior: lo que no se hace es borrar.
+     */
+    public function test_a_returning_customer_with_a_new_email_replaces_it(): void
+    {
+        $customer = $this->resolve($this->contact(email: 'maria@ejemplo.test'));
+        $this->resolve($this->contact(email: 'maria.nueva@ejemplo.test'));
+
+        $this->assertSame('maria.nueva@ejemplo.test', $customer->fresh()?->email);
     }
 
     /**

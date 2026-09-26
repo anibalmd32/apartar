@@ -33,12 +33,13 @@ it('admite también el 58 sin más y el cero detrás del +58', function (string 
     expect(PhoneNumber::fromInput($raw)->value)->toBe('+584141234567');
 })->with(['584141234567', '+58 0414 1234567']);
 
-it('reconoce las cinco operadoras móviles de RB-4', function (string $prefix): void {
+it('reconoce las cinco operadoras móviles de RB-4 y las dos que entraron con T-045', function (string $prefix): void {
     $phone = PhoneNumber::fromInput('0'.$prefix.'1234567');
 
     expect($phone->isMobile())->toBeTrue()
+        ->and($phone->isRecognised())->toBeTrue()
         ->and($phone->areaCode())->toBe($prefix);
-})->with(['412', '414', '416', '424', '426']);
+})->with(['412', '414', '415', '416', '422', '424', '426']);
 
 /**
  * RB-4: se aceptan fijos con código de área válido.
@@ -55,20 +56,40 @@ it('acepta un fijo con código de área válido', function (string $raw, string 
 ]);
 
 /**
- * SP-7: ni operadora ni zona del país. `0500` y `0800` son servicios, no el
- * teléfono de un cliente; `0250` no existe.
+ * La forma, no el censo (`REQ-IDN-007`, `T-045`): lo que no empieza por `2` ni
+ * por `4` no es un teléfono de Venezuela. `0500` y `0800` son servicios, no el
+ * teléfono de un cliente.
  */
-it('rechaza un código de área inválido nombrando las operadoras', function (string $raw, string $code): void {
+it('rechaza un código sin forma de teléfono venezolano', function (string $raw, string $code): void {
     expect(fn () => PhoneNumber::fromInput($raw))->toThrow(
         InvalidPhoneNumberException::class,
-        "El código {$code} no es de ninguna operadora móvil (0412, 0414, 0416, 0424, 0426) ni de ninguna zona del país.",
+        "El código {$code} no es de un teléfono de Venezuela: los móviles empiezan por 04 y los fijos por 02.",
     );
 })->with([
     ['05001234567', '0500'],
     ['08001234567', '0800'],
-    ['02501234567', '0250'],
-    ['04131234567', '0413'],
+    ['01231234567', '0123'],
+    ['09001234567', '0900'],
 ]);
+
+/**
+ * El censo pasó a ser una etiqueta: un prefijo que no está en él **se acepta**
+ * si tiene la forma, y `isRecognised()` dice que no lo reconocemos para que el
+ * formulario avise sin bloquear. Rechazarlo costaba la venta sin dejar rastro.
+ */
+it('acepta un prefijo fuera del censo y dice que no lo reconoce', function (string $raw, bool $mobile): void {
+    $phone = PhoneNumber::fromInput($raw);
+
+    expect($phone->isRecognised())->toBeFalse()
+        ->and($phone->isMobile())->toBe($mobile);
+})->with([
+    'zona sin asignar' => ['02501234567', false],
+    'móvil fuera del censo' => ['04131234567', false],
+]);
+
+it('reconoce un fijo del censo', function (): void {
+    expect(PhoneNumber::fromInput('0212-5551234')->isRecognised())->toBeTrue();
+});
 
 /**
  * SP-5: un `+` que no es `+58`.
@@ -108,7 +129,7 @@ it('rechaza el teléfono vacío', function (): void {
  */
 it('lanza en el constructor si lo que recibe no es E.164', function (string $value): void {
     expect(fn () => new PhoneNumber($value))->toThrow(InvalidPhoneNumberException::class);
-})->with(['04141234567', '+5804141234567', '+14155550199', '+584131234567']);
+})->with(['04141234567', '+5804141234567', '+14155550199', '+585001234567']);
 
 it('enseña la grafía nacional', function (): void {
     expect(PhoneNumber::fromInput('+584141234567')->formatted())->toBe('0414-1234567')
