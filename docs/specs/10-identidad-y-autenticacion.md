@@ -62,7 +62,7 @@ export interface CustomerIdentity {
 **Contratos de datos**
 - Entidad `Customer` (`customers`): `organization_id`, `document_number`, `full_name`, `phone`, `email?`, `account_id?`, `terms_accepted_at`, `terms_ip_address`, `last_login_at?`.
 - Índices: `UNIQUE(organization_id, document_number)`, `UNIQUE(organization_id, account_id)`, `INDEX(organization_id, phone)`.
-- `ResolveCustomerAction(CustomerContactData $contact): Customer`, con el tenant ya fijado.
+- `ResolveCustomerAction(CustomerContactData $contact, TermsConsent $consent): Customer`, con el tenant ya fijado. `TermsConsent` es la evidencia de `REQ-IDN-005` —`acceptedAt` y `ipAddress`— y **no admite `null`** (decisión de `T-043`, abajo).
 
 ```php
 final readonly class CustomerContactData
@@ -86,6 +86,12 @@ final readonly class CustomerContactData
 - RB-7 Se admiten RIF (`J`, `G`) además de cédulas: un negocio puede apartar como cliente de otro negocio, caso habitual en el mercado mayorista.
 - RB-8 El backoffice **no puede crear fichas a mano** en esta iteración: nacen del apartado, para que no haya clientes sin operación asociada.
 
+> **El consentimiento viaja aparte del contacto, y no se puede omitir** (decidido en `T-043`). El *happy path* crea la ficha «con el consentimiento de términos y su IP», y `CustomerContactData` no tiene dónde ponerlo. **No crece el DTO: la acción recibe un segundo parámetro, `TermsConsent`, obligatorio en los dos caminos.** El motivo es de naturaleza, no de comodidad: el contacto lo **declara la persona** —y con sesión de cuenta, parte lo impone la cuenta (`REQ-IDN-002` RB-2)—, mientras que el consentimiento lo **captura el servidor**, un instante y una IP que solo conoce la petición (`REQ-IDN-005` RB-6). Juntarlos obligaría a fabricar una evidencia cada vez que alguien necesite describir un contacto sin aceptación de por medio. `T-045` la construye con `TermsConsent::acceptedNowFrom($request->ip())` después de validar la casilla.
+>
+> **En la reutilización, la marca se renueva y la anterior queda en la auditoría.** Las dos respuestas eran defendibles: conservar la primera protege la evidencia más antigua; renovarla hace que la ficha diga bajo qué aceptación se contrajo **la deuda vigente**. Decide `REQ-IDN-005` RB-3, que ya estaba cerrada —«se actualiza en cada nuevo apartado (evidencia por operación, con rastro en auditoría)»—, y la forma del rastro es esta: la ficha guarda la **última** aceptación, y cada una de las anteriores sobrevive como el *antes* de la entrada `customer.contact_updated` que la sobrescribió. Por eso esa entrada sale **en toda reutilización que cambie algo**, también cuando el cliente vuelve con el contacto idéntico: lo sobrescrito entonces es la evidencia de su apartado anterior. Y lleva la IP, que es el dato que el dueño necesita el día que un cliente reclame que sus avisos llegan a otro número (`REQ-BOF-005`, nota bajo RB-9). Solo un reenvío idéntico en el mismo segundo y desde la misma IP no deja entrada, porque no sobrescribe nada.
+>
+> **Imposible de escribir, en tres capas.** (1) `handle()` no se deja llamar sin `TermsConsent`, y `TermsConsent` no se construye sin una IP válida. (2) La guarda `saving` de `Customer` lanza si una ficha nace sin `terms_accepted_at` o `terms_ip_address`, o si se le vacía una; las columnas admiten `NULL` en la base, la ficha no. (3) `CustomerCreationTest` recorre `app/` y solo admite que cree fichas `ResolveCustomerAction` —ni `new Customer`, ni `create()`, ni un `insert()` del *query builder*, que no dispara la guarda— y que la llame `CreateLayawayAction`. La tercera es también la que hace cumplir RB-6 y RB-8.
+
 **Happy path**
 1. Un visitante envía el formulario de apartado en el catálogo de la Ferretería con su cédula, nombre, teléfono y (opcionalmente) email.
 2. `ResolveCustomerAction` normaliza el documento y busca por `(organization_id, document_number)` con el tenant de la Ferretería.
@@ -95,9 +101,9 @@ final readonly class CustomerContactData
 **Sad paths y edge cases**
 - SP-1 Documento con formato inválido → `422` sobre el campo `document_number`.
 - SP-2 Teléfono ausente o inválido → `422`. No hay flujo que permita omitirlo (RB-2).
-- SP-3 Documento existente con nombre radicalmente distinto → se acepta y se actualiza, con auditoría `customer.identity_conflict` para revisión humana; **no** se bloquea la venta.
+- SP-3 Documento existente con nombre radicalmente distinto → se acepta y se actualiza, con auditoría `customer.identity_conflict` para revisión humana; **no** se bloquea la venta. *«Radicalmente distinto»* (`NameDivergence`, `T-043`): los dos nombres **no comparten ni una palabra**, después de quitar tildes, mayúsculas, signos, iniciales sueltas y partículas (`de`, `del`, `la`…), y contando como la misma dos palabras de cinco letras o más que difieren en una (`Gonzales`/`González`). Se equivoca **hacia el silencio** a propósito —dos razones sociales que empiezan por `Inversiones` no saltan—, porque el evento es la alarma y tiene que ser raro; el registro de toda sobrescritura, con el nombre de antes y el de después, ya es `customer.contact_updated`, que sale **además** y no en su lugar.
 - SP-4 El mismo documento apartando en dos organizaciones → dos fichas, y es correcto: son dos relaciones comerciales distintas.
-- SP-5 Dos requests concurrentes con el mismo documento nuevo → la restricción `UNIQUE(organization_id, document_number)` provoca colisión; la acción la captura y reintenta la lectura una vez.
+- SP-5 Dos requests concurrentes con el mismo documento nuevo → la restricción `UNIQUE(organization_id, document_number)` provoca colisión; la acción la captura y reintenta la lectura una vez. **La relectura va con `FOR UPDATE`, y la primera lectura sin él** (`T-043`). Lo primero está **medido en el motor**: dentro de la transacción del apartado, en `REPEATABLE READ`, una lectura normal usa la foto tomada antes de que la otra confirmase y devuelve «no existe» justo después de la colisión (`ResolveCustomerConcurrencyTest` falla sin el bloqueo). Lo segundo es el comportamiento documentado de InnoDB: un `FOR UPDATE` sobre un documento inexistente toma un bloqueo de hueco, dos peticiones lo toman a la vez, y sus dos inserciones acaban en *deadlock*, que deshace el apartado entero en lugar de dar una colisión capturable. La inserción va en su propio *savepoint* para que la colisión no arrastre la transacción exterior.
 - SP-6 Email con dominio inexistente → solo se valida el formato; el fallo se detecta al enviar el magic link, que es una vía secundaria.
 - SP-7 Ficha sin email → válida y frecuente; el acceso al portal es por documento + código (`REQ-IDN-008`).
 - SP-8 Tenant no fijado al invocar la acción → excepción `MissingTenantContextException` (`REQ-ORG-002` RB-5): jamás se crea una ficha sin organización.
@@ -110,7 +116,7 @@ final readonly class CustomerContactData
 
 **Gate de validación**
 - Superficie esperada: `app/Actions/Customer/ResolveCustomerAction.php`, `app/Models/Customer.php`, `app/Support/DocumentNumber.php`, `app/Support/PhoneNumber.php`, `database/migrations/*_create_customers_table.php`.
-- Tipos esperados: `Customer`, `CustomerContactData`, `DocumentNumber`, `DocumentKind`, `PhoneNumber`, `InvalidDocumentNumberException`.
+- Tipos esperados: `Customer`, `CustomerContactData`, `TermsConsent`, `NameDivergence`, `DocumentNumber`, `DocumentKind`, `PhoneNumber`, `InvalidDocumentNumberException`.
 - Anti-`SHALLOW`: `ResolveCustomerAction::handle()` (resolución por tenant, reutilización, actualización auditada, manejo de colisión) supera 4 líneas; `DocumentNumber::fromInput()` junto a su clase.
 - Tests: el mismo documento en dos organizaciones crea dos fichas aisladas (test de fuga); teléfono obligatorio; email opcional y no único; reutilización actualiza contacto con auditoría; concurrencia produce una sola ficha; sin tenant lanza excepción; RIF aceptado; `customers` no tiene columna `password` (assert de esquema).
 
@@ -279,7 +285,7 @@ final readonly class CustomerContactData
 **Reglas de negocio y precondiciones**
 - RB-1 El checkbox de aceptación es **obligatorio** en el formulario de apartado, con validación de servidor (`accepted`).
 - RB-2 Se persisten fecha/hora UTC e IP en el momento de la aceptación.
-- RB-3 Si la ficha ya tenía consentimiento, se **actualiza** en cada nuevo apartado (evidencia por operación, con rastro en auditoría).
+- RB-3 Si la ficha ya tenía consentimiento, se **actualiza** en cada nuevo apartado (evidencia por operación, con rastro en auditoría). El rastro es el *antes* de `customer.contact_updated`, que sale en toda reutilización que sobrescriba algo — también la marca sola (razonado bajo `REQ-IDN-001`, `T-043`).
 - RB-4 El consentimiento cubre los términos **de la plataforma** y las condiciones de apartado **del negocio**: el texto enlaza a ambos, y queda claro que el contrato de pago es con el negocio, no con Apartar.
 - RB-5 El banner de cookies es independiente y condiciona **solo** la telemetría no esencial (`REQ-TLM-005`).
 - RB-6 La IP se toma de `X-Forwarded-For` solo si el proxy es de confianza (`TrustProxies` para Traefik, `REQ-INF-002` RB-5).

@@ -155,7 +155,10 @@ trait LogsSensitiveActivity
             return null;
         }
 
-        foreach (['name', 'title', 'code', 'email', 'identifier'] as $attribute) {
+        // `full_name` es el de la ficha de cliente, y va antes que `email`: el
+        // correo es opcional y es justo uno de los datos que la reutilización
+        // de la ficha puede sobrescribir.
+        foreach (['name', 'full_name', 'title', 'code', 'email', 'identifier'] as $attribute) {
             $value = $subject->getAttribute($attribute);
 
             if (is_string($value) && trim($value) !== '') {

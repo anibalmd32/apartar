@@ -89,25 +89,41 @@ it('exige que toda Action ya escrita audite el evento que declara', function (Au
  * `ProductStatusChanged`, y `T-032` cierra ese bloque con los tres de
  * catálogos: `CatalogPublished` y `CatalogExpirationScheduled` desde
  * `PublishCatalogAction`, y `CatalogUnpublished` desde
- * `UnpublishCatalogAction`.
+ * `UnpublishCatalogAction`. `T-043` abre el de Clientes con los dos de
+ * `ResolveCustomerAction`: `CustomerContactUpdated` y
+ * `CustomerIdentityConflict`.
  *
  * Que la cifra haya que tocarla al añadir un emisor es el punto: obliga a
  * mirar si la Action nueva audita de verdad, en vez de dejar que el conteo se
  * ajuste solo.
  */
-it('cubre hoy los quince eventos cuya Action ya existe', function (): void {
+it('cubre hoy los diecisiete eventos cuya Action ya existe', function (): void {
     $covered = array_values(array_filter(
         AuditEvent::cases(),
         fn (AuditEvent $event): bool => class_exists($event->emitter()),
     ));
 
-    expect($covered)->toHaveCount(15);
+    expect($covered)->toHaveCount(17);
 
     $areas = array_values(array_unique(
         array_map(fn (AuditEvent $event): string => $event->area()->value, $covered),
     ));
 
-    expect($areas)->toEqualCanonicalizing([AuditArea::Organization->value, AuditArea::Catalog->value]);
+    expect($areas)->toEqualCanonicalizing([
+        AuditArea::Organization->value,
+        AuditArea::Catalog->value,
+        AuditArea::Customers->value,
+    ]);
+});
+
+/**
+ * La lista cerrada de RB-1 tiene treinta y cinco casos desde `T-043`, que
+ * añadió `customer.contact_updated` con su entrada en la spec. Crecer es una
+ * decisión de [30] y no de un enum, así que la cifra se afirma.
+ */
+it('declara los treinta y cinco eventos de la lista cerrada', function (): void {
+    expect(AuditEvent::cases())->toHaveCount(35);
+    expect(AuditEvent::CustomerContactUpdated->value)->toBe('customer.contact_updated');
 });
 
 /**

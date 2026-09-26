@@ -36,11 +36,13 @@ namespace App\Domain\Auditing;
  * el dato en cada Action, saberlo exigiría abrir treinta archivos que aún no
  * existen.
  *
- * ## Hoy solo hay emisores del bloque Organización
+ * ## Qué bloques tienen ya emisor
  *
- * Equipo (`T-013`, `T-013b`), ajustes e identidad (`T-014`) y cuentas de cobro
- * (`T-015`). Los otros cinco bloques los conecta cada hito con sus propias
- * Actions, que es cuando existen las operaciones que auditar.
+ * Organización entero —equipo (`T-013`, `T-013b`), ajustes e identidad
+ * (`T-014`) y cuentas de cobro (`T-015`)—, Catálogo entero (`T-027`, `T-032`)
+ * y, de Clientes, los dos que salen de reutilizar una ficha (`T-043`). Los
+ * demás los conecta cada hito con sus propias Actions, que es cuando existen
+ * las operaciones que auditar.
  */
 enum AuditEvent: string
 {
@@ -72,6 +74,7 @@ enum AuditEvent: string
 
     case CustomerMerged = 'customer.merged';
     case CustomerIdentityConflict = 'customer.identity_conflict';
+    case CustomerContactUpdated = 'customer.contact_updated';
     case AccountLinked = 'account.linked';
 
     // -------------------------------------------------------------------
@@ -122,7 +125,7 @@ enum AuditEvent: string
             self::CatalogUnpublished, self::CatalogExpirationScheduled => AuditArea::Catalog,
 
             self::CustomerMerged, self::CustomerIdentityConflict,
-            self::AccountLinked => AuditArea::Customers,
+            self::CustomerContactUpdated, self::AccountLinked => AuditArea::Customers,
 
             self::SettingsUpdated, self::IdentityUpdated, self::PaymentAccountCreated,
             self::PaymentAccountUpdated, self::PaymentAccountRemoved, self::TeamMemberInvited,
@@ -185,9 +188,13 @@ enum AuditEvent: string
             self::CatalogPublished, self::CatalogExpirationScheduled => 'App\Actions\Catalog\PublishCatalogAction',
             self::CatalogUnpublished => 'App\Actions\Catalog\UnpublishCatalogAction',
 
-            // Clientes · T-043, T-065, T-077.
+            // Clientes · T-043, T-065, T-077. Los dos de `T-043` salen de la
+            // misma reutilización de la ficha: la sobrescritura siempre, y el
+            // conflicto además cuando el nombre no se parece en nada al que
+            // había.
             self::CustomerMerged => 'App\Actions\Customer\MergeCustomersAction',
-            self::CustomerIdentityConflict => 'App\Actions\Customer\ResolveCustomerAction',
+            self::CustomerIdentityConflict,
+            self::CustomerContactUpdated => 'App\Actions\Customer\ResolveCustomerAction',
             self::AccountLinked => 'App\Actions\Account\LinkAccountAction',
 
             // Organización · T-013, T-013b, T-014, T-015. Los únicos que ya
@@ -244,6 +251,7 @@ enum AuditEvent: string
 
             self::CustomerMerged => 'Fichas de cliente fusionadas',
             self::CustomerIdentityConflict => 'Conflicto de identidad detectado',
+            self::CustomerContactUpdated => 'Ficha de cliente sobrescrita desde el formulario de apartado',
             self::AccountLinked => 'Cuenta de consumidor vinculada a una ficha',
 
             self::SettingsUpdated => 'Ajustes del negocio cambiados',
