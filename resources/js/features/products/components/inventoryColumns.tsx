@@ -20,7 +20,9 @@ import { Link, router } from '@inertiajs/react';
  *    estado, no en su lugar.
  *  - **Archivado no es borrado** (RB-10).
  *
- * Y una nueva: **la última modificación con su autor** (SP-7). Los botones son
+ * Y dos nuevas: **la última modificación con su autor** (SP-7) y, bajo las
+ * disponibles, **las apartadas y las que faltan** (`REQ-LAY-003` RB-6, SP-2,
+ * desde `T-044`). Los botones son
  * la matriz de `ChangeProductStatusAction` y no una lista de verbos: cada
  * estado ofrece solo los pasos que la acción acepta desde él (`REQ-CAT-007`
  * RB-1, SP-4).
@@ -89,6 +91,23 @@ function Actions({ product }: { product: ProductListItem }) {
     );
 }
 
+/**
+ * Las disponibles, con las apartadas debajo y el faltante como alerta
+ * (`REQ-LAY-003` RB-6, SP-2). Las tres llegan calculadas en la consulta del
+ * listado: aquí no se pide nada por fila.
+ */
+export function StockCell({ product }: { product: ProductListItem }) {
+    return (
+        <div className="flex flex-col items-start gap-1">
+            <span>{product.stock}</span>
+            {product.reservedUnits > 0 ? <span className="text-xs opacity-70">{product.reservedUnits} apartadas</span> : null}
+            {product.shortfallUnits > 0 ? (
+                <Badge tone="warning">{product.shortfallUnits === 1 ? 'Falta 1 apartada' : `Faltan ${product.shortfallUnits} apartadas`}</Badge>
+            ) : null}
+        </div>
+    );
+}
+
 /** La marca de SP-7: fecha y autor, o solo la fecha si el autor no se sabe. */
 export function LastEdit({ at, by }: { at: string | null; by: string | null }) {
     if (at === null) {
@@ -126,7 +145,7 @@ export function inventoryColumns(statusLabels: Readonly<Record<ProductStatus, st
             cell: (product) => product.categoryName ?? <span className="text-xs opacity-70">Sin categoría</span>,
         },
         { id: 'price', header: 'Precio', sortKey: 'price', primary: true, cell: (product) => <MoneyLabel money={product.price} /> },
-        { id: 'stock', header: 'Stock', sortKey: 'stock', cell: (product) => product.stock },
+        { id: 'stock', header: 'Disponibles', sortKey: 'stock', cell: (product) => <StockCell product={product} /> },
         {
             id: 'status',
             header: 'Estado',

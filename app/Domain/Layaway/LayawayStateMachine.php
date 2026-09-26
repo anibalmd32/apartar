@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Layaway;
 
+use App\Actions\Layaway\ReleaseStockAction;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\UsageMetric;
 use App\Events\Layaway\LayawayActivated;
@@ -30,12 +31,28 @@ use LogicException;
  *     primera;
  *  2. **escribe el estado y su marca de tiempo** (RB-7);
  *  3. **ajusta el cupo** `active_layaways` si la transición cruza la frontera
- *     de `countsTowardPlanLimit()` (RB-6);
+ *     de `countsTowardPlanLimit()` (RB-6), y **devuelve el stock** si el
+ *     destino es `expired` o `cancelled` (`REQ-LAY-003` RB-2, desde `T-044`);
  *  4. **emite el evento**, que se despacha después del commit (RB-7, SP-6).
  *
  * Repartidas entre quien llama, existiría un instante —y un fallo— en que el
  * estado dice `completed` y el cupo sigue ocupado, o `activated_at` está
  * escrito y el estado no. Juntas, o pasan las cuatro o ninguna.
+ *
+ * ## El stock viaja con la transición, y el producto se bloquea antes
+ *
+ * La liberación va aquí por lo mismo que el cupo: el job de expiración
+ * (`T-047`) y la cancelación (`T-053`) cambian el estado **llamando a esta
+ * máquina**, y si tuvieran que acordarse de devolver la unidad, uno de los dos
+ * acabaría sin hacerlo. Es la única dependencia de este archivo hacia una
+ * `Action`, y es deliberada: `ReleaseStockAction` es la pieza que la spec
+ * nombra, con su idempotencia, y duplicarla aquí sería tener dos.
+ *
+ * Y cambia el orden de los bloqueos: cuando la transición va a devolver stock,
+ * **el producto se bloquea antes que el apartado** (`REQ-LAY-003` RB-8). Es el
+ * orden de la creación del apartado —producto, cupo, cliente, apartado—, y
+ * con dos órdenes distintos sobre las mismas filas dos transacciones se
+ * abrazan. `StockLockOrderTest` lo afirma sobre el registro de consultas.
  *
  * ## Lo que no pregunta
  *
@@ -57,7 +74,10 @@ use LogicException;
  */
 final class LayawayStateMachine
 {
-    public function __construct(private readonly LimitEnforcer $limits) {}
+    public function __construct(
+        private readonly LimitEnforcer $limits,
+        private readonly ReleaseStockAction $stock,
+    ) {}
 
     /**
      * Lleva el apartado a `$to`, o lanza si la matriz de RB-1 no lo admite.
@@ -69,6 +89,13 @@ final class LayawayStateMachine
     public function transition(Layaway $layaway, LayawayStatus $to): void
     {
         DB::transaction(function () use ($layaway, $to): void {
+            if ($to->releasesStock()) {
+                // RB-8 de `REQ-LAY-003` · el producto antes que el apartado.
+                // Se bloquea aunque la transición resulte ilegal: es barato, y
+                // decidirlo después obligaría a bloquear en el otro orden.
+                $this->stock->lockProductOf($layaway);
+            }
+
             /** @var Layaway $locked */
             $locked = Layaway::query()->whereKey($layaway->getKey())->lockForUpdate()->firstOrFail();
 
@@ -85,6 +112,11 @@ final class LayawayStateMachine
             // admite `LayawayStatusWritesTest` (RB-2). La columna va escrita
             // aquí, en la llamada, para que ese test la reconozca.
             Layaway::query()->whereKey($locked->getKey())->update(['status' => $to->value] + $this->marksFor($from, $to, $now));
+
+            if ($to->releasesStock()) {
+                // RB-2 · expirar y cancelar devuelven la unidad; completar no.
+                $this->stock->handle($locked);
+            }
 
             $delta = (int) $to->countsTowardPlanLimit() - (int) $from->countsTowardPlanLimit();
 

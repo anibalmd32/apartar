@@ -8,6 +8,7 @@ use App\Casts\MoneyCast;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Catalog\SearchMode;
+use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Models\Concerns\RecordsLastEditor;
@@ -61,7 +62,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property Money $down_payment_cents cuota inicial
  * @property int $installments_count
  * @property int $frequency_days días entre cuotas
- * @property int $stock cero **no** cambia el estado: sigue publicado y agotado (`REQ-CAT-007` RB-4)
+ * @property int $stock **disponibles para apartar**, ya descontadas las reservadas (`REQ-LAY-003` RB-1); cero **no** cambia el estado: sigue publicado y agotado (`REQ-CAT-007` RB-4)
+ * @property int $stock_shortfall apartadas que no están en existencias (`REQ-LAY-003` SP-2); mayor que cero solo con `stock` a cero
  * @property ProductStatus $status
  * @property \Illuminate\Support\Carbon|null $published_at futuro = publicación programada (RB-5)
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -77,7 +79,19 @@ class Product extends Model implements HasMedia
     public const IMAGES = 'images';
 
     /**
+     * El mismo default que la columna, para que un producto recién creado no
+     * lea `null` antes de volver de la base.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'stock_shortfall' => 0,
+    ];
+
+    /**
      * `organization_id` queda fuera: lo rellena el trait (`REQ-ORG-002` RB-2).
+     * `stock_shortfall` también, a propósito: lo calcula `UpsertProductAction`
+     * a partir de las existencias declaradas, nunca llega de un formulario.
      *
      * @var list<string>
      */
@@ -109,6 +123,7 @@ class Product extends Model implements HasMedia
             'installments_count' => 'integer',
             'frequency_days' => 'integer',
             'stock' => 'integer',
+            'stock_shortfall' => 'integer',
             'status' => ProductStatus::class,
             'published_at' => 'datetime',
         ];
@@ -161,6 +176,96 @@ class Product extends Model implements HasMedia
     public function catalogs(): BelongsToMany
     {
         return $this->belongsToMany(Catalog::class)->withPivot('position', 'created_at');
+    }
+
+    /**
+     * Los apartados de este producto (`REQ-LAY-002` RB-6).
+     *
+     * @return HasMany<Layaway, $this>
+     */
+    public function layaways(): HasMany
+    {
+        return $this->hasMany(Layaway::class);
+    }
+
+    /**
+     * Añade `reserved_units`: las unidades inmovilizadas en apartados no
+     * terminales (`REQ-LAY-003` RB-6).
+     *
+     * **Es un dato calculado y no una columna**, y eso es la regla: una columna
+     * sería una segunda cuenta del mismo hecho, derivable y capaz de discrepar
+     * con los apartados. Va como subconsulta en el `select`, así que el listado
+     * del inventario la trae **en su misma consulta** y no una por fila; la
+     * subconsulta pasa por el global scope de `Layaway`, así que nunca suma
+     * apartados de otra organización.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeWithReservedUnits(Builder $query): Builder
+    {
+        return $query->withSum(
+            ['layaways as reserved_units' => fn (Builder $layaways): Builder => $layaways->whereIn('status', LayawayStatus::holdingStock())],
+            'quantity',
+        );
+    }
+
+    /**
+     * Carga `reserved_units` en este modelo, con una consulta, para que las
+     * preguntas de abajo no hagan una cada una.
+     */
+    public function loadReservedUnits(): static
+    {
+        return $this->loadSum(
+            ['layaways as reserved_units' => fn (Builder $layaways): Builder => $layaways->whereIn('status', LayawayStatus::holdingStock())],
+            'quantity',
+        );
+    }
+
+    /**
+     * Las unidades reservadas de este producto: la de `scopeWithReservedUnits()`
+     * o `loadReservedUnits()` si ya viene cargada, o una consulta si no.
+     *
+     * «Cargada» es que la clave **exista**, no que valga algo: sin apartados
+     * la suma llega como `NULL`, y confundirlo con «no cargada» haría una
+     * consulta por cada producto sin reservas del listado.
+     */
+    public function reservedUnits(): int
+    {
+        if (array_key_exists('reserved_units', $this->getAttributes())) {
+            return (int) $this->getAttribute('reserved_units');
+        }
+
+        return (int) $this->layaways()->whereIn('status', LayawayStatus::holdingStock())->sum('quantity');
+    }
+
+    /**
+     * Lo que hay en la tienda: las disponibles, más las apartadas que de verdad
+     * están (`REQ-LAY-003` SP-2).
+     *
+     * Es lo que el negocio cuenta y lo que escribe en «Existencias». El
+     * faltante se acota a las reservadas: si un apartado se completó mientras
+     * había faltante, el guardado no puede dar existencias negativas.
+     */
+    public function onHandUnits(): int
+    {
+        $reserved = $this->reservedUnits();
+
+        return $this->stock + $reserved - $this->boundedShortfall($reserved);
+    }
+
+    /**
+     * Las apartadas que no están en existencias, acotadas a las que siguen
+     * apartadas: la alerta de `REQ-LAY-003` SP-2 y `REQ-BOF-020` SP-6.
+     */
+    public function shortfallUnits(): int
+    {
+        return $this->boundedShortfall($this->reservedUnits());
+    }
+
+    private function boundedShortfall(int $reserved): int
+    {
+        return min((int) $this->getAttribute('stock_shortfall'), $reserved);
     }
 
     /**

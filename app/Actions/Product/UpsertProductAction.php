@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Product;
 
 use App\Domain\Auditing\AuditEvent;
+use App\Domain\Catalog\ProductLock;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Catalog\TaxonomyByName;
 use App\Domain\Tenancy\CrossTenantRelationException;
@@ -93,6 +94,19 @@ final class UpsertProductAction
         Gate::forUser($actor)->authorize('manageProducts', $this->context->organization());
 
         return DB::transaction(function () use ($data, $actor, $product): Product {
+            $reserved = 0;
+
+            if ($product instanceof Product) {
+                // `REQ-LAY-003` RB-8 · el producto se bloquea **antes que
+                // cualquier otra fila** —la categoría que se crea al vuelo, las
+                // etiquetas, la ficha técnica—, y las reservadas se cuentan
+                // bajo ese bloqueo: un apartado que entrara entre la cuenta y
+                // la escritura se quedaría con una unidad que ya no está.
+                $locked = ProductLock::acquire((int) $product->getKey());
+                $product->setRawAttributes($locked->getAttributes(), sync: true);
+                $reserved = $product->reservedUnits();
+            }
+
             $before = $product instanceof Product ? $this->auditedTermsOf($product) : [];
 
             $category = $this->resolveCategory($data);
@@ -110,9 +124,8 @@ final class UpsertProductAction
                 'down_payment_cents' => $data->downPayment,
                 'installments_count' => $data->installmentsCount,
                 'frequency_days' => $data->frequencyDays,
-                'stock' => $data->stock,
                 'slug' => $this->resolveSlug($data, $product),
-            ];
+            ] + $this->stockFrom($data->stock, $reserved);
 
             // `editedBy()` · la marca de última modificación con su autor
             // (SP-7), que solo cambia si el guardado escribe algo.
@@ -160,6 +173,31 @@ final class UpsertProductAction
 
             return $product;
         });
+    }
+
+    /**
+     * Las existencias que declara el negocio, repartidas entre lo que queda
+     * para apartar y lo que falta (`REQ-LAY-003` SP-2, `REQ-BOF-020` SP-6).
+     *
+     * El negocio escribe **lo que tiene en la tienda**, que es lo que cuenta:
+     * las apartadas que aún no entregó están ahí. Así que `stock` —las
+     * disponibles— es lo declarado menos lo apartado, y si lo declarado no
+     * llega a cubrir lo apartado **se permite**: puede haber pérdida física, y
+     * cancelar apartados de clientes que ya pagaron sería mucho peor. `stock`
+     * queda en cero (RB-4) y la diferencia va a `stock_shortfall`, que es la
+     * alerta y lo que la liberación absorbe antes de devolver nada a la venta.
+     *
+     * Sin reservas —todo producto hasta `T-045`— lo declarado es exactamente
+     * lo disponible, como era desde `T-027`.
+     *
+     * @return array{stock: int, stock_shortfall: int}
+     */
+    private function stockFrom(int $onHand, int $reserved): array
+    {
+        return [
+            'stock' => max(0, $onHand - $reserved),
+            'stock_shortfall' => max(0, $reserved - $onHand),
+        ];
     }
 
     /**

@@ -62,7 +62,7 @@ final readonly class ProductData
      * @param  Money  $downPayment  cuota inicial, estrictamente menor que el precio
      * @param  int  $installmentsCount  número de cuotas (1–36)
      * @param  int  $frequencyDays  días entre cuotas (1–90)
-     * @param  int  $stock  existencias; cero **no** cambia el estado (`REQ-CAT-007` RB-4)
+     * @param  int  $stock  existencias **en la tienda**, apartadas incluidas; `UpsertProductAction` las reparte entre disponibles y faltante (`REQ-LAY-003` SP-2). Cero **no** cambia el estado (`REQ-CAT-007` RB-4)
      * @param  int|null  $categoryId  categoría elegida de la lista de la organización
      * @param  string|null  $categoryName  categoría escrita al vuelo; se reutiliza si ya existe
      * @param  list<int>  $tagIds  etiquetas elegidas de la lista

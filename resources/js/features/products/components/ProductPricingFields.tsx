@@ -1,7 +1,8 @@
 import { TextField } from '@/components/ui/text-field';
 import { FinancingPlanPreview } from '@/features/products/components/FinancingPlanPreview';
+import { StockBreakdown } from '@/features/products/components/StockBreakdown';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
-import { type FinancingPlanView } from '@/types/product';
+import { type FinancingPlanView, type ProductFormValues } from '@/types/product';
 
 /**
  * Precio, plan de pago y existencias (`REQ-BOF-020` RB-1, RB-2, RB-7).
@@ -17,9 +18,11 @@ import { type FinancingPlanView } from '@/types/product';
 
 interface ProductPricingFieldsProps extends ProductFieldsProps {
     plan: FinancingPlanView | null;
+    /** El producto guardado, si se edita: de ahí salen existencias y reparto. */
+    saved: ProductFormValues | null;
 }
 
-export function ProductPricingFields({ data, setData, errors, plan }: ProductPricingFieldsProps) {
+export function ProductPricingFields({ data, setData, errors, plan, saved }: ProductPricingFieldsProps) {
     return (
         <section className="card bg-base-100 shadow-sm">
             <div className="card-body grid gap-2 sm:grid-cols-2">
@@ -75,10 +78,16 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     value={data.stock}
                     onChange={(event) => setData('stock', Number(event.target.value))}
                     error={errors.stock}
-                    hint="Cero no despublica el producto: se muestra agotado y no se puede apartar."
+                    hint="Las que tienes en la tienda, apartadas incluidas. Cero no despublica el producto: se muestra agotado y no se puede apartar."
                     autoComplete="off"
                     required
                 />
+
+                {saved === null ? null : (
+                    <div className="sm:col-span-2">
+                        <StockBreakdown breakdown={saved.stockBreakdown} onHand={saved.stock} />
+                    </div>
+                )}
 
                 <TextField
                     label="Número de cuotas"

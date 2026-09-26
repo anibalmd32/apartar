@@ -100,4 +100,34 @@ enum LayawayStatus: string
             self::Completed, self::Cancelled, self::Expired => false,
         };
     }
+
+    /**
+     * Si llegar aquí devuelve la unidad al stock (`REQ-LAY-003` RB-2).
+     *
+     * Expirar y cancelar, sí. **Completar, no**, y no es un olvido: completar
+     * significa que la unidad se entregó, y devolverla inventaría una nevera.
+     * Es la razón por la que esto no se deduce de `isTerminal()`, aunque los
+     * tres terminales parezcan la misma cosa.
+     */
+    public function releasesStock(): bool
+    {
+        return match ($this) {
+            self::Expired, self::Cancelled => true,
+            self::PendingDownPayment, self::Active, self::Overdue, self::Completed => false,
+        };
+    }
+
+    /**
+     * Los estados cuyos apartados tienen la unidad inmovilizada: los no
+     * terminales (`REQ-LAY-003` RB-6).
+     *
+     * **Se deriva de `isTerminal()`** y no se escribe aparte: dos listas de
+     * los mismos estados acabarían discrepando el día que llegue un séptimo.
+     *
+     * @return list<self>
+     */
+    public static function holdingStock(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $status): bool => ! $status->isTerminal()));
+    }
 }

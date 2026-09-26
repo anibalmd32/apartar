@@ -160,7 +160,10 @@ export interface ProductFormValues {
     readonly downPayment: string;
     readonly installmentsCount: number;
     readonly frequencyDays: number;
+    /** Existencias **en la tienda**, apartadas incluidas: lo que el negocio cuenta y reenvía. */
     readonly stock: number;
+    /** El reparto de esas existencias, solo para leer (`REQ-LAY-003` RB-6, SP-2). */
+    readonly stockBreakdown: StockBreakdownView;
     readonly status: ProductStatus;
     readonly categoryId: number | null;
     readonly tagIds: readonly number[];
@@ -174,6 +177,20 @@ export interface ProductFormValues {
     readonly slugIsLocked: boolean;
     /** SP-7 · gana el último, y la marca dice cuándo fue. */
     readonly updatedAt: string | null;
+}
+
+/**
+ * Cómo se reparten las existencias de un producto (`REQ-LAY-003` RB-6, SP-2).
+ *
+ * `available` es lo que el catálogo deja apartar —la columna `stock`—;
+ * `reserved`, las inmovilizadas en apartados vigentes, calculadas en el
+ * servidor; `shortfall`, las apartadas que **no están** en la tienda. Las tres
+ * llegan hechas: la pantalla no las deduce de las existencias.
+ */
+export interface StockBreakdownView {
+    readonly available: number;
+    readonly reserved: number;
+    readonly shortfall: number;
 }
 
 /**
@@ -207,7 +224,12 @@ export interface ProductListItem {
     readonly name: string;
     readonly sku: string;
     readonly status: ProductStatus;
+    /** Disponibles para apartar: la columna `stock`. */
     readonly stock: number;
+    /** Inmovilizadas en apartados vigentes (`REQ-LAY-003` RB-6). */
+    readonly reservedUnits: number;
+    /** Apartadas que no están en existencias: la alerta de SP-2. */
+    readonly shortfallUnits: number;
     readonly price: MoneyView;
     readonly categoryName: string | null;
     readonly catalogsCount: number;

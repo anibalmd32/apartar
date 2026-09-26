@@ -180,7 +180,7 @@ Convenciones duras:
 |---|---|---|
 | `categories` | `organization_id`, `name`, `slug`, `position` | `UNIQUE(organization_id, slug)` |
 | `tags` | `organization_id`, `name`, `slug` | `UNIQUE(organization_id, slug)` |
-| `products` | `organization_id`, `category_id`, `sku`, `name`, `slug`, `description`, `price_cents`, `compare_at_price_cents?`, `down_payment_cents`, `installments_count`, `frequency_days`, `stock`, `status`, `published_at?`, `deleted_at?` | `UNIQUE(organization_id, sku)`, `UNIQUE(organization_id, slug)`, `INDEX(organization_id, status)`, `FULLTEXT(name, description, sku)` |
+| `products` | `organization_id`, `category_id`, `sku`, `name`, `slug`, `description`, `price_cents`, `compare_at_price_cents?`, `down_payment_cents`, `installments_count`, `frequency_days`, `stock`, `stock_shortfall`, `status`, `published_at?`, `deleted_at?` | `UNIQUE(organization_id, sku)`, `UNIQUE(organization_id, slug)`, `INDEX(organization_id, status)`, `FULLTEXT(name, description, sku)` |
 | `product_tag` | `product_id`, `tag_id` | `PRIMARY(product_id, tag_id)` |
 | `product_specifications` | `organization_id`, `product_id`, `group?`, `label`, `value`, `position` | `INDEX(product_id, position)` |
 | `media` | tabla de `spatie/laravel-medialibrary` | — |

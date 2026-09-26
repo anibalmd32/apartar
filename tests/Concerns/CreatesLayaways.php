@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Concerns;
 
+use App\Actions\Layaway\ReserveStockAction;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Tenancy\TenantContext;
@@ -25,6 +26,10 @@ use Illuminate\Support\Str;
  * **Los demás estados se alcanzan con la propia máquina**, recorriendo el
  * camino más corto de RB-1. No hay atajo por el *query builder*: un apartado
  * `completed` de test es uno que pasó por `active`, igual que uno de verdad.
+ *
+ * **Y reserva su unidad** con `ReserveStockAction` (`T-044`), como hará
+ * `CreateLayawayAction`: sin eso, expirar o cancelar un apartado sembrado
+ * devolvería al stock una unidad que nunca salió de él.
  */
 trait CreatesLayaways
 {
@@ -48,10 +53,16 @@ trait CreatesLayaways
     /**
      * Un apartado de esa organización, llevado hasta `$status`.
      */
-    protected function layawayIn(Organization $organization, LayawayStatus $status = LayawayStatus::PendingDownPayment): Layaway
-    {
-        return app(TenantContext::class)->runFor($organization, function () use ($organization, $status): Layaway {
-            $product = Product::factory()->create();
+    protected function layawayIn(
+        Organization $organization,
+        LayawayStatus $status = LayawayStatus::PendingDownPayment,
+        ?Product $product = null,
+        int $quantity = 1,
+    ): Layaway {
+        return app(TenantContext::class)->runFor($organization, fn (): Layaway => DB::transaction(function () use ($organization, $status, $product, $quantity): Layaway {
+            $product ??= Product::factory()->create();
+
+            app(ReserveStockAction::class)->handle($product, $quantity);
 
             $customerId = DB::table('customers')->insertGetId([
                 'organization_id' => $organization->getKey(),
@@ -68,7 +79,7 @@ trait CreatesLayaways
                 'code' => 'AP-'.Str::upper(Str::random(8)),
                 'customer_id' => $customerId,
                 'product_id' => $product->getKey(),
-                'quantity' => 1,
+                'quantity' => $quantity,
                 'unit_price_cents' => 20_000,
                 'down_payment_cents' => 5_000,
                 'installments_count' => 5,
@@ -85,6 +96,6 @@ trait CreatesLayaways
             }
 
             return $layaway;
-        });
+        }));
     }
 }

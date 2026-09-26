@@ -406,6 +406,7 @@ final class ProductController extends Controller
     private function productForm(Product $product): array
     {
         $product->loadMissing('tags');
+        $product->loadReservedUnits();
 
         return $this->specificationRows($product) + $this->imageRows($product) + [
             'id' => (int) $product->getKey(),
@@ -423,7 +424,16 @@ final class ProductController extends Controller
             'downPayment' => $this->decimals($product->down_payment_cents),
             'installmentsCount' => $product->installments_count,
             'frequencyDays' => $product->frequency_days,
-            'stock' => $product->stock,
+            // «Existencias» es **lo que hay en la tienda** —disponibles más
+            // apartadas que de verdad están—, que es lo que el negocio cuenta
+            // y lo que vuelve a enviar; `UpsertProductAction` lo reparte. El
+            // desglose va aparte y solo se lee (`REQ-LAY-003` RB-6, SP-2).
+            'stock' => $product->onHandUnits(),
+            'stockBreakdown' => [
+                'available' => $product->stock,
+                'reserved' => $product->reservedUnits(),
+                'shortfall' => $product->shortfallUnits(),
+            ],
             'status' => $product->status->value,
             'categoryId' => $product->category_id,
             'tagIds' => $product->tags->map(fn (Tag $tag): int => (int) $tag->getKey())->values()->all(),
@@ -511,7 +521,9 @@ final class ProductController extends Controller
      * cada equipo lo suyo (`REQ-BOF-045` SP-8). `withCount('catalogs')` es la
      * columna de «en cuántos catálogos está» (`REQ-CAT-007` RB-6); `editor` es
      * el autor de la última modificación (SP-7), cargado de una vez para la
-     * página y no fila a fila.
+     * página y no fila a fila. Las unidades reservadas (`REQ-LAY-003` RB-6)
+     * van igual que los catálogos: una subconsulta en el mismo `select`, no
+     * una consulta por producto.
      *
      * Paginación **completa**: un inventario tiene techo —el del plan— y
      * contarlo es barato; `REQ-BOF-045` RB-6 reserva la simple para las tablas
@@ -523,7 +535,7 @@ final class ProductController extends Controller
     {
         $state = $this->tableState($request, InventorySort::whitelist(), InventorySort::Created, descendingByDefault: true);
 
-        $query = Product::query()->with(['category', 'editor:id,name'])->withCount('catalogs');
+        $query = Product::query()->with(['category', 'editor:id,name'])->withCount('catalogs')->withReservedUnits();
 
         $this->applyFilters($query, $request, $state);
 
@@ -630,7 +642,11 @@ final class ProductController extends Controller
             'name' => $product->name,
             'sku' => $product->sku,
             'status' => $product->status->value,
+            // `stock` son las **disponibles**: lo que el catálogo deja apartar.
             'stock' => $product->stock,
+            'reservedUnits' => $product->reservedUnits(),
+            // `REQ-LAY-003` SP-2 · la alerta: apartadas que no están.
+            'shortfallUnits' => $product->shortfallUnits(),
             'price' => $this->money($product->price_cents),
             'categoryName' => $product->category?->name,
             'catalogsCount' => (int) $product->getAttribute('catalogs_count'),

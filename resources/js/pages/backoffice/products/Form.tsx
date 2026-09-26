@@ -70,7 +70,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
             <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
                 <ProductIdentityFields {...fields} product={product} />
 
-                <ProductPricingFields {...fields} plan={plan} />
+                <ProductPricingFields {...fields} plan={plan} saved={product} />
 
                 <ProductTaxonomyFields {...fields} categories={categories} tags={tags} />
 

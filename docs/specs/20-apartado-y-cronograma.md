@@ -218,6 +218,8 @@ export interface LayawayFormValues {
 
 **Contratos de datos**
 - Campo `products.stock`; `ReserveStockAction` / `ReleaseStockAction`; campo `layaways.stock_released_at`.
+- Campo `products.stock_shortfall` (`T-044`, ver SP-2) y `ProductLock::acquire()`, el único sitio que bloquea la fila del producto.
+- `ReserveStockAction::handle(Product $product, int $quantity): Product` —**no abre transacción**: corre dentro de la del apartado, y fuera de una lanza—; `ReleaseStockAction::handle(Layaway $layaway): void`, que llama `LayawayStateMachine` al transicionar a `expired` o `cancelled` (`LayawayStatus::releasesStock()`).
 
 **Reglas de negocio y precondiciones**
 - RB-1 El stock se **decrementa al crear** el apartado (`pending_down_payment`), no al activarlo: si no, dos clientes podrían apartar la última unidad y solo uno pagaría.
@@ -243,6 +245,23 @@ export interface LayawayFormValues {
 - SP-6 Deadlock potencial entre dos transacciones → prevenido por el orden canónico de RB-8.
 - SP-7 Apartado expirado de una organización suspendida → el job libera stock igual: es mantenimiento de datos, no una operación de negocio bloqueada.
 
+> **Qué significa «el stock queda en 0» de SP-2** (decidido en `T-044`). La frase admitía dos lecturas —que se guarda lo que el negocio escribió, o que se guarda cero—, y la respuesta sale de preguntar **qué cuenta el negocio cuando escribe «Existencias»**: lo que tiene en la tienda, y las unidades apartadas que aún no entregó **están en la tienda**. Si el campo fuera «disponibles», bajar por debajo de lo reservado no significaría nada —1 disponible con 3 apartadas es un producto con 4 unidades—, y SP-2 no tendría caso. Así que son cuatro cifras, cada una en su sitio. Con **1 en existencias y 3 apartadas**:
+>
+> | | Qué es | En el ejemplo |
+> |---|---|---|
+> | `products.stock` | **disponibles para apartar**: existencias − reservadas, nunca negativa (RB-4) | **0** |
+> | reservadas | suma de `quantity` de los apartados no terminales (RB-6), **calculada** | 3 |
+> | `products.stock_shortfall` | apartadas que **no están** en la tienda: reservadas − existencias | **2** |
+> | «Existencias» en el formulario | disponibles + reservadas − faltante: lo que el negocio escribió y reenvía | **1** |
+>
+> La pantalla enseña «Existencias: 1», debajo «3 unidades en apartados vigentes · ninguna disponible para apartar», y la alerta: **«Faltan 2 unidades para cubrir los apartados vigentes»**, que no cancela ninguno. El listado enseña 0 disponibles, «3 apartadas» y el sello «Faltan 2 apartadas».
+>
+> **El faltante es una columna, y no contradice RB-6.** Las reservadas no la tienen porque se derivan de los apartados y una segunda cuenta podría discrepar; el faltante **no se deriva de nada** —es la diferencia entre lo que el negocio contó y lo que tenía comprometido—, y como `stock` no puede ser negativo, sin columna se perdería al guardar. Y perderlo no es cosmético: al cancelarse uno de esos tres apartados, la liberación sumaría a `stock` una unidad que no existe y el siguiente cliente apartaría una nevera fantasma — exactamente la venta doble que este requisito existe para impedir. Con la columna, **la liberación absorbe primero el faltante** y solo devuelve a la venta lo que queda (`ReleaseStockAction`).
+>
+> Dos consecuencias que conviene no perder. **Editar las existencias es una operación de stock**: `UpsertProductAction` bloquea el producto (RB-8) y cuenta las reservadas bajo ese bloqueo antes de repartir, así que un apartado creado mientras el formulario estaba abierto no recupera su unidad al guardar. Y **completar un apartado con faltante no lo recalcula**: el faltante se acota a las reservadas al leerlo (`Product::shortfallUnits()`), y el siguiente guardado de existencias lo rehace desde lo declarado.
+
+> **Cómo se cumple RB-8, y qué se pone rojo si alguien lo invierte** (`T-044`). El bloqueo del producto lo toma **un solo sitio**, `ProductLock::acquire()`, y lo piden `ReserveStockAction`, `ReleaseStockAction`, `UpsertProductAction` al editar y `LayawayStateMachine` **antes de su propio `FOR UPDATE` sobre el apartado** cuando la transición devuelve stock: la cancelación y la expiración bloquean producto → apartado → contador del plan, el mismo orden que la creación. Como un abrazo mortal no se puede provocar en un solo proceso, `StockLockOrderTest` lo afirma **sobre el registro de consultas**: la primera sentencia que bloquea o escribe una fila del tenant tiene que ser el `FOR UPDATE` de `products`. Se comprobó moviendo el bloqueo de la máquina detrás del del apartado: los dos casos de transición se ponen rojos y nombran la sentencia culpable. El *helper* está en `tests/Concerns/AssertsStockLockOrder` para que `T-045` lo aplique a `CreateLayawayAction`.
+
 **Fuera de alcance inmediato**
 - Stock por ubicación o almacén.
 - Reserva temporal previa al formulario.
@@ -250,7 +269,7 @@ export interface LayawayFormValues {
 
 **Gate de validación**
 - Superficie esperada: `app/Actions/Layaway/ReserveStockAction.php`, `app/Actions/Layaway/ReleaseStockAction.php`, `app/Actions/Layaway/CreateLayawayAction.php`, `app/Models/Layaway.php`.
-- Tipos esperados: `InsufficientStockException`, `ReserveStockAction`, `ReleaseStockAction`.
+- Tipos esperados: `InsufficientStockException`, `ReserveStockAction`, `ReleaseStockAction`, `ProductLock`.
 - Anti-`SHALLOW`: `ReserveStockAction::handle()` (bloqueo, comprobación, decremento, excepción) y `ReleaseStockAction::handle()` (idempotencia + incremento) superan 4 líneas.
 - Tests: concurrencia real con dos transacciones sobre la última unidad; stock nunca negativo; liberación idempotente; expiración devuelve stock y completar no; el bloqueo no alcanza productos de otra organización (fuga); orden de bloqueo respetado.
 
@@ -347,6 +366,8 @@ final class ScheduleGenerator
 > La máquina escribe por el *query builder* precisamente porque es la única escritura que la primera capa no rechaza y la única que la segunda admite. Si alguien escribe el estado en otro sitio, se pone rojo el test de arquitectura (*query builder*) o lanza `LogicException` en el primer test que ejercite ese código (modelo).
 >
 > **Qué viaja con cada transición**, todo dentro de `transition()` y en una transacción con la fila bloqueada: el estado; la marca —`activated_at` **solo al salir de `pending_down_payment`** (la vuelta desde `overdue` no reescribe la fecha de activación), `completed_at` y `cancelled_at`—; el cupo; y el evento. Entrar en mora, salir de ella y expirar no tienen columna en [05 §4]: su instante queda en `updated_at` y en el `occurredAt` del evento, y `expires_at` —que es el **plazo** de la inicial, no el momento en que expiró— no se toca. Los eventos son seis, uno por transición y todos `ShouldDispatchAfterCommit`: `LayawayActivated`, `LayawayBecameOverdue`, `LayawayCaughtUp` (la vuelta de RB-4), `LayawayCompleted`, `LayawayCancelled` y `LayawayExpired`, con identificadores y no el modelo, para que un listener encolado no tenga que rehidratarlo sin tenant.
+>
+> **Y desde `T-044`, el stock** (`REQ-LAY-003` RB-2): la transición a `expired` o a `cancelled` llama a `ReleaseStockAction` en la misma transacción, y **bloquea el producto antes que el apartado** (RB-8). Va aquí por lo mismo que el cupo: la expiración (`T-047`) y la cancelación (`T-053`) cambian el estado llamando a la máquina, y ninguna de las dos puede olvidarse de devolver la unidad. Completar no libera: la unidad se entregó.
 >
 > **El cupo se mueve con `LimitEnforcer::adjust()`**, que bloquea la fila de `usage_counters` dentro de la transacción, **nunca la deja negativa** y, si lo que se libera no estaba contado, la deja en cero y registra `usage_counter.below_zero` sin impedir la transición (SP-7, `REQ-SUB-003` RB-8). No pregunta por la suscripción (RB-9). Es el mismo método con el que `T-045` subirá el contador al crear.
 
