@@ -137,6 +137,9 @@ export interface LayawayFormValues {
 - RB-11 Se emite `layaway_created` con `catalog_id`, `organization_id` y el origen (`REQ-TLM-001`).
 - RB-12 Idempotencia por `idempotencyKey` (UUID generado en el cliente al montar el formulario): un segundo `POST` con la misma clave devuelve el apartado ya creado.
 - RB-13 Un cliente puede tener varios apartados simultáneos en el mismo negocio y en negocios distintos; no hay límite por cliente.
+- RB-14 El `POST` lleva **límite de envíos por IP** (`throttle:apartados`, añadido en `T-045b`): es una superficie pública y sin sesión, y cada apartado inmoviliza stock durante `down_payment_window_hours`.
+
+> **Qué protege ese límite y qué no, para que nadie lo confunda con la defensa.** Un contador por IP para lo que es: peticiones accidentales, un botón que se queda pulsado, un guion desde una sola máquina. **No** detiene a quien rote direcciones. El techo real del daño ya estaba puesto y no es este: `pending_down_payment` **cuenta para el cupo del plan** (`REQ-LAY-005` RB-6), así que el número de unidades que se pueden inmovilizar a la vez en un negocio no pasa de su `max_active_layaways` —quince en Free—, y todas caducan solas en 72 h. Eso acota el daño y lo hace **visible**: la exposición que queda es que llenar ese cupo deja al negocio sin poder vender hasta que expiren o los cancele, y sus dos mitigaciones ya tienen dueño —el aviso en el panel de que se están perdiendo ventas por el límite (`REQ-SUB-004` RB-4, `T-065`) y la cancelación de un apartado vigente (`REQ-LAY-009`)—. Quien algún día ajuste el número de este límite conviene que sepa que no es ahí donde está la garantía.
 
 **Happy path**
 1. El cliente pulsa "Apartar" en la ficha y llega al formulario con el producto y `quantity = 1`.
