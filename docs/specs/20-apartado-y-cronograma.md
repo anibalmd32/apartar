@@ -347,6 +347,8 @@ final class ScheduleGenerator
 - SP-7 Organización en otra zona horaria → las fechas se calculan en la suya, no en UTC ni en la del servidor.
 - SP-8 Cambio del `default_frequency_days` de la organización tras activar → irrelevante: el apartado usa su snapshot (`REQ-LAY-002`).
 
+> **SP-2 pide una transición que la matriz de `REQ-LAY-005` RB-1 no tiene, y se resuelve en dos pasos (decidido antes de `T-046`).** «Pasa directamente a `completed`» choca con RB-1, donde desde `pending_down_payment` solo se puede ir a `active`, `expired` o `cancelled`: son nueve celdas válidas de treinta y seis y `pending → completed` no es una de ellas. No se añade la décima. El apartado va **`pending_down_payment` → `active` → `completed`, en la misma transacción**, y hay tres razones para preferirlo a abrir la matriz. **Una:** la inicial se aprobó y la mercancía quedó comprometida, así que el apartado **estuvo** activo aunque fuera un instante; saltárselo cuenta una historia falsa. **Dos:** `activated_at` solo se escribe al salir de `pending_down_payment` (`T-042`), así que un salto directo dejaría un apartado `completed` **sin fecha de activación**, y todo informe que cruce por esa columna lo perdería sin decirlo. **Tres:** se emiten los dos eventos, que es lo que las notificaciones de H7 van a necesitar. Lo que no genera es cronograma: el financiado es cero y `AmortizationSchedule` vuelve vacío, que ya es su comportamiento desde `T-041`.
+
 **Fuera de alcance inmediato**
 - Cuotas de importe desigual definidas a mano.
 - Frecuencia mensual real (mismo día de cada mes).
