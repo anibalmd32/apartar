@@ -347,7 +347,7 @@ resources/js/
 └── types/             domain.ts, inertia.d.ts
 ```
 
-Reglas obligatorias: ningún componente supera **200 líneas** (objetivo 150, regla ESLint como error); la lógica vive en custom hooks; `strict: true` + `noUncheckedIndexedAccess`, sin `any`; `@tanstack/react-table` solo en backoffice y plataforma en modo manual; `@tanstack/react-form` en los formularios complejos; `@tanstack/react-query` **solo** para tasa, chat, badge de bandeja y paginación del feed; daisyUI envuelto en `components/ui`; mobile-first desde 375 px; TSDoc obligatorio.
+Reglas obligatorias: ningún componente supera **200 líneas** (objetivo 150, regla ESLint como error); la lógica vive en custom hooks; `strict: true` + `noUncheckedIndexedAccess`, sin `any`; `@tanstack/react-table` solo en backoffice y plataforma en modo manual; los formularios, con el `useForm` de Inertia (`@tanstack/react-form` salió del *stack* en `T-045b`, razonado bajo `REQ-BOF-021` en [31]); `@tanstack/react-query` **solo** para tasa, chat, badge de bandeja y paginación del feed; daisyUI envuelto en `components/ui`; mobile-first desde 375 px; TSDoc obligatorio.
 
 ---
 

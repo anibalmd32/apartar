@@ -145,10 +145,12 @@ it('deshabilita «Apartar» con el motivo cuando no se puede', () => {
     expect(button).toHaveAccessibleDescription('Agotado: ahora mismo no quedan unidades para apartar.');
 });
 
-it('con el producto apartable, «Apartar» está activo y sin motivo', () => {
+/** RB-7 · con el producto apartable, «Apartar» lleva al formulario de `T-045b`. */
+it('con el producto apartable, «Apartar» lleva al formulario y sin motivo', () => {
     renderPage();
 
-    expect(screen.getByRole('button', { name: 'Apartar' })).toBeEnabled();
+    expect(screen.getByRole('link', { name: 'Apartar' })).toHaveAttribute('href', '/c/ofertas/apartar/taladro');
+    expect(screen.queryByText(/no quedan unidades/)).toBeNull();
 });
 
 /** SP-7 · sin plan no hay cuota que enseñar, y tampoco se inventa. */
@@ -195,11 +197,11 @@ it('vuelve al catálogo y enlaza los relacionados dentro de él', () => {
     expect(screen.getByRole('link', { name: /Broca/ })).toHaveAttribute('href', '/c/ofertas/p/broca');
 });
 
-/** RB-8 y RB-7 · ni telemetría ni un formulario inventado: el botón no navega. */
-it('no emite nada ni navega al pulsar «Apartar»', () => {
+/** RB-8 · sin telemetría: pulsar «Apartar» es navegar, no emitir nada (`T-084`). */
+it('no emite nada al pulsar «Apartar»', () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Apartar' }));
 
     expect(fetch).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();

@@ -1,5 +1,5 @@
 {
-    "$comment": "Tabla compartida de REQ-IDN-007: la recorren identity-format.test.ts (la máscara) y tests/Unit/Support/IdentityFormatCasesTest.php (DocumentNumber::formatted y PhoneNumber::formatted). Cada entrada es una escritura completa y válida y la presentación que las dos suites tienen que dar. Es lo que impide que la máscara y el servidor opinen distinto sobre qué letra es un RIF.",
+    "$comment": "Tabla compartida de REQ-IDN-007: la recorren identity-format.test.ts (la máscara) y tests/Unit/Support/IdentityFormatCasesTest.php (DocumentNumber::formatted y PhoneNumber::formatted). Cada entrada es una escritura completa y válida y la presentación que las dos suites tienen que dar. Es lo que impide que la máscara y el servidor opinen distinto sobre qué letra es un RIF. phoneAreaCodes (T-045b) enfrenta phoneAreaCode() con PhoneNumber::areaCode(): el aviso de prefijo del formulario de apartado lee el código en el navegador.",
     "documents": [
         { "input": "V12345678", "formatted": "V-12.345.678" },
         { "input": "v-12.345.678", "formatted": "V-12.345.678" },
@@ -17,5 +17,13 @@
         { "input": "04141234567", "formatted": "0414-1234567" },
         { "input": "0412-123.45.67", "formatted": "0412-1234567" },
         { "input": "(0212) 555 1234", "formatted": "0212-5551234" }
+    ],
+    "phoneAreaCodes": [
+        { "input": "04141234567", "areaCode": "414" },
+        { "input": "(0212) 555 1234", "areaCode": "212" },
+        { "input": "4221234567", "areaCode": "422" },
+        { "input": "+58 413 123 4567", "areaCode": "413" },
+        { "input": "582501234567", "areaCode": "250" },
+        { "input": "+58 0414 1234567", "areaCode": "414" }
     ]
 }

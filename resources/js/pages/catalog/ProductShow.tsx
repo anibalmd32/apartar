@@ -24,13 +24,12 @@ import { Link } from '@inertiajs/react';
  * bloque «Especificaciones» en blanco parece un fallo de carga. Sin
  * relacionados, tampoco.
  *
- * ## «Apartar» todavía no lleva a ninguna parte
+ * ## «Apartar» lleva al formulario
  *
- * El formulario de `REQ-LAY-001` es `T-045`. El botón se pinta, y cuando no se
- * puede apartar se deshabilita **con su motivo escrito** al lado (RB-7); cuando
- * sí se puede, se queda sin destino, igual que la card estuvo sin enlace hasta
- * que existió esta página. No hay telemetría de visita ni de permanencia
- * (RB-8): es `T-084`.
+ * Desde `T-045b`, al formulario de `REQ-LAY-001` con este producto y
+ * `quantity = 1`. Cuando no se puede apartar, es un botón deshabilitado **con
+ * su motivo escrito** al lado (RB-7) y no un enlace: no hay a dónde ir. No hay
+ * telemetría de visita ni de permanencia (RB-8): es `T-084`.
  */
 
 export default function ProductShow({ catalog, product, related }: ProductShowProps) {
@@ -60,14 +59,23 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                     <PlanBreakdown product={product} />
 
                     <div className="flex flex-col gap-2">
-                        <Button
-                            variant="primary"
-                            block
-                            disabled={!product.canBeReserved}
-                            aria-describedby={product.unavailableReason !== null ? 'reserve-reason' : undefined}
-                        >
-                            Apartar
-                        </Button>
+                        {product.canBeReserved ? (
+                            <Link
+                                href={route('catalog.layaway.create', { catalog: catalog.slug, product: product.slug })}
+                                className="btn btn-primary btn-block"
+                            >
+                                Apartar
+                            </Link>
+                        ) : (
+                            <Button
+                                variant="primary"
+                                block
+                                disabled
+                                aria-describedby={product.unavailableReason !== null ? 'reserve-reason' : undefined}
+                            >
+                                Apartar
+                            </Button>
+                        )}
                         {product.unavailableReason !== null ? (
                             <p id="reserve-reason" className="text-sm opacity-80">
                                 {product.unavailableReason}

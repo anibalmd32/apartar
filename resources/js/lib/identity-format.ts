@@ -87,6 +87,49 @@ export function formatPhone(raw: string): string {
 }
 
 /**
+ * El código del teléfono —`414`, `212`—, o `null` mientras no esté completo.
+ *
+ * Existe para el aviso que **no bloquea** del formulario de apartado
+ * (`T-045b`): si el código no está en el censo que manda el servidor
+ * (`PhoneNumber::recognisedAreaCodes()`), se pregunta «¿es correcto?» y se deja
+ * seguir. El censo no está aquí —llega como dato—; lo único que se replica es
+ * cómo se lee un teléfono escrito, y eso lo vigila la tabla de casos contra
+ * `PhoneNumber::areaCode()`.
+ *
+ * Lee las mismas escrituras que `PhoneNumber::fromInput()`: nacional con cero,
+ * sin él, y con `+58` o `58` delante. Cualquier otra cosa es `null`: no hay
+ * código que preguntar, y el rechazo, si toca, lo da el servidor.
+ */
+export function phoneAreaCode(raw: string): string | null {
+    const compact = raw.replace(PHONE_SEPARATORS, '');
+    const international = compact.startsWith('+');
+    const digits = international ? compact.slice(1) : compact;
+
+    if (!/^\d+$/.test(digits)) {
+        return null;
+    }
+
+    let national = digits;
+
+    if (international || (digits.length === NATIONAL_DIGITS + 2 && digits.startsWith('58'))) {
+        if (!digits.startsWith('58')) {
+            return null;
+        }
+
+        national = digits.slice(2);
+    }
+
+    if (national.startsWith('0')) {
+        national = national.slice(1);
+    }
+
+    return national.length === NATIONAL_DIGITS ? national.slice(0, 3) : null;
+}
+
+/** Dígitos nacionales de un teléfono: código de tres y abonado de siete. */
+const NATIONAL_DIGITS = 10;
+
+/**
  * De tres en tres desde la derecha y **sobre la cadena**, como el servidor:
  * `0012345` → `0.012.345`, sin perder un cero (RB-7).
  */

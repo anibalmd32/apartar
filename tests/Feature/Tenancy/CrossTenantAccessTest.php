@@ -78,6 +78,11 @@ final class CrossTenantAccessTest extends TestCase
             .'lado y la comprobación de pertenencia tendría que hacerla el controlador igualmente. Pedido como '
             .'identificador, esa comprobación contra la colección del producto es el único camino, y quien '
             .'sostiene el `404` cruzado de la ruta es su `{product}` (`REQ-BOF-022` SP-9).',
+        'code' => 'El código de la página de gracias del apartado (`T-045b`). La página es solo de la sesión que '
+            .'apartó, así que sin ese código en la sesión todo es `404` y este mecanismo, que no la tiene, '
+            .'afirmaría un `404` vacío. Lo que de verdad se puede torcer —una sesión que guarda el código de un '
+            .'apartado de otro negocio— lo prueba `LayawayThanksIsolationTest`: bajo el catálogo de la URL, el '
+            .'código ajeno no existe y la respuesta es `404`.',
     ];
 
     /**

@@ -77,9 +77,20 @@ class AppServiceProvider extends ServiceProvider
      *
      * Va con nombre y no como `throttle:5,60` en la ruta para que el número
      * viva junto a su motivo y se pueda citar desde un test.
+     *
+     * `apartados` (`T-045b`): el envío del formulario de apartado es público,
+     * sin sesión, y **reserva stock durante 72 horas**. Sin techo, un solo
+     * cliente con un bucle dejaría agotado el inventario de un negocio sin
+     * pagar nada. Diez por minuto y por IP no los alcanza nadie que esté
+     * apartando de verdad —ni con dobles clics, que la idempotencia devuelve
+     * sin crear nada— y convierte el bucle en un goteo.
      */
     private function registerRateLimiters(): void
     {
         RateLimiter::for('registro', fn (Request $request) => Limit::perHour(5)->by($request->ip() ?? 'sin-ip'));
+        RateLimiter::for('apartados', fn (Request $request) => Limit::perMinute(self::LAYAWAY_SUBMISSIONS_PER_MINUTE)->by($request->ip() ?? 'sin-ip'));
     }
+
+    /** Envíos del formulario de apartado por minuto y por IP (`T-045b`). */
+    public const LAYAWAY_SUBMISSIONS_PER_MINUTE = 10;
 }

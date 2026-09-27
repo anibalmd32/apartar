@@ -6,15 +6,14 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Catalog\PublicCatalogAccess;
-use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CatalogViewResource;
 use App\Http\Resources\ProductCardResource;
 use App\Http\Resources\ProductDetailResource;
 use App\Models\Catalog;
-use App\Models\PaymentAccount;
 use App\Models\Product;
+use App\Queries\ActivePaymentAccountsQuery;
 use App\Queries\CatalogProductsQuery;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -54,8 +53,9 @@ use Inertia\Response;
  *
  * ## Qué no hace, todavía
  *
- * `product_viewed` y la permanencia (RB-8) son de `T-084`; el formulario al
- * que lleva «Apartar» (RB-7) es de `T-045`; el chat de SP-6, de `T-080`.
+ * `product_viewed` y la permanencia (RB-8) son de `T-084`, y el chat de SP-6
+ * de `T-080`. El formulario al que lleva «Apartar» (RB-7) llegó con `T-045b`:
+ * es `LayawayController`.
  */
 final class ProductShowController extends Controller
 {
@@ -67,6 +67,7 @@ final class ProductShowController extends Controller
     public function __construct(
         private readonly LimitEnforcer $limits,
         private readonly CatalogProductsQuery $products,
+        private readonly ActivePaymentAccountsQuery $paymentAccounts,
     ) {}
 
     /**
@@ -81,32 +82,12 @@ final class ProductShowController extends Controller
 
         return Inertia::render('catalog/ProductShow', [
             'catalog' => CatalogViewResource::forVisitor($catalog, $this->limits->plan(), $this->products)->resolve($request),
-            'product' => (new ProductDetailResource($product, $catalog, $this->paymentAccounts()))->resolve($request),
+            'product' => (new ProductDetailResource($product, $catalog, $this->paymentAccounts->all()))->resolve($request),
             'related' => array_map(
                 fn (Product $related): array => (new ProductCardResource($related, $catalog))->resolve($request),
                 $this->related($catalog, $product),
             ),
         ]);
-    }
-
-    /**
-     * Las cuentas de cobro **activas**, en el orden del negocio (RB-5).
-     *
-     * Sin ninguna, lista vacía: la página dice «consulta al negocio por el
-     * chat» (SP-6) y el negocio ve la alerta en su panel (`REQ-ORG-007` SP-4).
-     *
-     * @return list<PaymentAccountView>
-     */
-    private function paymentAccounts(): array
-    {
-        return PaymentAccount::query()
-            ->where('is_active', true)
-            ->orderBy('position')
-            ->orderBy('id')
-            ->get()
-            ->map(fn (PaymentAccount $account): PaymentAccountView => PaymentAccountView::of($account))
-            ->values()
-            ->all();
     }
 
     /**

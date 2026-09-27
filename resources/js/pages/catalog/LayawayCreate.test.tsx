@@ -1,0 +1,255 @@
+import { centsUsd } from '@/lib/money';
+import LayawayCreate from '@/pages/catalog/LayawayCreate';
+import { fakeRoute } from '@/test/fakes';
+import { type CatalogView, type ProductDetail } from '@/types/catalog-view';
+import { type RateView } from '@/types/exchange';
+import { type LayawayCreateProps, type LayawayPlanView } from '@/types/layaway';
+import { router } from '@inertiajs/core';
+import type * as InertiaReact from '@inertiajs/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+
+/**
+ * El formulario de apartado (`REQ-LAY-001`, `REQ-IDN-005`, `T-045b`).
+ *
+ * Con el `useForm` de verdad: se intercepta el `router` de Inertia, que es por
+ * donde sale todo envío y toda recarga, para ver **qué** se manda. Lo que el
+ * servidor hace con ello está en `LayawayPageTest`.
+ */
+
+const { usePage } = vi.hoisted(() => ({ usePage: vi.fn() }));
+
+vi.mock('@inertiajs/react', async (importOriginal) => ({
+    ...(await importOriginal<typeof InertiaReact>()),
+    usePage,
+    Head: () => null,
+    Link: (await import('@/test/fakes')).FakeLink,
+}));
+
+const BCV: RateView = { rate: 40, source: 'bcv', sourceLabel: 'BCV', publishedAt: '2026-09-18T09:00:00-04:00', isStale: false };
+
+function money(usd: string) {
+    return { cents: centsUsd(100), usd, ves: null };
+}
+
+const CATALOG: CatalogView = {
+    slug: 'ofertas',
+    name: 'Ofertas de septiembre',
+    description: null,
+    cover: null,
+    business: { name: 'Ferretería Oriente', slug: 'ferreteria', logoUrl: null, brandColor: null, brandingEnabled: false },
+    shareUrl: 'http://localhost/c/ofertas',
+    expiresAt: null,
+    showsPlatformBadge: false,
+};
+
+const PLAN: LayawayPlanView = {
+    quantity: 1,
+    total: money('$150.00'),
+    downPayment: money('$100.00'),
+    financedAmount: money('$50.00'),
+    installmentsCount: 3,
+    frequencyDays: 15,
+    installmentAmount: money('$16.66'),
+    lastInstallmentAmount: money('$16.68'),
+    installments: [
+        { number: 1, estimatedDueDate: '12 de octubre de 2026', amount: money('$16.66') },
+        { number: 2, estimatedDueDate: '27 de octubre de 2026', amount: money('$16.66') },
+        { number: 3, estimatedDueDate: '11 de noviembre de 2026', amount: money('$16.68') },
+    ],
+};
+
+function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
+    return {
+        slug: 'nevera',
+        name: 'Nevera Mabe',
+        price: money('$150.00'),
+        compareAtPrice: null,
+        downPayment: money('$100.00'),
+        installmentAmount: money('$16.66'),
+        lastInstallmentAmount: money('$16.68'),
+        installmentsCount: 3,
+        frequencyDays: 15,
+        categoryName: '',
+        tags: [],
+        inStock: true,
+        catalogSlug: 'ofertas',
+        description: '',
+        sku: 'NEV-1',
+        images: [],
+        specificationGroups: [],
+        maxQuantity: 3,
+        paymentAccounts: [],
+        canBeReserved: true,
+        unavailableReason: null,
+        ...overrides,
+    };
+}
+
+function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
+    const props: LayawayCreateProps = {
+        catalog: CATALOG,
+        product: product(),
+        plan: PLAN,
+        quantity: 1,
+        consent: { businessName: 'Ferretería Oriente', platformTermsDrafted: false },
+        recognisedAreaCodes: ['412', '414', '416', '424', '426', '212'],
+        ...overrides,
+    };
+
+    return render(<LayawayCreate {...props} />);
+}
+
+function fillRequired() {
+    fireEvent.change(screen.getByLabelText('Nombre y apellido'), { target: { value: 'María González' } });
+    fireEvent.change(screen.getByLabelText('Cédula o RIF'), { target: { value: '12345678' } });
+    fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '04141234567' } });
+    fireEvent.click(screen.getByRole('checkbox'));
+}
+
+let visit: ReturnType<typeof vi.spyOn>;
+let reload: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+    usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: BCV }, errors: {} } });
+    vi.stubGlobal('route', fakeRoute);
+    visit = vi.spyOn(router, 'visit').mockImplementation(() => undefined);
+    reload = vi.spyOn(router, 'reload').mockImplementation(() => undefined);
+});
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+});
+
+it('llega con el producto, cantidad 1, el plan del servidor y dónde pagar', () => {
+    renderPage();
+
+    expect(screen.getByRole('heading', { name: 'Apartar Nevera Mabe' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Cantidad')).toHaveValue(1);
+    expect(screen.getByText('$150.00')).toBeInTheDocument();
+    expect(screen.getByText('Última cuota')).toBeInTheDocument();
+    expect(screen.getByText(/todavía no ha publicado sus formas de pago/)).toBeInTheDocument();
+});
+
+/**
+ * RB-12 y §8 · **la clave se genera una vez al montar**: dos envíos del mismo
+ * formulario llevan la misma. Si se regenerase, un doble clic sería dos
+ * apartados.
+ */
+it('manda la misma clave de idempotencia en cada envío', () => {
+    renderPage();
+    fillRequired();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
+
+    const first = visit.mock.calls[0];
+    expect(first?.[0]).toBe('/c/ofertas/apartar/nevera');
+
+    // El primer envío termina (un `422`, por ejemplo) y se vuelve a pulsar.
+    act(() => (first?.[1] as { onFinish?: () => void } | undefined)?.onFinish?.());
+    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
+
+    const key = (call: unknown[] | undefined): unknown => (call?.[1] as { data: Record<string, unknown> }).data.idempotencyKey;
+
+    expect(visit).toHaveBeenCalledTimes(2);
+    expect(key(visit.mock.calls[0])).toMatch(/^[0-9a-f-]{36}$/);
+    expect(key(visit.mock.calls[1])).toBe(key(visit.mock.calls[0]));
+});
+
+it('manda los campos con los nombres del contrato', () => {
+    renderPage();
+    fillRequired();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
+
+    expect((visit.mock.calls[0]?.[1] as { method: string; data: Record<string, unknown> }).data).toMatchObject({
+        quantity: 1,
+        fullName: 'María González',
+        documentNumber: '12.345.678',
+        phone: '0414-1234567',
+        email: '',
+        termsAccepted: true,
+    });
+});
+
+/**
+ * §5 · al cambiar la cantidad **se pide el plan al servidor**, con retardo:
+ * el de dos unidades no es el de una multiplicado.
+ */
+it('pide el plan de la cantidad nueva al servidor, y no lo multiplica', () => {
+    vi.useFakeTimers();
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '2' } });
+    expect(reload).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(300));
+
+    expect(reload).toHaveBeenCalledWith({ only: ['plan'], data: { quantity: 2 } });
+    // Mientras llega, las cifras de una unidad no se enseñan como buenas.
+    expect(screen.getByRole('region', { name: 'Tu plan de pago' })).toHaveAttribute('aria-busy', 'true');
+});
+
+/** RB-5 · la cantidad no sale de 1…min(stock, 10). */
+it('acota la cantidad al tope que viene del servidor', () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '9' } });
+    expect(screen.getByLabelText('Cantidad')).toHaveValue(3);
+
+    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '0' } });
+    expect(screen.getByLabelText('Cantidad')).toHaveValue(1);
+});
+
+/**
+ * `T-040` · un prefijo fuera del censo **avisa y no bloquea**: el botón sigue
+ * enviando.
+ */
+it('avisa de un prefijo que no reconoce y deja apartar igual', () => {
+    renderPage();
+    fillRequired();
+
+    fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '04131234567' } });
+
+    expect(screen.getByText(/No reconocemos ese prefijo, ¿es correcto\?/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
+    expect(visit).toHaveBeenCalledTimes(1);
+});
+
+it('no avisa con un prefijo del censo', () => {
+    renderPage();
+    fillRequired();
+
+    expect(screen.queryByText(/No reconocemos ese prefijo/)).toBeNull();
+});
+
+/**
+ * `REQ-IDN-005` · mientras los documentos de la plataforma no estén redactados,
+ * la casilla no los enlaza ni los nombra; sí dice con quién es el compromiso.
+ */
+it('no enlaza documentos sin redactar, y dice que el compromiso es con el negocio', () => {
+    renderPage();
+
+    const consent = screen.getByRole('checkbox');
+    expect(consent).toBeRequired();
+    expect(screen.queryByRole('link', { name: /Términos de servicio/ })).toBeNull();
+    expect(screen.getByText(/El compromiso de pago es con/)).toHaveTextContent('Ferretería Oriente, no con Apartar');
+    expect(screen.getByText(/Guardamos la fecha y la IP/)).toBeInTheDocument();
+});
+
+it('enlaza los documentos en pestaña nueva cuando están redactados', () => {
+    renderPage({ consent: { businessName: 'Ferretería Oriente', platformTermsDrafted: true } });
+
+    expect(screen.getByRole('link', { name: 'Términos de servicio' })).toHaveAttribute('target', '_blank');
+    expect(screen.getByRole('link', { name: 'Política de privacidad' })).toHaveAttribute('href', '/privacidad');
+});
+
+it('sin poder apartar, dice el motivo y no pinta el formulario', () => {
+    renderPage({ product: product({ canBeReserved: false, unavailableReason: 'Agotado: ahora mismo no quedan unidades para apartar.' }) });
+
+    expect(screen.getByText('Agotado: ahora mismo no quedan unidades para apartar.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apartar' })).toBeNull();
+});

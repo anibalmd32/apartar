@@ -1,4 +1,4 @@
-import { formatDocumentNumber, formatPhone } from '@/lib/identity-format';
+import { formatDocumentNumber, formatPhone, phoneAreaCode } from '@/lib/identity-format';
 import { describe, expect, it } from 'vitest';
 import cases from './identity-format.cases.json';
 
@@ -68,5 +68,20 @@ describe('máscara del teléfono', () => {
     it.each(['+1 305 555 0199', '05001234567', '0414', 'llámame', ''])('no rechaza %j', (raw) => {
         expect(() => formatPhone(raw)).not.toThrow();
         expect(formatPhone(raw).replace(/\D/g, '')).toBe(raw.replace(/\D/g, ''));
+    });
+});
+
+/**
+ * El código del teléfono, para el aviso que no bloquea (`T-045b`). La misma
+ * tabla la recorre `IdentityFormatCasesTest.php` contra `PhoneNumber::areaCode()`.
+ */
+describe('código del teléfono', () => {
+    it.each(cases.phoneAreaCodes)('lee $input como el servidor: $areaCode', ({ input, areaCode }) => {
+        expect(phoneAreaCode(input)).toBe(areaCode);
+    });
+
+    /** Mientras no está completo, o no tiene forma de teléfono, no hay código que preguntar. */
+    it.each(['0414', '041412345', '+1 305 555 0199', 'llámame', '', '0414123456789'])('no inventa un código para %j', (raw) => {
+        expect(phoneAreaCode(raw)).toBeNull();
     });
 });

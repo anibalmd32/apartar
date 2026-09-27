@@ -153,7 +153,88 @@ final class CreateLayawayConcurrencyTest extends TestCase
         $this->assertSame(0, (int) DB::table('usage_counters')->where('organization_id', $organization->getKey())->where('metric', UsageMetric::ActiveLayaways->value)->value('value'));
     }
 
+    /**
+     * **El doble clic** (`T-045b`): el mismo UUID, del mismo formulario, para
+     * el mismo producto, y la última unidad. Es la única de las tres carreras
+     * que ocurre de verdad, y la única que pasa por la segunda comprobación de
+     * la clave, la que se hace **bajo el bloqueo del producto**.
+     *
+     * El primer clic va por la conexión rival, que hace lo que hace la acción:
+     * bloquea el producto, se lleva la unidad y escribe el apartado, sin
+     * confirmar todavía. El segundo es el nuestro, y el orden se fuerza así:
+     *
+     *  1. nuestra lectura rápida de la clave **no ve** el apartado del primero,
+     *     porque aún no está confirmado;
+     *  2. justo después de esa lectura —el `DB::listen` la ve pasar—, el
+     *     primero confirma y suelta el producto;
+     *  3. el nuestro bloquea el producto, vuelve a buscar la clave, y **ahora
+     *     sí** encuentra el apartado.
+     *
+     * Sin el paso 3, el segundo clic seguiría adelante con el stock ya en cero
+     * y el cliente vería «ya no quedan unidades» de lo que acaba de apartar. Se
+     * comprobó quitando esa segunda comprobación de la acción: el test lanza
+     * `InsufficientStockException`. Y es la otra cara de que el formulario
+     * genere la clave **una vez al montarse**: con una clave nueva por envío,
+     * el caso de abajo es lo que pasa.
+     */
+    public function test_a_double_click_on_the_last_unit_returns_the_same_layaway(): void
+    {
+        [$organization, $catalog, $product] = $this->seedCatalog(stock: 1);
+        $key = (string) Str::uuid();
+
+        $first = $this->rivalCreatesLayaway($organization, $product, $key, commit: false, takesTheUnit: true);
+        $this->commitRivalRightAfterOurQuickLookup($key);
+
+        $second = $this->create($catalog, $product, $key);
+
+        $this->assertSame($first, $second->getKey(), 'El segundo clic no devolvió el apartado del primero.');
+        $this->assertFalse($second->wasRecentlyCreated);
+        $this->assertSame(1, DB::table('layaways')->where('organization_id', $organization->getKey())->count());
+        $this->assertSame(0, (int) DB::table('products')->where('id', $product->getKey())->value('stock'));
+    }
+
+    /**
+     * El contraste: el mismo doble clic con **una clave distinta** en el
+     * segundo envío —un formulario que la regenerase en cada envío— no tiene
+     * nada que reconocer, y el cliente recibe «no quedan unidades» de lo que
+     * acaba de apartar.
+     */
+    public function test_the_same_double_click_with_a_fresh_key_is_refused_for_stock(): void
+    {
+        [$organization, $catalog, $product] = $this->seedCatalog(stock: 1);
+
+        $this->rivalCreatesLayaway($organization, $product, (string) Str::uuid(), commit: false, takesTheUnit: true);
+        $fresh = (string) Str::uuid();
+        $this->commitRivalRightAfterOurQuickLookup($fresh);
+
+        $this->expectException(InsufficientStockException::class);
+
+        $this->create($catalog, $product, $fresh);
+    }
+
     // -------------------------------------------------------------------
+
+    /**
+     * Confirma la transacción rival **en cuanto nuestra lectura rápida de la
+     * clave haya pasado**, y ni un momento antes. `DB::listen` avisa después
+     * de ejecutar la sentencia, que es exactamente el hueco entre esa lectura y
+     * el bloqueo del producto.
+     */
+    private function commitRivalRightAfterOurQuickLookup(string $key): void
+    {
+        $committed = false;
+
+        DB::listen(function ($query) use ($key, &$committed): void {
+            if ($committed || $query->connectionName === 'mysql_rival') {
+                return;
+            }
+
+            if (str_contains($query->sql, 'idempotency_key') && in_array($key, $query->bindings, true)) {
+                $committed = true;
+                $this->rival()->commit();
+            }
+        });
+    }
 
     /**
      * @return array{0: Organization, 1: Catalog, 2: Product, 3: Product}
@@ -194,12 +275,22 @@ final class CreateLayawayConcurrencyTest extends TestCase
     }
 
     /**
-     * El apartado del otro envío, escrito y confirmado por la conexión rival.
+     * El apartado del otro envío, escrito por la conexión rival.
+     *
+     * Con `$takesTheUnit`, hace lo que hace `CreateLayawayAction`: bloquea el
+     * producto primero y descuenta la unidad. Con `$commit` a `false`, lo deja
+     * todo a medias y con el bloqueo puesto, para que el test decida cuándo
+     * confirma.
      */
-    private function rivalCreatesLayaway(Organization $organization, Product $product, string $key): int
+    private function rivalCreatesLayaway(Organization $organization, Product $product, string $key, bool $commit = true, bool $takesTheUnit = false): int
     {
         $rival = $this->rival();
         $rival->beginTransaction();
+
+        if ($takesTheUnit) {
+            $rival->select('select id from products where id = ? for update', [$product->getKey()]);
+            $rival->update('update products set stock = stock - 1 where id = ?', [$product->getKey()]);
+        }
 
         $customerId = (int) $rival->table('customers')->insertGetId([
             'organization_id' => $organization->getKey(),
@@ -234,7 +325,9 @@ final class CreateLayawayConcurrencyTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $rival->commit();
+        if ($commit) {
+            $rival->commit();
+        }
 
         return $id;
     }

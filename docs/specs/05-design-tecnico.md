@@ -83,7 +83,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 
 ### 3.3 NPM
 
-`@inertiajs/react` · `react` `react-dom` · `@tanstack/react-table` · `@tanstack/react-form` · `@tanstack/react-query` · `laravel-echo` + `pusher-js` · `tailwindcss` `@tailwindcss/vite` · `daisyui` · `vite` `@vitejs/plugin-react` · **dev:** `typescript` `vitest` `@testing-library/react` `@testing-library/jest-dom` `jsdom` `eslint` `typescript-eslint` `eslint-plugin-react-hooks` `prettier`
+`@inertiajs/react` · `react` `react-dom` · `@tanstack/react-table` · `@tanstack/react-query` · `laravel-echo` + `pusher-js` · `tailwindcss` `@tailwindcss/vite` · `daisyui` · `vite` `@vitejs/plugin-react` · **dev:** `typescript` `vitest` `@testing-library/react` `@testing-library/jest-dom` `jsdom` `eslint` `typescript-eslint` `eslint-plugin-react-hooks` `prettier`
 
 ---
 

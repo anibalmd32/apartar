@@ -22,13 +22,13 @@ use App\Support\PhoneNumber;
  * letra, esto falla hasta que la tabla la lleve, y entonces es la máscara la
  * que falla hasta que la aprenda.
  *
- * @return array{documents: list<array{input: string, formatted: string}>, phones: list<array{input: string, formatted: string}>}
+ * @return array{documents: list<array{input: string, formatted: string}>, phones: list<array{input: string, formatted: string}>, phoneAreaCodes: list<array{input: string, areaCode: string}>}
  */
 function identityFormatCases(): array
 {
     $path = dirname(__DIR__, 3).'/resources/js/lib/identity-format.cases.json';
 
-    /** @var array{documents: list<array{input: string, formatted: string}>, phones: list<array{input: string, formatted: string}>} */
+    /** @var array{documents: list<array{input: string, formatted: string}>, phones: list<array{input: string, formatted: string}>, phoneAreaCodes: list<array{input: string, areaCode: string}>} */
     return json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
 }
 
@@ -43,6 +43,17 @@ it('enseña cada teléfono de la tabla igual que la máscara', function (): void
     foreach (identityFormatCases()['phones'] as $case) {
         expect(PhoneNumber::fromInput($case['input'])->formatted())
             ->toBe($case['formatted'], "La presentación de {$case['input']} no coincide con la tabla compartida.");
+    }
+});
+
+/**
+ * `T-045b` · el aviso de prefijo del formulario lee el código en el navegador
+ * con `phoneAreaCode()`, y tiene que leer el mismo que `PhoneNumber`.
+ */
+it('lee el código de cada teléfono de la tabla igual que la máscara', function (): void {
+    foreach (identityFormatCases()['phoneAreaCodes'] as $case) {
+        expect(PhoneNumber::fromInput($case['input'])->areaCode())
+            ->toBe($case['areaCode'], "El código de {$case['input']} no coincide con la tabla compartida.");
     }
 });
 

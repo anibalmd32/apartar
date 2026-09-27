@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Catalog\CatalogShowController;
+use App\Http\Controllers\Catalog\LayawayController;
 use App\Http\Controllers\Catalog\OrganizationStorefrontController;
 use App\Http\Controllers\Catalog\ProductShowController;
 use App\Support\CatalogShareLink;
@@ -25,8 +26,8 @@ use Illuminate\Support\Facades\Route;
 | `AssignVisitorId`, que [05 §7.2] monta en este grupo, llega con la
 | telemetría (`T-084`): hoy no hay nada que atribuir a ese identificador.
 |
-| La ficha entra con `T-035`; las que faltan —apartado, seguir, chat— entran
-| con su tarea. La vitrina `/{organization:slug}` va **al final** del archivo,
+| La ficha entra con `T-035` y el apartado con `T-045b`; las que faltan
+| —seguir, chat— entran con su tarea. La vitrina `/{organization:slug}` va **al final** del archivo,
 | con su propio bloque: es un comodín de un segmento.
 */
 
@@ -39,6 +40,21 @@ Route::middleware('catalog-tenant')
         // producto lo resuelve `Catalog::resolveChildRouteBinding()`, que mira
         // antes el catálogo (SP-3) y después la pertenencia y el estado.
         Route::get('{catalog:slug}/p/{product:slug}', ProductShowController::class)->name(CatalogShareLink::PRODUCT_ROUTE);
+
+        // El apartado (`REQ-LAY-001`, `T-045b`). El formulario resuelve el
+        // producto como la ficha —catálogo cerrado o producto que no está dan
+        // `404`/`410`—; el envío **no**, a propósito: `withoutScopedBindings()`
+        // lo resuelve solo por el global scope, sin mirar el estado del
+        // catálogo ni si sigue en él, para que un catálogo cerrado o un
+        // producto retirado mientras el cliente escribía sean un `422` que
+        // conserva el formulario (SP-3, SP-4) y no una página de error. El de
+        // otra organización sigue siendo `404`. Lo explica `LayawayController`.
+        Route::get('{catalog:slug}/apartar/{product:slug}', [LayawayController::class, 'create'])->name('catalog.layaway.create');
+        Route::post('{catalog:slug}/apartar/{product:slug}', [LayawayController::class, 'store'])
+            ->withoutScopedBindings()
+            ->middleware('throttle:apartados')
+            ->name('catalog.layaway.store');
+        Route::get('{catalog:slug}/apartar/{code}/gracias', [LayawayController::class, 'thanks'])->name('catalog.layaway.thanks');
     });
 
 /*

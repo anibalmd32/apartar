@@ -29,7 +29,6 @@ use App\Support\LayawayCode;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -587,19 +586,6 @@ final class CreateLayawayActionTest extends TestCase
             'El bus de telemetría ya existe (T-084): emite layaway_created al confirmar CreateLayawayAction, con '
             .'catalog_id, organization_id y el origen, y borra este caso.',
         );
-    }
-
-    /**
-     * La superficie —rutas, formulario, gracias, correo— es `T-045b`.
-     */
-    public function test_the_form_surface_is_still_pending(): void
-    {
-        $routes = array_values(array_filter(
-            array_map(fn (\Illuminate\Routing\Route $route): string => $route->uri(), Route::getRoutes()->getRoutes()),
-            fn (string $uri): bool => str_contains($uri, 'apartar'),
-        ));
-
-        $this->assertSame([], $routes, 'Llegó la superficie del apartado (T-045b): mándala a CreateLayawayAction y borra este caso.');
     }
 
     // -------------------------------------------------------------------

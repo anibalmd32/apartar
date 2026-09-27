@@ -58,6 +58,25 @@ final class LegalController extends Controller
         ],
     ];
 
+    /**
+     * Si los dos documentos que acepta el cliente al apartar están redactados.
+     *
+     * Es la pregunta que hace el formulario de apartado (`T-045b`) antes de
+     * enlazarlos en la casilla de consentimiento: mientras alguno diga que no
+     * vale, la casilla no lo enlaza ni lo nombra. Se lee de aquí y no de una
+     * copia para que redactarlos sea cambiar **una** marca.
+     */
+    public static function platformTermsAreDrafted(): bool
+    {
+        foreach (self::documents() as $document) {
+            if (! $document['drafted']) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function terms(): Response
     {
         return $this->render('terms');
@@ -70,6 +89,17 @@ final class LegalController extends Controller
 
     private function render(string $document): Response
     {
-        return Inertia::render('marketing/Legal', ['document' => ['key' => $document] + self::DOCUMENTS[$document]]);
+        return Inertia::render('marketing/Legal', ['document' => ['key' => $document] + self::documents()[$document]]);
+    }
+
+    /**
+     * Los documentos, leídos como el tipo que declaran y no como el valor de
+     * hoy: `drafted` es una marca que va a cambiar.
+     *
+     * @return array<string, array{title: string, drafted: bool, mustCover: list<string>}>
+     */
+    private static function documents(): array
+    {
+        return self::DOCUMENTS;
     }
 }

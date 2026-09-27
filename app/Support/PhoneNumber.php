@@ -198,7 +198,24 @@ final readonly class PhoneNumber
      */
     public function isRecognised(): bool
     {
-        return $this->isMobile() || in_array($this->areaCode(), self::LANDLINE_AREA_CODES, true);
+        return in_array($this->areaCode(), self::recognisedAreaCodes(), true);
+    }
+
+    /**
+     * El censo entero —móviles y zonas—, como **dato**, para el aviso que no
+     * bloquea del formulario de apartado (`T-045b`).
+     *
+     * Viaja como `prop` y no como una copia en el frontend: la regla sigue
+     * viviendo aquí, y la pantalla solo pregunta si el código que se está
+     * escribiendo está en la lista que le mandó el servidor. Mandar el
+     * teléfono al servidor para preguntarlo pondría un dato personal en una
+     * URL.
+     *
+     * @return list<string> códigos sin el cero nacional: `414`, `212`
+     */
+    public static function recognisedAreaCodes(): array
+    {
+        return [...self::MOBILE_PREFIXES, ...self::LANDLINE_AREA_CODES];
     }
 
     /**
