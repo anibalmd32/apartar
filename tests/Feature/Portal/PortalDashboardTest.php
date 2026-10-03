@@ -57,13 +57,17 @@ final class PortalDashboardTest extends TestCase
      * RB-3 y RB-5: un bloque, `totals` nulo, los vivos a la vista y los
      * terminales en el historial; los totales del bloque, solo de los vivos y
      * desde los balances materializados.
+     *
+     * Las cuotas vencidas son las de fecha ya pasada en el calendario del
+     * negocio, estén o no en mora (`DueCalendar`): el 27/09 la del 25/09 sí,
+     * aunque siga en la gracia, y la del 10/10 todavía no.
      */
     public function test_the_scoped_session_has_one_block_with_live_layaways_and_history(): void
     {
-        $active = $this->ownLayaway(LayawayStatus::Active);
+        $this->ownLayaway(LayawayStatus::Active);
         $expired = $this->ownLayaway(LayawayStatus::Expired);
-        DB::table('installments')->where('layaway_id', $active->getKey())->where('number', 1)->update(['status' => 'overdue']);
 
+        CarbonImmutable::setTestNow('2026-09-27 12:00:00');
         $this->signIn();
 
         $this->get(route('portal.dashboard'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page

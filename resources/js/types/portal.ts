@@ -60,11 +60,44 @@ export interface BusinessBlock {
     readonly history: readonly LayawaySummary[];
 }
 
+/**
+ * Una alerta del portal (`REQ-LAY-023`): una unión discriminada por `kind`.
+ *
+ * Todo viene calculado del servidor, con la zona y la tasa de cada negocio
+ * (SP-6): aquí solo se elige la frase. Cada una lleva a la acción que la
+ * resuelve (`actionUrl`, RB-7). `claim_available` es de la sesión de cuenta
+ * (H6) y hoy no llega nunca.
+ */
+export type PortalAlert = { readonly actionUrl: string } & (
+    | {
+          readonly kind: 'down_payment_window';
+          readonly hoursLeft: number;
+          /** Para decirlo en minutos cuando queda menos de una hora (SP-2). */
+          readonly minutesLeft: number;
+          readonly layawayCode: string;
+          readonly businessName: string;
+      }
+    /** `businessName` es `null` cuando agrupa varios negocios (RB-3, RB-5). */
+    | { readonly kind: 'overdue'; readonly count: number; readonly amount: MoneyView; readonly businessName: string | null }
+    | {
+          readonly kind: 'due_soon';
+          readonly dueDate: string;
+          readonly dueDateLabel: string;
+          readonly amount: MoneyView;
+          readonly businessName: string;
+      }
+    | { readonly kind: 'receipt_pending'; readonly count: number }
+    | { readonly kind: 'receipt_rejected'; readonly layawayCode: string; readonly businessName: string }
+    | { readonly kind: 'claim_available'; readonly businessName: string }
+);
+
 export interface PortalDashboardProps {
     readonly session: { readonly mode: 'scoped'; readonly displayName: string };
     readonly businesses: readonly BusinessBlock[];
     /** Agregado de todos los negocios: solo con la sesión de cuenta (H6). */
     readonly totals: PortalTotals | null;
+    /** Ya en el orden de RB-2; vacío si no hay nada que avisar. */
+    readonly alerts: readonly PortalAlert[];
 }
 
 export type InstallmentTone = 'paid' | 'overdue' | 'soon' | 'pending';

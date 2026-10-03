@@ -13,6 +13,7 @@ use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Customer;
 use App\Models\Layaway;
 use App\Queries\BusinessBalance;
+use App\Queries\PortalAlert;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,9 +32,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Lo que la sesión acotada **no** tiene, no viaja: `totals` es `null` —no hay
  * nada que agregar con un solo negocio (RB-3)— y no hay `feedPreview`
- * (RB-8). Las alertas son de `T-052`, los mensajes sin leer de H7 y los
- * comprobantes pendientes de H4: entran con sus tareas, en vez de viajar hoy
- * como un cero que diría algo falso.
+ * (RB-8). Los mensajes sin leer son de H7 y los comprobantes pendientes por
+ * bloque de H4: entran con sus tareas, en vez de viajar hoy como un cero que
+ * diría algo falso.
+ *
+ * Las alertas (`REQ-LAY-023`) van antes que los bloques, y las calcula
+ * `PortalAlertsQuery` sobre estos mismos bloques: no pueden contar otra cosa.
  *
  * @property list<BusinessBalance> $resource
  */
@@ -43,8 +47,9 @@ final class PortalDashboardResource extends JsonResource
 
     /**
      * @param  list<BusinessBalance>  $blocks
+     * @param  list<PortalAlert>  $alerts  ya en el orden de `REQ-LAY-023` RB-2
      */
-    public function __construct(array $blocks, private readonly PortalContext $portal)
+    public function __construct(array $blocks, private readonly array $alerts, private readonly PortalContext $portal)
     {
         parent::__construct($blocks);
     }
@@ -66,6 +71,8 @@ final class PortalDashboardResource extends JsonResource
                 fn (): array => $this->block($block, $request),
             ), $this->resource),
             'totals' => null,
+            // RB-8 · primero las alertas, cada una compuesta con su negocio.
+            'alerts' => array_map(fn (PortalAlert $alert): array => (new PortalAlertResource($alert))->resolve($request), $this->alerts),
         ];
     }
 

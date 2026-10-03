@@ -67,6 +67,7 @@ const PROPS: PortalDashboardProps = {
         ),
     ],
     totals: null,
+    alerts: [],
 };
 
 beforeEach(() => {
@@ -101,6 +102,33 @@ it('separa el historial y enlaza cada apartado con su detalle por código', () =
     expect(screen.getByText('Historial (1)')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Nevera Mabe/ })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QRT');
     expect(screen.getByText('Próximo vencimiento: 25 de septiembre')).toBeInTheDocument();
+});
+
+/** `REQ-LAY-020` RB-8 y `REQ-LAY-023` SP-5 · las alertas, antes que los bloques; sin ninguna, ni el contenedor. */
+it('pinta las alertas encima de los bloques, y nada si no hay', () => {
+    const { rerender } = render(<Dashboard {...PROPS} />);
+
+    expect(screen.queryByRole('region', { name: 'Avisos' })).toBeNull();
+
+    rerender(
+        <Dashboard
+            {...PROPS}
+            alerts={[
+                {
+                    kind: 'overdue',
+                    count: 1,
+                    amount: money('$30.00'),
+                    businessName: 'Ferretería Oriente',
+                    actionUrl: '/mi-cuenta/apartados/AP-7K3M9QRT',
+                },
+            ]}
+        />,
+    );
+
+    const alerts = screen.getByRole('region', { name: 'Avisos' });
+    const block = screen.getByRole('region', { name: 'Tus apartados en Ferretería Oriente' });
+
+    expect(alerts.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
 it('sin apartados, lo dice', () => {

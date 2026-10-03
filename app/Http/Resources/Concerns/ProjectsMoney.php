@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Resources\Concerns;
 
 use App\Domain\Exchange\CurrentRate;
+use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
+use App\Domain\Tenancy\TenantContext;
+use App\Models\Organization;
 
 /**
  * Compone el `MoneyView` con el que un importe sale al cliente
@@ -54,6 +57,37 @@ trait ProjectsMoney
             'cents' => $amount->cents,
             'usd' => MoneyFormatter::format($amount),
             'ves' => $this->projectedToVes($amount),
+        ];
+    }
+
+    /**
+     * Un importe hecho de partes de **varios negocios**, cada una proyectada
+     * con la tasa de **su** negocio (`REQ-LAY-020` RB-7).
+     *
+     * En dólares es la suma; en bolívares, la suma de cada parte convertida con
+     * su tasa —lo que de verdad costaría pagarlo todo hoy—, nunca el total
+     * convertido con la tasa de uno de ellos. Si a alguna parte le falta la
+     * tasa, el total no se proyecta: una suma con un hueco sería una cifra que
+     * nadie calculó (`REQ-FX-005` RB-4).
+     *
+     * @param  list<array{organization: Organization, amount: Money}>  $parts
+     * @return array{cents: int, usd: string, ves: string|null}
+     */
+    protected function moneyAcrossBusinesses(array $parts): array
+    {
+        $usd = new Money(0);
+        $ves = new Money(0, Currency::VES);
+
+        foreach ($parts as $part) {
+            $usd = $usd->add($part['amount']);
+            $rate = app(TenantContext::class)->runFor($part['organization'], fn (): ?RateSnapshot => $this->currentRate()->snapshot());
+            $ves = $rate === null || $ves === null ? null : $ves->add($part['amount']->convertTo(Currency::VES, $rate));
+        }
+
+        return [
+            'cents' => $usd->cents,
+            'usd' => MoneyFormatter::format($usd),
+            'ves' => $ves === null ? null : MoneyFormatter::format($ves),
         ];
     }
 

@@ -4,22 +4,27 @@ declare(strict_types=1);
 
 namespace App\Queries;
 
+use App\Domain\Layaway\DueCalendar;
+use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Layaway;
 use App\Models\Organization;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use LogicException;
 
 /**
  * Lo que una persona tiene con **un** negocio, para su bloque del portal
- * (`REQ-LAY-020` RB-2, RB-5, RB-6).
+ * (`REQ-LAY-020` RB-2, RB-5, RB-6) y sus alertas (`REQ-LAY-023`).
  *
  * Separa los apartados vivos del historial y agrega solo los vivos: lo
- * comprometido, lo pagado, lo que falta, las cuotas en mora y el próximo
- * vencimiento. Todo sale de los **balances materializados** de cada apartado
- * (`REQ-PAY-008`), no de recorrer pagos, y sin una consulta más: los apartados
- * ya vienen cargados por `CustomerBalanceQuery`.
+ * comprometido, lo pagado, lo que falta, lo vencido, lo que vence pronto y el
+ * próximo vencimiento. Todo sale de los **balances materializados** de cada
+ * apartado (`REQ-PAY-008`) y de las subconsultas de sus cuotas, no de recorrer
+ * pagos, y sin una consulta más: los apartados ya vienen cargados por
+ * `CustomerBalanceQuery`. Los terminales no cuentan para nada de eso
+ * (`REQ-LAY-023` RB-9).
  *
  * Nunca mezcla negocios: se construye con los apartados de una organización,
  * y lo afirma.
@@ -33,9 +38,10 @@ final readonly class BusinessBalance
     public array $history;
 
     /**
-     * @param  list<Layaway>  $layaways  de **esta** organización, con `overdue_installments_count`
+     * @param  list<Layaway>  $layaways  de **esta** organización, con las subconsultas de `CustomerBalanceQuery`
+     * @param  DueCalendar  $calendar  el de **esta** organización, con el que se contaron los vencimientos
      */
-    public function __construct(public Organization $organization, array $layaways)
+    public function __construct(public Organization $organization, array $layaways, public DueCalendar $calendar)
     {
         $active = [];
         $history = [];
@@ -71,9 +77,80 @@ final readonly class BusinessBalance
         return $this->sum(fn (Layaway $layaway): Money => $layaway->remaining_cents);
     }
 
+    /**
+     * Las cuotas sin cubrir con la fecha ya pasada en el calendario del
+     * negocio, estén o no en mora todavía (`DueCalendar`).
+     */
     public function overdueInstallments(): int
     {
         return (int) array_sum(array_map(fn (Layaway $layaway): int => self::overdueCountOf($layaway), $this->active));
+    }
+
+    /**
+     * Lo que falta de esas cuotas.
+     */
+    public function overdueAmount(): Money
+    {
+        return $this->sum(fn (Layaway $layaway): Money => new Money((int) $layaway->getAttribute('overdue_pending_cents')));
+    }
+
+    /**
+     * El primer apartado vivo con alguna cuota vencida, para llevar a la
+     * persona a él.
+     */
+    public function firstOverdueLayaway(): ?Layaway
+    {
+        foreach ($this->active as $layaway) {
+            if (self::overdueCountOf($layaway) > 0) {
+                return $layaway;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * La primera fecha dentro del umbral de «pronto» con alguna cuota sin
+     * cubrir, lo que falta de las cuotas de ese día y el apartado al que
+     * pertenece la primera; `null` si no vence nada pronto.
+     *
+     * @return array{date: CarbonImmutable, amount: Money, layaway: Layaway}|null
+     */
+    public function dueSoon(): ?array
+    {
+        $soon = null;
+
+        foreach ($this->active as $layaway) {
+            $date = $layaway->getAttribute('soon_due_date');
+
+            if (! is_string($date)) {
+                continue;
+            }
+
+            $day = $this->calendar->day(CarbonImmutable::parse($date));
+            $amount = new Money((int) $layaway->getAttribute('soon_pending_cents'));
+
+            if ($soon === null || $day->lessThan($soon['date'])) {
+                $soon = ['date' => $day, 'amount' => $amount, 'layaway' => $layaway];
+            } elseif ($day->equalTo($soon['date'])) {
+                $soon['amount'] = $soon['amount']->add($amount);
+            }
+        }
+
+        return $soon;
+    }
+
+    /**
+     * Los apartados que esperan la inicial, por orden de cuál se cierra antes.
+     *
+     * @return list<Layaway>
+     */
+    public function awaitingDownPayment(): array
+    {
+        $waiting = array_values(array_filter($this->active, fn (Layaway $layaway): bool => $layaway->status === LayawayStatus::PendingDownPayment));
+        usort($waiting, fn (Layaway $a, Layaway $b): int => ($a->expires_at?->getTimestamp() ?? PHP_INT_MAX) <=> ($b->expires_at?->getTimestamp() ?? PHP_INT_MAX));
+
+        return $waiting;
     }
 
     /**

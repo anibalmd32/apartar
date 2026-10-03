@@ -6,10 +6,10 @@ namespace App\Http\Controllers\Portal;
 
 use App\Domain\Account\PortalContext;
 use App\Domain\Catalog\CatalogVisibility;
+use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentAccountView;
-use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationBrand;
@@ -23,7 +23,6 @@ use App\Models\Installment;
 use App\Models\Layaway;
 use App\Queries\ActivePaymentAccountsQuery;
 use App\Support\Settings;
-use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -69,7 +68,7 @@ final class LayawayShowController extends Controller
         $layaway = $portal->findLayaway($code);
         $organization = $this->context->organization();
         $timezone = new DateTimeZone($organization->timezone);
-        $today = CarbonImmutable::now($timezone)->startOfDay();
+        $calendar = DueCalendar::of($organization, $this->settings);
         $installments = $layaway->installments()->get();
 
         return Inertia::render('portal/LayawayShow', [
@@ -84,7 +83,7 @@ final class LayawayShowController extends Controller
                 'statusMessage' => $this->statusMessage($layaway->status),
             ],
             'installments' => $installments
-                ->map(fn (Installment $installment): array => (new InstallmentRowResource($installment, $today, $this->soonDays()))->resolve($request))
+                ->map(fn (Installment $installment): array => (new InstallmentRowResource($installment, $calendar))->resolve($request))
                 ->values()
                 ->all(),
             'nextPaymentSuggestion' => $this->suggestion($layaway, $installments->all()),
@@ -153,21 +152,5 @@ final class LayawayShowController extends Controller
         return in_array($catalog->visibility(), [CatalogVisibility::Listed, CatalogVisibility::Unlisted], true)
             ? route('catalog.show', ['catalog' => $catalog->slug])
             : null;
-    }
-
-    /**
-     * El umbral de «vence pronto»: el primer recordatorio del negocio
-     * (`reminder_offsets_days`, el más negativo), para que el portal y el
-     * aviso digan lo mismo (`REQ-NOT-002` RB-5). Sin recordatorios previos,
-     * solo el mismo día.
-     */
-    private function soonDays(): int
-    {
-        $offsets = $this->settings->get(SettingKey::ReminderOffsetsDays);
-        $before = is_array($offsets)
-            ? array_filter(array_map(fn (mixed $offset): int => is_numeric($offset) ? (int) $offset : 0, $offsets), fn (int $offset): bool => $offset < 0)
-            : [];
-
-        return $before === [] ? 0 : (int) abs(min($before));
     }
 }
