@@ -1,5 +1,9 @@
+import { type OrganizationBrand } from '@/types/backoffice';
+import { type MoneyView } from '@/types/money';
+import { type PaymentAccountView } from '@/types/payment';
+
 /**
- * Tipos del portal del cliente (`REQ-IDN-004`, `REQ-IDN-008`).
+ * Tipos del portal del cliente (`REQ-IDN-004`, `REQ-LAY-020`, `REQ-LAY-021`).
  *
  * Ninguno lleva `id` numéricos de la ficha ni el de su cuenta (`REQ-IDN-004`
  * RB-4): el apartado se nombra por su código y la persona por su documento.
@@ -16,20 +20,91 @@ export interface PortalAccessProps {
     readonly status?: string | null;
 }
 
-/** Un apartado en la portada mínima de `T-049`; la completa es de `T-051`. */
-export interface PortalLayawayItem {
+export type LayawayStatus = 'pending_down_payment' | 'active' | 'overdue' | 'completed' | 'cancelled' | 'expired';
+
+/** Un apartado en el portal (`LayawaySummary`). */
+export interface LayawaySummary {
     readonly code: string;
+    readonly status: LayawayStatus;
+    /** Cómo se le nombra el estado al cliente; sale del enum del servidor. */
+    readonly statusLabel: string;
+    readonly isTerminal: boolean;
+    readonly acceptsPayments: boolean;
     readonly productName: string;
     readonly quantity: number;
-    readonly status: string;
-    readonly statusLabel: string;
-    readonly total: string;
+    readonly total: MoneyView;
+    readonly paid: MoneyView;
+    readonly remaining: MoneyView;
+    readonly nextDueDate: string | null;
+    readonly nextDueDateLabel: string | null;
+    readonly overdueInstallments: number;
+}
+
+export interface PortalTotals {
+    readonly activeLayaways: number;
+    readonly committed: MoneyView;
+    readonly paid: MoneyView;
+    readonly remaining: MoneyView;
+    readonly overdueInstallments: number;
+    readonly nextDueDate: string | null;
+    readonly nextDueDateLabel: string | null;
+}
+
+/** Lo que la persona tiene con un negocio: nunca se mezcla con otro. */
+export interface BusinessBlock {
+    readonly business: OrganizationBrand;
+    /** El negocio ya no opera en la plataforma (SP-9). La suspensión no se dice. */
+    readonly closed: boolean;
+    readonly totals: PortalTotals;
+    readonly layaways: readonly LayawaySummary[];
+    readonly history: readonly LayawaySummary[];
 }
 
 export interface PortalDashboardProps {
-    readonly organization: { readonly name: string };
-    readonly customer: { readonly fullName: string; readonly documentNumber: string };
-    readonly layaways: readonly PortalLayawayItem[];
+    readonly session: { readonly mode: 'scoped'; readonly displayName: string };
+    readonly businesses: readonly BusinessBlock[];
+    /** Agregado de todos los negocios: solo con la sesión de cuenta (H6). */
+    readonly totals: PortalTotals | null;
+}
+
+export type InstallmentTone = 'paid' | 'overdue' | 'soon' | 'pending';
+
+/** Una fila del cronograma, con sus días contados en el calendario del negocio. */
+export interface InstallmentRow {
+    readonly number: number;
+    readonly dueDate: string;
+    readonly dueDateLabel: string;
+    readonly amount: MoneyView;
+    readonly paid: MoneyView;
+    readonly pending: MoneyView;
+    readonly status: 'pending' | 'partially_paid' | 'paid' | 'overdue';
+    /** Negativo si ya venció. */
+    readonly daysUntilDue: number;
+    readonly tone: InstallmentTone;
+}
+
+export interface NextPaymentSuggestion {
+    readonly kind: 'down_payment' | 'installment';
+    readonly installmentNumber: number | null;
+    readonly amount: MoneyView;
+    /** El saldo entero, para quien quiera liquidar. */
+    readonly payOff: MoneyView;
+}
+
+export interface PortalLayawayShowProps {
+    readonly business: OrganizationBrand;
+    readonly layaway: LayawaySummary & {
+        readonly downPayment: MoneyView;
+        readonly expiresAt: string | null;
+        readonly activatedAt: string | null;
+        readonly statusMessage: string | null;
+    };
+    readonly installments: readonly InstallmentRow[];
+    readonly nextPaymentSuggestion: NextPaymentSuggestion | null;
+    readonly paymentAccounts: readonly PaymentAccountView[];
+    readonly catalogUrl: string | null;
+    /** El formulario del comprobante es de `T-059`; hasta entonces, `null`. */
+    readonly receiptUrl: string | null;
 }
 
 /** La confirmación del enlace por correo (`REQ-IDN-003` RB-9). */

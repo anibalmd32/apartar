@@ -43,7 +43,7 @@ final class ScopedAccessTest extends TestCase
     {
         parent::setUp();
 
-        $this->organization = Organization::factory()->create(['name' => 'Ferretería Oriente']);
+        $this->organization = $this->subscribe(Organization::factory()->create(['name' => 'Ferretería Oriente']));
         $this->layaway = $this->layawayIn($this->organization);
         DB::table('customers')->where('id', $this->layaway->customer_id)->update(['document_number' => 'V12345678', 'full_name' => 'María González']);
         $this->customer = $this->withinOrganization($this->organization, fn (): Customer => Customer::query()->findOrFail($this->layaway->customer_id));
@@ -71,13 +71,13 @@ final class ScopedAccessTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('portal/Dashboard')
-                ->where('organization.name', 'Ferretería Oriente')
-                ->where('customer.documentNumber', 'V-12.345.678')
-                ->where('layaways.0.code', $this->layaway->code)
-                ->where('layaways.0.statusLabel', 'Esperando la inicial')
+                ->where('businesses.0.business.name', 'Ferretería Oriente')
+                ->where('session.displayName', 'María González')
+                ->where('businesses.0.layaways.0.code', $this->layaway->code)
+                ->where('businesses.0.layaways.0.statusLabel', 'Esperando la inicial')
                 ->where('auth.portal', ['mode' => 'scoped', 'fullName' => 'María González', 'businessName' => 'Ferretería Oriente'])
-                ->missing('customer.id')
-                ->missing('layaways.0.id'));
+                ->where('totals', null)
+                ->missing('businesses.0.layaways.0.id'));
     }
 
     /**
@@ -190,7 +190,7 @@ final class ScopedAccessTest extends TestCase
 
         $this->get(route('portal.dashboard'))
             ->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('layaways.0.statusLabel', 'Vencido sin inicial'));
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('businesses.0.history.0.statusLabel', 'Vencido sin inicial'));
     }
 
     /**
@@ -262,9 +262,9 @@ final class ScopedAccessTest extends TestCase
         $codes = [];
 
         $this->get(route('portal.dashboard'))->assertInertia(function (AssertableInertia $page) use (&$codes): void {
-            /** @var list<array{code: string}> $layaways */
-            $layaways = $page->toArray()['props']['layaways'];
-            $codes = array_map(fn (array $layaway): string => $layaway['code'], $layaways);
+            /** @var array{layaways: list<array{code: string}>, history: list<array{code: string}>} $block */
+            $block = $page->toArray()['props']['businesses'][0];
+            $codes = array_map(fn (array $layaway): string => $layaway['code'], [...$block['layaways'], ...$block['history']]);
         });
 
         return $codes;

@@ -82,7 +82,9 @@ final class CrossTenantAccessTest extends TestCase
             .'apartó, así que sin ese código en la sesión todo es `404` y este mecanismo, que no la tiene, '
             .'afirmaría un `404` vacío. Lo que de verdad se puede torcer —una sesión que guarda el código de un '
             .'apartado de otro negocio— lo prueba `LayawayThanksIsolationTest`: bajo el catálogo de la URL, el '
-            .'código ajeno no existe y la respuesta es `404`.',
+            .'código ajeno no existe y la respuesta es `404`. Y el detalle del portal (`T-051`): ahí el código se '
+            .'busca entre las fichas de la sesión (`PortalContext::findLayaway()`), y el `404` de un código de '
+            .'otra persona o de otro negocio lo afirma `PortalLayawayIsolationTest`.',
     ];
 
     /**

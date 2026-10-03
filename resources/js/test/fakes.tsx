@@ -32,6 +32,10 @@ export function fakeRoute(name: string, params: RouteParams = {}): string {
             return '/mi-cuenta/acceso/codigo';
         case 'portal.logout':
             return '/mi-cuenta/salir';
+        case 'portal.dashboard':
+            return '/mi-cuenta';
+        case 'portal.layaways.show':
+            return `/mi-cuenta/apartados/${params.code}`;
         case 'portal.link.store':
             return '/mi-cuenta/acceso/enlace';
         case 'portal.link.show':

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Portal\AccessController;
 use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\LayawayShowController;
 use App\Http\Controllers\Portal\LoginLinkController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,5 +45,6 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
 
     Route::middleware(['portal', 'portal-tenant'])->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('apartados/{code}', LayawayShowController::class)->name('layaways.show');
     });
 });

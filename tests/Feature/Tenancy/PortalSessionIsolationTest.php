@@ -28,7 +28,7 @@ final class PortalSessionIsolationTest extends TestCase
 
     public function test_the_code_of_one_business_opens_only_that_business(): void
     {
-        $ours = Organization::factory()->create(['name' => 'Ferretería Oriente']);
+        $ours = $this->subscribe(Organization::factory()->create(['name' => 'Ferretería Oriente']));
         $theirs = $this->neighbourOrganization(['name' => 'Mueblería Centro']);
 
         $mine = $this->layawayIn($ours);
@@ -39,9 +39,10 @@ final class PortalSessionIsolationTest extends TestCase
             ->assertRedirect(route('portal.dashboard'));
 
         $this->get(route('portal.dashboard'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('organization.name', 'Ferretería Oriente')
-            ->has('layaways', 1)
-            ->where('layaways.0.code', $mine->code));
+            ->where('businesses.0.business.name', 'Ferretería Oriente')
+            ->has('businesses', 1)
+            ->has('businesses.0.layaways', 1)
+            ->where('businesses.0.layaways.0.code', $mine->code));
 
         $this->assertSame((int) $ours->getKey(), app(TenantContext::class)->organizationId());
         $this->assertNotSame($mine->code, $neighbours->code);

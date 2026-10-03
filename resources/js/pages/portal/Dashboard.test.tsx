@@ -1,49 +1,110 @@
+import { centsUsd } from '@/lib/money';
 import Dashboard from '@/pages/portal/Dashboard';
 import { fakeRoute } from '@/test/fakes';
-import { type PortalDashboardProps } from '@/types/portal';
-import { render, screen } from '@testing-library/react';
+import { type RateView } from '@/types/exchange';
+import { type BusinessBlock, type LayawaySummary, type PortalDashboardProps } from '@/types/portal';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 /**
- * La portada mínima del portal (`REQ-IDN-008` RB-4, `T-049`).
+ * La portada del portal (`REQ-LAY-020`).
  */
 
-vi.mock('@inertiajs/react', async () => ({ Head: () => null, Link: (await import('@/test/fakes')).FakeLink }));
+const { usePage } = vi.hoisted(() => ({ usePage: vi.fn() }));
+
+vi.mock('@inertiajs/react', async () => ({ usePage, Head: () => null, Link: (await import('@/test/fakes')).FakeLink }));
+
+const NO_RATE: RateView = { rate: null, source: 'bcv', sourceLabel: 'BCV', publishedAt: null, isStale: false };
+
+function money(usd: string) {
+    return { cents: centsUsd(100), usd, ves: null };
+}
+
+function layaway(code: string, productName: string, statusLabel: string, isTerminal = false): LayawaySummary {
+    return {
+        code,
+        status: isTerminal ? 'expired' : 'active',
+        statusLabel,
+        isTerminal,
+        acceptsPayments: !isTerminal,
+        productName,
+        quantity: 1,
+        total: money('$200.00'),
+        paid: money('$50.00'),
+        remaining: money('$150.00'),
+        nextDueDate: isTerminal ? null : '2026-09-25',
+        nextDueDateLabel: isTerminal ? null : '25 de septiembre',
+        overdueInstallments: 0,
+    };
+}
+
+function block(name: string, slug: string, layaways: LayawaySummary[], history: LayawaySummary[] = []): BusinessBlock {
+    return {
+        business: { name, slug, logoUrl: null, brandColor: null, brandingEnabled: false },
+        closed: false,
+        totals: {
+            activeLayaways: layaways.length,
+            committed: money('$200.00'),
+            paid: money('$50.00'),
+            remaining: money('$150.00'),
+            overdueInstallments: 1,
+            nextDueDate: '2026-09-25',
+            nextDueDateLabel: '25 de septiembre',
+        },
+        layaways,
+        history,
+    };
+}
 
 const PROPS: PortalDashboardProps = {
-    organization: { name: 'Ferretería Oriente' },
-    customer: { fullName: 'María González', documentNumber: 'V-12.345.678' },
-    layaways: [
-        { code: 'AP-7K3M9QRT', productName: 'Nevera Mabe', quantity: 1, status: 'active', statusLabel: 'Al día', total: '$200.00' },
-        { code: 'AP-QX2H8MNB', productName: 'Taladro', quantity: 2, status: 'expired', statusLabel: 'Vencido sin inicial', total: '$90.00' },
+    session: { mode: 'scoped', displayName: 'María González' },
+    businesses: [
+        block(
+            'Ferretería Oriente',
+            'ferreteria',
+            [layaway('AP-7K3M9QRT', 'Nevera Mabe', 'Al día')],
+            [layaway('AP-QX2H8MNB', 'Taladro', 'Vencido sin inicial', true)],
+        ),
     ],
+    totals: null,
 };
 
 beforeEach(() => {
     vi.stubGlobal('route', fakeRoute);
+    usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: NO_RATE } } });
 });
 
-/** RB-4 · todos los apartados de la ficha, también los terminales (RB-7). */
-it('lista todos los apartados de la ficha con su código y su estado', () => {
-    render(<Dashboard {...PROPS} />);
+/** RB-2 · cada negocio en su bloque, con su nombre; nunca mezclados. */
+it('pinta un bloque por negocio con sus propios apartados', () => {
+    render(
+        <Dashboard
+            {...PROPS}
+            businesses={[
+                block('Ferretería Oriente', 'ferreteria', [layaway('AP-7K3M9QRT', 'Nevera', 'Al día')]),
+                block('Boutique Sur', 'boutique', [layaway('AP-ZZ2H8MNB', 'Vestido', 'Al día')]),
+            ]}
+        />,
+    );
 
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
-    expect(screen.getByText('AP-7K3M9QRT')).toBeInTheDocument();
-    expect(screen.getByText('Vencido sin inicial')).toBeInTheDocument();
-    expect(screen.getByText(/2 ×/)).toBeInTheDocument();
+    const ferreteria = screen.getByRole('region', { name: 'Tus apartados en Ferretería Oriente' });
+    const boutique = screen.getByRole('region', { name: 'Tus apartados en Boutique Sur' });
+
+    expect(within(ferreteria).getByText('Nevera')).toBeInTheDocument();
+    expect(within(ferreteria).queryByText('Vestido')).toBeNull();
+    expect(within(boutique).getByText('Vestido')).toBeInTheDocument();
 });
 
-/** La sesión acotada es de un negocio, y lo dice; y se puede salir. */
-it('dice con qué negocio es la sesión y ofrece salir', () => {
+/** RB-5 · los terminales van al historial, y cada apartado lleva a su detalle. */
+it('separa el historial y enlaza cada apartado con su detalle por código', () => {
     render(<Dashboard {...PROPS} />);
 
-    expect(screen.getByRole('heading', { name: 'Tus apartados en Ferretería Oriente' })).toBeInTheDocument();
-    expect(screen.getByText('María González')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Salir' })).toHaveAttribute('href', '/mi-cuenta/salir');
+    expect(screen.getByText('Historial (1)')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Nevera Mabe/ })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QRT');
+    expect(screen.getByText('Próximo vencimiento: 25 de septiembre')).toBeInTheDocument();
 });
 
 it('sin apartados, lo dice', () => {
-    render(<Dashboard {...PROPS} layaways={[]} />);
+    render(<Dashboard {...PROPS} businesses={[]} />);
 
-    expect(screen.getByText('No tienes apartados en este negocio.')).toBeInTheDocument();
+    expect(screen.getByText('No tienes apartados todavía.')).toBeInTheDocument();
 });

@@ -15,6 +15,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Models\Subscription;
 use App\Support\LayawayCode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -58,6 +59,20 @@ trait CreatesLayaways
             LayawayStatus::Cancelled => [LayawayStatus::Cancelled],
             LayawayStatus::Expired => [LayawayStatus::Expired],
         };
+    }
+
+    /**
+     * Le da a la organización la suscripción que en producción siempre tiene
+     * (`REQ-SUB-002` RB-1), para las pantallas que preguntan al plan —la marca
+     * del negocio en el portal, por ejemplo—. Sin ella, `LimitEnforcer` lanza,
+     * y es correcto que lance: una organización sin suscripción es una base a
+     * medio sembrar.
+     */
+    protected function subscribe(Organization $organization): Organization
+    {
+        app(TenantContext::class)->runFor($organization, fn () => Subscription::factory()->create());
+
+        return $organization;
     }
 
     /**

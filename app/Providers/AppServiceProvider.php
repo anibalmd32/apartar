@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
+use App\Domain\Account\PortalContext;
 use App\Domain\Tenancy\TenantContext;
 use App\Support\Settings;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -41,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
             $app->make(TenantContext::class),
             $app->make(CacheFactory::class)->store(),
         ));
+
+        // `PortalContext` es *scoped*: se lee de la sesión de **esta**
+        // petición y muere con ella. Un `singleton` sobreviviría en el worker
+        // y respondería con la ficha de la petición anterior.
+        $this->app->scoped(PortalContext::class, fn (): PortalContext => PortalContext::fromSession());
     }
 
     /**
