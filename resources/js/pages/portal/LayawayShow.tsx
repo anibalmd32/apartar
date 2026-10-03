@@ -94,6 +94,13 @@ export default function LayawayShow({
                         <p className="text-sm opacity-70">
                             Si prefieres pagarlo todo de una vez: <MoneyLabel money={nextPaymentSuggestion.payOff} />
                         </p>
+                        {/* `REQ-LAY-008` RB-1, RB-2 · sin descuento, y el equivalente en bolívares se fija al pagar. */}
+                        <p className="text-xs opacity-70">
+                            Sin descuento por adelantar.
+                            {nextPaymentSuggestion.payOff.ves !== null
+                                ? ' El monto en bolívares es a la tasa de hoy y puede variar el día que pagues.'
+                                : null}
+                        </p>
                         {receiptUrl !== null ? (
                             <Link href={receiptUrl} className="btn btn-primary btn-block mt-2">
                                 Subir comprobante

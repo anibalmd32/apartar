@@ -132,6 +132,24 @@ enum LayawayStatus: string
     }
 
     /**
+     * Cómo se nombra el estado **en el backoffice** (`T-053`).
+     *
+     * Distinto del del cliente a propósito: al negocio se le dice «en mora» y
+     * «expirado»; al cliente, «con cuotas vencidas» y «vencido sin inicial».
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::PendingDownPayment => 'Esperando la inicial',
+            self::Active => 'Activo',
+            self::Overdue => 'En mora',
+            self::Completed => 'Pagado',
+            self::Cancelled => 'Cancelado',
+            self::Expired => 'Expirado',
+        };
+    }
+
+    /**
      * Cómo se le nombra el estado **al cliente** en su portal (`T-049`).
      *
      * Vive en el enum y no en el `.tsx`: una lista de casos es propiedad del

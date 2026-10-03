@@ -6,6 +6,7 @@ namespace App\Domain\Layaway;
 
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
+use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 /**
@@ -98,6 +99,32 @@ final readonly class AmortizationSchedule
         }
 
         return null;
+    }
+
+    /**
+     * Entre qué días puede caer la nueva fecha de la cuota `$number`
+     * (`REQ-LAY-011` RB-3).
+     *
+     * Desde mañana y no antes que la anterior; hasta la siguiente, o sin tope
+     * si es la última (SP-4). `$today` es el comienzo del día en la zona del
+     * negocio (RB-8). Si la cuota no existe, lanza: preguntar por la ventana
+     * de una cuota que no está en el cronograma es un error de quien llama.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function validMoveWindow(int $number, CarbonImmutable $today): RescheduleWindow
+    {
+        if ($number < 1 || $number > $this->count()) {
+            throw new InvalidArgumentException(sprintf('El cronograma tiene %d cuotas, y se preguntó por la %d.', $this->count(), $number));
+        }
+
+        $tomorrow = $today->startOfDay()->addDay();
+        $previous = $this->installments[$number - 2] ?? null;
+        $next = $this->installments[$number] ?? null;
+
+        $earliest = $previous !== null && $previous->dueDate->greaterThan($tomorrow) ? $previous->dueDate : $tomorrow;
+
+        return new RescheduleWindow($earliest, $next?->dueDate);
     }
 
     /**

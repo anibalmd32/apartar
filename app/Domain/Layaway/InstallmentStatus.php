@@ -55,4 +55,20 @@ enum InstallmentStatus: string
 
         return $paid->cents > 0 ? self::PartiallyPaid : self::Pending;
     }
+
+    /**
+     * Cómo se nombra el estado **en el backoffice**.
+     *
+     * Para el negocio, `overdue` es mora —pasó la gracia—, no solo fecha
+     * pasada: es lo que decide la cobranza.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending => 'Pendiente',
+            self::PartiallyPaid => 'Pago parcial',
+            self::Paid => 'Pagada',
+            self::Overdue => 'En mora',
+        };
+    }
 }

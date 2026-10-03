@@ -9,6 +9,9 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
+use Database\Factories\LayawayFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -81,7 +84,8 @@ use LogicException;
  */
 class Layaway extends Model
 {
-    use BelongsToOrganization;
+    /** @use HasFactory<LayawayFactory> */
+    use BelongsToOrganization, HasFactory;
 
     /**
      * Lo que se escribe una vez al crear y ya no se toca (`REQ-LAY-002` RB-1,
@@ -172,6 +176,18 @@ class Layaway extends Model
     public function installments(): HasMany
     {
         return $this->hasMany(Installment::class)->orderBy('number');
+    }
+
+    /**
+     * Los pagados que el negocio todavía no entregó: su cola de trabajo de
+     * mostrador (`REQ-LAY-010` RB-5).
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeCompletedNotDelivered(Builder $query): Builder
+    {
+        return $query->where('status', LayawayStatus::Completed)->whereNull('delivered_at');
     }
 
     /**

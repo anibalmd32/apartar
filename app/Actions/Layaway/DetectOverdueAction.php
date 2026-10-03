@@ -113,6 +113,21 @@ final class DetectOverdueAction
         return $today->subDays($this->graceDays())->toDateString();
     }
 
+    /**
+     * La misma pasada sobre **un** apartado, ahora: para quien acaba de mover
+     * algo de lo que su mora depende y no puede esperar a las 06:00.
+     *
+     * Lo usa la reprogramación (`REQ-LAY-011` RB-5): una cuota en mora que se
+     * mueve al futuro sale de `overdue`, y si no queda ninguna el apartado
+     * vuelve a `active`. Es la regla de la pasada diaria y no una copia, para
+     * que las dos no puedan discrepar. Se puede llamar dentro de una
+     * transacción que ya tenga el apartado bloqueado.
+     */
+    public function refresh(Layaway $layaway, CarbonImmutable $now): OverdueSummary
+    {
+        return $this->recalculate($layaway, $this->threshold($now), new OverdueSummary);
+    }
+
     private function recalculate(Layaway $layaway, string $threshold, OverdueSummary $summary): OverdueSummary
     {
         return DB::transaction(function () use ($layaway, $threshold, $summary): OverdueSummary {

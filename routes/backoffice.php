@@ -8,6 +8,8 @@ use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
 use App\Http\Controllers\Backoffice\CatalogController;
 use App\Http\Controllers\Backoffice\CategoryController;
+use App\Http\Controllers\Backoffice\InstallmentController;
+use App\Http\Controllers\Backoffice\LayawayController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductImageController;
@@ -291,6 +293,32 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('etiquetas', [TagController::class, 'store'])->name('tags.store');
             Route::put('etiquetas/{tag}', [TagController::class, 'update'])->name('tags.update');
             Route::delete('etiquetas/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
+
+            /*
+            | Apartados (`REQ-LAY-009`, `REQ-LAY-010`, `REQ-LAY-011`). De los
+            | dos roles: la cobranza es operación diaria, y quién puede lo dice
+            | `LayawayPolicy` en cada acción.
+            |
+            | **Todas declaran `during-suspension`.** Cancelar, entregar y
+            | reprogramar son la gestión de la cobranza que `REQ-SUB-007` RB-4
+            | preserva (`REQ-LAY-009` RB-9): con la organización suspendida
+            | los apartados vivos siguen su curso, y el negocio tiene que poder
+            | cerrar los abandonados, entregar lo pagado y pactar fechas.
+            |
+            | El apartado viaja por su **código** (`{layaway:code}`), que es
+            | como el negocio y el cliente lo nombran. Apartado y cuota se
+            | resuelven ya filtrados por el tenant: los de otra organización
+            | dan `404` y no `403` (`REQ-ORG-002` RB-6).
+            |
+            | La vista del apartado es mínima a propósito (`T-053`): los
+            | listados de cobranza que llevan a ella son de `T-065`.
+            */
+            Route::middleware('during-suspension')->group(function (): void {
+                Route::get('apartados/{layaway:code}', [LayawayController::class, 'show'])->name('layaways.show');
+                Route::post('apartados/{layaway:code}/cancelar', [LayawayController::class, 'cancel'])->name('layaways.cancel');
+                Route::post('apartados/{layaway:code}/entregar', [LayawayController::class, 'deliver'])->name('layaways.deliver');
+                Route::patch('cuotas/{installment}/reprogramar', [InstallmentController::class, 'reschedule'])->name('installments.reschedule');
+            });
 
             /*
             | Equipo (`REQ-ORG-004`, `REQ-ORG-005`). Del `owner`, por [05 §7.4]

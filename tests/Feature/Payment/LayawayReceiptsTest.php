@@ -52,4 +52,35 @@ final class LayawayReceiptsTest extends TestCase
 
         (new LayawayReceipts)->holdExpiration($layaway);
     }
+
+    /**
+     * Las tres preguntas de `T-052` y `T-053` responden «ninguno» mientras no
+     * hay tabla, y las tres lanzan en cuanto existe.
+     */
+    public function test_the_portal_and_cancellation_questions_follow_the_same_guard(): void
+    {
+        $organization = Organization::factory()->create();
+        $layaway = $this->layawayIn($organization);
+        $receipts = new LayawayReceipts;
+
+        $this->assertSame([], $receipts->pendingReviewCounts([$layaway]));
+        $this->assertSame([], $receipts->rejectedAwaitingRetry([$layaway]));
+        $this->assertSame(0, $receipts->rejectPendingOnCancellation($layaway));
+
+        Schema::shouldReceive('hasTable')->with('receipts')->andReturnTrue();
+
+        foreach ([
+            'pendingReviewCounts' => fn () => $receipts->pendingReviewCounts([$layaway]),
+            'rejectedAwaitingRetry' => fn () => $receipts->rejectedAwaitingRetry([$layaway]),
+            'rejectPendingOnCancellation' => fn () => $receipts->rejectPendingOnCancellation($layaway),
+        ] as $method => $call) {
+            try {
+                $call();
+                $this->fail("{$method}() siguió respondiendo con la tabla ya creada.");
+            } catch (LogicException $exception) {
+                $this->assertStringContainsString("::{$method}()", $exception->getMessage());
+                $this->assertStringContainsString('T-054', $exception->getMessage());
+            }
+        }
+    }
 }

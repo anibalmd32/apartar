@@ -82,6 +82,30 @@ it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua
     expect(screen.getByRole('region', { name: 'Dónde pagar' })).toBeInTheDocument();
 });
 
+/** `REQ-LAY-008` RB-1 y RB-2 · liquidar no tiene descuento, y el equivalente en bolívares puede moverse. */
+it('avisa de que liquidar no tiene descuento y de que los bolívares se fijan al pagar', () => {
+    const { rerender } = render(<LayawayShow {...props()} />);
+
+    const next = screen.getByRole('region', { name: 'Próximo pago' });
+    expect(next).toHaveTextContent('Sin descuento por adelantar.');
+    expect(next).not.toHaveTextContent('puede variar');
+
+    rerender(
+        <LayawayShow
+            {...props({
+                nextPaymentSuggestion: {
+                    kind: 'installment',
+                    installmentNumber: 1,
+                    amount: money('$30.00'),
+                    payOff: { cents: centsUsd(15_000), usd: '$150.00', ves: 'Bs. 6.375,00' },
+                },
+            })}
+        />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('puede variar el día que pagues');
+});
+
 /** RB-6 · esperando la inicial: instrucciones y plazo, sin cronograma. */
 it('esperando la inicial, enseña la inicial y el plazo en lugar del cronograma', () => {
     render(

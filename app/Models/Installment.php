@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Domain\Layaway\AmortizationSchedule;
 use App\Domain\Layaway\InstallmentStatus;
+use App\Domain\Layaway\ScheduledInstallment;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
+use Carbon\CarbonImmutable;
+use Database\Factories\InstallmentFactory;
+use DateTimeZone;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
@@ -47,7 +53,8 @@ use LogicException;
  */
 class Installment extends Model
 {
-    use BelongsToOrganization;
+    /** @use HasFactory<InstallmentFactory> */
+    use BelongsToOrganization, HasFactory;
 
     /**
      * Lo que fija la materialización y ya no se toca (RB-6). `due_date` no
@@ -108,6 +115,29 @@ class Installment extends Model
     public function layaway(): BelongsTo
     {
         return $this->belongsTo(Layaway::class);
+    }
+
+    /**
+     * Esas cuotas —las de un apartado, en orden— como el cronograma del
+     * dominio, con lo pagado de cada una y sus días en la zona del negocio.
+     *
+     * Es lo que permite preguntarle a `AmortizationSchedule` por la ventana de
+     * una reprogramación (`REQ-LAY-011` RB-3) con el cronograma **tal como está
+     * en la base**, no como se generó.
+     *
+     * @param  list<self>  $installments
+     */
+    public static function scheduleOf(array $installments, DateTimeZone $timezone): AmortizationSchedule
+    {
+        return new AmortizationSchedule(array_map(
+            fn (self $row): ScheduledInstallment => new ScheduledInstallment(
+                $row->number,
+                CarbonImmutable::parse($row->due_date->toDateString(), $timezone)->startOfDay(),
+                $row->amount_cents,
+                $row->paid_cents,
+            ),
+            $installments,
+        ));
     }
 
     /**

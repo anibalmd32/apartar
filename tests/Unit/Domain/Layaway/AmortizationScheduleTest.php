@@ -78,3 +78,30 @@ it('rechaza una cuota en otra moneda', function (): void {
     expect(fn () => new AmortizationSchedule([installmentAt(1, 1_000, currency: Currency::VES)]))
         ->toThrow(InvalidArgumentException::class, 'La cuota 1 está en VES');
 });
+
+/**
+ * `REQ-LAY-011` RB-3: la nueva fecha, desde mañana y nunca antes que la
+ * anterior; hasta la siguiente, o sin tope si es la última (SP-4). Las cuotas
+ * vencen el 25/09, el 10/10 y el 25/10.
+ */
+it('acota la ventana de una reprogramación entre las cuotas vecinas', function (): void {
+    $schedule = new AmortizationSchedule([installmentAt(1, 3_000), installmentAt(2, 3_000), installmentAt(3, 3_000)]);
+    $on = fn (string $day): CarbonImmutable => CarbonImmutable::parse($day, 'America/Caracas');
+
+    $middle = $schedule->validMoveWindow(2, $on('2026-10-01'));
+    $early = $schedule->validMoveWindow(2, $on('2026-09-20'));
+    $last = $schedule->validMoveWindow(3, $on('2026-10-01'));
+    $overdueFirst = $schedule->validMoveWindow(1, $on('2026-09-30'));
+
+    expect($middle->earliest->toDateString())->toBe('2026-10-02')
+        ->and($middle->latest?->toDateString())->toBe('2026-10-25')
+        // Mañana sería el 21/09, pero la cuota anterior vence el 25/09.
+        ->and($early->earliest->toDateString())->toBe('2026-09-25')
+        ->and($last->latest)->toBeNull()
+        ->and($overdueFirst->earliest->toDateString())->toBe('2026-10-01')
+        ->and($overdueFirst->latest?->toDateString())->toBe('2026-10-10');
+});
+
+it('no da ventana de una cuota que no está en el cronograma', function (int $number): void {
+    (new AmortizationSchedule([installmentAt(1, 3_000)]))->validMoveWindow($number, CarbonImmutable::parse('2026-10-01'));
+})->throws(InvalidArgumentException::class)->with([0, 2]);

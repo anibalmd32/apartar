@@ -101,3 +101,15 @@ it('nombra cada estado para el cliente sin repetir ninguno', function (): void {
         ->and(LayawayStatus::PendingDownPayment->customerLabel())->toBe('Esperando la inicial')
         ->and(LayawayStatus::Expired->customerLabel())->toBe('Vencido sin inicial');
 });
+
+/**
+ * `T-053`: el backoffice nombra los estados con palabras del negocio —«en
+ * mora», «expirado»—, distintas de las del cliente.
+ */
+it('nombra cada estado para el negocio sin repetir ninguno', function (): void {
+    $labels = array_map(fn (LayawayStatus $status): string => $status->label(), LayawayStatus::cases());
+
+    expect(array_unique($labels))->toHaveCount(count(LayawayStatus::cases()))
+        ->and(LayawayStatus::Overdue->label())->toBe('En mora')
+        ->and(LayawayStatus::Overdue->label())->not->toBe(LayawayStatus::Overdue->customerLabel());
+});

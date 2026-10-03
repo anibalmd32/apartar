@@ -36,3 +36,13 @@ it('deriva el estado de importe, pagado y gracia', function (int $paid, bool $pa
     'cubierta, pasada la gracia' => [3_000, true, InstallmentStatus::Paid],
     'cubierta de más' => [3_500, false, InstallmentStatus::Paid],
 ]);
+
+/**
+ * `T-053`: para el negocio, una cuota `overdue` está en mora —pasó la gracia—.
+ */
+it('nombra cada estado de la cuota para el backoffice', function (): void {
+    $labels = array_map(fn (InstallmentStatus $status): string => $status->label(), InstallmentStatus::cases());
+
+    expect(array_unique($labels))->toHaveCount(4)
+        ->and(InstallmentStatus::Overdue->label())->toBe('En mora');
+});

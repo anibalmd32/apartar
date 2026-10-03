@@ -18,6 +18,11 @@ use LogicException;
  * demora es del negocio. Castigarle por ella —devolverle el producto a la
  * venta con su dinero ya enviado— es exactamente lo que RB-2 prohíbe.
  *
+ * ## Que se rechazan al cancelar (`REQ-LAY-009` SP-3)
+ *
+ * Un apartado cancelado no acepta pagos, así que sus comprobantes en revisión
+ * se rechazan en la misma transacción, con el código `layaway_cancelled`.
+ *
  * ## Qué alertas dan en el portal (`REQ-LAY-023`)
  *
  * Cuántos esperan revisión —`receipt_pending`, y lo que sustituye al aviso de
@@ -26,9 +31,10 @@ use LogicException;
  *
  * **Las reglas están escritas con su forma definitiva; lo que falta es la
  * tabla.** `receipts` llega con `T-054`, así que hoy la respuesta es que ningún
- * apartado tiene comprobantes, que es literalmente cierto. `ExpireLayawaysAction`
- * y `PortalAlertsQuery` ya preguntan, y sus tests sustituyen esta clase en el
- * contenedor para probar la retención y las alertas. Por eso no es `final`.
+ * apartado tiene comprobantes, que es literalmente cierto. `ExpireLayawaysAction`,
+ * `PortalAlertsQuery` y `CancelLayawayAction` ya preguntan, y sus tests
+ * sustituyen esta clase en el contenedor para probar la retención, las alertas
+ * y el rechazo. Por eso no es `final`.
  *
  * ## Y falla ruidosamente cuando llegue la tabla
  *
@@ -102,6 +108,29 @@ class LayawayReceipts
             .'no se enteraría en el portal de que su comprobante fue rechazado (`REQ-LAY-023` RB-2).');
 
         return [];
+    }
+
+    /**
+     * Rechaza los comprobantes en revisión del apartado que se está cancelando,
+     * con el código `layaway_cancelled`, y dice cuántos (`REQ-LAY-009` SP-3).
+     *
+     * Corre dentro de la transacción de la cancelación, con el apartado ya
+     * bloqueado: o se cancela y se rechazan, o ninguna de las dos cosas. Así no
+     * quedan comprobantes huérfanos en la bandeja de un apartado que ya no
+     * acepta pagos.
+     *
+     * @throws LogicException si `receipts` ya existe y nadie ha sustituido este cuerpo
+     */
+    public function rejectPendingOnCancellation(Layaway $layaway): int
+    {
+        $this->assertTheTableIsStillMissing(__FUNCTION__, sprintf(
+            'el rechazo de cada `Receipt` en `pending_review` del apartado %d con `RejectionReasonCode::LayawayCancelled`, '
+            .'por el global scope del tenant, y su aviso al cliente. Hasta que lo haga, cancelar dejaría comprobantes '
+            .'huérfanos en la bandeja de conciliación (`REQ-LAY-009` SP-3).',
+            (int) $layaway->getKey(),
+        ));
+
+        return 0;
     }
 
     /**

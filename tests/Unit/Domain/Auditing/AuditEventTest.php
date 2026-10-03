@@ -91,19 +91,21 @@ it('exige que toda Action ya escrita audite el evento que declara', function (Au
  * `PublishCatalogAction`, y `CatalogUnpublished` desde
  * `UnpublishCatalogAction`. `T-043` abre el de Clientes con los dos de
  * `ResolveCustomerAction`: `CustomerContactUpdated` y
- * `CustomerIdentityConflict`.
+ * `CustomerIdentityConflict`. `T-053` abre el de Cobranza con tres:
+ * `LayawayCancelled`, `LayawayDelivered` e `InstallmentRescheduled`, cada uno
+ * desde su Action.
  *
  * Que la cifra haya que tocarla al añadir un emisor es el punto: obliga a
  * mirar si la Action nueva audita de verdad, en vez de dejar que el conteo se
  * ajuste solo.
  */
-it('cubre hoy los diecisiete eventos cuya Action ya existe', function (): void {
+it('cubre hoy los veinte eventos cuya Action ya existe', function (): void {
     $covered = array_values(array_filter(
         AuditEvent::cases(),
         fn (AuditEvent $event): bool => class_exists($event->emitter()),
     ));
 
-    expect($covered)->toHaveCount(17);
+    expect($covered)->toHaveCount(20);
 
     $areas = array_values(array_unique(
         array_map(fn (AuditEvent $event): string => $event->area()->value, $covered),
@@ -113,6 +115,7 @@ it('cubre hoy los diecisiete eventos cuya Action ya existe', function (): void {
         AuditArea::Organization->value,
         AuditArea::Catalog->value,
         AuditArea::Customers->value,
+        AuditArea::Collections->value,
     ]);
 });
 
