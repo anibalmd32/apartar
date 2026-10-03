@@ -822,6 +822,14 @@ Rutas `GET|POST /c/{catalog:slug}/apartar/{product:slug}`, `LayawayController`, 
 `ExpireLayawaysAction`, `ExpireLayawaysJob`, `LayawayExpiringNotification`.
 **Hecho cuando:** expira sin comprobantes; **no expira con comprobante en revisión**; rechazo tardío da 24 h una sola vez; libera stock idempotentemente; **cada apartado usa la ventana de su organización**; el tenant se limpia entre iteraciones.
 **De `T-044`: la liberación ya la hace la máquina.** Transicionar a `expired` llama a `ReleaseStockAction`, idempotente por `stock_released_at`, y no pregunta por la suspensión (SP-7). Lo que esta tarea no puede hacer es **bloquear el apartado antes de llamar a la máquina** —para mirar sus comprobantes, por ejemplo— sin bloquear antes el producto con `ProductLock`: la máquina lo pide primero, y con el apartado ya cogido el orden quedaría invertido. `StockLockOrderTest` cubre la máquina, no a quien la llama.
+**Cerrada**, salvo los avisos de RB-5. De `REQ-LAY-006` queda: el aviso de 12 h antes y el de la expiración (RB-5), de **`T-083`**; la consulta real de comprobantes (RB-2), de **`T-054`**; y quien llama a la prórroga (RB-3), de **`T-062`**. Lo que conviene no perder:
+- **`LayawayExpiringNotification` no se escribió, a propósito.** El aviso de 12 h es `down_payment_reminder` de `DispatchDueRemindersAction` (`REQ-NOT-002` RB-6), y lo que lo hace enviarse **una vez** es el registro de `notification_dispatches`, que no existe todavía: un job horario sin registro avisaría doce veces, o ninguna si se salta una hora. El aviso al expirar va en el listener de `LayawayExpired`, que es como `T-083` notificará todas las transiciones. `ExpireLayawaysActionTest::test_the_expiration_notices_are_still_pending` se pone rojo en cuanto exista `DispatchDueRemindersAction.php`.
+- **La retención por comprobante es `LayawayReceipts::holdExpiration()`**, con la forma de `RecordedReceipts`: hoy responde `false` y **lanza** en cuanto exista la tabla `receipts`. Los tests la sustituyen en el contenedor para probar RB-2.
+- **La prórroga es `ExtendDownPaymentWindowAction`**, que devuelve `DownPaymentExtension` —concedida, ventana abierta, ya prorrogado, no espera la inicial— en lugar de un booleano, para que el rechazo pueda decir por qué no la hubo. Mueve `expires_at` a rechazo + 24 h y marca `extended_at`; el job no sabe nada de prórrogas, lee `expires_at`.
+- **Cada apartado se vuelve a comprobar bajo el bloqueo** —estado, plazo y comprobantes—, en una transacción por apartado y **con el producto bloqueado antes** (`ReleaseStockAction::lockProductOf()`). `assertLocksTheProductFirst()` se aplica a la acción, y se comprobó que quitar el bloqueo del producto lo pone rojo.
+- **El plazo es estricto**: `expires_at < now`; al segundo exacto todavía no expira.
+- **La ventana de cada organización no se relee**: va congelada en `expires_at` desde la creación (RB-7, SP-5). El test lo afirma creando por `CreateLayawayAction` en dos negocios con 72 h y 48 h, y cambiando el ajuste después.
+- **El job es `Schedule::job(...)->hourly()->withoutOverlapping()->name('layaways:expire')`**, en la cola `default`, con `WithoutOverlapping` también en el job, y registra `layaways.expiration_held` por organización cuando hay apartados retenidos: es la señal de comprobantes sin revisar con la ventana vencida.
 
 **T-048 · Detección de mora** · `B` · 2 pts · *Requisitos: `REQ-LAY-007`*
 `DetectOverdueAction`, `DetectOverdueLayawaysJob`, scopes.
@@ -860,6 +868,8 @@ Rutas `GET|POST /c/{catalog:slug}/apartar/{product:slug}`, `LayawayController`, 
 `receipts`, `payments`, `payment_allocations`; verificar que la unicidad de `receipts` es **por organización**.
 **Y las seis columnas del snapshot de tasa** (`REQ-FX-006`): `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied DECIMAL(18,8)`, `rate_source` y **`rate_published_at`** — no `rate_fetched_at`, ver la nota de `REQ-FX-006` en [13](13-bimoneda-y-tasa-de-cambio.md). Venían de `T-023`, que no podía escribirlas porque esta tabla nace aquí.
 
+**Y rellenar también `LayawayReceipts::holdExpiration()` (`T-047`)**, con la misma guarda: lanza en cuanto existe `receipts`. El cuerpo pasa a ser «tiene algún `Receipt` en `pending_review` o `approved`» por el global scope (`REQ-LAY-006` RB-1, RB-2), y `LayawayReceiptsTest::test_no_layaway_has_receipts_while_the_table_does_not_exist` se reescribe con un comprobante de verdad.
+
 **Y rellenar `RecordedReceipts::existFor()` (`T-015`), en esta misma tarea.** `REQ-ORG-007` RB-6 —una cuenta de cobro con comprobantes no se borra, se desactiva— está escrita, probada y en producción desde `T-015` contra un colaborador que hoy responde que ninguna cuenta tiene comprobantes, porque la tabla no existe. **El cuerpo pasa a ser `Receipt::query()->where('payment_account_id', $account->getKey())->exists()`**, que va por el global scope del tenant, y no cambia nada más: ni la acción, ni la ruta, ni el mensaje, ni el test. La clase no es `final` por eso. Si se deja para después, la tarea no compila: la guarda **lanza** en cuanto `receipts` existe y el cuerpo sigue sin sustituirse, que es justo lo contrario del `false` silencioso que `T-024` habría dejado con `PublishedCatalogs`.
 
 **T-055 · Enums y contratos de pago** · `A` · 2 pts · *Requisitos: `REQ-PAY-001`*
@@ -894,6 +904,7 @@ El colaborador compartido con la firma de [05 §5](05-design-tecnico.md).
 
 **T-062 · Rechazo y pago manual** · `B` · 3 pts · *Requisitos: `REQ-PAY-006`, `REQ-PAY-007`*
 `RejectReceiptAction`, `RegisterManualPaymentAction`, `ReceiptRejectedNotification`.
+**De `T-047`: la prórroga está escrita.** «Prórroga solo si la ventana venció» es `ExtendDownPaymentWindowAction::handle($layaway, $rejectedAt)`, que devuelve `DownPaymentExtension`; llámala al rechazar un comprobante de un apartado en `pending_down_payment`, dentro de tu transacción, y usa el resultado para el mensaje al negocio. Solo bloquea el apartado, así que no altera el orden canónico.
 **Hecho cuando:** motivo obligatorio y archivo conservado; **prórroga solo si la ventana venció**; rechazado no se puede aprobar; pago manual sin `receipt_id` con `registered_by`; **produce el mismo resultado que la aprobación para el mismo importe** (test de equivalencia).
 
 **T-023 · Snapshot inmutable de tasa** · `B` · 1 pt · *Requisitos: `REQ-FX-006`*
@@ -1019,6 +1030,7 @@ Servicio `reverb`, `config/reverb.php`, `routes/channels.php` con los 3 canales,
 
 **T-083 · Notificaciones de cobro y manuales** · `B` · 3 pts · *Requisitos: `REQ-NOT-002`, `REQ-NOT-003`, `REQ-NOT-004`, `REQ-ACC-006`*
 `NotificationType` con sus mapas, `notification_dispatches`, `DispatchDueRemindersAction`, `SendManualPushAction`, `DispatchCatalogDigestAction`, las clases de notificación, `Compose.tsx`.
+**De `T-047`: los dos avisos de la expiración son tuyos** (`REQ-LAY-006` RB-5). El de 12 h antes es `down_payment_reminder` (`REQ-NOT-002` RB-6); el de la expiración, el listener de `LayawayExpired`. **Y el registro de idempotencia tiene un agujero para el primero:** `UNIQUE(organization_id, installment_id, type, channel)` con `installment_id` a `NULL` —un apartado sin activar no tiene cuotas— **no deduplica en MySQL**, porque dos `NULL` nunca chocan en un único. Hace falta la clave del apartado en el registro para ese tipo, y se decide aquí, al crear la tabla. `ExpireLayawaysActionTest::test_the_expiration_notices_are_still_pending` se pone rojo cuando crees `DispatchDueRemindersAction.php`.
 **Hecho cuando:** un test por offset en el límite; doble ejecución no duplica; **agrupa por negocio y no entre negocios**; envío a las 08:00 de cada zona; **el nombre del negocio aparece en todo mensaje**; rollback no notifica; Free no envía digest y reporta el alcance potencial; el segmento reutiliza `CollectionFilters`.
 
 **Cierre de H7:** el negocio se comunica con sus clientes · 10 requisitos cerrados.

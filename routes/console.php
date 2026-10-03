@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Jobs\ExpireLayawaysJob;
 use App\Jobs\FetchExchangeRate;
 use Illuminate\Support\Facades\Schedule;
 
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Schedule;
 | Las catorce entradas del schedule de REQ-INF-003 RB-5 entran con la tarea de
 | cada job, no todas de golpe: `layaways:expire` con T-047,
 | `notifications:dispatch-reminders` con T-083, y así hasta cerrar al final de
-| H8. Esta es la primera.
+| H8.
 |
 | El servicio `queue` ya ejecuta `schedule:work`, de modo que cada entrada
 | empieza a correr en cuanto se registra aquí.
@@ -37,3 +38,16 @@ Schedule::job(new FetchExchangeRate)
     ->everyThirtyMinutes()
     ->withoutOverlapping()
     ->name('exchange-rate:fetch');
+
+/*
+| Expiración de apartados sin inicial (REQ-LAY-006 RB-6).
+|
+| Cada hora, **por organización**: el job las recorre todas —también las
+| suspendidas, RB-8— y fija el tenant en cada una. No es ⏰: un plazo vence a
+| una hora concreta, no a una hora local del día, así que la pasada horaria es
+| la granularidad real de la regla.
+*/
+Schedule::job(new ExpireLayawaysJob)
+    ->hourly()
+    ->withoutOverlapping()
+    ->name('layaways:expire');

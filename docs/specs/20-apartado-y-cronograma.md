@@ -467,6 +467,8 @@ final class ScheduleGenerator
 - SP-6 Apartado ya `active` con `expires_at` pasado → ignorado por el filtro de estado; queda como dato histórico.
 - SP-7 Job procesando apartados de 500 organizaciones → el tenant se fija y se limpia por apartado, sin fuga entre iteraciones (`REQ-ORG-002` SP-7).
 
+> **Cómo quedó (`T-047`).** El job recorre las organizaciones con `RunsForEveryOrganization` —el tenant se fija **por organización**, que es el «por lote» de `REQ-INF-003` RB-1b— y `ExpireLayawaysAction` vuelve a comprobar cada apartado **bajo el bloqueo**, con el producto bloqueado antes (`REQ-LAY-003` RB-8), en una transacción por apartado. RB-2 pregunta a `LayawayReceipts::holdExpiration()`, que hasta `T-054` responde que no hay comprobantes y **lanza** en cuanto exista la tabla. RB-3 es `ExtendDownPaymentWindowAction`, que llamará el rechazo (`T-062`): mueve `expires_at` —el plazo— y marca `extended_at`. **RB-5 es de `T-083`**: el aviso de 12 h es `down_payment_reminder` de `REQ-NOT-002` RB-6 y necesita el registro idempotente de `notification_dispatches` para salir una sola vez; el de la expiración es un listener de `LayawayExpired`.
+
 **Fuera de alcance inmediato**
 - Prórroga manual por el negocio.
 - Ventana de expiración por producto o por catálogo.
