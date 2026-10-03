@@ -515,6 +515,8 @@ final class ScheduleGenerator
 - SP-6 Dos organizaciones con zonas horarias distintas → cada una se evalúa en la suya; "hoy" significa lo mismo que para su cliente.
 - SP-7 Organización con gracia de 0 días → válido: la cuota es `overdue` el día siguiente al vencimiento.
 
+> **Cómo quedó (`T-048`).** El estado de cada cuota se **deriva** en cada pasada con `InstallmentStatus::resolve()` —la misma regla que usará el pago (`T-058`)— y solo se escribe si cambia; el apartado sigue a sus cuotas **en los dos sentidos** (RB-2), así que una gracia ampliada (SP-3) lo devuelve a `active` con `LayawayCaughtUp`, sin pago de por medio. «Hoy» es la fecha de la zona de la organización calculada en PHP, y el umbral es `hoy − gracia`. El job se despacha cada hora y solo visita las organizaciones cuya hora local es las 06:00 (`REQ-INF-003` RB-5b).
+
 **Fuera de alcance inmediato**
 - Intereses de mora, recargos y refinanciación.
 - Cancelación automática por mora prolongada.

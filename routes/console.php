@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Jobs\DetectOverdueLayawaysJob;
 use App\Jobs\ExpireLayawaysJob;
 use App\Jobs\FetchExchangeRate;
 use Illuminate\Support\Facades\Schedule;
@@ -51,3 +52,15 @@ Schedule::job(new ExpireLayawaysJob)
     ->hourly()
     ->withoutOverlapping()
     ->name('layaways:expire');
+
+/*
+| Detección de mora (REQ-LAY-007 RB-5), ⏰ 06:00 de cada organización.
+|
+| Se despacha **cada hora** y el job visita solo las organizaciones cuya hora
+| local es las 06:00 (REQ-INF-003 RB-5b): una ejecución diaria a hora fija
+| evaluaría a los negocios de otros husos con el «hoy» equivocado.
+*/
+Schedule::job(new DetectOverdueLayawaysJob)
+    ->hourly()
+    ->withoutOverlapping()
+    ->name('layaways:detect-overdue');

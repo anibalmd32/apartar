@@ -8,6 +8,7 @@ use App\Casts\MoneyCast;
 use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
@@ -73,6 +74,32 @@ class Installment extends Model
                 ));
             }
         });
+    }
+
+    /**
+     * Las cuotas marcadas en mora (`REQ-LAY-007`).
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeOverdue(Builder $query): Builder
+    {
+        return $query->where('status', InstallmentStatus::Overdue);
+    }
+
+    /**
+     * Las que no están cubiertas y vencen **antes** de ese día: las que
+     * entran en mora si ese día es `hoy − gracia` (RB-1, RB-4).
+     *
+     * Recibe el día como `Y-m-d` ya calculado en la zona de la organización;
+     * aquí no se pregunta la hora a MySQL (`T-039`).
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeUnpaidDueBefore(Builder $query, string $day): Builder
+    {
+        return $query->whereColumn('paid_cents', '<', 'amount_cents')->where('due_date', '<', $day);
     }
 
     /**

@@ -834,6 +834,13 @@ Rutas `GET|POST /c/{catalog:slug}/apartar/{product:slug}`, `LayawayController`, 
 **T-048 · Detección de mora** · `B` · 2 pts · *Requisitos: `REQ-LAY-007`*
 `DetectOverdueAction`, `DetectOverdueLayawaysJob`, scopes.
 **Hecho cuando:** gracia respetada al día exacto; pago parcial sigue vencido; ampliar la gracia devuelve cuotas a `pending`; **dos organizaciones con gracias y zonas distintas se evalúan por separado**.
+**Cerrada.** De `REQ-LAY-007` queda la vuelta a `active` **por pago** en la transacción del pago (RB-6), de **`T-058`**; la alerta de mora prolongada del dashboard (RB-7), de **`T-065`**; y el aviso de mora +1 del *happy path*, de **`T-083`**. Lo que conviene no perder:
+- **El estado de una cuota se deriva, no se acumula**: `InstallmentStatus::resolve($amount, $paid, $pastGrace)` es la única regla —cubierta → `paid`; sin cubrir y pasada la gracia → `overdue`, también a medio pagar; si no, `partially_paid` o `pending`— y la pasada solo escribe si cambia. Eso la hace idempotente, recupera sola un día perdido y deja que una gracia ampliada **devuelva** cuotas a `pending` (SP-3).
+- **El apartado sigue a sus cuotas en los dos sentidos** (RB-2): con alguna en mora pasa a `overdue`; sin ninguna, vuelve a `active` —con `LayawayCaughtUp`, aunque no haya pago: es lo que pasa cuando se amplía la gracia—.
+- **«Hoy» es el de la zona de la organización, calculado en PHP**: el umbral es `hoy − gracia` como `Y-m-d`, y una cuota está en mora si `due_date < umbral`. Se comprobó que con la zona del servidor el test de las tres organizaciones se pone rojo.
+- **Un apartado, una transacción**: se bloquean el apartado y sus cuotas antes de recalcular, como hará el pago. No hay stock de por medio, así que el orden canónico no aplica.
+- **Solo se recorren candidatos**: los `overdue` y los que tienen alguna cuota sin cubrir pasada del umbral o marcada en mora (`Installment::scopeUnpaidDueBefore()`, `scopeOverdue()`). Un `partially_paid` dentro de la gracia lo escribe el pago, no esta pasada.
+- **El job es ⏰ de verdad**: se despacha cada hora (`layaways:detect-overdue`) y `organizationsToVisit()` deja pasar solo a las organizaciones cuya hora local es las 06:00, con un único instante por ejecución. Los terminales no se tocan (SP-4) y las suspendidas sí se visitan (RB-8).
 
 **T-049 · Acceso por documento + código** · `B` · 3 pts · *Requisitos: `REQ-IDN-008`, `REQ-IDN-004`*
 `StartScopedSessionAction`, guard `customer`, `EnsurePortalSession`, `AccessController`, `PortalLayout`.
@@ -886,6 +893,7 @@ Rutas `GET|POST /c/{catalog:slug}/apartar/{product:slug}`, `LayawayController`, 
 **T-058 · `PaymentApplier`** · `B` · 3 pts · *Requisitos: `REQ-PAY-005`, `REQ-PAY-007`*
 El colaborador compartido con la firma de [05 §5](05-design-tecnico.md).
 **Hecho cuando:** crea `Payment` con el snapshot de tasa; asigna FIFO; recalcula balance; transiciona estado; ajusta el cupo del plan; todo en la transacción del llamador.
+**De `T-046`, `T-047` y `T-048`: tres piezas que ya existen y que tienes que llamar, no reescribir.** La inicial de un `pending_down_payment` se aplica **activando** con `ActivateLayawayAction` (genera el cronograma y, con financiado cero, completa en dos pasos). El estado de cada cuota tras asignar el pago sale de `InstallmentStatus::resolve($amount, $paid, $pastGrace)` —la misma regla que la mora, con `$pastGrace` calculado con el «hoy» y la gracia de la organización, igual que `DetectOverdueAction::threshold()`—. Y la vuelta a `active` al cubrir lo vencido (RB-6 de `REQ-LAY-007`) la decides tú con esa misma regla: si tras el pago no queda ninguna cuota `overdue`, transiciona.
 **Por qué separada de T-059 y T-062:** es lo que garantiza que aprobar un comprobante y registrar un pago manual den **resultados idénticos**. Escribirla una vez y probarla sola es lo que hace posible el test de equivalencia.
 
 **T-059 · Envío de comprobante** · `B` · 5 pts · *Requisitos: `REQ-PAY-001`, `REQ-PAY-002`, `REQ-PAY-003`*
