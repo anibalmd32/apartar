@@ -467,6 +467,8 @@ final readonly class CustomerContactData
 - SP-7 Confusión de caracteres al transcribir el código → el alfabeto excluye `0`, `O`, `1` e `I` precisamente por esto, y la entrada normaliza a mayúsculas e ignora guiones y espacios.
 - SP-8 Cliente con fichas en dos negocios usando el código de uno → sesión acotada a **ese** negocio; para ver el otro necesita su código, o conectar Google y reclamar ambas (`REQ-ACC-004`).
 
+> **Cómo quedó (`T-049`).** El código resuelve la organización con `TenantResolver::forLayawayCode()` —lectura por la clave global, como el slug del catálogo— y, con ese tenant fijado, la ficha del apartado tiene que tener **ese** documento. Los tres fallos son una sola `AccessVerificationFailedException` en el campo del código; una cédula mal escrita se rechaza por su forma y no consume intento. El límite de RB-5 lo pone `StartScopedSessionRequest` (5 por hora por documento canónico + IP; el sexto, `429`). `StartScopedSessionAction` devuelve la `Customer` —`ScopedSessionResult` no hizo falta—, y el recuerdo de 30 días necesitó una columna: **`customers.remember_token`**, que no es una credencial que la persona conozca. La ficha absorbida por una fusión (SP-6) llega con `REQ-IDN-006`.
+
 **Fuera de alcance inmediato**
 - OTP por WhatsApp o SMS como alternativa (`Q2`, plan pago futuro).
 - Acceso solo con el código, sin documento.

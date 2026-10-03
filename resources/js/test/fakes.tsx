@@ -6,9 +6,9 @@ import { type ReactNode } from 'react';
  *
  * `route()` es global en la aplicación porque `@routes` lo inyecta en la
  * plantilla con la lista real; en jsdom no hay plantilla. El doble conoce solo
- * las rutas públicas del catálogo —la vista, la ficha y las tres del apartado—,
- * y con la misma forma que
- * `routes/catalog.php`: un test que pida otra falla en voz alta en lugar de
+ * las rutas públicas del catálogo —la vista, la ficha y las tres del apartado—
+ * y las del acceso al portal, con la misma forma que `routes/catalog.php` y
+ * `routes/portal.php`: un test que pida otra falla en voz alta en lugar de
  * recibir una URL inventada.
  */
 
@@ -26,6 +26,12 @@ export function fakeRoute(name: string, params: RouteParams = {}): string {
             return `/c/${params.catalog}/apartar/${params.product}`;
         case 'catalog.layaway.thanks':
             return `/c/${params.catalog}/apartar/${params.code}/gracias`;
+        case 'portal.access':
+            return '/mi-cuenta/acceso';
+        case 'portal.access.code':
+            return '/mi-cuenta/acceso/codigo';
+        case 'portal.logout':
+            return '/mi-cuenta/salir';
         default:
             throw new Error(`fakeRoute no conoce la ruta «${name}».`);
     }

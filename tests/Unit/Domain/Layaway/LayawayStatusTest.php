@@ -89,3 +89,15 @@ it('responde las tres preguntas por estado', function (LayawayStatus $status, bo
 it('llama terminal exactamente a lo que no tiene salida', function (LayawayStatus $status): void {
     expect($status->isTerminal())->toBe($status->allowedTransitions() === []);
 })->with(LayawayStatus::cases());
+
+/**
+ * `T-049` · cada estado tiene su nombre para el cliente, distinto de los
+ * demás: la lista vive en el enum, no en el `.tsx`.
+ */
+it('nombra cada estado para el cliente sin repetir ninguno', function (): void {
+    $labels = array_map(fn (LayawayStatus $status): string => $status->customerLabel(), LayawayStatus::cases());
+
+    expect(array_unique($labels))->toHaveCount(count(LayawayStatus::cases()))
+        ->and(LayawayStatus::PendingDownPayment->customerLabel())->toBe('Esperando la inicial')
+        ->and(LayawayStatus::Expired->customerLabel())->toBe('Vencido sin inicial');
+});

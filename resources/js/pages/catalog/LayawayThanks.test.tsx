@@ -102,6 +102,13 @@ it('sin correo, avisa de que es el único canal e invita a anotar el código', (
     expect(warning).toHaveTextContent('no te llegará ninguno');
 });
 
+/** `T-049` · y dice dónde se usa el código: el acceso al portal. */
+it('sin correo, enlaza el acceso al portal con cédula y código', () => {
+    renderPage({ hasEmail: false });
+
+    expect(screen.getByRole('link', { name: 'consultar tu apartado' })).toHaveAttribute('href', '/mi-cuenta/acceso');
+});
+
 it('con correo, dice que también va por ahí', () => {
     renderPage({ hasEmail: true });
 

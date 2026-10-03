@@ -130,4 +130,23 @@ enum LayawayStatus: string
     {
         return array_values(array_filter(self::cases(), fn (self $status): bool => ! $status->isTerminal()));
     }
+
+    /**
+     * Cómo se le nombra el estado **al cliente** en su portal (`T-049`).
+     *
+     * Vive en el enum y no en el `.tsx`: una lista de casos es propiedad del
+     * tipo, y una etiqueta escrita en el cliente se queda corta en silencio el
+     * día que llegue un séptimo estado.
+     */
+    public function customerLabel(): string
+    {
+        return match ($this) {
+            self::PendingDownPayment => 'Esperando la inicial',
+            self::Active => 'Al día',
+            self::Overdue => 'Con cuotas vencidas',
+            self::Completed => 'Pagado',
+            self::Cancelled => 'Cancelado',
+            self::Expired => 'Vencido sin inicial',
+        };
+    }
 }

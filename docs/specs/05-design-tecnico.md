@@ -140,7 +140,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 | # | Tabla | Columnas clave | Índices |
 |---|---|---|---|
 | 15 | `account_identities` | `account_id`, `provider`, `provider_id`, `email` | `UNIQUE(provider, provider_id)` |
-| 16 | `customers` | `organization_id`, `document_number`, `document_kind`, `full_name`, `phone`, `email?`, `account_id?`, `terms_accepted_at?`, `terms_ip_address?`, `last_login_at?` | `UNIQUE(organization_id, document_number)`, `UNIQUE(organization_id, account_id)`, `INDEX(organization_id, phone)` |
+| 16 | `customers` | `organization_id`, `document_number`, `document_kind`, `full_name`, `phone`, `email?`, `account_id?`, `terms_accepted_at?`, `terms_ip_address?`, `last_login_at?`, `remember_token?` (`T-049`) | `UNIQUE(organization_id, document_number)`, `UNIQUE(organization_id, account_id)`, `INDEX(organization_id, phone)` |
 | 17 | `customer_login_tokens` | `organization_id`, `customer_id`, `token_hash`, `expires_at`, `consumed_at?`, `requested_ip` | `UNIQUE(organization_id, token_hash)`, `INDEX(customer_id, expires_at)` |
 
 > `customers` **no tiene columna `password`** (`REQ-IDN-001` RB-5). `accounts` **no tiene documento ni teléfono** (`REQ-ACC-001` RB-2). Ambas ausencias son verificables por test de esquema.

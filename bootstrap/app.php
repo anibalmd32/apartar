@@ -16,10 +16,12 @@ use App\Http\Middleware\EnsureAdminIsActive;
 use App\Http\Middleware\EnsureIsOwner;
 use App\Http\Middleware\EnsureOrganizationIsActive;
 use App\Http\Middleware\EnsurePasswordIsChanged;
+use App\Http\Middleware\EnsurePortalSession;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\OperatesWithoutTenant;
 use App\Http\Middleware\OutsideTenancy;
 use App\Http\Middleware\ResolveCatalogTenant;
+use App\Http\Middleware\ResolvePortalTenant;
 use App\Http\Middleware\ResolveStorefrontTenant;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
@@ -78,12 +80,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenant::class);
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveCatalogTenant::class);
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveStorefrontTenant::class);
+        $middleware->prependToPriorityList(SubstituteBindings::class, ResolvePortalTenant::class);
 
         // Cada superficie declara de dónde sale su tenant (REQ-ORG-002 RB-4).
         // `catalog-tenant` lo saca del slug del catálogo (`T-033`);
         // `storefront-tenant`, del de la organización, y solo si su vitrina
         // está activada (`T-036`);
-        // `ResolvePortalTenant` entra con H3, cuando exista `Customer`.
+        // `portal-tenant`, de la ficha de la sesión acotada del portal, detrás
+        // de `portal`, que exige esa sesión (`T-049`).
         //
         // `outside-tenancy` no resuelve nada: declara que la ruta no
         // pertenece a ninguna superficie. La suite de REQ-QAX-008 exige que
@@ -102,6 +106,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => ResolveTenant::class,
             'catalog-tenant' => ResolveCatalogTenant::class,
             'storefront-tenant' => ResolveStorefrontTenant::class,
+            'portal-tenant' => ResolvePortalTenant::class,
+            'portal' => EnsurePortalSession::class,
             'without-tenant' => OperatesWithoutTenant::class,
             'outside-tenancy' => OutsideTenancy::class,
             'owner' => EnsureIsOwner::class,

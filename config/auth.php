@@ -42,6 +42,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // La sesión **acotada** del cliente final (REQ-IDN-004, REQ-IDN-008):
+        // una ficha de una organización, abierta con documento + código. Es
+        // independiente de `web` (RB-1): tener una no otorga nada en la otra.
+        'customer' => [
+            'driver' => 'session',
+            'provider' => 'customers',
+        ],
     ],
 
     /*
@@ -68,6 +76,13 @@ return [
             // (REQ-ORG-002 RB-4). Lo registra AppServiceProvider.
             'driver' => 'tenant-aware',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        // `tenant-aware` por lo mismo: la sesión del portal se lee antes de
+        // que `ResolvePortalTenant` fije la organización de la ficha.
+        'customers' => [
+            'driver' => 'tenant-aware',
+            'model' => App\Models\Customer::class,
         ],
 
         // 'users' => [

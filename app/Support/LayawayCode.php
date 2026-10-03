@@ -125,6 +125,28 @@ final class LayawayCode
     }
 
     /**
+     * El código tal como lo escribe una persona, llevado a la forma canónica
+     * (`REQ-IDN-008` SP-7).
+     *
+     * Mayúsculas, sin espacios, guiones ni puntos, y con el prefijo puesto
+     * aunque se haya omitido: `ap 7k3m-9qrt`, `AP7K3M9QRT` y `7K3M9QRT` son
+     * todos `AP-7K3M9QRT`. No corrige caracteres: el alfabeto ya excluye los
+     * ambiguos (`0`, `O`, `1`, `I`), así que quien escriba uno ha escrito un
+     * código que no existe, y el resultado no pasa `isWellFormed()`.
+     */
+    public static function normalize(string $raw): string
+    {
+        $compact = (string) preg_replace('/[^A-Z0-9]/', '', mb_strtoupper($raw));
+        $prefix = rtrim(self::PREFIX, '-');
+
+        if (strlen($compact) === self::LENGTH + strlen($prefix) && str_starts_with($compact, $prefix)) {
+            $compact = substr($compact, strlen($prefix));
+        }
+
+        return self::PREFIX.$compact;
+    }
+
+    /**
      * Sustituye el generador, para que un test provoque una colisión. `null`
      * devuelve el de verdad.
      *

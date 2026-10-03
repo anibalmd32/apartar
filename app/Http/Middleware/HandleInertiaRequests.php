@@ -9,10 +9,13 @@ use App\Domain\Money\CurrencyDisplay;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
+use App\Models\Customer;
+use App\Models\Organization;
 use App\Models\User;
 use App\Support\Settings;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -58,6 +61,9 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                // `REQ-IDN-004` · la sesión del portal, perezosa: solo se
+                // resuelve al pintar, cuando el tenant ya está fijado.
+                'portal' => fn (): ?array => $this->portalSession(),
             ],
             'teamMember' => $this->teamMember($request),
             'currency' => $this->currency($request),
@@ -196,6 +202,31 @@ class HandleInertiaRequests extends Middleware
                 'slug' => $organization->slug,
                 'status' => $organization->status->value,
             ],
+        ];
+    }
+
+    /**
+     * La sesión del portal, si la hay: `PortalSessionView` (`REQ-IDN-004`).
+     *
+     * Solo lo que la cabecera del portal pinta —el modo, el nombre y el
+     * negocio—, y **nunca** el `id` de la ficha ni su `account_id` (RB-4). La
+     * sesión acotada es de un negocio, y lo dice: la persona tiene que saber
+     * con quién está viendo sus cuentas.
+     *
+     * @return array{mode: 'scoped', fullName: string, businessName: string}|null
+     */
+    private function portalSession(): ?array
+    {
+        $customer = Auth::guard('customer')->user();
+
+        if (! $customer instanceof Customer) {
+            return null;
+        }
+
+        return [
+            'mode' => 'scoped',
+            'fullName' => $customer->full_name,
+            'businessName' => (string) Organization::query()->whereKey($customer->organization_id)->value('name'),
         ];
     }
 }

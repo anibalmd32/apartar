@@ -46,7 +46,11 @@ export default function LayawayThanks({ catalog, layaway, paymentAccounts, recei
                     <Alert tone="warning">
                         <span>
                             <strong>Anota este código ahora.</strong> No dejaste correo, así que no te llegará ninguno: esta pantalla es el único
-                            sitio donde aparece. Con él y tu cédula podrás consultar tu apartado.
+                            sitio donde aparece. Con él y tu cédula podrás{' '}
+                            <Link href={route('portal.access')} className="link">
+                                consultar tu apartado
+                            </Link>
+                            .
                         </span>
                     </Alert>
                 )}

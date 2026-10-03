@@ -148,6 +148,32 @@ final class TenantResolver
     }
 
     /**
+     * La organización de un código de apartado (`REQ-IDN-008` RB-3).
+     *
+     * `layaways.code` es la tercera de las claves de `GlobalUniqueExceptions`
+     * y por el mismo motivo que `catalogs.slug`: el portal lo recibe **antes**
+     * de saber de qué negocio es, y es el código el que lo dice. Igual que
+     * `publicCatalog()`, no se filtra por ninguna organización: se descubre
+     * cuál es, por una clave única en toda la plataforma, y quien llama fija
+     * ese tenant antes de leer nada más del apartado.
+     *
+     * Recibe el código ya normalizado (`LayawayCode::normalize()`). Uno que no
+     * existe da la misma excepción que cualquier otro fallo de resolución.
+     *
+     * @throws ModelNotFoundException<Organization>
+     */
+    public function forLayawayCode(string $code): Organization
+    {
+        $organizationId = $code === '' ? null : DB::table('layaways')->where('code', $code)->value(TenantScope::COLUMN);
+
+        if (! is_numeric($organizationId)) {
+            throw (new ModelNotFoundException)->setModel(Organization::class, ['el código de apartado']);
+        }
+
+        return $this->forOrganizationId((int) $organizationId);
+    }
+
+    /**
      * @throws ModelNotFoundException<Organization>
      */
     private function forCatalogSlug(string $slug): Organization

@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Support\DocumentKind;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
 
@@ -22,6 +24,13 @@ use LogicException;
  * `ResolveCustomerAction`: el backoffice no da de alta fichas a mano (RB-8),
  * y `CustomerCreationTest` lo afirma sobre `app/`. No tiene contraseña ni la
  * tendrá (RB-5).
+ *
+ * ## Es autenticable, sin contraseña
+ *
+ * Es lo que autentica el guard `customer`, la sesión **acotada** del portal
+ * (`REQ-IDN-004`, `T-049`). Se abre con documento + código de apartado
+ * (`StartScopedSessionAction`) y nunca con `attempt()`: no hay credencial que
+ * comparar, y `getAuthPassword()` devuelve `null` porque la columna no existe.
  *
  * ## La evidencia de consentimiento no se puede perder
  *
@@ -48,10 +57,15 @@ use LogicException;
  * @property \Illuminate\Support\Carbon|null $terms_accepted_at la última aceptación (`REQ-IDN-005` RB-3)
  * @property string|null $terms_ip_address
  * @property \Illuminate\Support\Carbon|null $last_login_at
+ * @property string|null $remember_token el «recuérdame» de la sesión acotada (`REQ-IDN-008` RB-4), no una credencial
  */
-class Customer extends Model
+class Customer extends Model implements AuthenticatableContract
 {
+    use Authenticatable;
     use BelongsToOrganization;
+
+    /** `REQ-IDN-004` RB-4 · el token de sesión no viaja en ninguna respuesta. */
+    protected $hidden = ['remember_token'];
 
     /** Las dos columnas de la evidencia de consentimiento. */
     public const CONSENT_COLUMNS = ['terms_accepted_at', 'terms_ip_address'];
