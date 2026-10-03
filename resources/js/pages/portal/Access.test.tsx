@@ -12,7 +12,7 @@ const { useForm, post, setData } = vi.hoisted(() => ({ useForm: vi.fn(), post: v
 vi.mock('@inertiajs/react', async () => ({ useForm, Head: () => null, Link: (await import('@/test/fakes')).FakeLink }));
 
 function mockForm(errors: Record<string, string> = {}) {
-    useForm.mockReturnValue({ data: { document: '', code: '' }, setData, post, processing: false, errors });
+    useForm.mockReturnValue({ data: { document: '', code: '', email: '' }, setData, post, processing: false, errors, reset: vi.fn() });
 }
 
 beforeEach(() => {
@@ -50,4 +50,22 @@ it('dice dónde está el código', () => {
     render(<Access />);
 
     expect(screen.getByText(/pídeselo al negocio donde apartaste/)).toBeInTheDocument();
+});
+
+/** `REQ-IDN-003` · la segunda vía: cédula y correo, hacia el envío del enlace. */
+it('ofrece pedir un enlace por correo con la cédula y el correo', () => {
+    render(<Access />);
+
+    fireEvent.change(screen.getByLabelText('Correo que dejaste'), { target: { value: 'maria@ejemplo.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviarme un enlace' }));
+
+    expect(setData).toHaveBeenCalledWith('email', 'maria@ejemplo.test');
+    expect(post).toHaveBeenCalledWith('/mi-cuenta/acceso/enlace', expect.objectContaining({ onSuccess: expect.any(Function) }));
+});
+
+/** RB-2 · la respuesta a la solicitud llega como aviso, sin decir si se envió. */
+it('pinta el aviso de la solicitud', () => {
+    render(<Access status="Si esos datos coinciden con un apartado que dejó ese correo, te enviamos un enlace." />);
+
+    expect(screen.getByText(/te enviamos un enlace/)).toBeInTheDocument();
 });

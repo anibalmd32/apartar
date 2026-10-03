@@ -174,6 +174,37 @@ final class TenantResolver
     }
 
     /**
+     * Las organizaciones donde hay una ficha con ese documento **y** ese
+     * correo (`REQ-IDN-003` RB-2, RB-3).
+     *
+     * Es la única lectura de `customers` sin un tenant fijado, y existe porque
+     * RB-3 la exige: el documento es único **por organización**, la persona no
+     * dice de qué negocio es, y la respuesta correcta es un enlace por cada
+     * uno en que los dos datos coinciden. Como `publicCatalog()` y
+     * `forLayawayCode()`, no lee ningún dato de la ficha: solo **descubre**
+     * las organizaciones, y quien llama vuelve a buscar la ficha con cada
+     * tenant fijado, por el global scope.
+     *
+     * El correo se compara sin distinguir mayúsculas: la persona lo escribe
+     * como lo recuerda, y una mayúscula no es otro buzón.
+     *
+     * @return list<Organization>
+     */
+    public function organizationsWithCustomer(string $documentNumber, string $email): array
+    {
+        $ids = DB::table('customers')
+            ->where('document_number', $documentNumber)
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
+            ->pluck(TenantScope::COLUMN)
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        return $ids === [] ? [] : Organization::query()->whereKey($ids)->orderBy('id')->get()->all();
+    }
+
+    /**
      * @throws ModelNotFoundException<Organization>
      */
     private function forCatalogSlug(string $slug): Organization

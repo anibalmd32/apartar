@@ -32,6 +32,11 @@ export function fakeRoute(name: string, params: RouteParams = {}): string {
             return '/mi-cuenta/acceso/codigo';
         case 'portal.logout':
             return '/mi-cuenta/salir';
+        case 'portal.link.store':
+            return '/mi-cuenta/acceso/enlace';
+        case 'portal.link.show':
+        case 'portal.link.consume':
+            return `/mi-cuenta/acceso/enlace/${params.token}`;
         default:
             throw new Error(`fakeRoute no conoce la ruta «${name}».`);
     }

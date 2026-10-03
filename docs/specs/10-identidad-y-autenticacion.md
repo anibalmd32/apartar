@@ -216,6 +216,8 @@ final readonly class CustomerContactData
 - SP-7 Prefetch del cliente de correo → el `GET` no consume (RB-9).
 - SP-8 Organización suspendida → el enlace **funciona**: el cliente tiene derecho a ver su deuda (`REQ-ORG-008` RB-1).
 
+> **Cómo quedó (`T-050`).** Las organizaciones de RB-3 se descubren con `TenantResolver::organizationsWithCustomer()` —solo `organization_id`, sin leer la ficha— y en cada una la ficha se vuelve a buscar con su tenant. Los tres casos de SP-1/SP-2 son **una** `UnusableLoginLinkException` y la misma pantalla con `404`; el contrato de arriba nombraba dos excepciones, y con un único tratamiento posible no hacían falta. El límite de RB-6 cuenta **solicitudes**, coincidan o no. El enlace y el código abren la sesión por el mismo sitio (`PortalLogin`).
+
 **Fuera de alcance inmediato**
 - Enlace por WhatsApp o SMS.
 - Un enlace único que abra sesión en varias organizaciones a la vez.

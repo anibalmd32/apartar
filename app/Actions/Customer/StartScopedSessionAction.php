@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Customer;
 
+use App\Auth\PortalLogin;
 use App\Domain\Customer\AccessVerificationFailedException;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
@@ -12,10 +13,7 @@ use App\Models\Layaway;
 use App\Support\DocumentNumber;
 use App\Support\LayawayCode;
 use Carbon\CarbonImmutable;
-use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Auth;
-use LogicException;
 
 /**
  * Abre la sesión acotada del portal con documento + código de apartado
@@ -55,12 +53,10 @@ use LogicException;
  */
 final class StartScopedSessionAction
 {
-    /** RB-4 · treinta días, en minutos. */
-    public const REMEMBER_MINUTES = 60 * 24 * 30;
-
     public function __construct(
         private readonly TenantContext $context,
         private readonly TenantResolver $resolver,
+        private readonly PortalLogin $login,
     ) {}
 
     /**
@@ -98,24 +94,9 @@ final class StartScopedSessionAction
             return $customer;
         });
 
-        $this->login($customer);
+        // RB-4 · el guard `customer`, con su recuerdo de 30 días.
+        $this->login->open($customer);
 
         return $customer;
-    }
-
-    private function login(Customer $customer): void
-    {
-        $guard = Auth::guard('customer');
-
-        if ($guard instanceof SessionGuard) {
-            $guard->setRememberDuration(self::REMEMBER_MINUTES);
-            $guard->login($customer, remember: true);
-
-            return;
-        }
-
-        // Un guard `customer` que no es de sesión es una configuración rota:
-        // mejor un fallo que una sesión que no se abre.
-        throw new LogicException('El guard «customer» tiene que ser de sesión (config/auth.php).');
     }
 }

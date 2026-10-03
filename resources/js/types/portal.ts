@@ -31,3 +31,13 @@ export interface PortalDashboardProps {
     readonly customer: { readonly fullName: string; readonly documentNumber: string };
     readonly layaways: readonly PortalLayawayItem[];
 }
+
+/** La confirmación del enlace por correo (`REQ-IDN-003` RB-9). */
+export interface PortalLoginLinkProps {
+    readonly token: string;
+}
+
+/** El enlace que ya no sirve: un solo mensaje para los tres motivos (SP-2). */
+export interface PortalLoginLinkUnusableProps {
+    readonly message: string;
+}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Portal\AccessController;
 use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\LoginLinkController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,6 +29,13 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
     Route::middleware('outside-tenancy')->group(function (): void {
         Route::get('acceso', [AccessController::class, 'create'])->name('access');
         Route::post('acceso/codigo', [AccessController::class, 'storeCode'])->name('access.code');
+
+        // `REQ-IDN-003` · el enlace por correo. El `GET` del enlace solo
+        // confirma; el canje es el `POST` (RB-9). El tenant del canje lo dice
+        // el prefijo del token, dentro de la acción.
+        Route::post('acceso/enlace', [LoginLinkController::class, 'store'])->name('link.store');
+        Route::get('acceso/enlace/{token}', [LoginLinkController::class, 'show'])->name('link.show');
+        Route::post('acceso/enlace/{token}', [LoginLinkController::class, 'consume'])->name('link.consume');
     });
 
     Route::middleware(['portal', 'outside-tenancy'])
