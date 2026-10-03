@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Domain\Payment;
 
 use App\Models\Layaway;
-use Illuminate\Support\Facades\Schema;
-use LogicException;
+use App\Models\Receipt;
+use Carbon\CarbonImmutable;
 
 /**
  * Lo que los comprobantes de un apartado deciden fuera del módulo de cobranza.
+ *
+ * Todas las preguntas van por el global scope del tenant (`Receipt` lleva
+ * `BelongsToOrganization`): se hacen con la organización del apartado fijada,
+ * y un comprobante de otro negocio no existe para ellas.
  *
  * ## Si congelan su expiración (`REQ-LAY-006` RB-1, RB-2)
  *
@@ -27,45 +31,24 @@ use LogicException;
  *
  * Cuántos esperan revisión —`receipt_pending`, y lo que sustituye al aviso de
  * la ventana de la inicial cuando ya hay uno en camino (SP-3)— y qué apartados
- * tienen su último comprobante rechazado sin reemplazo —`receipt_rejected`—.
+ * tienen su último comprobante rechazado —`receipt_rejected`—.
  *
- * **Las reglas están escritas con su forma definitiva; lo que falta es la
- * tabla.** `receipts` llega con `T-054`, así que hoy la respuesta es que ningún
- * apartado tiene comprobantes, que es literalmente cierto. `ExpireLayawaysAction`,
- * `PortalAlertsQuery` y `CancelLayawayAction` ya preguntan, y sus tests
- * sustituyen esta clase en el contenedor para probar la retención, las alertas
- * y el rechazo. Por eso no es `final`.
- *
- * ## Y falla ruidosamente cuando llegue la tabla
- *
- * Es la guarda de `RecordedReceipts` (`T-015`), y por la misma razón: si
- * `receipts` existe y estos cuerpos siguen sin sustituirse, **lanzan**.
- * Responder «ninguno» en silencio con la tabla ya creada expiraría apartados
- * con el comprobante del cliente esperando revisión, y escondería en el
- * portal el rechazo que el cliente necesita para corregir; ningún test se
- * pondría rojo.
- *
- * **Quien los rellena es `T-054`**, la tarea que crea la tabla.
+ * Los cuerpos los escribió `T-054`, que creó la tabla; antes respondían
+ * «ninguno» y lanzaban en cuanto existiera. Sigue sin ser `final` porque los
+ * tests de la expiración, las alertas y la cancelación la sustituyen en el
+ * contenedor para probar cada caso sin sembrar archivos.
  */
 class LayawayReceipts
 {
     /**
      * Indica si el apartado tiene algún comprobante en revisión o aprobado.
-     *
-     * @throws LogicException si `receipts` ya existe y nadie ha sustituido este cuerpo
      */
     public function holdExpiration(Layaway $layaway): bool
     {
-        $this->assertTheTableIsStillMissing(__FUNCTION__, sprintf(
-            'una consulta de `Receipt` con estado `pending_review` o `approved` del apartado %d, por el global scope del '
-            .'tenant. Hasta que lo haga, `REQ-LAY-006` RB-2 estaría desactivado: el job expiraría apartados con el '
-            .'comprobante del cliente esperando revisión.',
-            (int) $layaway->getKey(),
-        ));
-
-        // `T-054` sustituye esto por la consulta del modelo. Mientras la tabla
-        // no exista, ningún apartado tiene comprobantes.
-        return false;
+        return Receipt::query()
+            ->where('layaway_id', $layaway->getKey())
+            ->whereIn('status', ReceiptStatus::holdingExpiration())
+            ->exists();
     }
 
     /**
@@ -77,37 +60,58 @@ class LayawayReceipts
      *
      * @param  list<Layaway>  $layaways
      * @return array<int, int>
-     *
-     * @throws LogicException si `receipts` ya existe y nadie ha sustituido este cuerpo
      */
     public function pendingReviewCounts(array $layaways): array
     {
-        $this->assertTheTableIsStillMissing(__FUNCTION__, 'un `COUNT` de `Receipt` en `pending_review` agrupado por '
-            .'`layaway_id`, por el global scope del tenant. Hasta que lo haga, el portal no diría «comprobante en '
-            .'revisión» (`REQ-LAY-023` SP-3) y seguiría apremiando con la ventana de la inicial a quien ya pagó.');
+        if ($layaways === []) {
+            return [];
+        }
 
-        return [];
+        $counts = [];
+
+        Receipt::query()
+            ->whereIn('layaway_id', self::idsOf($layaways))
+            ->where('status', ReceiptStatus::PendingReview)
+            ->groupBy('layaway_id')
+            ->selectRaw('layaway_id, COUNT(*) AS pending')
+            ->toBase()
+            ->get()
+            ->each(function (object $row) use (&$counts): void {
+                /** @var object{layaway_id: int|string, pending: int|string} $row */
+                $counts[(int) $row->layaway_id] = (int) $row->pending;
+            });
+
+        return $counts;
     }
 
     /**
-     * Los `id` de esos apartados cuyo **último** comprobante fue rechazado y
-     * no tiene todavía uno que lo reemplace.
+     * Los `id` de esos apartados cuyo **último** comprobante fue rechazado.
      *
-     * Un rechazo ya contestado con un reintento deja de ser una alerta: lo que
-     * queda es el reintento, en revisión.
+     * Un rechazo ya contestado deja de ser una alerta: el reintento es más
+     * nuevo, y lo que queda es él —en revisión—. Por eso basta mirar el último
+     * de cada apartado, sin seguir la cadena de `replaces_receipt_id`.
      *
      * @param  list<Layaway>  $layaways
      * @return list<int>
-     *
-     * @throws LogicException si `receipts` ya existe y nadie ha sustituido este cuerpo
      */
     public function rejectedAwaitingRetry(array $layaways): array
     {
-        $this->assertTheTableIsStillMissing(__FUNCTION__, 'los apartados cuyo último `Receipt` está `rejected` y ningún '
-            .'otro lo reemplaza (`replaces_receipt_id`), por el global scope del tenant. Hasta que lo haga, el cliente '
-            .'no se enteraría en el portal de que su comprobante fue rechazado (`REQ-LAY-023` RB-2).');
+        if ($layaways === []) {
+            return [];
+        }
 
-        return [];
+        $latest = Receipt::query()
+            ->whereIn('layaway_id', self::idsOf($layaways))
+            ->groupBy('layaway_id')
+            ->selectRaw('MAX(id)');
+
+        return Receipt::query()
+            ->whereIn('id', $latest)
+            ->where('status', ReceiptStatus::Rejected)
+            ->pluck('layaway_id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->values()
+            ->all();
     }
 
     /**
@@ -117,35 +121,40 @@ class LayawayReceipts
      * Corre dentro de la transacción de la cancelación, con el apartado ya
      * bloqueado: o se cancela y se rechazan, o ninguna de las dos cosas. Así no
      * quedan comprobantes huérfanos en la bandeja de un apartado que ya no
-     * acepta pagos.
+     * acepta pagos. Los coge con `FOR UPDATE`, para que una aprobación que
+     * llegue a la vez espere y después los encuentre rechazados.
      *
-     * @throws LogicException si `receipts` ya existe y nadie ha sustituido este cuerpo
+     * Sin revisor: lo rechaza el sistema, no una persona. El aviso al cliente
+     * es de `T-083`.
      */
     public function rejectPendingOnCancellation(Layaway $layaway): int
     {
-        $this->assertTheTableIsStillMissing(__FUNCTION__, sprintf(
-            'el rechazo de cada `Receipt` en `pending_review` del apartado %d con `RejectionReasonCode::LayawayCancelled`, '
-            .'por el global scope del tenant, y su aviso al cliente. Hasta que lo haga, cancelar dejaría comprobantes '
-            .'huérfanos en la bandeja de conciliación (`REQ-LAY-009` SP-3).',
-            (int) $layaway->getKey(),
-        ));
+        $pending = Receipt::query()
+            ->where('layaway_id', $layaway->getKey())
+            ->where('status', ReceiptStatus::PendingReview)
+            ->lockForUpdate()
+            ->get();
 
-        return 0;
+        $now = CarbonImmutable::now();
+
+        foreach ($pending as $receipt) {
+            $receipt->forceFill([
+                'status' => ReceiptStatus::Rejected,
+                'rejection_reason_code' => RejectionReasonCode::LayawayCancelled,
+                'reviewed_by' => null,
+                'reviewed_at' => $now,
+            ])->save();
+        }
+
+        return $pending->count();
     }
 
     /**
-     * @throws LogicException
+     * @param  list<Layaway>  $layaways
+     * @return list<int>
      */
-    private function assertTheTableIsStillMissing(string $method, string $replacement): void
+    private static function idsOf(array $layaways): array
     {
-        if (Schema::hasTable('receipts')) {
-            throw new LogicException(sprintf(
-                'La tabla `receipts` ya existe y `%s::%s()` sigue respondiendo que no hay comprobantes. `T-054` crea '
-                .'esa tabla y es quien tiene que sustituir este cuerpo por %s',
-                self::class,
-                $method,
-                $replacement,
-            ));
-        }
+        return array_map(fn (Layaway $layaway): int => (int) $layaway->getKey(), $layaways);
     }
 }

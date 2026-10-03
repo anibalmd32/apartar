@@ -112,7 +112,13 @@ it('nombra con _cents toda columna que hable de dinero', function (): void {
         // `declared_amount` es la cantidad en la moneda que declaró el cliente
         // (`receipts`, `payments`) y no es un importe en centavos de USD; llega
         // con el bloque 7 y tiene su propia convención.
-        if (in_array($column['name'], ['declared_amount'], true)) {
+        //
+        // `amount_cents_usd` sí son centavos de USD, con la moneda escrita
+        // detrás: es el nombre que fija el contrato de `REQ-FX-006` para el
+        // pago, junto a `declared_amount` en otra moneda, y renombrarlo
+        // rompería ese contrato (`T-054`). El tipo lo comprueba el caso de
+        // `BIGINT` de abajo.
+        if (in_array($column['name'], ['declared_amount', 'amount_cents_usd'], true)) {
             continue;
         }
 
@@ -122,7 +128,21 @@ it('nombra con _cents toda columna que hable de dinero', function (): void {
     expect($offenders)->toBe([], 'Columnas monetarias sin sufijo _cents: '.implode(', ', $offenders));
 });
 
-it('declara toda tasa de cambio como DECIMAL(18,8)', function (): void {
+/**
+ * Hasta `T-054` la única columna decimal del esquema era una tasa, y el caso
+ * exigía `(18,8)` a **todo** decimal. Con el bloque 7 llega el primer decimal
+ * que no es una tasa —lo que el cliente declaró, en su moneda, con dos
+ * decimales (`REQ-PAY-001` RB-5)—, así que el caso se parte en dos sin
+ * aflojarse: toda tasa es `(18,8)`, y todo otro decimal tiene que estar
+ * declarado aquí con su precisión y su motivo. Uno nuevo sin declarar falla.
+ */
+it('declara toda tasa de cambio como DECIMAL(18,8) y ningún otro decimal sin motivo', function (): void {
+    // Columna => precisión exigida. Lo declarado por el cliente: hasta dos
+    // decimales en su moneda, y cabe un pago en bolívares de catorce cifras.
+    $declaredDecimals = [
+        'declared_amount' => 'decimal(16,2)',
+    ];
+
     $offenders = [];
 
     foreach (projectColumns() as $column) {
@@ -130,12 +150,14 @@ it('declara toda tasa de cambio como DECIMAL(18,8)', function (): void {
             continue;
         }
 
-        if (! preg_match('/decimal\(18\s*,\s*8\)/i', $column['type'])) {
-            $offenders[] = $column['table'].'.'.$column['name'].' es '.$column['type'];
+        $expected = $declaredDecimals[$column['name']] ?? 'decimal(18,8)';
+
+        if (str_replace(' ', '', strtolower($column['type'])) !== $expected) {
+            $offenders[] = $column['table'].'.'.$column['name'].' es '.$column['type'].', se esperaba '.$expected;
         }
     }
 
-    expect($offenders)->toBe([], 'Decimales fuera de (18,8): '.implode(', ', $offenders));
+    expect($offenders)->toBe([], 'Decimales fuera de su precisión: '.implode(', ', $offenders));
 });
 
 /**

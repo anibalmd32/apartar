@@ -155,11 +155,10 @@ final class UpsertPaymentAccountActionTest extends TestCase
     /**
      * **RB-6 y SP-3 · borrar una cuenta con comprobantes la desactiva.**
      *
-     * `receipts` llega con `T-054`, así que se ejercita sustituyendo
-     * `RecordedReceipts` en el contenedor: es lo que permite que la regla esté
-     * escrita con su forma definitiva —y probada— antes de que exista el
-     * modelo. Y la excepción **no es un fallo**: la operación se completó de
-     * otra forma, y SP-3 exige informarlo.
+     * Se ejercita sustituyendo `RecordedReceipts` en el contenedor, como desde
+     * `T-015`, antes de que existiera `receipts`; la consulta de verdad la
+     * prueba `RecordedReceiptsTest` desde `T-054`. Y la excepción **no es un
+     * fallo**: la operación se completó de otra forma, y SP-3 exige informarlo.
      */
     public function test_deleting_an_account_with_receipts_deactivates_it(): void
     {
@@ -280,8 +279,8 @@ final class UpsertPaymentAccountActionTest extends TestCase
     /**
      * Sustituye la consulta de comprobantes por una que dice que sí los hay.
      *
-     * `receipts` llega con `T-054`; hasta entonces esto es lo que permite
-     * ejercitar RB-6 con su forma definitiva.
+     * Sin sembrar un comprobante con su apartado, su ficha y su archivo: lo que
+     * aquí se prueba es la degradación del borrado, no la consulta.
      */
     private function withReceipts(): void
     {

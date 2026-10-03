@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Payment;
 
 use App\Models\PaymentAccount;
-use Illuminate\Support\Facades\Schema;
-use LogicException;
+use App\Models\Receipt;
 
 /**
  * Si una cuenta de cobro tiene comprobantes apuntándole (`REQ-ORG-007` RB-6,
@@ -20,13 +19,15 @@ use LogicException;
  * discusión con un cliente sobre un pago, «esa cuenta ya no existe» no es una
  * respuesta.
  *
- * **La regla está escrita con su forma definitiva; lo que falta es la tabla.**
- * `receipts` llega con `T-054`, así que hoy la respuesta es que ninguna cuenta
- * tiene comprobantes — lo cual es literalmente cierto—.
- * `UpsertPaymentAccountAction` ya pregunta, ya degrada el borrado y ya tiene su
- * test, contra esta clase sustituida en el contenedor. Por eso no es `final`.
+ * La regla se escribió en `T-015` con su forma definitiva y sin tabla:
+ * `receipts` llegó con `T-054`, que sustituyó el cuerpo por la consulta del
+ * modelo **en la misma tarea**, sin tocar la acción, la ruta, el mensaje ni el
+ * test. `UpsertPaymentAccountAction` pregunta, degrada el borrado y tiene su
+ * test contra esta clase sustituida en el contenedor; por eso no es `final`.
+ * La migración la respalda además con `restrict` en
+ * `receipts.payment_account_id`.
  *
- * ## Y por eso falla ruidosamente cuando llegue la tabla
+ * ## Por qué, hasta `T-054`, fallaba ruidosamente
  *
  * Esta es la lección que `T-014` dejó pagada. `PublishedCatalogs::exist()` nació
  * respondiendo `false` **comprobando que su tabla no existiera**, y eso lo
@@ -35,8 +36,8 @@ use LogicException;
  * quedaba desactivada sin un solo test en rojo. El síntoma no habría aparecido
  * hasta que un negocio real perdiera su enlace.
  *
- * Aquí la guarda va **al revés**: si `receipts` existe y este cuerpo sigue sin
- * sustituirse, **lanza**. Es la convención de fallo cerrado que ya rige las
+ * Aquí la guarda iba **al revés**: si `receipts` existía y este cuerpo seguía
+ * sin sustituirse, **lanzaba**. Es la convención de fallo cerrado que ya rige las
  * declaraciones de superficie y de suspensión de las rutas y el `match` sin
  * `default` de `LimitEnforcer::measure()`: lo que no se ha decidido se para,
  * no se deja pasar. Un despliegue que reviente en el primer test es barato; una
@@ -48,27 +49,11 @@ use LogicException;
 class RecordedReceipts
 {
     /**
-     * Indica si esa cuenta tiene algún comprobante asociado.
-     *
-     * @throws LogicException si `receipts` ya existe y nadie ha sustituido este cuerpo
+     * Indica si esa cuenta tiene algún comprobante asociado, por el global
+     * scope del tenant.
      */
     public function existFor(PaymentAccount $account): bool
     {
-        if (Schema::hasTable('receipts')) {
-            throw new LogicException(sprintf(
-                'La tabla `receipts` ya existe y `%s::existFor()` sigue respondiendo que la cuenta %d no tiene '
-                .'comprobantes. `T-054` crea esa tabla y es quien tiene que sustituir este cuerpo por '
-                .'`Receipt::query()->where(\'payment_account_id\', $account->getKey())->exists()`, que va por el '
-                .'global scope del tenant. Hasta que lo haga, `REQ-ORG-007` RB-6 estaría desactivado: borrar una '
-                .'cuenta con comprobantes los dejaría apuntando al vacío y ningún test se pondría en rojo.',
-                self::class,
-                (int) $account->getKey(),
-            ));
-        }
-
-        // `T-054` sustituye esto por la consulta del modelo. Mientras la tabla
-        // no exista, ninguna cuenta tiene comprobantes y esta es la única
-        // respuesta honesta.
-        return false;
+        return Receipt::query()->where('payment_account_id', $account->getKey())->exists();
     }
 }

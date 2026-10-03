@@ -10,6 +10,8 @@ use App\Domain\Auditing\AuditEvent;
 use App\Domain\Layaway\IllegalLayawayTransitionException;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Payment\LayawayReceipts;
+use App\Domain\Payment\ReceiptStatus;
+use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Events\Layaway\LayawayCancelled;
@@ -17,6 +19,7 @@ use App\Models\AuditEntry;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Models\Receipt;
 use App\Models\UsageCounter;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -28,6 +31,7 @@ use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use Tests\Concerns\AssertsStockLockOrder;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\CreatesReceipts;
 use Tests\TestCase;
 
 /**
@@ -35,7 +39,7 @@ use Tests\TestCase;
  */
 final class CancelLayawayActionTest extends TestCase
 {
-    use AssertsStockLockOrder, CreatesLayaways, RefreshDatabase;
+    use AssertsStockLockOrder, CreatesLayaways, CreatesReceipts, RefreshDatabase;
 
     private const REASON = 'El cliente dejó de responder hace un mes.';
 
@@ -141,6 +145,26 @@ final class CancelLayawayActionTest extends TestCase
     }
 
     /**
+     * SP-3 de punta a punta, con comprobantes de verdad (`T-054`): los que
+     * esperaban revisión quedan rechazados con `layaway_cancelled`; el
+     * aprobado no se toca.
+     */
+    public function test_it_rejects_real_pending_receipts(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $pending = $this->receiptFor($layaway);
+        $approved = $this->receiptFor($layaway, ReceiptStatus::Approved);
+
+        $this->cancel($layaway);
+
+        $this->withinOrganization($this->organization, function () use ($pending, $approved): void {
+            $this->assertSame(RejectionReasonCode::LayawayCancelled, Receipt::query()->findOrFail($pending->getKey())->rejection_reason_code);
+            $this->assertSame(ReceiptStatus::Approved, Receipt::query()->findOrFail($approved->getKey())->status);
+        });
+        $this->assertSame(1, $this->auditEntry()->properties['changed']['receipts_rejected']['after'] ?? null);
+    }
+
+    /**
      * RB-5: lo pagado se queda como estaba, para constancia, y el apartado
      * conserva sus cuotas.
      */
@@ -219,8 +243,9 @@ final class CancelLayawayActionTest extends TestCase
     private array $rejectedFor = [];
 
     /**
-     * Los comprobantes no existen hasta `T-054`: el colaborador se sustituye y
-     * apunta con qué apartado, y en qué estado, se le llamó.
+     * El colaborador se sustituye para afirmar **cuándo** se le llama —con qué
+     * apartado y en qué estado—, que con comprobantes de verdad no se ve. El
+     * rechazo real lo afirman `LayawayReceiptsTest` y el caso de abajo.
      */
     private function fakeReceipts(): void
     {

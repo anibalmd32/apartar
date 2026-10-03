@@ -10,10 +10,10 @@ use Tests\Support\SchemaInspector;
 /**
  * Bloque 7 del esquema: el apartado y sus cuotas ([05 §4]).
  *
- * De este bloque son dos tablas de cinco: `receipts`, `payments` y
- * `payment_allocations` llegan con `T-054`. Todo H3 se construye sobre estas
- * dos, y todo H4 escribe en ellas: una columna mal tipada aquí es un balance
- * mal calculado después.
+ * Dos tablas de las cinco del bloque; las otras tres —`receipts`, `payments`
+ * y `payment_allocations`— están en `PaymentSchemaTest` (`T-054`). Todo H3 se
+ * construye sobre estas dos, y todo H4 escribe en ellas: una columna mal
+ * tipada aquí es un balance mal calculado después.
  */
 it('crea las dos tablas del bloque 7', function (string $table): void {
     expect(Schema::hasTable($table))->toBeTrue();

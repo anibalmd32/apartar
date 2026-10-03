@@ -12,6 +12,7 @@ use App\Actions\Layaway\ExpireLayawaysAction;
 use App\Domain\Customer\TermsConsent;
 use App\Domain\Layaway\ExpirationOutcome;
 use App\Domain\Payment\LayawayReceipts;
+use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationStatus;
@@ -32,6 +33,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Tests\Concerns\AssertsStockLockOrder;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\CreatesReceipts;
 use Tests\TestCase;
 
 /**
@@ -44,7 +46,7 @@ use Tests\TestCase;
  */
 final class ExpireLayawaysActionTest extends TestCase
 {
-    use AssertsStockLockOrder, CreatesLayaways, RefreshDatabase;
+    use AssertsStockLockOrder, CreatesLayaways, CreatesReceipts, RefreshDatabase;
 
     private Organization $organization;
 
@@ -133,6 +135,22 @@ final class ExpireLayawaysActionTest extends TestCase
         $this->assertSame('pending_down_payment', $this->statusOf($held));
         $this->assertSame('expired', $this->statusOf($free));
         $this->assertSame(3, $this->stockOf($product), 'Solo vuelve la unidad del que expiró.');
+    }
+
+    /**
+     * RB-2 de punta a punta, con comprobantes de verdad (`T-054`): en revisión
+     * retiene, rechazado no.
+     */
+    public function test_a_real_receipt_under_review_holds_and_a_rejected_one_does_not(): void
+    {
+        $held = $this->pendingUntil('2026-09-13 09:59:00');
+        $rejected = $this->pendingUntil('2026-09-13 09:59:00');
+        $this->receiptFor($held);
+        $this->receiptFor($rejected, ReceiptStatus::Rejected);
+
+        $this->assertSame(['expired' => 1, 'held' => 1], $this->expireAt('2026-09-13 10:05:00')->toArray());
+        $this->assertSame('pending_down_payment', $this->statusOf($held));
+        $this->assertSame('expired', $this->statusOf($rejected));
     }
 
     /**

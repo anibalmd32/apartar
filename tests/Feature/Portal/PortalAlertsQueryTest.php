@@ -10,6 +10,7 @@ use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Payment\LayawayReceipts;
+use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Settings\SettingKey;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use ReflectionClass;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\CreatesReceipts;
 use Tests\TestCase;
 
 /**
@@ -38,8 +40,10 @@ use Tests\TestCase;
  * primera vence el 25/09 y la segunda el 10/10. Las organizaciones están en
  * Caracas.
  *
- * Los comprobantes no existen hasta `T-054`: los casos que los necesitan
- * sustituyen `LayawayReceipts` en el contenedor, como hace la expiración.
+ * Los casos de comprobantes sustituyen `LayawayReceipts` en el contenedor,
+ * como hace la expiración: se escribieron antes de que existiera la tabla
+ * (`T-054`), y siguen siendo la forma barata de combinar condiciones. Uno, al
+ * final, va con comprobantes de verdad de punta a punta.
  *
  * La agrupación de varios negocios se prueba pasándole a la consulta los
  * bloques de tres negocios —uno por cada sesión acotada—, porque la sesión de
@@ -47,7 +51,7 @@ use Tests\TestCase;
  */
 final class PortalAlertsQueryTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
 
     protected function tearDown(): void
     {
@@ -301,6 +305,33 @@ final class PortalAlertsQueryTest extends TestCase
             .'su nombre de negocio no puede salir de esa búsqueda), y la portada acotada proponer conectar Google (RB-10). '
             .'Escribe sus tests y borra este.',
         );
+    }
+
+    /**
+     * De punta a punta, con comprobantes de verdad (`T-054`): uno en revisión
+     * en la ventana vencida es `receipt_pending` (SP-3), y el último rechazado
+     * de un apartado vivo es `receipt_rejected`, con su negocio y su código.
+     */
+    public function test_real_receipts_raise_receipt_pending_and_receipt_rejected(): void
+    {
+        $organization = $this->business('Ferretería Oriente');
+        $waiting = $this->layawayIn($organization);
+        $customer = $this->customerOf($waiting);
+        $active = $this->scheduled($organization, $customer);
+        $this->window($waiting, '2026-09-20 10:00:00');
+        $this->receiptFor($waiting);
+        $this->receiptFor($active, ReceiptStatus::Rejected);
+
+        CarbonImmutable::setTestNow('2026-09-15 12:00:00');
+        $this->actingAs($customer, 'customer');
+
+        $this->get(route('portal.dashboard'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('alerts', 2)
+            ->where('alerts.0.kind', 'receipt_rejected')
+            ->where('alerts.0.layawayCode', $active->code)
+            ->where('alerts.0.businessName', 'Ferretería Oriente')
+            ->where('alerts.1.kind', 'receipt_pending')
+            ->where('alerts.1.count', 1));
     }
 
     private function business(string $name): Organization

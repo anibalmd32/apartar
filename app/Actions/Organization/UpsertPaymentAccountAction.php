@@ -167,11 +167,10 @@ final class UpsertPaymentAccountAction
      * mismo motivo por el que un usuario nunca se borra (`REQ-ORG-005` RB-1).
      *
      * Quién tiene comprobantes lo responde `RecordedReceipts`, sustituible en
-     * el contenedor: `receipts` llega con `T-054` y **hasta entonces la
-     * respuesta es que ninguna cuenta los tiene**, que es literalmente cierto.
-     * Cuando esa tabla exista y nadie haya rellenado el cuerpo, esa clase
-     * **lanza** en vez de responder que no — el fallo cerrado que evita que
-     * esta regla quede apagada en silencio.
+     * el contenedor, que consulta `receipts` por el global scope desde
+     * `T-054`. La base lo respalda con `restrict` en
+     * `receipts.payment_account_id`: si esta comprobación faltara, el `DELETE`
+     * reventaría en lugar de borrar.
      *
      * @throws AuthorizationException si el actor no gobierna las cuentas de cobro
      * @throws PaymentAccountInUseException si tenía comprobantes: **la cuenta ya quedó desactivada**

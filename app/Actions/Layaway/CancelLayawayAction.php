@@ -33,8 +33,8 @@ use InvalidArgumentException;
  *     bloqueo** (RB-3, SP-1, SP-4): un `completed` o un `cancelled` no se
  *     cancela, y una aprobación concurrente que lo completó gana.
  *  3. Sus comprobantes en revisión, rechazados con `layaway_cancelled` (SP-3):
- *     no quedan huérfanos en la bandeja. Lo hace `LayawayReceipts`, que hoy no
- *     tiene tabla que consultar (`T-054`).
+ *     no quedan huérfanos en la bandeja. Lo hace `LayawayReceipts`, con los
+ *     comprobantes bloqueados para que una aprobación concurrente espere.
  *  4. La transición, que libera el stock y el cupo y emite `LayawayCancelled`
  *     (RB-4) —el aviso al cliente cuelga de ese evento (`T-083`)—.
  *  5. El motivo, en `cancellation_reason`, y la auditoría (RB-2).
