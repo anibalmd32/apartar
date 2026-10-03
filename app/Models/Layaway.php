@@ -11,6 +11,7 @@ use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 /**
@@ -159,6 +160,18 @@ class Layaway extends Model
             installmentsCount: $this->installments_count,
             frequencyDays: $this->frequency_days,
         );
+    }
+
+    /**
+     * El cronograma materializado, en orden (`REQ-LAY-004`). Vacío hasta la
+     * activación (RB-1), y vacío para siempre si no hay nada que financiar
+     * (SP-2).
+     *
+     * @return HasMany<Installment, $this>
+     */
+    public function installments(): HasMany
+    {
+        return $this->hasMany(Installment::class)->orderBy('number');
     }
 
     /**

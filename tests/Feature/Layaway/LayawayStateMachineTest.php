@@ -10,10 +10,8 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Events\Layaway\LayawayActivated;
 use App\Events\Layaway\LayawayBecameOverdue;
-use App\Events\Layaway\LayawayCancelled;
 use App\Events\Layaway\LayawayCaughtUp;
 use App\Events\Layaway\LayawayCompleted;
-use App\Events\Layaway\LayawayExpired;
 use App\Events\Layaway\LayawayTransitioned;
 use App\Models\Layaway;
 use App\Models\Organization;
@@ -58,12 +56,11 @@ final class LayawayStateMachineTest extends TestCase
 
         // Se escucha con el despachador de verdad y no con `Event::fake()`,
         // que registra al instante y no respetaría el `afterCommit`: lo que se
-        // quiere ver es lo que llega a un listener real.
-        foreach ([LayawayActivated::class, LayawayBecameOverdue::class, LayawayCaughtUp::class, LayawayCompleted::class, LayawayCancelled::class, LayawayExpired::class] as $event) {
-            Event::listen($event, function (LayawayTransitioned $transition): void {
-                $this->dispatched[] = $transition;
-            });
-        }
+        // quiere ver es lo que llega a un listener real. Una sola suscripción,
+        // a la interfaz, como hará `T-082` (`T-046`).
+        Event::listen(LayawayTransitioned::class, function (LayawayTransitioned $transition): void {
+            $this->dispatched[] = $transition;
+        });
     }
 
     protected function tearDown(): void
@@ -187,10 +184,10 @@ final class LayawayStateMachineTest extends TestCase
         );
 
         $completed = $this->dispatched[3];
-        $this->assertSame($layaway->getKey(), $completed->layawayId);
-        $this->assertSame($this->organization->getKey(), $completed->organizationId);
-        $this->assertSame(LayawayStatus::Active, $completed->from);
-        $this->assertSame(LayawayStatus::Completed, $completed->to);
+        $this->assertSame($layaway->getKey(), $completed->layawayId());
+        $this->assertSame($this->organization->getKey(), $completed->organizationId());
+        $this->assertSame(LayawayStatus::Active, $completed->from());
+        $this->assertSame(LayawayStatus::Completed, $completed->to());
     }
 
     /**

@@ -7,6 +7,8 @@ namespace Tests\Concerns;
 use App\Actions\Layaway\ReserveStockAction;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Layaway\LayawayTerms;
+use App\Domain\Money\Money;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
@@ -66,8 +68,15 @@ trait CreatesLayaways
         LayawayStatus $status = LayawayStatus::PendingDownPayment,
         ?Product $product = null,
         int $quantity = 1,
+        ?LayawayTerms $terms = null,
     ): Layaway {
-        return app(TenantContext::class)->runFor($organization, fn (): Layaway => DB::transaction(function () use ($organization, $status, $product, $quantity): Layaway {
+        // Las condiciones por defecto: $200 con $50 de inicial por unidad, 5
+        // cuotas cada 15 días —el *happy path* de `REQ-LAY-004`—. Con
+        // `$terms`, las suyas, y la cantidad sale de ellas.
+        $terms ??= new LayawayTerms(new Money(20_000), new Money(5_000), $quantity, 5, 15);
+
+        return app(TenantContext::class)->runFor($organization, fn (): Layaway => DB::transaction(function () use ($organization, $status, $product, $terms): Layaway {
+            $quantity = $terms->quantity;
             $product ??= Product::factory()->create();
 
             app(ReserveStockAction::class)->handle($product, $quantity);
@@ -95,14 +104,14 @@ trait CreatesLayaways
                 'customer_id' => $customerId,
                 'product_id' => $product->getKey(),
                 'quantity' => $quantity,
-                'unit_price_cents' => 20_000,
-                'down_payment_cents' => 5_000,
-                'installments_count' => 5,
-                'frequency_days' => 15,
+                'unit_price_cents' => $terms->unitPrice,
+                'down_payment_cents' => $terms->downPayment,
+                'installments_count' => $terms->installmentsCount,
+                'frequency_days' => $terms->frequencyDays,
                 'product_name_snapshot' => $product->name,
                 'product_sku_snapshot' => $product->sku,
-                'total_cents' => 20_000,
-                'remaining_cents' => 20_000,
+                'total_cents' => $terms->total(),
+                'remaining_cents' => $terms->total(),
                 'status' => LayawayStatus::PendingDownPayment,
             ])->save();
 

@@ -7,4 +7,4 @@ namespace App\Events\Layaway;
 /**
  * `pending_down_payment` → `active`: se aprobó la inicial (`REQ-LAY-005` RB-1).
  */
-final class LayawayActivated extends LayawayTransitioned {}
+final class LayawayActivated extends LayawayTransition {}

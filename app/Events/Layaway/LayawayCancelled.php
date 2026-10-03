@@ -7,4 +7,4 @@ namespace App\Events\Layaway;
 /**
  * Un estado vivo → `cancelled`: lo canceló el negocio (`REQ-LAY-009`); libera cupo (RB-6).
  */
-final class LayawayCancelled extends LayawayTransitioned {}
+final class LayawayCancelled extends LayawayTransition {}

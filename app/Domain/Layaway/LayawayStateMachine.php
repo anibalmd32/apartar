@@ -13,7 +13,7 @@ use App\Events\Layaway\LayawayCancelled;
 use App\Events\Layaway\LayawayCaughtUp;
 use App\Events\Layaway\LayawayCompleted;
 use App\Events\Layaway\LayawayExpired;
-use App\Events\Layaway\LayawayTransitioned;
+use App\Events\Layaway\LayawayTransition;
 use App\Models\Layaway;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -156,7 +156,7 @@ final class LayawayStateMachine
         };
     }
 
-    private function eventFor(Layaway $layaway, LayawayStatus $from, LayawayStatus $to, CarbonImmutable $now): LayawayTransitioned
+    private function eventFor(Layaway $layaway, LayawayStatus $from, LayawayStatus $to, CarbonImmutable $now): LayawayTransition
     {
         $arguments = [(int) $layaway->getKey(), (int) $layaway->getAttribute('organization_id'), $from, $to, $now];
 

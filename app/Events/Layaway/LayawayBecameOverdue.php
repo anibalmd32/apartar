@@ -7,4 +7,4 @@ namespace App\Events\Layaway;
 /**
  * `active` → `overdue`: venció una cuota y pasó la gracia (`REQ-LAY-007`).
  */
-final class LayawayBecameOverdue extends LayawayTransitioned {}
+final class LayawayBecameOverdue extends LayawayTransition {}
