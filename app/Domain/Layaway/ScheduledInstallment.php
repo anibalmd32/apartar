@@ -28,6 +28,14 @@ use InvalidArgumentException;
  * cronograma se reconstruya desde `installments` con pagos aplicados,
  * `paid` es lo que permite a `AmortizationSchedule::firstUnpaid()` responder
  * lo que su nombre dice (`REQ-LAY-004` RB-8, `REQ-PAY-008` RB-3).
+ *
+ * ## Y la fila, cuando la hay
+ *
+ * Un cronograma recién generado no tiene filas todavía, y su `installmentId`
+ * es nulo. Reconstruido desde la base (`Installment::scheduleOf()`), lleva el
+ * `id` de cada cuota: es lo que permite a `FifoAllocator` (`T-056`) decir a
+ * **qué fila** va cada parte de un pago, que es lo que se escribe en
+ * `payment_allocations`.
  */
 final readonly class ScheduledInstallment
 {
@@ -38,12 +46,14 @@ final readonly class ScheduledInstallment
      * @param  CarbonImmutable  $dueDate  el día de vencimiento, a las 00:00 en la zona de la organización
      * @param  Money  $amount  el importe, inmutable (RB-6)
      * @param  Money|null  $paid  lo pagado; nada si se omite
+     * @param  int|null  $installmentId  la fila de `installments`, si ya está materializada; nula en un cronograma recién generado
      */
     public function __construct(
         public int $number,
         public CarbonImmutable $dueDate,
         public Money $amount,
         ?Money $paid = null,
+        public ?int $installmentId = null,
     ) {
         if ($number < 1) {
             throw new InvalidArgumentException(sprintf('Las cuotas se numeran desde 1, y llegó la %d.', $number));

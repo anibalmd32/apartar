@@ -38,3 +38,15 @@ it('se numera desde 1', function (): void {
     expect(fn () => new ScheduledInstallment(0, CarbonImmutable::parse('2026-09-25'), new Money(3_000)))
         ->toThrow(InvalidArgumentException::class, 'Las cuotas se numeran desde 1');
 });
+
+/**
+ * `T-056`: recién generada no tiene fila; reconstruida desde la base, lleva el
+ * `id` al que `FifoAllocator` asigna.
+ */
+it('lleva la fila de installments solo cuando la tiene', function (): void {
+    $generated = new ScheduledInstallment(1, CarbonImmutable::parse('2026-09-25'), new Money(3_000));
+    $stored = new ScheduledInstallment(1, CarbonImmutable::parse('2026-09-25'), new Money(3_000), new Money(0), 42);
+
+    expect($generated->installmentId)->toBeNull()
+        ->and($stored->installmentId)->toBe(42);
+});

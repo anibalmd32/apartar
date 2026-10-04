@@ -131,7 +131,8 @@ class Installment extends Model
 
     /**
      * Esas cuotas —las de un apartado, en orden— como el cronograma del
-     * dominio, con lo pagado de cada una y sus días en la zona del negocio.
+     * dominio, con lo pagado de cada una, sus días en la zona del negocio y el
+     * `id` de cada fila, que es a lo que `FifoAllocator` asigna (`T-056`).
      *
      * Es lo que permite preguntarle a `AmortizationSchedule` por la ventana de
      * una reprogramación (`REQ-LAY-011` RB-3) con el cronograma **tal como está
@@ -147,6 +148,7 @@ class Installment extends Model
                 CarbonImmutable::parse($row->due_date->toDateString(), $timezone)->startOfDay(),
                 $row->amount_cents,
                 $row->paid_cents,
+                (int) $row->getKey(),
             ),
             $installments,
         ));
