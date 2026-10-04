@@ -179,6 +179,28 @@ class Layaway extends Model
     }
 
     /**
+     * Los comprobantes que subió el cliente, del más antiguo al más nuevo
+     * (`REQ-PAY-001`). No tocan el balance hasta que se aprueban.
+     *
+     * @return HasMany<Receipt, $this>
+     */
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(Receipt::class)->orderBy('id');
+    }
+
+    /**
+     * Los pagos conciliados, por fecha de conciliación (`REQ-LAY-022` RB-1).
+     * Son lo único que mueve el balance.
+     *
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->orderBy('settled_at')->orderBy('id');
+    }
+
+    /**
      * Los pagados que el negocio todavía no entregó: su cola de trabajo de
      * mostrador (`REQ-LAY-010` RB-5).
      *

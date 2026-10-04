@@ -63,6 +63,15 @@ it('hace único el pago de cada comprobante dentro de su organización', functio
 });
 
 /**
+ * `REQ-PAY-007` SP-5 (`T-055`): la clave del formulario del pago manual,
+ * única por organización y nula en los pagos que salen de un comprobante.
+ */
+it('hace única la clave de idempotencia del pago manual dentro de su organización', function (): void {
+    expect(SchemaInspector::columns('payments')['idempotency_key']['nullable'])->toBeTrue();
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'idempotency_key'))->toBeTrue();
+});
+
+/**
  * Todo importe que entra en el balance es `BIGINT` de centavos de USD con
  * signo (`REQ-FX-001` RB-1); lo declarado, en su moneda, es decimal.
  */

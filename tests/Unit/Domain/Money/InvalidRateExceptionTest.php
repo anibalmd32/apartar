@@ -57,3 +57,17 @@ it('no se confunde con las dos excepciones de la tasa', function (): void {
     expect($exception)->not->toBeInstanceOf(MissingExchangeRateException::class);
     expect($exception)->not->toBeInstanceOf(ExchangeRateUnavailableException::class);
 });
+
+/**
+ * `T-055`: una tasa escrita a mano con más decimales de los que se guardan no
+ * es un fallo de la fuente, y el mensaje no la manda a revisar un parser.
+ */
+it('explica que una tasa manual tiene más decimales de los que se guardan', function (): void {
+    expect(InvalidRateException::tooPrecise('42.123456789', 8)->getMessage())
+        ->toBe('La tasa "42.123456789" tiene más de 8 decimales, que es lo que se guarda de ella.');
+});
+
+it('explica que una tasa manual tiene más cifras enteras de las que caben', function (): void {
+    expect(InvalidRateException::tooLarge('12345678901', 10)->getMessage())
+        ->toBe('La tasa "12345678901" tiene más de 10 cifras enteras, que es lo que cabe de ella.');
+});

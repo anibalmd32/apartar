@@ -180,7 +180,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 | 28 | `layaways` | `organization_id`, `code`, `idempotency_key`, `customer_id`, `product_id`, `catalog_id?`, `quantity`, `unit_price_cents`, `down_payment_cents`, `installments_count`, `frequency_days`, `product_name_snapshot`, `product_sku_snapshot`, `total_cents`, `paid_cents`, `remaining_cents`, `status`, `expires_at?`, `extended_at?`, `activated_at?`, `next_due_date?`, `completed_at?`, `cancelled_at?`, `cancellation_reason?`, `delivered_at?`, `stock_released_at?` | **`UNIQUE(code)` global**, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, status, next_due_date)`, `INDEX(organization_id, customer_id)` |
 | 29 | `installments` | `organization_id`, `layaway_id`, `number`, `due_date`, `amount_cents`, `paid_cents`, `status`, `paid_at?` | `UNIQUE(organization_id, layaway_id, number)`, `INDEX(organization_id, status, due_date)` |
 | 30 | `receipts` | `organization_id`, `layaway_id`, `customer_id`, `payment_account_id?`, `payment_method`, `bank?`, `reference?`, `paid_at`, `declared_amount`, `declared_currency`, `note?`, `file_path`, `file_hash`, `file_mime`, `file_size`, `status`, `reviewed_by?`, `reviewed_at?`, `rejection_reason_code?`, `rejection_reason?`, `replaces_receipt_id?` | `UNIQUE(organization_id, file_hash)`, `UNIQUE(organization_id, bank, reference)`, `INDEX(organization_id, status, created_at)` |
-| 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `INDEX(organization_id, settled_at)` |
+| 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `idempotency_key?`, `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, settled_at)` |
 | 32 | `payment_allocations` | `organization_id`, `payment_id`, `installment_id`, `amount_cents` | `INDEX(organization_id, payment_id)`, `INDEX(organization_id, installment_id)` |
 
 > `layaways.product_id` con FK `restrict` (`REQ-LAY-002` RB-6). `receipts.replaces_receipt_id` autorreferencia nullable.
@@ -190,6 +190,8 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 > La unicidad de `receipts` es **por organización**, no global: es el cambio del pivote (`REQ-PAY-003` RB-4).
 >
 > **Tres correcciones de `T-054`, al crear las tablas.** (1) **`payment_allocations` lleva `organization_id`**, y sus índices la llevan delante. La tabla estaba escrita como un pivote, y no lo es: tiene modelo (`PaymentAllocation`), la reconciliación la suma por cuota y la reasignación la reescribe. Un modelo sin la columna del tenant no puede llevar `BelongsToOrganization`, y toda consulta sobre él saldría sin filtro; declararla fuera del tenant, como `product_tag`, habría sido ampliar la lista blanca para que `tenancy:audit` callara. (2) **`receipts` lleva un `CHECK` que exige `bank` y `reference` juntos o ninguno.** El único `(organization_id, bank, reference)` no ve una fila con un `NULL` —en MySQL dos `NULL` no chocan—: para el efectivo es lo que se quiere (`REQ-PAY-003` RB-3), pero una referencia sin banco pasaría el único tantas veces como se subiera. `REQ-PAY-001` RB-2 ya exige los dos salvo en efectivo; la base también. (3) **`receipts` lleva además `INDEX(organization_id, layaway_id, status)`**, para las preguntas por apartado de `LayawayReceipts` (expiración, alertas del portal, rechazo al cancelar).
+>
+> **Y una de `T-055`: `payments.idempotency_key`**, nula y única por organización. `ManualPaymentData` la lleva en el contrato de [22] (`REQ-PAY-007` SP-5) y la tabla no le daba sitio: un doble clic sobre «Registrar pago» manda dos peticiones a la vez, y solo un único que la base haga cumplir dentro de la transacción impide los dos pagos. Es el mecanismo de `layaways.idempotency_key` (`T-045`). Los pagos que salen de un comprobante la dejan nula y ya son únicos por `receipt_id`.
 
 ### Bloque 8 — Comunicación, datos y trabajos
 
@@ -304,6 +306,11 @@ final class PaymentApplier
         ?Receipt $receipt,
         ?User $registeredBy,
         ?string $note,
+        // Corregido en T-055: la clave del formulario del pago manual
+        // (REQ-PAY-007 SP-5). Nula al aprobar un comprobante. Va en el
+        // INSERT: payments.idempotency_key es inmutable y UNIQUE por
+        // organización, y este es el único sitio que crea Payment.
+        ?string $idempotencyKey = null,
     ): AppliedPayment;
 }
 

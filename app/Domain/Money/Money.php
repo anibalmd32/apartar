@@ -326,9 +326,13 @@ final readonly class Money
      * de la mañana no sabrá que lo que hay que mirar es el parser de la
      * fuente.
      *
+     * Es pública desde `T-055`: la tasa que el negocio escribe a mano al
+     * conciliar (`ManualRate`) tiene que pasar exactamente esta comprobación,
+     * y no una copia de ella.
+     *
      * @throws InvalidRateException
      */
-    private static function assertUsableRate(string $rate): string
+    public static function assertUsableRate(string $rate): string
     {
         if (preg_match(self::RATE_PATTERN, $rate) !== 1) {
             throw InvalidRateException::malformed($rate);

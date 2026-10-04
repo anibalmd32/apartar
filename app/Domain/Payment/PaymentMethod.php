@@ -4,28 +4,23 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Domain\Money\Currency;
+
 /**
  * Las seis formas en que un negocio venezolano cobra (`REQ-ORG-007` RB-2,
  * `REQ-PAY-001`).
  *
- * **Es un enum compartido y por eso no se escribe entero aquí.** Lo usan dos
- * requisitos de dos hitos distintos: `REQ-ORG-007` —esta tarea, que declara
- * dónde le pagan al negocio— y `REQ-PAY-001` —el comprobante con el que el
+ * **Es un enum compartido por dos hitos.** Lo usan `REQ-ORG-007` —dónde le
+ * pagan al negocio, `T-015`— y `REQ-PAY-001` —el comprobante con el que el
  * cliente dice a cuál de esas cuentas pagó, en H4—. Su definición normativa,
  * con los tres métodos, está en los contratos compartidos de
  * [22-comprobantes-y-conciliacion.md].
  *
- * De esos tres, aquí vive **solo `identifierLabel()`**, que es el único que
- * esta tarea consume. Los otros dos llegan con la tarea de comprobantes que
- * los use:
- *
- *  - `requiresReference()` decide si el comprobante exige banco y referencia,
- *    y no hay comprobantes todavía;
- *  - `defaultCurrency()` devuelve `Currency`, que **nace en `T-017`**.
- *    Escribir aquí un `Currency` provisional para poder completar el enum
- *    sería fabricar exactamente la segunda fuente de verdad que `T-017`
- *    tendría que desmontar después, y las segundas fuentes de verdad de una
- *    moneda se pagan en dinero de alguien.
+ * `T-015` escribió solo `identifierLabel()`, el único que consumía. Los otros
+ * dos llegaron con `T-055`, los contratos de pago: `requiresReference()`, que
+ * decide si el comprobante exige banco y referencia, y `defaultCurrency()`,
+ * que devuelve un `Currency` y por eso no podía existir antes de `T-017` sin
+ * fabricar una segunda fuente de verdad de la moneda.
  *
  * **Seis casos, no tres.** La línea de `T-015` del plan decía «3 métodos» y
  * era un error de redacción, ya corregido: manda el bloque de contratos de
@@ -121,5 +116,42 @@ enum PaymentMethod: string
     public function isCash(): bool
     {
         return $this === self::EfectivoUsd || $this === self::EfectivoVes;
+    }
+
+    /**
+     * Si un comprobante de este método exige banco y referencia
+     * (`REQ-PAY-001` RB-2).
+     *
+     * Todo lo que pasa por un banco o una plataforma deja una referencia que el
+     * negocio puede buscar, y esa referencia es la mitad del criterio de
+     * duplicados de `REQ-PAY-003`. El efectivo no deja nada que buscar
+     * (RB-3). Los dos van **juntos**: la tabla `receipts` lleva un `CHECK` que
+     * rechaza uno sin el otro (`T-054`).
+     *
+     * Se escribe con un `match` y no como `! isCash()`: un método nuevo tiene
+     * que decidir si deja referencia, no heredarlo de una negación.
+     */
+    public function requiresReference(): bool
+    {
+        return match ($this) {
+            self::PagoMovil, self::Transferencia, self::Zelle, self::BinancePay => true,
+            self::EfectivoUsd, self::EfectivoVes => false,
+        };
+    }
+
+    /**
+     * La moneda en que suele llegar un pago por este método.
+     *
+     * **Sugiere, no impone** (`REQ-PAY-001` SP-10): un cliente puede pagar
+     * dólares en efectivo a una cuenta de bolívares en efectivo, y el
+     * formulario solo la preselecciona. Binance Pay se liquida en USDT, que el
+     * negocio concilia como dólares.
+     */
+    public function defaultCurrency(): Currency
+    {
+        return match ($this) {
+            self::PagoMovil, self::Transferencia, self::EfectivoVes => Currency::VES,
+            self::Zelle, self::BinancePay, self::EfectivoUsd => Currency::USD,
+        };
     }
 }

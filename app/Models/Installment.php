@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 /**
@@ -115,6 +116,17 @@ class Installment extends Model
     public function layaway(): BelongsTo
     {
         return $this->belongsTo(Layaway::class);
+    }
+
+    /**
+     * Las partes de pagos que la cubrieron. Su suma es `paid_cents`
+     * (`REQ-PAY-008`, lo que comprueba `layaways:reconcile`).
+     *
+     * @return HasMany<PaymentAllocation, $this>
+     */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PaymentAllocation::class);
     }
 
     /**

@@ -2,18 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domain\Money\Currency;
 use App\Domain\Payment\PaymentMethod;
 
 /**
- * El enum compartido de `REQ-ORG-007` y `REQ-PAY-001`.
- *
- * Lo que se fija aquí es sobre todo **el reparto**: los seis casos y
- * `identifierLabel()` son de esta tarea; `requiresReference()` y
- * `defaultCurrency()` llegan con la tarea de comprobantes, porque el segundo
- * devuelve `Currency` y `Currency` nace en `T-017`. El test que lo comprueba no
- * es una formalidad: sin él, alguien lo completaría con un `Currency`
- * provisional y `T-017` tendría que desmontar una segunda fuente de verdad de
- * una moneda.
+ * El enum compartido de `REQ-ORG-007` y `REQ-PAY-001`: los seis casos y sus
+ * tres preguntas del contrato de [22], más el nombre para una persona.
  */
 
 /**
@@ -72,22 +66,30 @@ it('distingue el efectivo del resto', function (): void {
 });
 
 /**
- * **El reparto con H4, fijado.** `defaultCurrency()` devuelve `Currency`, que
- * nace en `T-017`: escribirlo aquí con una moneda provisional fabricaría la
- * segunda fuente de verdad que esa tarea tendría que desmontar.
- * `requiresReference()` llega con los comprobantes que lo usan.
- *
- * El día que `T-017` y la tarea de comprobantes los añadan, este test se cae y
- * se borra: es lo que hace que el reparto sea una decisión y no un olvido.
+ * `REQ-PAY-001` RB-2 y `REQ-PAY-003` RB-3: todo lo que pasa por un banco o una
+ * plataforma exige banco y referencia; el efectivo, no. Llegó con `T-055`,
+ * que borró el test que esperaba este método.
  */
-it('deja requiresReference y defaultCurrency para la tarea de comprobantes', function (): void {
-    // Por reflexión y no con `method_exists()`: el análisis estático sabe que
-    // esos métodos no están y pliega la llamada a `false`, con lo que el test
-    // dejaría de comprobar nada el día que alguien los añadiera.
-    $enum = new ReflectionEnum(PaymentMethod::class);
+it('exige referencia a todo lo que no es efectivo', function (PaymentMethod $method): void {
+    expect($method->requiresReference())->toBe(! $method->isCash());
+})->with(PaymentMethod::cases());
 
-    expect($enum->hasMethod('requiresReference'))
-        ->toBeFalse('`requiresReference()` es de la tarea de comprobantes (`REQ-PAY-001`); si ya está, borra este test.')
-        ->and($enum->hasMethod('defaultCurrency'))
-        ->toBeFalse('`defaultCurrency()` devuelve `Currency`, que nace en `T-017`; si ya está, borra este test.');
+/**
+ * `REQ-PAY-001` SP-10: la moneda que el método sugiere, sin imponerla.
+ */
+it('sugiere la moneda en que suele llegar cada método', function (): void {
+    $currencies = [];
+
+    foreach (PaymentMethod::cases() as $method) {
+        $currencies[$method->value] = $method->defaultCurrency();
+    }
+
+    expect($currencies)->toBe([
+        'pago_movil' => Currency::VES,
+        'transferencia' => Currency::VES,
+        'zelle' => Currency::USD,
+        'binance_pay' => Currency::USD,
+        'efectivo_usd' => Currency::USD,
+        'efectivo_ves' => Currency::VES,
+    ]);
 });

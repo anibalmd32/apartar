@@ -52,4 +52,26 @@ final class InvalidRateException extends RuntimeException
             $rate,
         ));
     }
+
+    /**
+     * Una tasa escrita a mano con más decimales de los que se guardan
+     * (`ManualRate`, `T-055`).
+     *
+     * No es un fallo de la fuente sino de quien la escribió, y el arreglo es
+     * recortarla: la columna la redondearía en silencio y el pago diría haber
+     * usado una tasa distinta de la que convirtió el importe.
+     */
+    public static function tooPrecise(string $rate, int $scale): self
+    {
+        return new self(sprintf('La tasa "%s" tiene más de %d decimales, que es lo que se guarda de ella.', $rate, $scale));
+    }
+
+    /**
+     * Una tasa escrita a mano con más cifras enteras de las que caben en la
+     * columna (`ManualRate`): el `INSERT` reventaría en vez de responder.
+     */
+    public static function tooLarge(string $rate, int $digits): self
+    {
+        return new self(sprintf('La tasa "%s" tiene más de %d cifras enteras, que es lo que cabe de ella.', $rate, $digits));
+    }
 }
