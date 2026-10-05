@@ -44,6 +44,7 @@ use LogicException;
  * @property int|null $receipt_id nulo en un pago manual
  * @property string|null $idempotency_key la del formulario del pago manual (`REQ-PAY-007` SP-5)
  * @property Money $amount_cents_usd lo que entra en el balance
+ * @property Money $unallocated_cents lo que no cupo en el saldo (`REQ-PAY-005` RB-6); no es crédito y no cuenta en `paid_cents` (`T-057`)
  * @property Currency $declared_currency
  * @property string $declared_amount en su moneda, con dos decimales
  * @property string $rate_applied ocho decimales; `1` en un pago en dólares (`REQ-FX-006` RB-4)
@@ -68,6 +69,7 @@ class Payment extends Model
         'receipt_id',
         'idempotency_key',
         'amount_cents_usd',
+        'unallocated_cents',
         'declared_currency',
         'declared_amount',
         'rate_applied',
@@ -144,6 +146,7 @@ class Payment extends Model
     {
         return [
             'amount_cents_usd' => MoneyCast::class,
+            'unallocated_cents' => MoneyCast::class,
             'declared_currency' => Currency::class,
             'declared_amount' => 'decimal:2',
             'rate_applied' => 'decimal:8',

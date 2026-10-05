@@ -489,6 +489,14 @@ final readonly class ManualPaymentData
 - RB-6 Idempotente y seguro en producción; corre a diario a las 05:30 en modo reporte, y las discrepancias alimentan la pantalla de Salud de la plataforma (`REQ-PLT-006` RB-2), que es la señal más importante de ese panel.
 - RB-7 **Ninguna otra clase escribe estos campos**: solo `LayawayBalanceRecalculator`, regla verificable por revisión y por test de arquitectura.
 
+> **De dónde sale cada término de RB-3, decidido en `T-057`.** Ni el sobrante ni la inicial aplicada tenían columna.
+> - **Sobrante** = `payments.unallocated_cents`, **nueva** ([05 §4]): lo que `FifoAllocator` dijo que no cabía, escrito en el `INSERT` por `PaymentApplier`. Derivado, la primera invariante se habría cumplido sola.
+> - **Inicial aplicada** = la inicial total de `Layaway::terms()` si `activated_at` no es nulo, `0` si lo es. Sin columna: la inicial no es una cuota, solo se aplica activando, y activar solo ocurre al aprobarla (`REQ-LAY-004` RB-1).
+> - **Lo que se escribe** es la segunda invariante —`paid_cents = sum(installments.paid_cents) + inicial aplicada`—, no la primera: el recalculador corre **dentro** de la activación, antes de que se reparta el excedente, y ahí las cuotas y la inicial ya cuentan la historia entera (y con financiado cero la cuentan como completa, SP-3). La primera es la comprobación cruzada: `diff()` la mide y `BalanceDiscrepancy` la reporta aparte de las columnas, porque recalcular no la arregla.
+> - **`next_due_date`** se calcula con `paid_cents < amount_cents` y no con `status != paid`: es la misma condición —`InstallmentStatus::resolve()` da `paid` exactamente cuando la cuota está cubierta— sin depender de que el estado de la cuota se haya escrito ya.
+> - **`status`**: lo **decide** el recalculador —completar dentro de `settlement_tolerance_cents`, entrar y salir de la mora siguiendo a las cuotas (`REQ-LAY-007` RB-2, RB-6)— y lo **escribe** `LayawayStateMachine` (`REQ-LAY-005` RB-2). Por eso RB-7 se comprueba en dos tests: `LayawayBalanceWritesTest` (los tres primeros, solo el recalculador) y `LayawayStatusWritesTest` (el estado, solo la máquina). La única otra escritura del balance es la del `INSERT` —sin pagos: `0`, el total y sin vencimiento—, y no se admite por lista sino por regla: la guarda de `Layaway` rechaza crear un apartado con cualquier otro saldo.
+> - SP-2 se «reporta» con `Log::warning('layaway_balance.overpaid')`, que la suite convierte en fallo (`FailsOnCounterDrift`), y con `BalanceDiscrepancy::$overpaidCents`.
+
 **Happy path**
 1. Se aprueba un pago; la transacción actualiza cuotas y llama al recalculador.
 2. `paid_cents` sube 6000, `remaining_cents` baja 6000, `next_due_date` avanza a la cuota 5.

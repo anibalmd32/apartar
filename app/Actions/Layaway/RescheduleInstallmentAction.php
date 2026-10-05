@@ -6,6 +6,7 @@ namespace App\Actions\Layaway;
 
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Layaway\InvalidRescheduleException;
+use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\StaffReason;
 use App\Domain\Tenancy\TenantContext;
@@ -39,14 +40,14 @@ use InvalidArgumentException;
  *
  * ## Después de mover
  *
- *  - `next_due_date`, que es el vencimiento de la primera cuota sin cubrir
- *    (RB-5). **Lo escribe esta acción de forma provisional**, como la
- *    activación: `REQ-PAY-008` RB-7 dice que solo `LayawayBalanceRecalculator`
- *    escribe ese campo, y el recalculador es de `T-057`.
  *  - Los estados de las cuotas y del apartado (RB-5), con la misma regla que
  *    la mora (`DetectOverdueAction::refresh()`): una cuota vencida que se
  *    mueve al futuro sale de `overdue`, y si no queda ninguna el apartado
  *    vuelve a `active`.
+ *  - `next_due_date`, que es el vencimiento de la primera cuota sin cubrir
+ *    (RB-5). Lo escribe `LayawayBalanceRecalculator` (`REQ-PAY-008` RB-7), al
+ *    que se llama **después** de la mora para que vea las cuotas ya con su
+ *    estado.
  *  - La auditoría, con la fecha de antes, la de después y el motivo (RB-4).
  *    No se avisa al cliente (RB-6).
  *
@@ -60,6 +61,7 @@ final class RescheduleInstallmentAction
     public function __construct(
         private readonly TenantContext $context,
         private readonly DetectOverdueAction $overdue,
+        private readonly LayawayBalanceRecalculator $balance,
     ) {}
 
     /**
@@ -102,8 +104,6 @@ final class RescheduleInstallmentAction
             $before = $target->due_date->toDateString();
             $target->forceFill(['due_date' => $newDay->toDateString()])->save();
 
-            $this->writeNextDueDate($layaway);
-
             $this->audit(
                 AuditEvent::InstallmentRescheduled,
                 subject: $layaway,
@@ -114,6 +114,10 @@ final class RescheduleInstallmentAction
             );
 
             $this->overdue->refresh($layaway, CarbonImmutable::now());
+
+            // RB-5 · `next_due_date` con la fecha nueva, cuando las cuotas ya
+            // tienen su estado de mora (`REQ-PAY-008` RB-7).
+            $this->balance->recalculate($layaway);
 
             $installment->setRawAttributes($target->fresh()?->getAttributes() ?? $target->getAttributes(), sync: true);
 
@@ -133,16 +137,5 @@ final class RescheduleInstallmentAction
         }
 
         throw new InvalidArgumentException(sprintf('El apartado no tiene cuota %d.', $number));
-    }
-
-    /**
-     * RB-5 · el vencimiento de la primera cuota sin cubrir, ya con la fecha
-     * nueva. Provisional hasta `LayawayBalanceRecalculator` (`T-057`).
-     */
-    private function writeNextDueDate(Layaway $layaway): void
-    {
-        $first = $layaway->installments()->whereColumn('paid_cents', '<', 'amount_cents')->orderBy('number')->first();
-
-        $layaway->forceFill(['next_due_date' => $first?->due_date->toDateString()])->save();
     }
 }

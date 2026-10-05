@@ -55,6 +55,15 @@ use LogicException;
  * escritura que no pasa por esta guarda, y la única que el test de
  * arquitectura admite.
  *
+ * ## El balance, igual, con otro dueño
+ *
+ * `paid_cents`, `remaining_cents` y `next_due_date` (`BALANCE_COLUMNS`) son de
+ * `LayawayBalanceRecalculator` (`REQ-PAY-008` RB-7, `T-057`), con las mismas
+ * dos capas: guardarlos cambiados en un apartado existente **lanza**, crearlo
+ * con un saldo que no sea «sin pagos» también, y `LayawayBalanceWritesTest`
+ * caza lo que no pasa por un modelo. El recalculador escribe por el *query
+ * builder*, como la máquina.
+ *
  * @property int $id
  * @property int $organization_id
  * @property string $code `AP-` y ocho caracteres, único global (`REQ-LAY-001` RB-9)
@@ -110,6 +119,15 @@ class Layaway extends Model
         'total_cents',
     ];
 
+    /**
+     * El balance materializado, menos el estado (`REQ-PAY-008` RB-1): solo lo
+     * escribe `LayawayBalanceRecalculator` (RB-7, `T-057`), por el *query
+     * builder*. El estado tiene su propia guarda, la de la máquina.
+     *
+     * @var list<string>
+     */
+    public const BALANCE_COLUMNS = ['paid_cents', 'remaining_cents', 'next_due_date'];
+
     protected static function booted(): void
     {
         static::saving(static function (Layaway $layaway): void {
@@ -124,7 +142,19 @@ class Layaway extends Model
                     ));
                 }
 
+                self::assertBornWithoutPayments($layaway);
+
                 return;
+            }
+
+            $balance = array_values(array_filter(self::BALANCE_COLUMNS, fn (string $column): bool => $layaway->isDirty($column)));
+
+            if ($balance !== []) {
+                throw new LogicException(sprintf(
+                    'El balance de un apartado solo lo escribe LayawayBalanceRecalculator::recalculate() (REQ-PAY-008 RB-7), '
+                    .'y se intentó guardar: %s. Mueve los pagos o las cuotas y pídele al recalculador que lo derive.',
+                    implode(', ', $balance),
+                ));
             }
 
             if ($layaway->isDirty('status')) {
@@ -145,6 +175,31 @@ class Layaway extends Model
                 ));
             }
         });
+    }
+
+    /**
+     * La única escritura del balance que no es del recalculador: la del
+     * `INSERT`, que lo siembra **sin pagos** —`paid_cents` a cero,
+     * `remaining_cents` igual al total y sin vencimiento—. Es lo que hacen
+     * `CreateLayawayAction` y los sembradores de test (`CreatesLayaways`,
+     * `LayawayFactory`), y lo que cualquier otro creador tiene que hacer: un
+     * apartado no puede nacer con un saldo que ningún pago explica.
+     */
+    private static function assertBornWithoutPayments(self $layaway): void
+    {
+        $paid = $layaway->getAttribute('paid_cents');
+        $remaining = $layaway->getAttribute('remaining_cents');
+        $total = $layaway->getAttribute('total_cents');
+
+        $paidIsZero = $paid === null || ($paid instanceof Money && $paid->cents === 0);
+        $remainingIsTotal = $remaining instanceof Money && $total instanceof Money && $remaining->cents === $total->cents;
+
+        if (! $paidIsZero || ! $remainingIsTotal || $layaway->getAttribute('next_due_date') !== null) {
+            throw new LogicException(
+                'Un apartado nace sin pagos (REQ-PAY-008): paid_cents = 0, remaining_cents = total_cents y sin '
+                .'next_due_date. A partir de ahí el balance solo lo escribe LayawayBalanceRecalculator (RB-7).'
+            );
+        }
     }
 
     /**

@@ -80,7 +80,9 @@ final class PortalDashboardTest extends TestCase
             ->has('businesses.0.history', 1)
             ->where('businesses.0.history.0.code', $expired->code)
             ->where('businesses.0.totals.activeLayaways', 2)
-            ->where('businesses.0.totals.remaining.cents', 40_000)
+            // $200 del que espera la inicial y $150 del activo: desde `T-057`
+            // activar deja aplicada la inicial de $50.
+            ->where('businesses.0.totals.remaining.cents', 35_000)
             ->where('businesses.0.totals.overdueInstallments', 1)
             ->where('businesses.0.totals.nextDueDate', '2026-09-25'));
     }

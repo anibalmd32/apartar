@@ -82,8 +82,20 @@ it('guarda los importes de la cobranza como BIGINT con signo', function (string 
     expect(strtolower($definition['type']))->not->toContain('unsigned');
 })->with([
     ['payments', 'amount_cents_usd'],
+    ['payments', 'unallocated_cents'],
     ['payment_allocations', 'amount_cents'],
 ]);
+
+/**
+ * `REQ-PAY-008` RB-3 (`T-057`): el sobrante de cada pago, obligatorio y sin
+ * valor por defecto —lo escribe el `INSERT` de `PaymentApplier` o nadie—.
+ */
+it('guarda el sobrante de cada pago, obligatorio y sin valor por defecto', function (): void {
+    $column = SchemaInspector::columns('payments')['unallocated_cents'];
+
+    expect($column['nullable'])->toBeFalse();
+    expect($column['default'])->toBeNull();
+});
 
 it('guarda lo declarado como decimal, sin convertir', function (string $table): void {
     expect(strtolower(SchemaInspector::columns($table)['declared_amount']['type']))->toBe('decimal(16,2)');

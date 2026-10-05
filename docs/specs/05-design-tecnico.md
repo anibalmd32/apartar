@@ -180,7 +180,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 | 28 | `layaways` | `organization_id`, `code`, `idempotency_key`, `customer_id`, `product_id`, `catalog_id?`, `quantity`, `unit_price_cents`, `down_payment_cents`, `installments_count`, `frequency_days`, `product_name_snapshot`, `product_sku_snapshot`, `total_cents`, `paid_cents`, `remaining_cents`, `status`, `expires_at?`, `extended_at?`, `activated_at?`, `next_due_date?`, `completed_at?`, `cancelled_at?`, `cancellation_reason?`, `delivered_at?`, `stock_released_at?` | **`UNIQUE(code)` global**, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, status, next_due_date)`, `INDEX(organization_id, customer_id)` |
 | 29 | `installments` | `organization_id`, `layaway_id`, `number`, `due_date`, `amount_cents`, `paid_cents`, `status`, `paid_at?` | `UNIQUE(organization_id, layaway_id, number)`, `INDEX(organization_id, status, due_date)` |
 | 30 | `receipts` | `organization_id`, `layaway_id`, `customer_id`, `payment_account_id?`, `payment_method`, `bank?`, `reference?`, `paid_at`, `declared_amount`, `declared_currency`, `note?`, `file_path`, `file_hash`, `file_mime`, `file_size`, `status`, `reviewed_by?`, `reviewed_at?`, `rejection_reason_code?`, `rejection_reason?`, `replaces_receipt_id?` | `UNIQUE(organization_id, file_hash)`, `UNIQUE(organization_id, bank, reference)`, `INDEX(organization_id, status, created_at)` |
-| 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `idempotency_key?`, `amount_cents_usd`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, settled_at)` |
+| 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `idempotency_key?`, `amount_cents_usd`, `unallocated_cents`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, settled_at)` |
 | 32 | `payment_allocations` | `organization_id`, `payment_id`, `installment_id`, `amount_cents` | `INDEX(organization_id, payment_id)`, `INDEX(organization_id, installment_id)` |
 
 > `layaways.product_id` con FK `restrict` (`REQ-LAY-002` RB-6). `receipts.replaces_receipt_id` autorreferencia nullable.
@@ -192,6 +192,8 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 > **Tres correcciones de `T-054`, al crear las tablas.** (1) **`payment_allocations` lleva `organization_id`**, y sus índices la llevan delante. La tabla estaba escrita como un pivote, y no lo es: tiene modelo (`PaymentAllocation`), la reconciliación la suma por cuota y la reasignación la reescribe. Un modelo sin la columna del tenant no puede llevar `BelongsToOrganization`, y toda consulta sobre él saldría sin filtro; declararla fuera del tenant, como `product_tag`, habría sido ampliar la lista blanca para que `tenancy:audit` callara. (2) **`receipts` lleva un `CHECK` que exige `bank` y `reference` juntos o ninguno.** El único `(organization_id, bank, reference)` no ve una fila con un `NULL` —en MySQL dos `NULL` no chocan—: para el efectivo es lo que se quiere (`REQ-PAY-003` RB-3), pero una referencia sin banco pasaría el único tantas veces como se subiera. `REQ-PAY-001` RB-2 ya exige los dos salvo en efectivo; la base también. (3) **`receipts` lleva además `INDEX(organization_id, layaway_id, status)`**, para las preguntas por apartado de `LayawayReceipts` (expiración, alertas del portal, rechazo al cancelar).
 >
 > **Y una de `T-055`: `payments.idempotency_key`**, nula y única por organización. `ManualPaymentData` la lleva en el contrato de [22] (`REQ-PAY-007` SP-5) y la tabla no le daba sitio: un doble clic sobre «Registrar pago» manda dos peticiones a la vez, y solo un único que la base haga cumplir dentro de la transacción impide los dos pagos. Es el mecanismo de `layaways.idempotency_key` (`T-045`). Los pagos que salen de un comprobante la dejan nula y ya son únicos por `receipt_id`.
+>
+> **Y una de `T-057`: `payments.unallocated_cents`**, `BIGINT` obligatoria **sin valor por defecto**, inmutable, con un `CHECK` que la acota entre `0` y `amount_cents_usd`. Es el «sobrante» de la primera invariante de `REQ-PAY-008` RB-3 (`paid_cents === sum(amount_cents_usd) − sum(unallocated)`), que no tenía columna. Derivarlo —importe menos asignaciones menos la inicial que cubrió— habría hecho que la invariante se cumpliera **por definición**: una asignación perdida se habría leído como un sobrante mayor, no como un descuadre. Lo escribe `PaymentApplier` (`T-058`) en el `INSERT`, con el `AllocationPlan::$unallocatedCents` de `FifoAllocator`; sin valor por defecto, un `INSERT` que lo olvide falla en vez de declarar «sin sobrante». La reasignación conserva la suma de lo repartido (`REQ-PAY-009` RB-2), así que no lo mueve. La «inicial aplicada» de la segunda invariante **no** lleva columna: se deriva —la inicial total de `terms()` si `activated_at` no es nulo, cero si lo es—, porque la inicial solo se aplica activando y activar solo ocurre al aprobarla. Ver la nota de `REQ-PAY-008` en [22](22-comprobantes-y-conciliacion.md).
 
 ### Bloque 8 — Comunicación, datos y trabajos
 
@@ -327,12 +329,19 @@ final readonly class AppliedPayment
 
 // ─── 5. app/Domain/Layaway/LayawayBalanceRecalculator.php ──────────────
 /**
- * ÚNICA clase que escribe paid_cents, remaining_cents, next_due_date y status
- * de un apartado. Verifica las cuatro invariantes de REQ-PAY-008 RB-3.
+ * ÚNICA clase que escribe paid_cents, remaining_cents y next_due_date de un
+ * apartado, y la que DECIDE status cuando lo mueve el dinero (completar con
+ * la tolerancia, entrar y salir de la mora); la escritura del estado es de
+ * LayawayStateMachine::transition(), a la que se lo pide. Corregido en T-057:
+ * el contrato decía que escribía status, y eso es de REQ-LAY-005 RB-2.
  */
 final class LayawayBalanceRecalculator
 {
-    /** Recalcula desde los pagos y cuotas reales. Acota remaining a >= 0. */
+    /**
+     * Recalcula desde las cuotas y la inicial aplicada (la segunda invariante
+     * de RB-3; la primera, contra los pagos, la mide diff()). Acota remaining
+     * a >= 0. Ver la nota de REQ-PAY-008 en [22].
+     */
     public function recalculate(Layaway $layaway): void;
     /** Compara lo materializado con lo derivado sin escribir. */
     public function diff(Layaway $layaway): ?BalanceDiscrepancy;
@@ -392,9 +401,9 @@ ApproveReceiptAction / RegisterManualPaymentAction
        │    ├─ crea Payment con el snapshot de tasa
        │    ├─ FifoAllocator::plan()                  → AllocationPlan
        │    ├─ actualiza installments
-       │    ├─ LayawayBalanceRecalculator::recalculate()
-       │    └─ LayawayStateMachine::transition()
-       │         └─ UsageCalculator ajusta active_layaways
+       │    └─ LayawayBalanceRecalculator::recalculate()   ← decide la transición (T-057)
+       │         └─ LayawayStateMachine::transition()
+       │              └─ UsageCalculator ajusta active_layaways
        ├─ marca el Receipt (si viene)
        └─ audita
   └─ afterCommit → notificaciones + broadcast

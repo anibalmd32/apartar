@@ -373,18 +373,21 @@ final class ActivateLayawayActionTest extends TestCase
     }
 
     /**
-     * `REQ-PAY-008` RB-7: `next_due_date` es uno de los cuatro campos que solo
-     * escribe `LayawayBalanceRecalculator`. Hasta que exista, lo fija la
-     * activación (RB-8); el día que exista, este caso se pone rojo.
+     * `REQ-PAY-008` · activar es aprobar la inicial, así que el balance la
+     * lleva aplicada: lo escribe el recalculador, al que la activación llama
+     * después de insertar las cuotas (`T-057`).
      */
-    public function test_next_due_date_is_still_written_here_until_the_recalculator_exists(): void
+    public function test_activation_leaves_the_down_payment_applied_through_the_recalculator(): void
     {
-        $this->assertFileDoesNotExist(
-            app_path('Domain/Layaway/LayawayBalanceRecalculator.php'),
-            'LayawayBalanceRecalculator ya existe (T-057): ActivateLayawayAction tiene que dejar de escribir '
-            .'next_due_date por su cuenta y llamar a recalculate() después de insertar las cuotas (REQ-PAY-008 RB-7). '
-            .'Haz ese cambio y borra este caso.',
-        );
+        $layaway = $this->layaway();
+
+        $this->activate($layaway);
+
+        $row = DB::table('layaways')->where('id', $layaway->getKey())->first();
+        $this->assertNotNull($row);
+        $this->assertSame(5_000, (int) $row->paid_cents);
+        $this->assertSame(15_000, (int) $row->remaining_cents);
+        $this->assertSame(5_000, $layaway->paid_cents->cents);
     }
 
     private function layaway(?LayawayTerms $terms = null): Layaway

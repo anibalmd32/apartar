@@ -26,6 +26,20 @@ final class CounterDriftGuardTest extends TestCase
         $this->counterDrift = [];
     }
 
+    /**
+     * `T-057` · un saldo acotado a cero por exceso también es deriva.
+     */
+    public function test_an_overpaid_layaway_is_caught(): void
+    {
+        Log::warning('layaway_balance.overpaid', ['layaway_id' => 7, 'overpaid_cents' => 100]);
+
+        $this->assertCount(1, $this->counterDrift);
+        $this->assertSame('layaway_balance.overpaid', $this->counterDrift[0]['message']);
+        $this->assertSame(100, $this->counterDrift[0]['overpaid_cents']);
+
+        $this->counterDrift = [];
+    }
+
     public function test_other_warnings_are_not_drift(): void
     {
         Log::warning('usage_counter.recomputed', ['metric' => 'active_layaways']);

@@ -17,6 +17,7 @@ use App\Models\Receipt;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
@@ -84,6 +85,7 @@ final class PaymentModelTest extends TestCase
             'receipt_id' => $receipt->getKey(),
             'idempotency_key' => '6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f',
             'amount_cents_usd' => new Money(1),
+            'unallocated_cents' => new Money(1),
             'declared_currency' => Currency::VES,
             'declared_amount' => '1.00',
             'rate_applied' => '60.00000000',
@@ -198,6 +200,62 @@ final class PaymentModelTest extends TestCase
             $this->assertSame([(int) $allocation->getKey()], $paid->allocations()->pluck('id')->map(fn (mixed $id): int => (int) $id)->all());
             $this->assertSame(1, Installment::query()->findOrFail($allocation->installment_id)->allocations()->count());
         });
+    }
+
+    /**
+     * `T-057`: el sobrante de un pago va entre cero y su importe, y lo hace
+     * cumplir la base. Los dos bordes entran.
+     *
+     * @param  int  $unallocated  centavos sin asignar de un pago de $30
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('unallocatedBounds')]
+    public function test_the_unallocated_cents_stay_between_zero_and_the_amount(int $unallocated, bool $accepted): void
+    {
+        if (! $accepted) {
+            $this->expectException(QueryException::class);
+        }
+
+        $payment = $this->within(fn (): Payment => Payment::factory()->createOne(['unallocated_cents' => new Money($unallocated)]));
+
+        $this->assertSame($unallocated, $payment->unallocated_cents->cents);
+    }
+
+    /**
+     * @return array<string, array{int, bool}>
+     */
+    public static function unallocatedBounds(): array
+    {
+        return [
+            'nada sin asignar' => [0, true],
+            'todo sin asignar' => [3_000, true],
+            'más que el pago' => [3_001, false],
+            'negativo' => [-1, false],
+        ];
+    }
+
+    /**
+     * `T-057`: la columna no tiene valor por defecto. Un `INSERT` que se
+     * olvida del sobrante falla en vez de declarar «sin sobrante».
+     */
+    public function test_a_payment_without_its_unallocated_cents_is_refused_by_the_database(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $this->expectException(QueryException::class);
+        $this->expectExceptionMessage('unallocated_cents');
+
+        DB::table('payments')->insert([
+            'organization_id' => $this->organization->getKey(),
+            'layaway_id' => $layaway->getKey(),
+            'amount_cents_usd' => 3_000,
+            'declared_currency' => 'USD',
+            'declared_amount' => '30.00',
+            'rate_applied' => '1.00000000',
+            'rate_source' => 'bcv',
+            'settled_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**

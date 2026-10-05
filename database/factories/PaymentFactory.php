@@ -43,6 +43,7 @@ class PaymentFactory extends Factory
             'receipt_id' => null,
             'idempotency_key' => null,
             'amount_cents_usd' => new Money(3_000),
+            'unallocated_cents' => new Money(0),
             'declared_currency' => Currency::USD,
             'declared_amount' => '30.00',
             'rate_applied' => '1.00000000',

@@ -6,6 +6,7 @@ namespace App\Actions\Layaway;
 
 use App\Domain\Layaway\AmortizationSchedule;
 use App\Domain\Layaway\IllegalLayawayTransitionException;
+use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\ScheduleAlreadyMaterializedException;
@@ -34,8 +35,8 @@ use LogicException;
  *
  * ## Una sola cosa, con el apartado bloqueado
  *
- * Transicionar a `active`, insertar las cuotas, comprobar la invariante y fijar
- * `next_due_date` van en **una transacción** con la fila del apartado bloqueada
+ * Transicionar a `active`, insertar las cuotas, comprobar la invariante y
+ * recalcular el balance van en **una transacción** con la fila del apartado bloqueada
  * desde el principio. Un cronograma insertado con el apartado todavía en
  * `pending_down_payment`, o un `active` sin cuotas, son estados que nadie sabe
  * leer, y separados existiría el instante —y el fallo— en que se ven.
@@ -69,7 +70,9 @@ use LogicException;
  * instante—, `activated_at` solo se escribe al salir de `pending_down_payment`
  * y un `completed` sin él se le pierde a todo informe que cruce por esa
  * columna, y así se emiten los dos eventos que H7 necesita. Sin cuotas y con
- * `next_due_date` en `null`.
+ * `next_due_date` en `null`. **El segundo paso lo pide el recalculador**
+ * (`T-057`): con la inicial aplicada no queda saldo, y completar dentro de la
+ * tolerancia es su decisión (`REQ-PAY-005` RB-7), no un caso aparte de aquí.
  *
  * ## Dos garantías distintas
  *
@@ -86,11 +89,11 @@ use LogicException;
  * ## Lo que no hace
  *
  * No decide **cuándo** se activa —eso es de quien aprueba la inicial, H4— ni
- * toca el balance: `paid_cents` y `remaining_cents` son de
- * `LayawayBalanceRecalculator` (`T-057`). `next_due_date` lo escribe aquí
- * porque nace con el cronograma (RB-8) y el recalculador aún no existe;
- * `ActivateLayawayActionTest` se pone rojo el día que exista, para que la
- * escritura pase a él (`REQ-PAY-008` RB-7).
+ * escribe el balance: `paid_cents`, `remaining_cents` y `next_due_date` son de
+ * `LayawayBalanceRecalculator` (`REQ-PAY-008` RB-7), al que llama después de
+ * insertar las cuotas. Desde `T-057`, activar deja la inicial **aplicada**
+ * —`paid_cents` es la inicial total—, porque activar es lo que significa que
+ * se aprobó; el excedente sobre ella lo reparte después `PaymentApplier`.
  */
 final class ActivateLayawayAction
 {
@@ -101,6 +104,7 @@ final class ActivateLayawayAction
         private readonly TenantContext $context,
         private readonly LayawayStateMachine $machine,
         private readonly ScheduleGenerator $generator,
+        private readonly LayawayBalanceRecalculator $balance,
     ) {}
 
     /**
@@ -136,17 +140,11 @@ final class ActivateLayawayAction
 
                 $this->assertScheduleAddsUp($locked);
 
-                // RB-8 · la primera **no pagada**, no la primera: recién
-                // generadas son la misma, y dejan de serlo con el primer pago.
-                Layaway::query()->whereKey($locked->getKey())->update([
-                    'next_due_date' => $schedule->firstUnpaid()?->dueDateString(),
-                ]);
-
-                if ($schedule->isEmpty()) {
-                    // SP-2 · financiado cero: el segundo paso, en la misma
-                    // transacción.
-                    $this->machine->transition($locked, LayawayStatus::Completed);
-                }
+                // RB-8 y el balance (`REQ-PAY-008` RB-7) · la inicial queda
+                // aplicada y `next_due_date` es la primera cuota sin cubrir.
+                // Con financiado cero no queda saldo, y el recalculador pide
+                // el segundo paso, `completed` (SP-2), en esta transacción.
+                $this->balance->recalculate($locked);
 
                 $fresh = $locked->fresh() ?? throw new LogicException('El apartado desapareció a mitad de su activación.');
                 $layaway->setRawAttributes($fresh->getAttributes(), sync: true);

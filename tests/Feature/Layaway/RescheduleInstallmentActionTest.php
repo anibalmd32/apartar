@@ -217,20 +217,6 @@ final class RescheduleInstallmentActionTest extends TestCase
         $this->reschedule(2, '2026-10-12', 'Porque sí');
     }
 
-    /**
-     * `next_due_date` lo escribe esta acción solo hasta que exista el
-     * recalculador, que es el único que debe escribirlo (`REQ-PAY-008` RB-7).
-     */
-    public function test_next_due_date_is_still_written_here_until_the_recalculator_exists(): void
-    {
-        $this->assertFileDoesNotExist(
-            app_path('Domain/Layaway/LayawayBalanceRecalculator.php'),
-            'LayawayBalanceRecalculator ya existe (T-057): RescheduleInstallmentAction tiene que dejar de escribir '
-            .'next_due_date por su cuenta (writeNextDueDate) y llamar a recalculate() después de mover la cuota '
-            .'(REQ-LAY-011 RB-5, REQ-PAY-008 RB-7). Haz ese cambio y borra este caso.',
-        );
-    }
-
     private function reschedule(int $number, string $day, string $reason = self::REASON): void
     {
         $this->withinOrganization($this->organization, fn () => app(RescheduleInstallmentAction::class)->handle(
