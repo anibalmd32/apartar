@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Support\SourceFiles;
+
 /**
  * Umbral de cobertura del dominio (`REQ-QAX-003` RB-1 y SP-4).
  *
@@ -65,20 +67,11 @@ it('mantiene existentes los directorios que mide', function (string $directory):
 it('acompaña cada clase de dominio con su test unitario', function (): void {
     $domainClasses = [];
 
+    // Por `SourceFiles`: un iterador de SPL pierde archivos en el montaje de
+    // desarrollo, y aquí eso es un test que no se exige (`T-058b`).
     foreach (['Domain', 'Actions'] as $layer) {
-        $path = app_path($layer);
-
-        if (! is_dir($path)) {
-            continue;
-        }
-
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
-
-        /** @var SplFileInfo $file */
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'php') {
-                $domainClasses[] = $file->getBasename('.php');
-            }
+        foreach (SourceFiles::in(app_path($layer)) as $file) {
+            $domainClasses[] = basename($file, '.php');
         }
     }
 
@@ -93,15 +86,7 @@ it('acompaña cada clase de dominio con su test unitario', function (): void {
     // `BelongsToOrganization` o su global scope solo se pueden ejercitar
     // contra una base de datos real. Lo que la regla exige es que **cada
     // clase tenga su test dedicado**, no en qué suite vive.
-    $tests = [];
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('tests')));
-
-    /** @var SplFileInfo $file */
-    foreach ($iterator as $file) {
-        if ($file->isFile() && $file->getExtension() === 'php') {
-            $tests[] = $file->getBasename('.php');
-        }
-    }
+    $tests = array_map(fn (string $file): string => basename($file, '.php'), SourceFiles::in(base_path('tests')));
 
     $uncovered = array_values(array_filter(
         $domainClasses,

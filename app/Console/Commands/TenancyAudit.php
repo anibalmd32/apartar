@@ -6,11 +6,9 @@ namespace App\Console\Commands;
 
 use App\Domain\Tenancy\GlobalUniqueExceptions;
 use App\Domain\Tenancy\TenantScope;
+use App\Support\SourceFiles;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 /**
  * Auditoría estática del aislamiento multi-tenant (`REQ-QAX-008` RB-4).
@@ -790,27 +788,15 @@ final class TenancyAudit extends Command
     /**
      * Archivos PHP de un directorio, en profundidad y en orden estable.
      *
+     * Por `SourceFiles` y no por un iterador de SPL: en el montaje de
+     * desarrollo, el iterador se saltaba 27 de las 45 migraciones sin avisar
+     * (`T-058b`), y esta auditoría respondía en verde sin haberlas leído.
+     *
      * @return list<string>
      */
     private function phpFilesIn(string $directory): array
     {
-        if (! is_dir($directory)) {
-            return [];
-        }
-
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
-
-        /** @var SplFileInfo $file */
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'php') {
-                $files[] = str_replace('\\', '/', $file->getPathname());
-            }
-        }
-
-        sort($files);
-
-        return $files;
+        return SourceFiles::in($directory);
     }
 
     /**

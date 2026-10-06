@@ -6,10 +6,7 @@ namespace Tests\Feature\Tenancy;
 
 use App\Domain\Tenancy\GlobalUniqueExceptions;
 use Illuminate\Support\Facades\Artisan;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use RuntimeException;
-use SplFileInfo;
 use Tests\TestCase;
 
 /**
@@ -652,14 +649,12 @@ final class TenancyAuditTest extends TestCase
             return;
         }
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        /** @var SplFileInfo $entry */
-        foreach ($iterator as $entry) {
-            $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
+        // Con `scandir()` y no con un iterador de SPL, que en el montaje de
+        // desarrollo se salta entradas (`T-058b`): un árbol a medio borrar
+        // haría fallar el `rmdir` final o contaminaría el siguiente test.
+        foreach (array_diff(scandir($directory) ?: [], ['.', '..']) as $entry) {
+            $path = $directory.'/'.$entry;
+            is_dir($path) && ! is_link($path) ? $this->deleteTree($path) : unlink($path);
         }
 
         rmdir($directory);

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Support\SourceFiles;
+
 /**
  * Las reglas de `REQ-QAX-001` y `REQ-QAX-002` que no cubren ni Pint ni PHPStan
  * ni ESLint, comprobadas como tests para que corran en cada PR y no dependan
@@ -33,23 +35,9 @@ function vendorPublishedMigrations(): array
  */
 function phpFilesIn(string $directory): array
 {
-    if (! is_dir($directory)) {
-        return [];
-    }
-
-    $files = [];
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
-
-    /** @var SplFileInfo $file */
-    foreach ($iterator as $file) {
-        if ($file->isFile() && $file->getExtension() === 'php') {
-            $files[] = $file->getPathname();
-        }
-    }
-
-    sort($files);
-
-    return $files;
+    // Por `SourceFiles`: un iterador de SPL pierde archivos en el montaje de
+    // desarrollo (`T-058b`).
+    return SourceFiles::in($directory);
 }
 
 /**
@@ -168,18 +156,12 @@ it('mantiene los modelos por debajo de 200 líneas de código', function (): voi
  */
 it('no usa any en resources/js', function (): void {
     $offenders = [];
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(resource_path('js')));
 
-    /** @var SplFileInfo $file */
-    foreach ($iterator as $file) {
-        if (! $file->isFile() || ! in_array($file->getExtension(), ['ts', 'tsx'], true)) {
-            continue;
-        }
-
-        $contents = (string) file_get_contents($file->getPathname());
+    foreach (SourceFiles::in(resource_path('js'), ['ts', 'tsx']) as $file) {
+        $contents = (string) file_get_contents($file);
 
         if (preg_match('/(:\s*any\b|<any>|\bas\s+any\b|Array<any>)/', $contents) === 1) {
-            $offenders[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $offenders[] = str_replace(str_replace('\\', '/', base_path()).'/', '', $file);
         }
     }
 

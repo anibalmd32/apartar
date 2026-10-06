@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tenancy;
 
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
+use App\Support\SourceFiles;
 use Tests\TestCase;
 
 /**
@@ -199,23 +197,9 @@ final class AccountBoundaryTest extends TestCase
      */
     private function filesIn(string $directory, array $extensions): array
     {
-        if (! is_dir($directory)) {
-            return [];
-        }
-
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
-
-        /** @var SplFileInfo $file */
-        foreach ($iterator as $file) {
-            if ($file->isFile() && in_array($file->getExtension(), $extensions, true)) {
-                $files[] = str_replace('\\', '/', $file->getPathname());
-            }
-        }
-
-        sort($files);
-
-        return $files;
+        // Por `SourceFiles`: un iterador de SPL pierde archivos en el montaje
+        // de desarrollo (`T-058b`).
+        return SourceFiles::in($directory, $extensions);
     }
 
     private function relative(string $file): string

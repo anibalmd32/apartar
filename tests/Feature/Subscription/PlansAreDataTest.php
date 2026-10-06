@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Subscription;
 
 use App\Actions\Subscription\StartFreeSubscriptionAction;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
+use App\Support\SourceFiles;
 use Tests\TestCase;
 
 /**
@@ -152,19 +150,9 @@ final class PlansAreDataTest extends TestCase
      */
     private function phpFilesIn(string $directory): array
     {
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
-
-        /** @var SplFileInfo $file */
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'php') {
-                $files[] = str_replace('\\', '/', $file->getPathname());
-            }
-        }
-
-        sort($files);
-
-        return $files;
+        // Por `SourceFiles`: un iterador de SPL pierde archivos en el montaje
+        // de desarrollo (`T-058b`).
+        return SourceFiles::in($directory);
     }
 
     private function relative(string $file): string
