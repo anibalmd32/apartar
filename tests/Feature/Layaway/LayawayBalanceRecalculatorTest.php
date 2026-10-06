@@ -11,8 +11,9 @@ use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
-use App\Domain\Payment\FifoAllocator;
+use App\Domain\Payment\PaymentApplier;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\UsageMetric;
 use App\Events\Layaway\LayawayCompleted;
@@ -23,10 +24,10 @@ use App\Models\OrganizationSetting;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\UsageCounter;
+use App\Models\User;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Closure;
-use DateTimeZone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -44,11 +45,11 @@ use Tests\TestCase;
  * `Asia/Tokyo` y no en la zona de la aplicación, para que una fecha tomada de
  * la zona equivocada no pase por casualidad.
  *
- * **Los pagos se aplican como lo hará `PaymentApplier` (`T-058`)**, que aún no
- * existe: activar con la inicial, repartir el resto con `FifoAllocator`,
- * guardar el pago con su sobrante, una fila de reparto por asignación, el
- * estado de cada cuota con `InstallmentStatus::resolve()` y recalcular. Es
- * `pay()`, y `T-058` lo sustituye por la llamada real.
+ * **Los pagos se aplican con `PaymentApplier`** (`pay()`), el único que los
+ * crea desde `T-058`: activar con la inicial, repartir el resto con
+ * `FifoAllocator`, el pago con su sobrante, el estado de cada cuota y
+ * recalcular. Lo que el FIFO no puede producir —una cuota cubierta saltándose
+ * las anteriores— lo siembra `cover()`, como lo dejaría una reasignación.
  */
 final class LayawayBalanceRecalculatorTest extends TestCase
 {
@@ -56,9 +57,9 @@ final class LayawayBalanceRecalculatorTest extends TestCase
 
     private const TIMEZONE = 'Asia/Tokyo';
 
-    private const GRACE_DAYS = 3;
-
     private Organization $organization;
+
+    private ?User $staff = null;
 
     protected function setUp(): void
     {
@@ -517,45 +518,15 @@ final class LayawayBalanceRecalculatorTest extends TestCase
     }
 
     /**
-     * Aplica un pago como lo hará `PaymentApplier` (`T-058`).
+     * Un pago en dólares, aplicado por `PaymentApplier`.
      */
     private function pay(Layaway $layaway, int $cents): void
     {
-        $this->within(fn () => DB::transaction(function () use ($layaway, $cents): void {
-            /** @var Layaway $locked */
-            $locked = Layaway::query()->whereKey($layaway->getKey())->lockForUpdate()->firstOrFail();
-            $excess = $cents;
+        $this->within(function () use ($layaway, $cents): void {
+            $this->staff ??= User::factory()->create();
 
-            if ($locked->status === LayawayStatus::PendingDownPayment) {
-                app(ActivateLayawayAction::class)->handle($locked);
-                $excess -= $locked->terms()->totalDownPayment()->cents;
-            }
-
-            $plan = $excess > 0 ? app(FifoAllocator::class)->plan($locked, new Money($excess)) : null;
-
-            $payment = Payment::factory()->createOne([
-                'layaway_id' => $locked->getKey(),
-                'amount_cents_usd' => new Money($cents),
-                'unallocated_cents' => new Money($plan === null ? 0 : $plan->unallocatedCents),
-            ]);
-
-            foreach ($plan === null ? [] : $plan->allocations as $allocation) {
-                PaymentAllocation::factory()->createOne([
-                    'payment_id' => $payment->getKey(),
-                    'installment_id' => $allocation['installmentId'],
-                    'amount_cents' => new Money($allocation['cents']),
-                ]);
-
-                $installment = Installment::query()->findOrFail($allocation['installmentId']);
-                $paid = new Money($installment->paid_cents->cents + $allocation['cents']);
-                $installment->forceFill([
-                    'paid_cents' => $paid,
-                    'status' => InstallmentStatus::resolve($installment->amount_cents, $paid, $this->pastGrace($installment)),
-                ])->save();
-            }
-
-            app(LayawayBalanceRecalculator::class)->recalculate($locked);
-        }));
+            app(PaymentApplier::class)->apply($layaway, new Money($cents), null, number_format($cents / 100, 2, '.', ''), Currency::USD, null, $this->staff, null);
+        });
     }
 
     /**
@@ -572,17 +543,6 @@ final class LayawayBalanceRecalculatorTest extends TestCase
 
             app(LayawayBalanceRecalculator::class)->recalculate($layaway);
         });
-    }
-
-    /**
-     * La regla de `DetectOverdueAction::threshold()`: vencida antes de
-     * `hoy − gracia`, en la zona del negocio.
-     */
-    private function pastGrace(Installment $installment): bool
-    {
-        $threshold = CarbonImmutable::now(new DateTimeZone(self::TIMEZONE))->startOfDay()->subDays(self::GRACE_DAYS)->toDateString();
-
-        return $installment->due_date->toDateString() < $threshold;
     }
 
     /**

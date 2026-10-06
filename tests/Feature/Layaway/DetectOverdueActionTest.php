@@ -207,6 +207,29 @@ final class DetectOverdueActionTest extends TestCase
     }
 
     /**
+     * `isPastGrace()` es la misma regla, para una cuota y un instante, y la
+     * que usa `PaymentApplier` (`T-058`): en el borde exacto, y en el «hoy» de
+     * la zona del negocio —el 28/09 a mediodía en Caracas ya es el 29 en
+     * Tokio—.
+     */
+    public function test_is_past_grace_is_the_same_rule_for_one_installment(): void
+    {
+        $tokyo = $this->neighbourOrganization(['timezone' => 'Asia/Tokyo']);
+        $inCaracas = $this->activeLayaway($this->organization);
+        $inTokyo = $this->activeLayaway($tokyo);
+
+        $first = fn (Organization $organization, Layaway $layaway): Installment => $this->withinOrganization($organization, fn (): Installment => Installment::query()
+            ->where('layaway_id', $layaway->getKey())->where('number', 1)->firstOrFail());
+        $pastGrace = fn (Organization $organization, Layaway $layaway, string $instant): bool => $this->withinOrganization($organization, fn (): bool => app(DetectOverdueAction::class)
+            ->isPastGrace($first($organization, $layaway), CarbonImmutable::parse($instant)));
+
+        // Cuota del 25/09, gracia de 3 días: en mora desde el 29.
+        $this->assertFalse($pastGrace($this->organization, $inCaracas, '2026-09-28 23:59:59'));
+        $this->assertTrue($pastGrace($this->organization, $inCaracas, '2026-09-29 00:00:00'));
+        $this->assertTrue($pastGrace($tokyo, $inTokyo, '2026-09-28 12:00:00'));
+    }
+
+    /**
      * RB-8: con la organización suspendida, la mora se detecta igual.
      */
     public function test_it_runs_with_the_organization_suspended(): void

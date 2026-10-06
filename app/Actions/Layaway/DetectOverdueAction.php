@@ -114,6 +114,20 @@ final class DetectOverdueAction
     }
 
     /**
+     * Si esa cuota ya pasó su gracia en ese instante, medido en el «hoy» y con
+     * la gracia de la organización fijada: el `$pastGrace` de
+     * `InstallmentStatus::resolve()`.
+     *
+     * Lo usa la aplicación de pagos (`PaymentApplier`, `T-058`) para el estado
+     * de cada cuota que cubre, y es esta regla y no una copia, para que el
+     * pago y la pasada diaria no puedan discrepar sobre la misma cuota.
+     */
+    public function isPastGrace(Installment $installment, CarbonImmutable $now): bool
+    {
+        return $installment->due_date->toDateString() < $this->threshold($now);
+    }
+
+    /**
      * La misma pasada sobre **un** apartado, ahora: para quien acaba de mover
      * algo de lo que su mora depende y no puede esperar a las 06:00.
      *

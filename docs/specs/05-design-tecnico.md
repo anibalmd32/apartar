@@ -302,7 +302,10 @@ final class PaymentApplier
     public function apply(
         Layaway $layaway,
         Money $settled,
-        RateSnapshot $rate,
+        // Corregido en T-058: también la tasa escrita a mano al conciliar
+        // (ManualRate → rate_source = manual, rate_published_at nula), y null
+        // solo para un pago en USD, que no convierte (REQ-PAY-005 RB-10).
+        RateSnapshot|ManualRate|null $rate,
         string $declaredAmount,
         Currency $declaredCurrency,
         ?Receipt $receipt,
@@ -324,6 +327,10 @@ final readonly class AppliedPayment
         public AllocationPlan $plan,
         public LayawayStatus $statusBefore,
         public LayawayStatus $statusAfter,
+        // Añadido en T-058: la parte que cubrió la inicial, que no es una
+        // asignación ni sobrante. amount = inicial + asignaciones + sobrante,
+        // y el constructor rechaza lo que no cuadre.
+        public int $downPaymentCents = 0,
     ) {}
 }
 

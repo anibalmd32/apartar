@@ -340,6 +340,13 @@ final readonly class ApproveReceiptData
 - SP-11 **Comprobante de otra organización** por manipulación de la URL → `404` por el binding filtrado.
 - SP-12 Aprobación que completa el apartado cuando el plan ya está por encima del techo → el cupo se libera igual; el consumo nunca queda negativo.
 
+> **Tres reglas que la spec no escribía, decididas en `T-058` (`PaymentApplier`).**
+> - **Un pago menor que la inicial sobre un `pending_down_payment` se rechaza** (`PaymentNotApplicableException::belowDownPayment`, `422`). RB-5 dice que se activa y se aplica «el excedente sobre la inicial», y activar con menos contaría como aplicada una inicial que no se cobró: `REQ-PAY-008` RB-3 deriva la inicial aplicada de `activated_at`, y la primera invariante lo reportaría como descuadre. Si un negocio cobra la inicial en dos partes, la registra cuando la tiene entera.
+> - **Un pago en USD no necesita tasa** (RB-10 la exige solo con VES): guarda `rate_applied = 1` y, si no hay ninguna tasa, la **fuente configurada** del negocio con `rate_published_at` nula (`REQ-FX-006` RB-4). Con tasa vigente, su fuente y su fecha.
+> - **La tasa editada a mano** (SP-7, `REQ-FX-006` SP-3) llega como `ManualRate` y se congela con `rate_source = manual` y `rate_published_at` nula: no la publicó nadie. La tasa manual **configurada** por el negocio (`REQ-FX-003`) es otra cosa: llega como `RateSnapshot` con la fecha en que se fijó, y esa sí se guarda. `[05 §5]` corregido.
+>
+> Y la transición de RB-7 y RB-8 no la hace `PaymentApplier`: la decide `LayawayBalanceRecalculator` (`T-057`) al recalcular, y la escribe la máquina. Ver la nota de `REQ-PAY-008`.
+
 **Fuera de alcance inmediato**
 - Anulación o reverso de una aprobación.
 - Crédito a favor del cliente por excedentes.

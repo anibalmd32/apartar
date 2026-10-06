@@ -49,7 +49,7 @@ use LogicException;
  * @property string $declared_amount en su moneda, con dos decimales
  * @property string $rate_applied ocho decimales; `1` en un pago en dólares (`REQ-FX-006` RB-4)
  * @property RateSource $rate_source
- * @property \Illuminate\Support\Carbon|null $rate_published_at nula solo con una tasa manual
+ * @property \Illuminate\Support\Carbon|null $rate_published_at nula con una tasa escrita a mano al conciliar, o en un pago en USD sin tasa disponible (`T-058`)
  * @property \Illuminate\Support\Carbon $settled_at
  * @property int|null $registered_by quién lo registró a mano
  * @property string|null $note
