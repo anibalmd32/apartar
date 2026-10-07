@@ -82,6 +82,22 @@ it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua
     expect(screen.getByRole('region', { name: 'Dónde pagar' })).toBeInTheDocument();
 });
 
+/** `REQ-PAY-001` · al volver del formulario, el aviso de que el comprobante llegó, y el botón para subir otro. */
+it('pinta el aviso de la acción anterior y el botón de subir comprobante', () => {
+    usePage.mockReturnValue({
+        props: {
+            auth: { portal: { fullName: 'María González' } },
+            currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: { rate: null } },
+            status: 'Recibimos tu comprobante. Lo revisaremos pronto.',
+        },
+    });
+
+    render(<LayawayShow {...props({ receiptUrl: '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante' })} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Recibimos tu comprobante. Lo revisaremos pronto.');
+    expect(screen.getByRole('link', { name: 'Subir comprobante' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante');
+});
+
 /** `REQ-LAY-008` RB-1 y RB-2 · liquidar no tiene descuento, y el equivalente en bolívares puede moverse. */
 it('avisa de que liquidar no tiene descuento y de que los bolívares se fijan al pagar', () => {
     const { rerender } = render(<LayawayShow {...props()} />);

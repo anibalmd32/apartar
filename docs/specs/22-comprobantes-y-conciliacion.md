@@ -134,6 +134,8 @@ final readonly class SubmitReceiptData
 - Anti-`SHALLOW`: `SubmitReceiptAction::handle()` (hash, duplicados por organización, validación de la cuenta de cobro, almacenamiento, creación, broadcast, telemetría) y `PaymentMethod::requiresReference()`/`identifierLabel()` superan 4 líneas junto a sus tipos.
 - Tests: crea en `pending_review` sin tocar el balance; exige referencia según método; la misma referencia en otra organización se acepta (test explícito de SP-3); cuenta de cobro ajena rechazada (fuga); `paid_at` futura rechazada; terminal rechazado; rollback elimina el archivo; **se acepta con la cuota de almacenamiento agotada** (test de RB-10); funciona con organización suspendida.
 
+> **Cómo quedó, en `T-059`.** **El botón de la página de gracias del catálogo lleva al formulario del portal** (`/mi-cuenta/apartados/{code}/comprobante`): crear un apartado no abre sesión, así que sin ella `EnsurePortalSession` pide documento y código y `redirect()->intended()` vuelve al formulario. Un apartado que ya no cobra es `403` antes de validar (SP-4, `StoreReceiptRequest::authorize()`). La fecha de pago se acota en el **calendario del negocio**, del día de creación del apartado a hoy (RB-4), con los mismos bordes que recibe el formulario. El importe sugerido (RB-9) es `NextPayment` —el mismo del detalle del apartado—, en crudo en dólares y, con tasa, en bolívares a la de esa organización. El límite de RB-12 es el limitador `comprobantes`, **por ficha**. **Lo que no hace todavía**: difundir a la bandeja (RB-8) es de `T-060` con `ReceiptSubmitted`, y emitir `receipt_uploaded` es de `T-084`. **RB-10**: nada mide aún el almacenamiento (`T-066`), y el test afirma que la subida se acepta con el contador de `storage_mb` en el techo.
+
 ---
 
 ### REQ-PAY-002 · Almacenamiento privado y acceso firmado
@@ -187,6 +189,8 @@ final readonly class SubmitReceiptData
 - Anti-`SHALLOW`: `SignedFileUrl::forReceipt()` (TTL por audiencia + firma) y `ReceiptFileController::__invoke()` (firma, policy, pertenencia al tenant, existencia, `stream` con cabeceras) superan 4 líneas.
 - Tests: URL sin firma `403`; firma caducada `403`; firma válida de otro cliente `403`; **firma válida de otra organización `403`**; MIME falso rechazado; archivo ausente `404`; cabeceras `no-store`; la ruta física incluye el `organization_id`; `PlatformAdmin` sin grant `403`.
 
+> **Cómo quedó, en `T-059`.** Disco `receipts` (`storage/app/private/receipts`, `serve => false`), y `file_path` relativo a él: **`{organization_id}/{uuid}.{ext}`**, con la organización leída **del apartado** y no del contexto de la petición (RB-4, RB-7). Lo sirven dos rutas, una por audiencia —portal con URL de 5 min y backoffice con 15—, por los motivos de [05 §7.6]. Con ellas, **una firma válida abierta desde otra organización da `404` y no `403`**: lo exige `REQ-ORG-002` RB-6 para todo recurso ajeno, y no confirma que exista; el `403` queda para la firma ausente, caducada o manipulada y para la policy (otro cliente del mismo negocio). **El tope de 5 MB es una constante** (`ReceiptFile::MAX_SIZE_MB`) mientras no exista quien lea `platform_settings` (`T-086`), y un test se pone rojo el día que llegue. **La recompresión (RB-6) solo toca JPEG y PNG**: el GD del contenedor no codifica WebP, y un PDF no se recomprime; mide los píxeles antes de abrir la imagen (SP-8, 40 Mpx) y escribe a un temporal que solo sustituye al original si sale bien (SP-7). `file_hash` sigue siendo el del archivo subido (`REQ-PAY-003` RB-7). **RB-11 (`PlatformAdmin` sin grant) se deniega por construcción**: no hay modelo, guard ni ruta de plataforma todavía, y su caso de prueba es de `T-086`.
+
 ---
 
 ### REQ-PAY-003 · Detección de comprobantes duplicados
@@ -230,6 +234,8 @@ final readonly class SubmitReceiptData
 - Tipos esperados: `DuplicateReceiptException`, `UniqueReceiptFingerprint`, `DuplicateCriterion`.
 - Anti-`SHALLOW`: `UniqueReceiptFingerprint::validate()` (dos criterios, acotados por organización, caso de referencia nula) supera 4 líneas junto a su clase.
 - Tests: mismo archivo en la misma organización bloqueado; **mismo archivo y misma referencia en otra organización permitidos** (test explícito de RB-4); referencia nula no bloquea; rechazado no libera la referencia; carrera concurrente produce un solo registro; el mensaje no filtra datos ajenos.
+
+> **Cómo quedó, en `T-059`.** La comprobación vive en dos sitios con la misma regla: `UniqueReceiptFingerprint` en el formulario —para que el error salga junto a su campo— y `SubmitReceiptAction` bajo el bloqueo del apartado, que además convierte el choque de cualquiera de los dos únicos en `DuplicateReceiptException` con su `DuplicateCriterion` (SP-5): la carrera la gana la base. El error vuelve al campo `file` (hash) o `reference` (banco + referencia) con «Este comprobante ya fue reportado.», sin nada de otros clientes (RB-6).
 
 ---
 

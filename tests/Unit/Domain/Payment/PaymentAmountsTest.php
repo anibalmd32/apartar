@@ -27,3 +27,15 @@ it('rechaza cero, negativos y lo que no es un decimal de dos cifras', function (
     'separador de millar' => ['1.234,50'],
     'vacío' => [''],
 ]);
+
+/**
+ * `T-059` · lo que cabe en `declared_amount DECIMAL(16,2)`: catorce cifras
+ * enteras. La decimoquinta no es un `500` del `INSERT`, es un error de su
+ * campo. Los ceros a la izquierda no cuentan.
+ */
+it('acota las cifras enteras a lo que cabe en la columna', function (): void {
+    expect(PaymentAmounts::assertPositive('99999999999999.99', Currency::VES, 'declarado')->cents)->toBe(9_999_999_999_999_999)
+        ->and(PaymentAmounts::assertPositive('000000000000001.00', Currency::VES, 'declarado')->cents)->toBe(100);
+
+    PaymentAmounts::assertPositive('100000000000000', Currency::VES, 'declarado');
+})->throws(InvalidArgumentException::class, 'como mucho 14 cifras');

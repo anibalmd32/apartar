@@ -16,6 +16,7 @@ use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
+use App\Http\Controllers\ReceiptFileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -318,6 +319,21 @@ Route::prefix('backoffice')->group(function (): void {
                 Route::post('apartados/{layaway:code}/cancelar', [LayawayController::class, 'cancel'])->name('layaways.cancel');
                 Route::post('apartados/{layaway:code}/entregar', [LayawayController::class, 'deliver'])->name('layaways.deliver');
                 Route::patch('cuotas/{installment}/reprogramar', [InstallmentController::class, 'reschedule'])->name('installments.reschedule');
+
+                /*
+                | El archivo del comprobante (`REQ-PAY-002`), para el equipo.
+                | Sobrevive a la suspensión: sin verlo no se aprueba, y aprobar
+                | comprobantes es lo que `REQ-ORG-008` RB-3 conserva.
+                |
+                | Firmada (`SignedFileUrl::forBackoffice`, 15 minutos) además de
+                | la sesión, el tenant y `ReceiptPolicy`. `signed` corre detrás
+                | del binding, así que el `{receipt}` de otro negocio es `404`
+                | aunque la URL esté bien firmada. La del cliente está en
+                | `portal.php`; el porqué de dos rutas, en el controlador.
+                */
+                Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
+                    ->middleware('signed')
+                    ->name('receipts.file');
             });
 
             /*

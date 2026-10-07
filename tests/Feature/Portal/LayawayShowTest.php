@@ -18,6 +18,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\CreatesReceipts;
 use Tests\TestCase;
 
 /**
@@ -29,7 +30,7 @@ use Tests\TestCase;
  */
 final class LayawayShowTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
 
     private Organization $organization;
 
@@ -75,6 +76,8 @@ final class LayawayShowTest extends TestCase
      */
     public function test_pending_down_payment_shows_instructions_and_payment_accounts_instead_of_a_schedule(): void
     {
+        // Un plazo que todavía no venció: uno pasado ya no se enseña (SP-2).
+        CarbonImmutable::setTestNow('2026-09-12 10:00:00');
         DB::table('layaways')->where('id', $this->layaway->getKey())->update(['expires_at' => '2026-09-13 10:00:00']);
 
         $this->show()->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
@@ -88,7 +91,7 @@ final class LayawayShowTest extends TestCase
             ->where('nextPaymentSuggestion.amount.cents', 5_000)
             ->has('paymentAccounts', 1)
             ->where('paymentAccounts.0.holderName', 'Ana Pérez')
-            ->where('receiptUrl', null));
+            ->where('receiptUrl', route('portal.receipts.create', ['code' => $this->layaway->code])));
     }
 
     /**
@@ -150,7 +153,33 @@ final class LayawayShowTest extends TestCase
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->where('layaway.statusMessage', 'Este apartado fue cancelado por el negocio. Si tienes dudas, escríbele.')
             ->where('nextPaymentSuggestion', null)
-            ->has('paymentAccounts', 0));
+            ->has('paymentAccounts', 0)
+            // `T-059` · un apartado que ya no cobra no ofrece subir comprobante.
+            ->where('receiptUrl', null));
+    }
+
+    /**
+     * SP-2 (`T-059`) · esperando la inicial con el plazo vencido: con un
+     * comprobante en revisión, la reserva está protegida y se dice; sin él,
+     * no se promete nada. En los dos casos, un plazo pasado no se enseña como
+     * plazo.
+     */
+    public function test_an_expired_window_with_a_receipt_in_review_says_the_reservation_is_protected(): void
+    {
+        CarbonImmutable::setTestNow('2026-09-20 10:00:00');
+        DB::table('layaways')->where('id', $this->layaway->getKey())->update(['expires_at' => '2026-09-13 10:00:00']);
+
+        $this->show()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.expiresAt', null)
+            ->where('layaway.statusMessage', null));
+
+        $this->receiptFor($this->layaway);
+        $this->withoutOrganization();
+
+        $this->show()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.expiresAt', null)
+            ->where('layaway.statusMessage', 'Tu comprobante está en revisión: tu reserva está protegida aunque haya pasado el plazo de la inicial.')
+            ->where('receiptUrl', route('portal.receipts.create', ['code' => $this->layaway->code])));
     }
 
     /**

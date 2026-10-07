@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
-use Symfony\Component\Finder\Finder;
 use Tests\TestCase;
 
 /**
@@ -319,7 +318,7 @@ final class LayawayPageTest extends TestCase
             ->where('layaway.hasEmail', true)
             ->has('paymentAccounts', 1)
             ->where('paymentAccounts.0.identifier', '0414-7654321')
-            ->where('receiptUrl', null));
+            ->where('receiptUrl', route('portal.receipts.create', ['code' => $layaway->code])));
     }
 
     /**
@@ -352,18 +351,6 @@ final class LayawayPageTest extends TestCase
     // -------------------------------------------------------------------
     // Lo aplazado, en rojo el día que llegue
     // -------------------------------------------------------------------
-
-    /**
-     * El botón de subir el comprobante es de `T-059`. Hasta entonces
-     * `receiptUrl` llega nulo y la página no lo pinta.
-     */
-    public function test_the_receipt_upload_is_still_pending(): void
-    {
-        $found = Finder::create()->files()->in([app_path(), resource_path('js')])->name(['SubmitReceiptAction.php', 'ReceiptCreate.tsx']);
-
-        $this->assertSame(0, iterator_count($found),
-            'Llegó la subida del comprobante (T-059): da a receiptUrl su ruta en LayawayController::thanks() y borra este caso.');
-    }
 
     // -------------------------------------------------------------------
 

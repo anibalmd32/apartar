@@ -14,11 +14,13 @@ use App\Http\Middleware\ResolveCatalogTenant;
 use App\Http\Middleware\ResolveStorefrontTenant;
 use App\Http\Middleware\ResolveTenant;
 use App\Models\Catalog;
+use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Closure;
+use Illuminate\Auth\AuthManager;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +32,7 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionNamedType;
+use Tests\Concerns\CreatesLayaways;
 use Tests\TestCase;
 
 /**
@@ -54,7 +57,7 @@ use Tests\TestCase;
  */
 final class CrossTenantAccessTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesLayaways, RefreshDatabase;
 
     /**
      * Parámetros de ruta que son **un identificador y no un modelo**, con su
@@ -84,7 +87,9 @@ final class CrossTenantAccessTest extends TestCase
             .'apartado de otro negocio— lo prueba `LayawayThanksIsolationTest`: bajo el catálogo de la URL, el '
             .'código ajeno no existe y la respuesta es `404`. Y el detalle del portal (`T-051`): ahí el código se '
             .'busca entre las fichas de la sesión (`PortalContext::findLayaway()`), y el `404` de un código de '
-            .'otra persona o de otro negocio lo afirma `PortalLayawayIsolationTest`.',
+            .'otra persona o de otro negocio lo afirma `PortalLayawayIsolationTest`. El formulario del comprobante '
+            .'(`T-059`, `GET` y `POST /mi-cuenta/apartados/{code}/comprobante`) busca igual, y su `404` lo afirma '
+            .'`PortalReceiptIsolationTest`.',
     ];
 
     /**
@@ -448,14 +453,23 @@ final class CrossTenantAccessTest extends TestCase
             );
         }
 
-        $actor = $this->actorFor($surface, $own);
+        [$actor, $guard] = $this->actorFor($surface, $own);
 
         $this->withoutOrganization();
 
         $method = $this->methodOf($route);
         $url = $this->urlFor($route, $parameters);
 
-        $response = $this->actingAs($actor)->call($method, $url);
+        // `actingAs()` con guard lo deja como el guard por defecto para el
+        // resto del test. Tras un caso del portal, las rutas que vienen
+        // después —la vitrina, que comparte el usuario de `web`— leerían una
+        // ficha de cliente donde esperan un usuario. Se devuelve al de antes.
+        $default = $this->app->make(AuthManager::class)->getDefaultDriver();
+        try {
+            $response = $this->actingAs($actor, $guard)->call($method, $url);
+        } finally {
+            $this->app->make(AuthManager::class)->shouldUse($default);
+        }
 
         $this->assertSame(404, $response->getStatusCode(), sprintf(
             '%s devolvió %d con el recurso de otra organización; REQ-ORG-002 RB-6 exige 404.',
@@ -576,24 +590,38 @@ final class CrossTenantAccessTest extends TestCase
     }
 
     /**
-     * Quién pide el recurso ajeno, según la superficie.
+     * Quién pide el recurso ajeno, según la superficie, y con qué guard.
      *
-     * Solo el backoffice tiene hoy con qué autenticarse; la pública no lo
-     * necesita y tiene su propio caso más arriba. El portal llega con H3
-     * —necesita `Customer`— y hasta entonces **falla en voz alta** en lugar de
-     * omitir el caso: enseñarle al mecanismo a situarse en una superficie nueva
-     * es parte de añadirla.
+     * El backoffice, con un usuario de la organización propia en `web`. El
+     * portal (`T-059`, con la primera ruta suya que enlaza un modelo), con la
+     * ficha de un apartado de la propia en `customer`: es lo que
+     * `ResolvePortalTenant` lee para fijar el tenant. No hay *factory* de
+     * `Customer` —la ficha solo la crea `ResolveCustomerAction`—, así que sale
+     * de `layawayIn()`, como en los tests del portal.
+     *
+     * La pública no lo necesita y tiene su propio caso más arriba. Cualquier
+     * otra superficie **falla en voz alta** en lugar de omitir el caso:
+     * enseñarle al mecanismo a situarse en una superficie nueva es parte de
+     * añadirla.
+     *
+     * @return array{0: User|Customer, 1: string}
      */
-    private function actorFor(TenantSurface $surface, Organization $organization): User
+    private function actorFor(TenantSurface $surface, Organization $organization): array
     {
-        if ($surface !== TenantSurface::Backoffice) {
-            $this->fail(sprintf(
-                'La suite no sabe autenticarse en la superficie %s; enséñale antes de enrutarla.',
-                $surface->value,
-            ));
+        if ($surface === TenantSurface::Backoffice) {
+            return [$this->withinOrganization($organization, fn (): User => User::factory()->create()), 'web'];
         }
 
-        return $this->withinOrganization($organization, fn (): User => User::factory()->create());
+        if ($surface === TenantSurface::Portal) {
+            $layaway = $this->layawayIn($organization);
+
+            return [$this->withinOrganization($organization, fn (): Customer => Customer::query()->findOrFail($layaway->customer_id)), 'customer'];
+        }
+
+        $this->fail(sprintf(
+            'La suite no sabe autenticarse en la superficie %s; enséñale antes de enrutarla.',
+            $surface->value,
+        ));
     }
 
     /**

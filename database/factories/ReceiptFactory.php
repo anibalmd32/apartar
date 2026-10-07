@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Domain\Money\Currency;
 use App\Domain\Payment\PaymentMethod;
+use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\ReceiptStatus;
 use App\Models\Layaway;
 use App\Models\Receipt;
@@ -20,8 +21,10 @@ use Illuminate\Support\Str;
  *
  * Existe para los mecanismos que necesitan **un comprobante cualquiera** —el
  * de `CrossTenantAccessTest`, cuando una ruta lo enlace (`T-059`, `T-060`)—.
- * **No hay archivo**: la ruta no existe y el hash es aleatorio. La subida de
- * verdad es `SubmitReceiptAction` (`T-059`).
+ * **No hay archivo**: la ruta tiene la forma de las de verdad
+ * —`{organization_id}/{uuid}.jpg`, la de `ReceiptFile::pathFor()`, con la
+ * organización del apartado— pero nada la escribe, y el hash es aleatorio. La
+ * subida de verdad es `SubmitReceiptAction` (`T-059`).
  *
  * La organización y la ficha son las del apartado, leídas de su fila: sin
  * contexto, `CreatesWithinTenant` crearía una organización nueva y el
@@ -53,7 +56,8 @@ class ReceiptFactory extends Factory
             'declared_amount' => '850.00',
             'declared_currency' => Currency::VES,
             'note' => null,
-            'file_path' => 'receipts/'.Str::uuid().'.jpg',
+            // Después de `organization_id`: la recibe ya resuelta.
+            'file_path' => fn (array $attributes): string => ReceiptFile::pathFor((int) $attributes['organization_id'], 'jpg'),
             'file_hash' => hash('sha256', (string) Str::uuid()),
             'file_mime' => 'image/jpeg',
             'file_size' => 120_000,

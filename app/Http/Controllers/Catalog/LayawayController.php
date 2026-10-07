@@ -190,8 +190,10 @@ final class LayawayController extends Controller
                 'hasEmail' => $customer?->email !== null,
             ],
             'paymentAccounts' => array_map(fn ($account): array => $account->toArray(), $this->paymentAccounts->all()),
-            // `T-059` · el comprobante. Hasta entonces, sin destino.
-            'receiptUrl' => null,
+            // `T-059` · el formulario del comprobante vive en el portal. Sin
+            // sesión, el acceso pide documento y código y vuelve aquí
+            // (`redirect()->intended()`): crear un apartado no abre sesión.
+            'receiptUrl' => route('portal.receipts.create', ['code' => $layaway->code]),
         ]);
     }
 

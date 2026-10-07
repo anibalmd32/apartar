@@ -95,7 +95,18 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('registro', fn (Request $request) => Limit::perHour(5)->by($request->ip() ?? 'sin-ip'));
         RateLimiter::for('apartados', fn (Request $request) => Limit::perMinute(self::LAYAWAY_SUBMISSIONS_PER_MINUTE)->by($request->ip() ?? 'sin-ip'));
+        RateLimiter::for('comprobantes', fn (Request $request) => Limit::perHour(self::RECEIPT_SUBMISSIONS_PER_HOUR)
+            ->by('ficha:'.(Auth::guard('customer')->id() ?? $request->ip() ?? 'sin-ip')));
     }
+
+    /**
+     * Comprobantes por hora y **por ficha** de cliente (`REQ-PAY-001` RB-12,
+     * `T-059`). Por ficha y no por IP: la ruta va detrás de la sesión del
+     * portal, y una familia que comparte la conexión del hogar no se reparte
+     * el cupo. Diez cubre a quien reintenta un comprobante rechazado varias
+     * veces; un bucle llenaría la bandeja del negocio de capturas.
+     */
+    public const RECEIPT_SUBMISSIONS_PER_HOUR = 10;
 
     /** Envíos del formulario de apartado por minuto y por IP (`T-045b`). */
     public const LAYAWAY_SUBMISSIONS_PER_MINUTE = 10;

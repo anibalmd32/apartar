@@ -536,6 +536,7 @@ Esta sección no es documental: **`REQ-QAX-008` deriva sus tests de fuga de aqu�
 | GET | `/` (dashboard) | `account`\|`customer` | T por ficha |
 | GET | `/apartados/{code}` | `account`\|`customer` | T por ficha |
 | GET · POST | `/apartados/{code}/comprobante` | `account`\|`customer` | T por ficha |
+| GET | `/comprobantes/{receipt}/archivo` | `account`\|`customer` + `signed` | T por ficha |
 | GET | `/novedades` | `account` | — |
 | GET · PATCH | `/suscripciones`, `/suscripciones/{catalog}` | `account` | — |
 | GET · POST | `/reclamar` | `account` | — |
@@ -585,10 +586,12 @@ Esta sección no es documental: **`REQ-QAX-008` deriva sus tests de fuga de aqu�
 
 | Método | URI | Nota |
 |---|---|---|
-| GET | `/archivos/comprobantes/{receipt}` | firmada + policy + pertenencia al tenant |
+| ~~GET~~ | ~~`/archivos/comprobantes/{receipt}`~~ | **sustituida en `T-059`** por dos rutas, una por audiencia (nota abajo) |
 | GET | `/invitacion/{token}`, POST idem | aceptación de invitación de equipo |
 | GET | `/api/tasa` | público, cacheado 60 s |
 | POST | `/api/telemetry` | público, rate limit 60/min |
+
+> **El archivo del comprobante se sirve por dos rutas, una por audiencia (`T-059`).** La ruta única `/archivos/comprobantes/{receipt}` «fuera de grupo» no se puede construir con el tenancy de este proyecto: sin tenant fijado, el *binding* implícito de `Receipt` lanza `MissingTenantContextException` —un `500`—, y una ruta no puede declarar dos superficies (`CrossTenantAccessTest`). Así que hay una por quien mira, cada una con su tenant: **`GET /mi-cuenta/comprobantes/{receipt}/archivo`** (`portal.receipts.file`: `portal` + `portal-tenant` + `signed`, URL de **5 min**) y **`GET /backoffice/comprobantes/{receipt}/archivo`** (`receipts.file` (el grupo del backoffice no prefija nombres; `SignedFileUrl::BACKOFFICE_ROUTE`): el grupo del backoffice + `during-suspension` + `signed`, **15 min**), las dos sobre un único `ReceiptFileController` y con las URL de `SignedFileUrl::forCustomer()` / `forBackoffice()`. El triple control de `REQ-PAY-002` RB-2 queda: firma (403 si falta, caduca o se manipula), policy (`ReceiptPolicy`: otro cliente o un usuario sin la capacidad → 403) y pertenencia al tenant (el *binding*). **Una firma válida abierta desde otra organización da `404`, no el `403` de SP-5**: es lo que exige `REQ-ORG-002` RB-6 para todo recurso ajeno, y no revela que exista. Anotado en [22].
 
 ### 7.7 Canales de broadcast — `routes/channels.php`
 

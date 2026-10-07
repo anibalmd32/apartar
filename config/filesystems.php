@@ -47,6 +47,17 @@ return [
             'throw' => false,
         ],
 
+        // Comprobantes de pago (`REQ-PAY-002`): privado, sin URL pública y
+        // con la organización en la ruta (`{organization_id}/{uuid}.{ext}`).
+        // Solo se sirve por la ruta firmada de `ReceiptFileController`.
+        'receipts' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/receipts'),
+            'serve' => false,
+            'throw' => true,
+            'visibility' => 'private',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -36,6 +36,12 @@ use Illuminate\Translation\PotentiallyTranslatedString;
  * para nginx, así que las dos tienen que coincidir. Es la misma precaución que
  * `media-library.php` toma con su lista de extensiones bloqueadas, escrita
  * donde se decide qué entra.
+ *
+ * ## Dos listas cerradas, no una abierta
+ *
+ * `new RealMimeType` es la del catálogo; `RealMimeType::receipts()`, la del
+ * comprobante de pago, que admite además PDF (`REQ-PAY-002` RB-5, SP-1). Cada
+ * sitio que sube archivos elige la suya y ninguno hereda lo que otro necesita.
  */
 final class RealMimeType implements ValidationRule
 {
@@ -54,6 +60,44 @@ final class RealMimeType implements ValidationRule
     ];
 
     /**
+     * Los tipos de un comprobante de pago (`REQ-PAY-002` RB-5): los del
+     * catálogo y el PDF, que es como muchos bancos entregan el justificante.
+     *
+     * Es una lista aparte y no una ampliación de `ALLOWED` porque esa la lee
+     * también `Product::acceptsMimeTypes()`: un PDF en la galería de un
+     * producto, servido desde el disco público, es justo lo que la lista
+     * cerrada existe para impedir.
+     *
+     * @var array<string, list<string>>
+     */
+    public const RECEIPT_TYPES = self::ALLOWED + ['application/pdf' => ['pdf']];
+
+    /**
+     * Cómo se nombra cada tipo en el mensaje de error.
+     *
+     * @var array<string, string>
+     */
+    private const LABELS = [
+        'image/jpeg' => 'JPG',
+        'image/png' => 'PNG',
+        'image/webp' => 'WebP',
+        'application/pdf' => 'PDF',
+    ];
+
+    /**
+     * @param  array<string, list<string>>  $allowed  tipo real => extensiones que le corresponden
+     */
+    public function __construct(private readonly array $allowed = self::ALLOWED) {}
+
+    /**
+     * La variante del comprobante de pago: imágenes y PDF.
+     */
+    public static function receipts(): self
+    {
+        return new self(self::RECEIPT_TYPES);
+    }
+
+    /**
      * @param  Closure(string): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -70,20 +114,51 @@ final class RealMimeType implements ValidationRule
         // cabecera que mandó el navegador.
         $mime = (string) $value->getMimeType();
 
-        if (! array_key_exists($mime, self::ALLOWED)) {
-            $fail('El archivo no es una imagen JPG, PNG ni WebP. Comprueba que no sea otra cosa con el nombre cambiado.');
+        if (! array_key_exists($mime, $this->allowed)) {
+            $fail(sprintf('El archivo no es %s. Comprueba que no sea otra cosa con el nombre cambiado.', $this->describeAllowed()));
 
             return;
         }
 
         $extension = mb_strtolower($value->getClientOriginalExtension());
 
-        if (! in_array($extension, self::ALLOWED[$mime], true)) {
+        if (! in_array($extension, $this->allowed[$mime], true)) {
             $fail(sprintf(
                 'El archivo es %s pero su nombre termina en «.%s». Renómbralo para que coincidan.',
                 $mime,
                 $extension,
             ));
         }
+    }
+
+    /**
+     * Lo que se admite, dicho como lo leería quien sube: «una imagen JPG, PNG
+     * ni WebP» para el catálogo, «una imagen JPG, PNG o WebP ni un PDF» para
+     * el comprobante. Un mensaje que dijera solo «imagen» a quien acaba de
+     * subir un PDF válido de su banco le haría creer que el PDF no vale.
+     */
+    private function describeAllowed(): string
+    {
+        $images = [];
+        $documents = [];
+
+        foreach (array_keys($this->allowed) as $mime) {
+            $label = self::LABELS[$mime] ?? $mime;
+
+            if (str_starts_with($mime, 'image/')) {
+                $images[] = $label;
+            } else {
+                $documents[] = 'un '.$label;
+            }
+        }
+
+        $parts = [];
+
+        if ($images !== []) {
+            $last = array_pop($images);
+            $parts[] = 'una imagen '.($images === [] ? $last : implode(', ', $images).($documents === [] ? ' ni ' : ' o ').$last);
+        }
+
+        return implode(' ni ', [...$parts, ...$documents]);
     }
 }

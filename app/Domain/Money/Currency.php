@@ -30,4 +30,18 @@ enum Currency: string
 
     /** Bolívar venezolano: la moneda en la que se muestra y se paga. */
     case VES = 'VES';
+
+    /**
+     * Cómo se nombra la moneda en un selector (`T-059`: el formulario del
+     * comprobante, `REQ-PAY-001` RB-2). Es un nombre, no un símbolo: el
+     * importe sigue formateándolo `MoneyFormatter`, y el frontend no tiene
+     * diccionario propio de monedas.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::USD => 'Dólares (USD)',
+            self::VES => 'Bolívares (VES)',
+        };
+    }
 }

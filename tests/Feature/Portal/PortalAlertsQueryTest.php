@@ -218,7 +218,7 @@ final class PortalAlertsQueryTest extends TestCase
             ->where('alerts.0.minutesLeft', 40)
             ->where('alerts.0.layawayCode', $layaway->code)
             ->where('alerts.0.businessName', 'Ferretería Oriente')
-            ->where('alerts.0.actionUrl', route('portal.layaways.show', ['code' => $layaway->code])));
+            ->where('alerts.0.actionUrl', route('portal.receipts.create', ['code' => $layaway->code])));
 
         CarbonImmutable::setTestNow('2026-09-27 12:40:00');
 

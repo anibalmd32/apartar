@@ -57,6 +57,9 @@ class Receipt extends Model
     /** @use HasFactory<ReceiptFactory> */
     use BelongsToOrganization, HasFactory;
 
+    /** El disco privado del archivo; `file_path` es relativo a él (`REQ-PAY-002`). */
+    public const DISK = 'receipts';
+
     /**
      * @return BelongsTo<Layaway, $this>
      */

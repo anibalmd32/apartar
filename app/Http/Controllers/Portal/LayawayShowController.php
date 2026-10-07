@@ -8,7 +8,8 @@ use App\Domain\Account\PortalContext;
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\LayawayStatus;
-use App\Domain\Money\Money;
+use App\Domain\Layaway\NextPayment;
+use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
@@ -49,8 +50,10 @@ use Inertia\Response;
  *    **neutro**: el motivo que escribió el negocio no sale de aquí
  *    (`REQ-LAY-009` RB-8), y por eso este controlador no lo lee.
  *
- * El botón de subir comprobante es de `T-059` (`receiptUrl`, hoy `null`), el
- * chat de H7 y el historial de pagos y comprobantes de `T-061`.
+ * El botón de subir comprobante lleva al formulario de `T-059` mientras el
+ * apartado cobre; el chat es de H7 y el historial de pagos y comprobantes de
+ * `T-061`. El pago sugerido sale de `NextPayment`, el mismo que precarga el
+ * importe del formulario.
  */
 final class LayawayShowController extends Controller
 {
@@ -61,6 +64,7 @@ final class LayawayShowController extends Controller
         private readonly Settings $settings,
         private readonly LimitEnforcer $limits,
         private readonly ActivePaymentAccountsQuery $paymentAccounts,
+        private readonly LayawayReceipts $receipts,
     ) {}
 
     public function __invoke(Request $request, string $code, PortalContext $portal): Response
@@ -76,11 +80,13 @@ final class LayawayShowController extends Controller
             'layaway' => [
                 ...(new LayawaySummaryResource($layaway))->resolve($request),
                 'downPayment' => $this->money($layaway->terms()->totalDownPayment()),
-                'expiresAt' => $layaway->status === LayawayStatus::PendingDownPayment
+                // Un plazo vencido no se enseña como plazo: o lo protege un
+                // comprobante en revisión (SP-2) o el job lo expirará.
+                'expiresAt' => $layaway->status === LayawayStatus::PendingDownPayment && ! $this->windowClosed($layaway)
                     ? $layaway->expires_at?->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [a las] h:mm a')
                     : null,
                 'activatedAt' => $layaway->activated_at?->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
-                'statusMessage' => $this->statusMessage($layaway->status),
+                'statusMessage' => $this->statusMessage($layaway),
             ],
             'installments' => $installments
                 ->map(fn (Installment $installment): array => (new InstallmentRowResource($installment, $calendar))->resolve($request))
@@ -92,7 +98,8 @@ final class LayawayShowController extends Controller
                 ? array_map(fn (PaymentAccountView $account): array => $account->toArray(), $this->paymentAccounts->all())
                 : [],
             'catalogUrl' => $this->catalogUrl($layaway),
-            'receiptUrl' => null,
+            // `REQ-PAY-001` RB-1 · solo si el apartado todavía cobra (SP-4).
+            'receiptUrl' => $layaway->status->acceptsPayments() ? route('portal.receipts.create', ['code' => $layaway->code]) : null,
         ]);
     }
 
@@ -105,37 +112,45 @@ final class LayawayShowController extends Controller
      */
     private function suggestion(Layaway $layaway, array $installments): ?array
     {
-        if (! $layaway->status->acceptsPayments()) {
-            return null;
-        }
+        $next = NextPayment::for($layaway, $installments);
 
-        if ($layaway->status === LayawayStatus::PendingDownPayment) {
-            return ['kind' => 'down_payment', 'installmentNumber' => null, 'amount' => $this->money($layaway->terms()->totalDownPayment()), 'payOff' => $this->money($layaway->remaining_cents)];
-        }
-
-        foreach ($installments as $installment) {
-            $pending = $installment->amount_cents->cents - $installment->paid_cents->cents;
-
-            if ($pending > 0) {
-                return ['kind' => 'installment', 'installmentNumber' => $installment->number, 'amount' => $this->money(new Money($pending)), 'payOff' => $this->money($layaway->remaining_cents)];
-            }
-        }
-
-        return null;
+        return $next === null ? null : [
+            'kind' => $next->kind->value,
+            'installmentNumber' => $next->installmentNumber,
+            'amount' => $this->money($next->amount),
+            'payOff' => $this->money($layaway->remaining_cents),
+        ];
     }
 
     /**
      * SP-3 y SP-4 · lo que se le dice al cliente de un apartado terminal.
      * Cancelado es **neutro**: el motivo del negocio no viaja.
+     *
+     * SP-2 (`T-059`) · esperando la inicial con el plazo ya vencido y un
+     * comprobante en revisión, la reserva **está protegida**
+     * (`REQ-LAY-006` RB-2: el job no la expira), y eso es lo que hay que
+     * decirle a quien ve pasada la fecha que se le dio.
      */
-    private function statusMessage(LayawayStatus $status): ?string
+    private function statusMessage(Layaway $layaway): ?string
     {
-        return match ($status) {
+        return match ($layaway->status) {
             LayawayStatus::Cancelled => 'Este apartado fue cancelado por el negocio. Si tienes dudas, escríbele.',
             LayawayStatus::Expired => 'Este apartado venció porque la inicial no llegó a tiempo, y el producto volvió a la venta.',
             LayawayStatus::Completed => 'Este apartado está pagado. ¡Gracias!',
-            LayawayStatus::PendingDownPayment, LayawayStatus::Active, LayawayStatus::Overdue => null,
+            LayawayStatus::PendingDownPayment => $this->windowClosed($layaway) && $this->receipts->holdExpiration($layaway)
+                ? 'Tu comprobante está en revisión: tu reserva está protegida aunque haya pasado el plazo de la inicial.'
+                : null,
+            LayawayStatus::Active, LayawayStatus::Overdue => null,
         };
+    }
+
+    /**
+     * Si ya pasó el plazo de la inicial (`expires_at`). Un instante, no un
+     * día: lo mismo que mira el job de expiración.
+     */
+    private function windowClosed(Layaway $layaway): bool
+    {
+        return $layaway->expires_at !== null && $layaway->expires_at->isPast();
     }
 
     /**

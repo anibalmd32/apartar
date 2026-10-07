@@ -1,3 +1,4 @@
+import { Alert } from '@/components/ui/alert';
 import { CurrencyToggle } from '@/features/currency/components/CurrencyToggle';
 import { RateStamp } from '@/features/currency/components/RateStamp';
 import { type CurrencyPageProps } from '@/types/exchange';
@@ -22,7 +23,7 @@ interface PortalLayoutProps {
 }
 
 export default function PortalLayout({ title, businessName, customerName, children }: PortalLayoutProps) {
-    const { currency } = usePage<{ currency: CurrencyPageProps }>().props;
+    const { currency, status } = usePage<{ currency: CurrencyPageProps; status?: string | null }>().props;
 
     return (
         <div className="bg-base-200 min-h-screen">
@@ -50,7 +51,11 @@ export default function PortalLayout({ title, businessName, customerName, childr
                 </div>
             </header>
 
-            <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">{children}</main>
+            <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+                {/* El aviso de la acción anterior, p. ej. «Recibimos tu comprobante» (`REQ-PAY-001`). */}
+                {status ? <Alert tone="success">{status}</Alert> : null}
+                {children}
+            </main>
         </div>
     );
 }

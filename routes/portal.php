@@ -6,6 +6,8 @@ use App\Http\Controllers\Portal\AccessController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\LayawayShowController;
 use App\Http\Controllers\Portal\LoginLinkController;
+use App\Http\Controllers\Portal\ReceiptController;
+use App\Http\Controllers\ReceiptFileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,5 +48,21 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
     Route::middleware(['portal', 'portal-tenant'])->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('apartados/{code}', LayawayShowController::class)->name('layaways.show');
+
+        // `REQ-PAY-001` · reportar un pago. El envío lleva el techo de RB-12:
+        // diez por hora y por ficha (`comprobantes`).
+        Route::get('apartados/{code}/comprobante', [ReceiptController::class, 'create'])->name('receipts.create');
+        Route::post('apartados/{code}/comprobante', [ReceiptController::class, 'store'])
+            ->middleware('throttle:comprobantes')
+            ->name('receipts.store');
+
+        // `REQ-PAY-002` · el archivo del comprobante, para su titular. Firmada
+        // (`SignedFileUrl::forCustomer`, 5 minutos) **además** de la sesión y
+        // el tenant: `signed` corre después del binding, así que el
+        // comprobante de otro negocio es `404` y no `403`. La de su equipo
+        // está en `backoffice.php`; el porqué de dos rutas, en el controlador.
+        Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
+            ->middleware('signed')
+            ->name('receipts.file');
     });
 });

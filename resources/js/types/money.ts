@@ -60,3 +60,12 @@ export interface MoneyView {
      */
     readonly ves: string | null;
 }
+
+/**
+ * Las dos monedas en las que se declara un pago (`REQ-PAY-001` RB-5).
+ *
+ * Espejo de `Currency` en `app/Domain/Money/`. Nombra la moneda, no un importe:
+ * lo que se escribe junto a ella es una cadena decimal que el servidor
+ * convierte al aprobar (`REQ-FX-006`), nunca aquí.
+ */
+export type Currency = 'USD' | 'VES';

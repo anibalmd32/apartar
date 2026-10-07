@@ -27,9 +27,15 @@ use InvalidArgumentException;
 final class PaymentAmounts
 {
     /**
+     * Las cifras enteras que caben en `declared_amount DECIMAL(16,2)`, en
+     * `receipts` y en `payments`: dieciséis menos dos (`T-059`).
+     */
+    public const INTEGER_DIGITS = 14;
+
+    /**
      * @param  string  $what  qué importe es, para el mensaje: «declarado», «conciliado»…
      *
-     * @throws InvalidArgumentException si no es un decimal positivo de hasta dos cifras
+     * @throws InvalidArgumentException si no es un decimal positivo de hasta dos cifras, o no cabe en la columna
      */
     public static function assertPositive(string $amount, Currency $currency, string $what): Money
     {
@@ -37,6 +43,22 @@ final class PaymentAmounts
 
         if ($money->cents <= 0) {
             throw new InvalidArgumentException(sprintf('El importe %s tiene que ser mayor que cero, y es "%s".', $what, $amount));
+        }
+
+        // Un importe con más cifras de las que caben no es un error de forma
+        // sino de columna: pasaría por aquí y el `INSERT` lo rechazaría con un
+        // `500` en vez del `422` de su campo. Es lo mismo que `ManualRate`
+        // hace con la tasa. Los ceros a la izquierda no ocupan sitio.
+        $integer = ltrim(explode('.', ltrim($amount, '-'), 2)[0], '0');
+
+        if (strlen($integer) > self::INTEGER_DIGITS) {
+            throw new InvalidArgumentException(sprintf(
+                'El importe %s tiene como mucho %d cifras antes de los decimales, y "%s" tiene %d.',
+                $what,
+                self::INTEGER_DIGITS,
+                $amount,
+                strlen($integer),
+            ));
         }
 
         return $money;

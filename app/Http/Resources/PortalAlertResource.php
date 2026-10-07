@@ -26,9 +26,9 @@ use LogicException;
  *
  * ## El CTA
  *
- * Cada alerta lleva a la acción que la resuelve (RB-7): hoy, al detalle del
- * apartado, donde están las cuentas de cobro y el importe sugerido. El botón
- * de subir comprobante llega con `T-059` y ese es el sitio al que apuntará.
+ * Cada alerta lleva a la acción que la resuelve (RB-7): las de deuda, al
+ * formulario del comprobante (`T-059`), que ya trae las cuentas de cobro y el
+ * importe sugerido; la de «en revisión», al detalle del apartado.
  *
  * @property PortalAlert $resource
  */
@@ -51,8 +51,25 @@ final class PortalAlertResource extends JsonResource
         return [
             'kind' => $alert->kind->value,
             ...$this->fields($alert),
-            'actionUrl' => route('portal.layaways.show', ['code' => $alert->layawayCode]),
+            'actionUrl' => $this->actionUrl($alert),
         ];
+    }
+
+    /**
+     * RB-7 · la acción que resuelve cada alerta. Las de deuda llevan a subir
+     * el comprobante (`T-059`); «en revisión» lleva al detalle, porque no hay
+     * nada que pagar: hay que esperar.
+     */
+    private function actionUrl(PortalAlert $alert): string
+    {
+        return match ($alert->kind) {
+            PortalAlertKind::DownPaymentWindow,
+            PortalAlertKind::Overdue,
+            PortalAlertKind::ReceiptRejected,
+            PortalAlertKind::DueSoon => route('portal.receipts.create', ['code' => $alert->layawayCode]),
+            PortalAlertKind::ReceiptPending,
+            PortalAlertKind::ClaimAvailable => route('portal.layaways.show', ['code' => $alert->layawayCode]),
+        };
     }
 
     /**
