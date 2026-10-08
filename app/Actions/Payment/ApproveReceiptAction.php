@@ -7,6 +7,8 @@ namespace App\Actions\Payment;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\StaleRate;
+use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Money;
 use App\Domain\Payment\AppliedPayment;
 use App\Domain\Payment\PaymentApplier;
@@ -43,7 +45,8 @@ use Illuminate\Support\Facades\Gate;
  *     `ExchangeRateService::current()`), o la que el negocio escribió a mano,
  *     que se congela como `manual` y se audita (SP-7). En dólares no hace
  *     falta ninguna; en bolívares sin tasa, el aplicador responde `422`
- *     (SP-6).
+ *     (SP-6). Y si la vigente tiene más de 30 días, convertir con ella se
+ *     confirma (`StaleRate`, `REQ-FX-006` SP-5, `T-023`).
  *  4. **La aplicación** —el pago con su snapshot, el reparto FIFO, la
  *     activación si esperaba la inicial, las cuotas, el balance y la
  *     transición— la hace `PaymentApplier`.
@@ -79,6 +82,7 @@ final class ApproveReceiptAction
      * @throws PaymentNotApplicableException si el apartado no cobra, la conversión da cero o no cubre la inicial
      * @throws MissingExchangeRateException si es en bolívares y no hay tasa (SP-6)
      * @throws UnconfirmedExcessException si sobra algo y no se confirmó (SP-5)
+     * @throws UnconfirmedStaleRateException si convierte con una tasa de más de 30 días sin confirmarla
      */
     public function handle(Receipt $receipt, ApproveReceiptData $data, User $actor): AppliedPayment
     {
@@ -96,6 +100,7 @@ final class ApproveReceiptAction
             }
 
             $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
+            StaleRate::in($rate, $data->settledCurrency)?->assertConfirmedBy($data->confirmedStaleRate);
 
             // El pago congela **lo conciliado** en su moneda, no lo que declaró
             // el cliente: es el par que reproduce los dólares con la tasa
@@ -161,6 +166,8 @@ final class ApproveReceiptAction
             'settled' => $data->settledAmount.' '.$data->settledCurrency->value,
             'rate_applied' => $applied->payment->rate_applied,
             'rate_source' => $applied->payment->rate_source->value,
+            // Cuándo se publicó: con más de 30 días, convertir con ella se confirmó (`REQ-FX-006` SP-5).
+            'rate_published_at' => $applied->payment->rate_published_at?->toIso8601String(),
             'down_payment_cents' => $applied->downPaymentCents,
             'allocations' => array_map(fn (array $allocation): array => [
                 'installment' => $numbers[$allocation['installmentId']] ?? null,

@@ -7,6 +7,8 @@ namespace App\Actions\Payment;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\StaleRate;
+use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Money;
 use App\Domain\Payment\AppliedPayment;
 use App\Domain\Payment\IdempotencyKeyReusedException;
@@ -48,8 +50,9 @@ use Illuminate\Support\Facades\Gate;
  *     preguntar si el apartado aún cobra —si el ganador lo completó, la
  *     respuesta sería un falso «ya no admite pagos»—. Y si aun así chocan en
  *     el único de la tabla, el perdedor recibe el del ganador.
- *  4. **La aplicación**, con la tasa vigente o la escrita a mano (solo si hay
- *     algo que convertir), y **cómo se pagó** —método, cuenta y día—
+ *  4. **La aplicación**, con la tasa vigente —confirmada si tiene más de 30
+ *     días, `REQ-FX-006` SP-5— o la escrita a mano (solo si hay algo que
+ *     convertir), y **cómo se pagó** —método, cuenta y día—
  *     guardado en el pago (`PaymentOrigin`, `T-062`): sin comprobante, es lo
  *     único que queda además de la nota (RB-6).
  *  5. **El sobrante** se confirma por su cifra (SP-7, como `REQ-PAY-005`
@@ -78,6 +81,7 @@ final class RegisterManualPaymentAction
      * @throws MissingExchangeRateException si es en bolívares y no hay tasa (SP-3)
      * @throws UnconfirmedExcessException si sobra algo y no se confirmó esa cifra (SP-7)
      * @throws IdempotencyKeyReusedException si la clave ya registró otro pago (SP-5)
+     * @throws UnconfirmedStaleRateException si convierte con una tasa de más de 30 días sin confirmarla
      */
     public function handle(Layaway $layaway, ManualPaymentData $data, User $actor): Payment
     {
@@ -114,6 +118,7 @@ final class RegisterManualPaymentAction
         }
 
         $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
+        StaleRate::in($rate, $data->currency)?->assertConfirmedBy($data->confirmedStaleRate);
 
         $applied = $this->applier->apply(
             $layaway,
@@ -190,6 +195,8 @@ final class RegisterManualPaymentAction
             'paid_on' => $data->paidAt->toDateString(),
             'rate_applied' => $applied->payment->rate_applied,
             'rate_source' => $applied->payment->rate_source->value,
+            // Cuándo se publicó: con más de 30 días, convertir con ella se confirmó (`REQ-FX-006` SP-5).
+            'rate_published_at' => $applied->payment->rate_published_at?->toIso8601String(),
             'down_payment_cents' => $applied->downPaymentCents,
             'allocations' => array_map(fn (array $allocation): array => [
                 'installment' => $numbers[$allocation['installmentId']] ?? null,

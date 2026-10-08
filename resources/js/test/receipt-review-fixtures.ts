@@ -22,6 +22,7 @@ export const PREVIEW: ApprovalPreviewView = {
     ],
     unallocated: null,
     unallocatedCents: 0,
+    staleRate: null,
     statusAfter: 'active',
     statusAfterLabel: 'Al día',
     summary: 'Se aplicará a las cuotas 1 y 2.',

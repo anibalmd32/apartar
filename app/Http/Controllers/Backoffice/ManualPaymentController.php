@@ -8,6 +8,7 @@ use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
 use App\Domain\Money\Money;
@@ -63,6 +64,8 @@ final class ManualPaymentController extends Controller
             $payment = $action->handle($layaway, $request->toData(), $actor);
         } catch (UnconfirmedExcessException $exception) {
             return back()->withErrors(['confirm_excess' => $exception->getMessage()]);
+        } catch (UnconfirmedStaleRateException $exception) {
+            return back()->withErrors(['confirm_stale_rate' => $exception->getMessage()]);
         } catch (MissingExchangeRateException $exception) {
             return back()->withErrors(['rate' => $exception->getMessage()]);
         } catch (PaymentNotApplicableException|IdempotencyKeyReusedException $exception) {

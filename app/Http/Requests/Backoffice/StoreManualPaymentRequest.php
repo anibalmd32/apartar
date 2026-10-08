@@ -61,6 +61,8 @@ final class StoreManualPaymentRequest extends FormRequest
             'note' => ['required', 'string', 'min:'.StaffReason::MIN, 'max:'.StaffReason::MAX],
             'idempotency_key' => ['required', 'string', 'uuid'],
             'confirm_excess' => ['nullable', 'integer', 'min:1'],
+            // La tasa vieja que se confirmó (`REQ-FX-006` SP-5, `StaleRate::token()`).
+            'confirm_stale_rate' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -111,6 +113,7 @@ final class StoreManualPaymentRequest extends FormRequest
                 note: $this->string('note')->toString(),
                 idempotencyKey: $this->string('idempotency_key')->toString(),
                 confirmedExcessCents: $this->filled('confirm_excess') ? $this->integer('confirm_excess') : null,
+                confirmedStaleRate: $this->filled('confirm_stale_rate') ? $this->string('confirm_stale_rate')->toString() : null,
             );
         } catch (InvalidRateException $exception) {
             throw ValidationException::withMessages(['rate' => $exception->getMessage()]);

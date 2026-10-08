@@ -55,6 +55,12 @@ final readonly class ManualPaymentData
          * `ApproveReceiptData`: lo confirmado es una cifra.
          */
         public ?int $confirmedExcessCents = null,
+        /**
+         * La tasa vieja que se vio y se confirmó —fuente, valor y
+         * publicación— (`REQ-FX-006` SP-5, `StaleRate::token()`). Añadido
+         * en `T-023`.
+         */
+        public ?string $confirmedStaleRate = null,
     ) {
         PaymentAmounts::assertPositive($amount, $currency, 'del pago');
 

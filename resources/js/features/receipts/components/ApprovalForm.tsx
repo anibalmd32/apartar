@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { CheckboxField } from '@/components/ui/checkbox-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
+import { StaleRateConfirmation, staleRatePending } from '@/features/receipts/components/StaleRateConfirmation';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { type ReceiptReviewProps } from '@/types/receipt';
@@ -41,6 +42,8 @@ interface ApprovalFormValues {
     note: string;
     /** Los centavos de sobrante que se confirmaron; `null` sin confirmar. */
     confirm_excess: number | null;
+    /** La publicación de la tasa vieja que se confirmó (`REQ-FX-006` SP-5). */
+    confirm_stale_rate: string | null;
 }
 
 export function ApprovalForm({ approval, receipt, rate, initialPreview, initialError }: ApprovalFormProps) {
@@ -50,12 +53,14 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
         rate: '',
         note: '',
         confirm_excess: null,
+        confirm_stale_rate: null,
     });
 
     const { preview, error, loading } = useApprovalPreview(
         approval.previewUrl,
         { amount: form.data.amount, currency: form.data.currency, rate: form.data.rate },
         { amount: receipt.declaredAmount, currency: receipt.declaredCurrency, rate: '', preview: initialPreview, error: initialError },
+        form.errors.confirm_stale_rate ?? '',
     );
 
     const excess = preview?.unallocated ?? null;
@@ -63,7 +68,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
     // importe, otra tasa—, la casilla se desmarca sola y hay que volver a
     // confirmarlo. El servidor compara la misma cifra.
     const confirmed = preview !== null && excess !== null && form.data.confirm_excess === preview.unallocatedCents;
-    const blocked = form.processing || loading || (excess !== null && !confirmed);
+    const blocked = form.processing || loading || (excess !== null && !confirmed) || staleRatePending(preview, form.data.confirm_stale_rate);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -155,6 +160,13 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
                 // —entró otro pago entre medias—: se dice igual.
                 <Alert tone="warning">{form.errors.confirm_excess}</Alert>
             ) : null}
+
+            <StaleRateConfirmation
+                staleRate={preview?.staleRate ?? null}
+                confirmed={form.data.confirm_stale_rate}
+                onChange={(token) => form.setData('confirm_stale_rate', token)}
+                error={form.errors.confirm_stale_rate}
+            />
 
             <button type="submit" className="btn btn-primary" disabled={blocked}>
                 Aprobar y aplicar el pago

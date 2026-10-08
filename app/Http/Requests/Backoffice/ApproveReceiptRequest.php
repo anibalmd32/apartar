@@ -54,6 +54,8 @@ final class ApproveReceiptRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:'.ApproveReceiptData::NOTE_MAX],
             // Los centavos de sobrante que se vieron y se confirmaron (SP-5).
             'confirm_excess' => ['nullable', 'integer', 'min:1'],
+            // La tasa vieja que se confirmó (`REQ-FX-006` SP-5, `StaleRate::token()`).
+            'confirm_stale_rate' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -87,6 +89,7 @@ final class ApproveReceiptRequest extends FormRequest
                 rateOverride: $rate === '' ? null : $rate,
                 note: $note === '' ? null : $note,
                 confirmedExcessCents: $this->filled('confirm_excess') ? $this->integer('confirm_excess') : null,
+                confirmedStaleRate: $this->filled('confirm_stale_rate') ? $this->string('confirm_stale_rate')->toString() : null,
             );
         } catch (InvalidRateException $exception) {
             throw ValidationException::withMessages(['rate' => $exception->getMessage()]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Payment;
 
 use App\Domain\Exchange\RateSource;
+use App\Domain\Exchange\StaleRate;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
@@ -40,6 +41,8 @@ final readonly class ApprovalPreview
         public int $unallocatedCents,
         public LayawayStatus $statusBefore,
         public LayawayStatus $statusAfter,
+        /** La tasa de más de 30 días que habría que confirmar (`REQ-FX-006` SP-5), si la hay. */
+        public ?StaleRate $staleRate = null,
     ) {
         $allocated = array_sum(array_column($allocations, 'cents'));
 
@@ -95,6 +98,9 @@ final readonly class ApprovalPreview
             // La cifra exacta que se confirma (SP-5): la que el servidor
             // compara al aprobar con la que de verdad sobra.
             'unallocatedCents' => $this->unallocatedCents,
+            // Lo que hay que confirmar si la tasa es vieja: el aviso y la
+            // publicación que el servidor compara (`REQ-FX-006` SP-5).
+            'staleRate' => $this->staleRate?->toArray(),
             'statusAfter' => $this->statusAfter->value,
             'statusAfterLabel' => $this->statusAfter->label(),
             'summary' => $this->summary(),

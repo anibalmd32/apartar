@@ -49,6 +49,12 @@ final readonly class ApproveReceiptData
          * sobrante tras confirmar $10.
          */
         public ?int $confirmedExcessCents = null,
+        /**
+         * La tasa vieja que se vio y se confirmó —fuente, valor y
+         * publicación— (`REQ-FX-006` SP-5, `StaleRate::token()`). Añadido
+         * en `T-023`.
+         */
+        public ?string $confirmedStaleRate = null,
     ) {
         PaymentAmounts::assertPositive($settledAmount, $settledCurrency, 'conciliado');
 

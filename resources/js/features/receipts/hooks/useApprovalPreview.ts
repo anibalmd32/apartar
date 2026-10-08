@@ -68,6 +68,10 @@ export function useApprovalPreview(
     url: string,
     values: ApprovalValues,
     initial: ApprovalValues & { preview: ApprovalPreviewView | null; error: string | null },
+    // Lo que obliga a volver a preguntar aunque no cambie ningún dato: el
+    // error con el que el servidor devolvió el envío (la tasa cumplió 30 días
+    // después de la vista previa, `REQ-FX-006` SP-5).
+    revision = '',
 ): ApprovalPreviewState {
     const [settled, setSettled] = useState(values);
     const { amount, currency, rate } = values;
@@ -80,10 +84,10 @@ export function useApprovalPreview(
         return () => window.clearTimeout(timer);
     }, [amount, currency, rate]);
 
-    const asIs = same(settled, initial);
+    const asIs = same(settled, initial) && revision === '';
 
     const { data, isFetching, isError } = useQuery({
-        queryKey: ['receipts', 'approval-preview', url, settled.amount, settled.currency, settled.rate],
+        queryKey: ['receipts', 'approval-preview', url, settled.amount, settled.currency, settled.rate, revision],
         queryFn: () => ask(url, settled),
         enabled: !asIs && settled.amount !== '',
         placeholderData: keepPreviousData,

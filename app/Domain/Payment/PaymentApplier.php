@@ -11,6 +11,7 @@ use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Exchange\RateSource;
+use App\Domain\Exchange\StaleRate;
 use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
@@ -239,6 +240,7 @@ final class PaymentApplier
                 unallocatedCents: $applied->plan->unallocatedCents,
                 statusBefore: $applied->statusBefore,
                 statusAfter: $applied->statusAfter,
+                staleRate: StaleRate::in($rate, $settled->currency),
             );
         } finally {
             DB::rollBack();

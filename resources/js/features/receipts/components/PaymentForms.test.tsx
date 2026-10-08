@@ -166,6 +166,32 @@ it('tras registrar, el formulario vuelve a empezar con otra clave', async () => 
     expect(second).not.toBe(first);
 });
 
+/**
+ * `REQ-FX-006` SP-5: con una tasa de más de 30 días, no se registra sin
+ * confirmarla, y lo confirmado es esa publicación.
+ */
+it('pide confirmar una tasa de más de 30 días y manda su publicación', async () => {
+    const staleRate = { token: 'bcv@40.00000000@1753000000', days: 45, sourceLabel: 'BCV' };
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ preview: { ...PREVIEW, staleRate } }), { status: 200 }));
+    withQueries(<ManualPaymentForm options={OPTIONS} />);
+
+    fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
+    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '1200.00' } });
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
+    });
+
+    const record = screen.getByRole('button', { name: 'Registrar el pago' });
+    expect(await screen.findByText(/La tasa BCV se publicó hace 45 días/)).toBeInTheDocument();
+    expect(record).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText('Confirmo que convierto con la tasa de hace 45 días'));
+    fireEvent.click(record);
+
+    expect(post.mock.calls[0]?.[1]).toMatchObject({ currency: 'VES', confirm_stale_rate: 'bcv@40.00000000@1753000000' });
+});
+
 /** `REQ-PAY-006` RB-4: el formulario del portal dice a qué rechazado sustituye. */
 it('el formulario del cliente dice a qué comprobante rechazado sustituye', () => {
     render(<ReceiptCreate {...receiptProps({ replaces: { submittedAt: '2026-10-01', reason: 'La imagen está cortada.' } })} />);

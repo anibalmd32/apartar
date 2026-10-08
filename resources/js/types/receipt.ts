@@ -218,6 +218,8 @@ export interface ApprovalPreviewView {
     readonly unallocated: string | null;
     /** La cifra exacta del sobrante, la que se manda al confirmarlo y el servidor compara. */
     readonly unallocatedCents: number;
+    /** La tasa de más de 30 días que hay que confirmar (`REQ-FX-006` SP-5); `token` es lo que se manda. */
+    readonly staleRate: { readonly token: string; readonly days: number; readonly sourceLabel: string } | null;
     readonly statusAfter: string;
     readonly statusAfterLabel: string;
     readonly summary: string;
