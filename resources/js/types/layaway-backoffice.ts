@@ -71,6 +71,17 @@ export interface ManualPaymentOptions {
     readonly rate: { readonly rate: string; readonly sourceLabel: string } | null;
 }
 
+/** El editor del reparto (`REQ-PAY-009` RB-8): las cuotas y cada pago repartido con su reparto actual. */
+export interface ReallocationOptions {
+    readonly installments: readonly { readonly id: number; readonly number: number; readonly amountCents: number; readonly paidCents: number }[];
+    readonly payments: readonly {
+        readonly id: number;
+        readonly url: string;
+        readonly label: string;
+        readonly allocations: readonly { readonly installmentId: number; readonly cents: number }[];
+    }[];
+}
+
 export interface BackofficeLayawayShowProps {
     readonly layaway: BackofficeLayaway;
     readonly customer: { readonly fullName: string; readonly documentNumber: string; readonly phone: string } | null;
@@ -79,4 +90,6 @@ export interface BackofficeLayawayShowProps {
     readonly payments: readonly PaymentRow[];
     /** `null` si el apartado ya no cobra. */
     readonly manualPayment: ManualPaymentOptions | null;
+    /** `null` si no hay pagos repartidos o el apartado está cerrado. */
+    readonly reallocation: ReallocationOptions | null;
 }

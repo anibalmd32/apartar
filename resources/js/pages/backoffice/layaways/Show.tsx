@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { CancelLayawayDialog } from '@/features/layaway/components/CancelLayawayDialog';
 import { RescheduleInstallmentDialog } from '@/features/layaway/components/RescheduleInstallmentDialog';
+import { AllocationEditor } from '@/features/receipts/components/AllocationEditor';
 import { ManualPaymentForm } from '@/features/receipts/components/ManualPaymentForm';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -19,7 +20,7 @@ import { useForm, usePage } from '@inertiajs/react';
  * la acción, bajo el bloqueo del apartado. Los listados de cobranza que traen
  * hasta aquí son de `T-065`.
  */
-export default function LayawayShow({ layaway, customer, installments, payments, manualPayment }: BackofficeLayawayShowProps) {
+export default function LayawayShow({ layaway, customer, installments, payments, manualPayment, reallocation }: BackofficeLayawayShowProps) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const delivery = useForm({});
 
@@ -123,6 +124,15 @@ export default function LayawayShow({ layaway, customer, installments, payments,
                     <PaymentHistory payments={payments} empty="Este apartado todavía no tiene pagos." />
                 </div>
             </section>
+
+            {reallocation !== null ? (
+                <section className="card bg-base-100 shadow-sm" aria-label="Reasignar un pago">
+                    <div className="card-body gap-3">
+                        <h2 className="card-title text-base">Reasignar un pago</h2>
+                        <AllocationEditor options={reallocation} />
+                    </div>
+                </section>
+            ) : null}
         </BackofficeLayout>
     );
 }

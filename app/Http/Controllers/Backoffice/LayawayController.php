@@ -12,6 +12,7 @@ use App\Domain\Layaway\IllegalLayawayTransitionException;
 use App\Domain\Layaway\LayawayNotDeliverableException;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
+use App\Domain\Money\MoneyFormatter;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
@@ -24,6 +25,7 @@ use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
+use App\Models\PaymentAllocation;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -69,6 +71,12 @@ final class LayawayController extends Controller
         $schedule = Installment::scheduleOf($installments, $timezone);
         $collecting = in_array($layaway->status, [LayawayStatus::Active, LayawayStatus::Overdue], true);
         $customer = Customer::query()->find($layaway->customer_id);
+        $payments = Payment::query()
+            ->where('layaway_id', $layaway->getKey())
+            ->with(['allocations.installment', 'receipt'])
+            ->latest('settled_at')
+            ->latest('id')
+            ->get();
 
         return Inertia::render('backoffice/layaways/Show', [
             'layaway' => [
@@ -116,15 +124,12 @@ final class LayawayController extends Controller
                 ];
             }, $installments),
             // `REQ-LAY-022` · los pagos, como los ve el cliente.
-            'payments' => Payment::query()
-                ->where('layaway_id', $layaway->getKey())
-                ->with(['allocations.installment', 'receipt'])
-                ->latest('settled_at')
-                ->latest('id')
-                ->get()
+            'payments' => $payments
                 ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone))->resolve($request))
                 ->values()
                 ->all(),
+            // `REQ-PAY-009` · reasignar un pago entre las cuotas, mientras el apartado viva.
+            'reallocation' => $this->reallocationOptions($layaway, $installments, $payments->all(), $timezone),
             // `REQ-PAY-007` · registrar un pago a mano, mientras el apartado cobre.
             'manualPayment' => $layaway->status->acceptsPayments() ? $this->manualPaymentOptions($layaway, $timezone) : null,
         ]);
@@ -166,6 +171,42 @@ final class LayawayController extends Controller
             'currencies' => array_map(fn (Currency $currency): array => ['value' => $currency->value, 'label' => $currency->label()], Currency::cases()),
             'paidAt' => ['min' => $min, 'max' => $max],
             'rate' => $rate instanceof RateSnapshot ? ['rate' => $rate->rate, 'sourceLabel' => $rate->source->label()] : null,
+        ];
+    }
+
+    /**
+     * Lo que necesita el editor del reparto (`REQ-PAY-009` RB-8): las cuotas
+     * con lo que tienen pagado, y cada pago repartido con su reparto actual.
+     * `null` si no hay nada que reasignar o el apartado está cerrado (RB-7).
+     *
+     * @param  list<Installment>  $installments
+     * @param  array<int, Payment>  $payments
+     * @return array<string, mixed>|null
+     */
+    private function reallocationOptions(Layaway $layaway, array $installments, array $payments, DateTimeZone $timezone): ?array
+    {
+        $allocated = array_values(array_filter($payments, fn (Payment $payment): bool => $payment->allocations->isNotEmpty()));
+
+        if ($allocated === [] || in_array($layaway->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true)) {
+            return null;
+        }
+
+        return [
+            'installments' => array_map(fn (Installment $installment): array => [
+                'id' => (int) $installment->getKey(),
+                'number' => $installment->number,
+                'amountCents' => $installment->amount_cents->cents,
+                'paidCents' => $installment->paid_cents->cents,
+            ], $installments),
+            'payments' => array_map(fn (Payment $payment): array => [
+                'id' => (int) $payment->getKey(),
+                'url' => route('payments.reallocate', $payment),
+                'label' => sprintf('%s del %s', MoneyFormatter::format($payment->amount_cents_usd), $payment->settled_at->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM')),
+                'allocations' => $payment->allocations->map(fn (PaymentAllocation $allocation): array => [
+                    'installmentId' => (int) $allocation->installment_id,
+                    'cents' => $allocation->amount_cents->cents,
+                ])->values()->all(),
+            ], $allocated),
         ];
     }
 

@@ -44,8 +44,13 @@ use JsonException;
  */
 final readonly class AuditProperties
 {
-    /** Tope de caracteres de un valor de texto. */
-    private const MAX_STRING = 400;
+    /**
+     * Tope de caracteres de un valor de texto: el de un motivo
+     * (`StaffReason::MAX`). Con 400, el motivo de una cancelación, una
+     * reprogramación o una reasignación —que la auditoría tiene que guardar
+     * (`REQ-PAY-009` RB-5)— perdía su final a partir del carácter 401 (`T-063`).
+     */
+    private const MAX_STRING = 500;
 
     /** Tope de elementos de una lista. */
     private const MAX_ITEMS = 20;

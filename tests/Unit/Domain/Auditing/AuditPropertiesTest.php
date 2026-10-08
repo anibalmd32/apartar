@@ -105,6 +105,18 @@ it('recorta los textos largos', function (): void {
 });
 
 /**
+ * Pero un motivo entero cabe: el tope es el de `StaffReason` (500), y la
+ * auditoría de una cancelación o una reasignación lo guarda sin cortar.
+ */
+it('guarda entero un motivo de 500 caracteres', function (): void {
+    $reason = str_repeat('ñ', App\Domain\Layaway\StaffReason::MAX);
+
+    $changed = AuditProperties::between([], ['reason' => $reason])->toArray()['changed'];
+
+    expect($changed['reason']['after'])->toBe($reason);
+});
+
+/**
  * **SP-2 · y cuando ni recortando cabe, se guarda el resumen.**
  *
  * El resumen conserva los **nombres** de los campos y tira los valores: ante la

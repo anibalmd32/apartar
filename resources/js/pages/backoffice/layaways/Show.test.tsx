@@ -71,6 +71,7 @@ function props(layaway: Partial<BackofficeLayawayShowProps['layaway']> = {}): Ba
         ],
         payments: [],
         manualPayment: null,
+        reallocation: null,
     };
 }
 
@@ -168,4 +169,30 @@ it('reprograma solo cuotas sin pagar, dentro de su ventana', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reprogramar' }));
 
     expect(patch).toHaveBeenCalledWith('/backoffice/cuotas/12/reprogramar', expect.anything());
+});
+
+/** `REQ-PAY-009` RB-8 · el editor del reparto aparece cuando el servidor lo manda, y no si no. */
+it('ofrece reasignar un pago solo cuando hay reparto que editar', () => {
+    const { unmount } = render(<LayawayShow {...props()} />);
+    expect(screen.queryByRole('form', { name: 'Reasignar un pago' })).not.toBeInTheDocument();
+    unmount();
+
+    render(
+        <LayawayShow
+            {...props()}
+            reallocation={{
+                installments: [{ id: 11, number: 1, amountCents: 3_000, paidCents: 3_000 }],
+                payments: [
+                    {
+                        id: 7,
+                        url: '/backoffice/pagos/7/reasignar',
+                        label: '$30.00 del 10 de septiembre',
+                        allocations: [{ installmentId: 11, cents: 3_000 }],
+                    },
+                ],
+            }}
+        />,
+    );
+    expect(screen.getByRole('form', { name: 'Reasignar un pago' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Importe para la cuota 1')).toHaveValue('30.00');
 });

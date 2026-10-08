@@ -12,6 +12,7 @@ use App\Http\Controllers\Backoffice\InstallmentController;
 use App\Http\Controllers\Backoffice\LayawayController;
 use App\Http\Controllers\Backoffice\ManualPaymentController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
+use App\Http\Controllers\Backoffice\PaymentReallocationController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\ReceiptInboxController;
@@ -331,6 +332,16 @@ Route::prefix('backoffice')->group(function (): void {
                 */
                 Route::post('apartados/{layaway:code}/pagos', [ManualPaymentController::class, 'store'])->name('layaways.payments.store');
                 Route::get('apartados/{layaway:code}/pagos/vista-previa', [ManualPaymentController::class, 'preview'])->name('layaways.payments.preview');
+
+                /*
+                | Reasignar un pago entre las cuotas de su apartado
+                | (`REQ-PAY-009`, `T-063`). Es gestión de la cobranza y sobrevive
+                | a la suspensión. `{payment}` es numérico y llega filtrado por
+                | el tenant: el de otro negocio es `404` (SP-2).
+                */
+                Route::patch('pagos/{payment}/reasignar', PaymentReallocationController::class)
+                    ->whereNumber('payment')
+                    ->name('payments.reallocate');
 
                 /*
                 | El archivo del comprobante (`REQ-PAY-002`), para el equipo.
