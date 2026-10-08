@@ -45,4 +45,14 @@ final class ReceiptPolicy
 
         return $actor->role->can(OrganizationCapability::Receipts);
     }
+
+    /**
+     * La bandeja de conciliación (`REQ-PAY-004`): solo el equipo, con la misma
+     * capacidad que pide abrir cada archivo. Un cliente no tiene bandeja; la
+     * suya es el historial del apartado, en el portal.
+     */
+    public function viewAny(User|Customer $actor): bool
+    {
+        return $actor instanceof User && $actor->role->can(OrganizationCapability::Receipts);
+    }
 }

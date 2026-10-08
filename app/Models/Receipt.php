@@ -10,6 +10,7 @@ use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Tenancy\BelongsToOrganization;
 use Database\Factories\ReceiptFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -122,6 +123,21 @@ class Receipt extends Model
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
+    }
+
+    /**
+     * Los que esperan al negocio: la cola de la bandeja y la cifra de su badge
+     * (`REQ-PAY-004` RB-3, RB-4).
+     *
+     * Por el global scope, como todo lo de aquí: lo que cuenta es lo de la
+     * organización fijada. La consulta va por `(organization_id, status,
+     * created_at)`, el índice que `T-054` puso para esto.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopePendingReview(Builder $query): void
+    {
+        $query->where($query->qualifyColumn('status'), ReceiptStatus::PendingReview->value);
     }
 
     /**

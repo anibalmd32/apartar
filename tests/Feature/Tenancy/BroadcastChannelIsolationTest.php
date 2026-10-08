@@ -15,19 +15,18 @@ use Tests\TestCase;
 /**
  * Aislamiento de los canales de broadcast (`REQ-QAX-008` RB-3 y SP-7).
  *
- * Los tres canales de [05 §7.7] llegan en H7, con el chat y los comprobantes.
- * Este archivo no espera a que existan, y no porque sobre trabajo: SP-7 dice
- * que una fuga por un canal **no la detectaría ningún test HTTP**, y un archivo
- * vacío con un `TODO` depende de que alguien se acuerde el día que registre el
- * primero.
+ * Este archivo existió antes que el primer canal, y no porque sobrara
+ * trabajo: SP-7 dice que una fuga por un canal **no la detectaría ningún test
+ * HTTP**, y un archivo vacío con un `TODO` depende de que alguien se acuerde el
+ * día que registre el primero.
  *
- * Lo que se afirma hoy es la regla, no los canales: **ningún canal registrado
- * carece de comprobación de pertenencia**. Hoy no hay ninguno y la aserción
- * pasa sobre el conjunto vacío; el día que se registre
- * `organization.{orgId}.receipts` sin autorizar, este archivo falla sin que
- * nadie haya tenido que acordarse de nada. Que el mecanismo funciona de verdad
- * lo prueban los canales inyectados de más abajo, que es lo que distingue esta
- * vacuidad de un test apagado.
+ * Lo que se afirma es la regla, no los canales: **ningún canal registrado
+ * carece de comprobación de pertenencia**. El primero fue
+ * `organization.{orgId}.receipts` (`T-060`), y su caso concreto —el cliente, el
+ * miembro desactivado, la firma por HTTP— está en `ReceiptInboxChannelTest`;
+ * los dos de la conversación llegan con H7 y pasan por aquí sin que nadie
+ * tenga que acordarse. Que el mecanismo funciona de verdad lo prueban los
+ * canales inyectados de más abajo.
  *
  * Como en `CrossTenantAccessTest`, lo que el mecanismo no sabe interpretar
  * **es una violación**, no un caso omitido.

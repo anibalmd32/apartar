@@ -117,6 +117,16 @@ describe('el orden', () => {
 
         expect(lastVisit().query).toEqual({ sort: 'name', status: 'draft' });
     });
+
+    it('se puede pedir un orden concreto, y volver al defecto', () => {
+        const { result } = hook();
+
+        act(() => result.current.setSort('-name'));
+        expect(lastVisit().query).toEqual({ sort: '-name', status: 'draft' });
+
+        act(() => result.current.setSort(null));
+        expect(lastVisit().query).toEqual({ status: 'draft' });
+    });
 });
 
 /**

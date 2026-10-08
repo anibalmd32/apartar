@@ -10,6 +10,7 @@ use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Tenancy\TenantContext;
+use App\Events\ReceiptSubmitted;
 use App\Jobs\CompressReceiptImage;
 use App\Models\Layaway;
 use App\Models\Receipt;
@@ -58,6 +59,11 @@ use Throwable;
  *     despachado dentro de la transacción podría correr antes de que la fila
  *     exista para su conexión, o correr para una fila que se deshizo. Solo
  *     para JPEG y PNG, que son lo único que el job sabe recomprimir.
+ *  7. **El aviso a la bandeja, también después del commit** (RB-8,
+ *     `REQ-PAY-004`): `ReceiptSubmitted` por el canal de la organización. Un
+ *     aviso de algo que se deshizo mandaría al negocio a buscar un comprobante
+ *     que no existe; y uno que falla **no deshace nada** (SP-6 de
+ *     `REQ-PAY-004`): se informa y la subida sigue siendo un éxito.
  *
  * ## Si algo falla, el archivo no se queda
  *
@@ -89,8 +95,7 @@ use Throwable;
  *    sería el cliente.
  *  - **No pregunta por la suspensión del negocio** (RB-11): el portal del
  *    cliente sigue funcionando con la organización `suspended`.
- *  - **No difunde a la bandeja** (RB-8, `REQ-PAY-004`): `ReceiptSubmitted` es
- *    de `T-060`. **Ni emite `receipt_uploaded`**: la telemetría es de `T-084`.
+ *  - **No emite `receipt_uploaded`** (RB-8): la telemetría es de `T-084`.
  *  - **No valida el reloj** (RB-4, SP-5): `paid_at` futura o anterior al
  *    apartado es del formulario, que sabe qué día es para quien sube.
  *  - **No comprueba la cuenta de cobro**: `SubmitReceiptData` ya no se puede
@@ -173,6 +178,7 @@ final class SubmitReceiptAction
                 });
 
                 $this->compressAfterCommit($receipt, $mime);
+                $this->announceAfterCommit($receipt, $layaway->code);
 
                 return $receipt;
             });
@@ -329,6 +335,38 @@ final class SubmitReceiptAction
                 $this->context->runFor($organization, function () use ($organization, $receiptId): void {
                     Bus::dispatch(new CompressReceiptImage($receiptId, (int) $organization->getKey()));
                 });
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
+    }
+
+    /**
+     * Avisa a la bandeja del negocio cuando la transacción se confirme, y
+     * nunca si se deshace (`REQ-PAY-004`).
+     *
+     * El evento se arma **ahora**, con la fila recién escrita, y se emite
+     * después: dentro del *callback* ya no hay transacción, y volver a leer el
+     * comprobante sería una consulta para saber lo que ya se sabe.
+     *
+     * Con el tenant del apartado fijado alrededor, por lo mismo que la
+     * recompresión: con la cola `sync` la difusión corre aquí mismo, y nada de
+     * lo que corra dentro tiene que poder dejar la petición sin organización.
+     *
+     * Un fallo —Reverb caído, la cola caída, el broadcaster que lanza con
+     * `sync`— se informa y se sigue (SP-6): el comprobante está confirmado, la
+     * bandeja lo enseña en la próxima carga y el contador lo recoge en su
+     * siguiente consulta. Responder con un error haría que el cliente lo
+     * reintentara y se encontrara con «ya fue reportado».
+     */
+    private function announceAfterCommit(Receipt $receipt, string $layawayCode): void
+    {
+        $organization = $this->context->organization();
+        $event = ReceiptSubmitted::of($receipt, $layawayCode);
+
+        DB::afterCommit(function () use ($organization, $event): void {
+            try {
+                $this->context->runFor($organization, fn () => event($event));
             } catch (Throwable $exception) {
                 report($exception);
             }

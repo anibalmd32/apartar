@@ -19,6 +19,18 @@ enum ReceiptStatus: string
     case Rejected = 'rejected';
 
     /**
+     * Cómo se nombra en la bandeja del negocio (`REQ-PAY-004`).
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::PendingReview => 'En revisión',
+            self::Approved => 'Aprobado',
+            self::Rejected => 'Rechazado',
+        };
+    }
+
+    /**
      * Si todavía espera al negocio.
      */
     public function awaitsReview(): bool

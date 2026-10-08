@@ -57,6 +57,8 @@ export interface ServerTable<TRow extends RowData> {
     setPage: (page: number) => void;
     setPerPage: (perPage: number) => void;
     toggleSort: (sortKey: string) => void;
+    /** Un orden concreto —`"name"`, `"-name"` o `null` para el defecto—, desde la página 1. */
+    setSort: (sort: string | null) => void;
     setFilter: (key: string, value: string | string[] | null) => void;
     clearFilters: () => void;
 }
@@ -179,6 +181,7 @@ export function useServerTable<TRow extends RowData>({ rows, meta, columns, only
         setPage: (page) => visit({ page: Math.max(1, Math.trunc(page)) }),
         setPerPage: (perPage) => visit({ page: 1, perPage: PER_PAGE_OPTIONS.includes(perPage) ? perPage : PER_PAGE_OPTIONS[0] }),
         toggleSort: (sortKey) => visit({ page: 1, sort: nextSort(meta.sort, sortKey) }),
+        setSort: (sort) => visit({ page: 1, sort }),
         setFilter: (key, value) => visit({ page: 1, filters: { ...state.filters, [key]: value } }),
         clearFilters: () => visit({ page: 1, filters: Object.fromEntries(Object.keys(state.filters).map((key) => [key, null])) }),
     };

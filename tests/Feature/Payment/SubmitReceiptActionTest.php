@@ -18,6 +18,7 @@ use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Domain\Tenancy\TenantContext;
+use App\Events\ReceiptSubmitted;
 use App\Jobs\CompressReceiptImage;
 use App\Models\Layaway;
 use App\Models\Organization;
@@ -25,13 +26,20 @@ use App\Models\PaymentAccount;
 use App\Models\Receipt;
 use App\Models\UsageCounter;
 use Carbon\CarbonImmutable;
+use Illuminate\Broadcasting\BroadcastEvent;
+use Illuminate\Broadcasting\BroadcastException;
+use Illuminate\Broadcasting\BroadcastManager;
+use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\Concerns\CreatesLayaways;
@@ -166,7 +174,7 @@ final class SubmitReceiptActionTest extends TestCase
 
         $this->assertStringEndsWith('.pdf', $receipt->file_path);
         $this->assertSame('application/pdf', $receipt->file_mime);
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(CompressReceiptImage::class);
     }
 
     /**
@@ -518,6 +526,125 @@ final class SubmitReceiptActionTest extends TestCase
         $dimensions = getimagesizefromstring((string) Storage::disk(Receipt::DISK)->get($receipt->file_path));
         $this->assertNotFalse($dimensions);
         $this->assertSame([2000, 1000], [$dimensions[0], $dimensions[1]]);
+    }
+
+    /**
+     * RB-8 · la bandeja se entera **después del commit**: dentro de una
+     * transacción que sigue abierta, nada; al confirmarse, `ReceiptSubmitted`
+     * con el comprobante, su apartado y su organización (`REQ-PAY-004`).
+     */
+    public function test_the_inbox_is_told_after_the_commit(): void
+    {
+        Event::fake([ReceiptSubmitted::class]);
+        $layaway = $this->layawayIn($this->organization);
+
+        $receipt = DB::transaction(function () use ($layaway): Receipt {
+            $receipt = $this->submit($layaway);
+            Event::assertNotDispatched(ReceiptSubmitted::class);
+
+            return $receipt;
+        });
+
+        Event::assertDispatchedTimes(ReceiptSubmitted::class, 1);
+        Event::assertDispatched(ReceiptSubmitted::class, fn (ReceiptSubmitted $event): bool => $event->receiptId === (int) $receipt->getKey()
+            && $event->organizationId === (int) $this->organization->getKey()
+            && $event->layawayCode === $layaway->code
+            && $event->declaredAmount === '850.00'
+            && $event->declaredCurrency === 'VES');
+    }
+
+    /**
+     * Ni un aviso de algo que no existe: si la transacción de fuera se
+     * deshace, o la subida se rechaza, la bandeja no se entera.
+     */
+    public function test_the_inbox_is_not_told_of_a_receipt_that_does_not_exist(): void
+    {
+        Event::fake([ReceiptSubmitted::class]);
+        $layaway = $this->layawayIn($this->organization);
+
+        try {
+            DB::transaction(function () use ($layaway): void {
+                $this->submit($layaway);
+
+                throw new RuntimeException('Algo falló después.');
+            });
+        } catch (RuntimeException) {
+            // Lo esperado.
+        }
+
+        Event::assertNotDispatched(ReceiptSubmitted::class);
+
+        $file = $this->receiptImage();
+        $this->submit($layaway, ['file' => $file, 'reference' => '111']);
+        Event::fake([ReceiptSubmitted::class]);
+        $this->refused(fn () => $this->submit($layaway, ['file' => $this->sameFileAs($file), 'reference' => '222']));
+
+        Event::assertNotDispatched(ReceiptSubmitted::class);
+    }
+
+    /**
+     * SP-6 de `REQ-PAY-004` · **un fallo de la difusión no deshace nada**. Con
+     * la cola `sync` la difusión corre dentro de la subida, así que es el peor
+     * caso: el broadcaster lanza, y el comprobante y su archivo se quedan, la
+     * subida devuelve el comprobante y el fallo se informa. Y se afirma que el
+     * broadcaster **se llamó**: si nadie difundiera, esto pasaría igual.
+     */
+    public function test_a_broadcast_failure_does_not_undo_the_receipt(): void
+    {
+        Exceptions::fake();
+        $this->assertSame('sync', config('queue.default'));
+        $layaway = $this->layawayIn($this->organization);
+        $this->actingAsOrganization($this->organization);
+
+        $broadcaster = Mockery::mock(Broadcaster::class);
+        $broadcaster->shouldReceive('broadcast')->once()->andThrow(new BroadcastException('Reverb no responde.'));
+        app(BroadcastManager::class)->extend('failing', fn () => $broadcaster);
+        config(['broadcasting.connections.failing' => ['driver' => 'failing'], 'broadcasting.default' => 'failing']);
+
+        $receipt = $this->submit($layaway);
+
+        $this->assertSame(1, DB::table('receipts')->where('id', $receipt->getKey())->where('status', 'pending_review')->count());
+        Storage::disk(Receipt::DISK)->assertExists($receipt->file_path);
+        Exceptions::assertReported(fn (BroadcastException $exception): bool => $exception->getMessage() === 'Reverb no responde.');
+        $this->assertSame((int) $this->organization->getKey(), app(TenantContext::class)->organizationId());
+    }
+
+    /**
+     * SP-6 también cuando falla **la cola**: en producción el broadcaster
+     * corre en el worker, y lo que puede fallar dentro de la subida es
+     * encolarlo —Redis caído—. Un PDF, para que la recompresión no se encole y
+     * el único empujón a la cola sea la difusión.
+     */
+    public function test_a_queue_failure_while_announcing_does_not_undo_the_receipt(): void
+    {
+        Exceptions::fake();
+        $layaway = $this->layawayIn($this->organization);
+
+        $connection = Mockery::mock(\Illuminate\Contracts\Queue\Queue::class);
+        $connection->shouldReceive('pushOn')->once()->andThrow(new RuntimeException('Redis no responde.'));
+        Queue::shouldReceive('connection')->andReturn($connection);
+
+        $receipt = $this->submit($layaway, ['file' => $this->receiptPdf()]);
+
+        $this->assertSame(1, DB::table('receipts')->where('id', $receipt->getKey())->count());
+        Storage::disk(Receipt::DISK)->assertExists($receipt->file_path);
+        Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'Redis no responde.');
+    }
+
+    /**
+     * Con una cola de verdad la difusión se encola en `high`, con escalares
+     * —el worker no tiene que volver a leer el comprobante sin tenant—.
+     */
+    public function test_the_broadcast_is_queued_on_high(): void
+    {
+        Queue::fake();
+        $layaway = $this->layawayIn($this->organization);
+
+        $receipt = $this->submit($layaway);
+
+        Queue::assertPushedOn('high', BroadcastEvent::class, function (BroadcastEvent $job) use ($receipt): bool {
+            return $job->event instanceof ReceiptSubmitted && $job->event->receiptId === (int) $receipt->getKey();
+        });
     }
 
     // -------------------------------------------------------------------

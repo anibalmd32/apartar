@@ -42,9 +42,15 @@ export interface NavSection {
 interface BackofficeNavProps {
     sections: readonly NavSection[];
     capabilities: readonly OrganizationCapability[];
+    /**
+     * Una cifra junto a una sección, por su `href`: hoy, los comprobantes que
+     * esperan (`REQ-PAY-004` RB-3). Un cero no se pinta: el badge avisa de
+     * trabajo, y sin trabajo no hay nada que avisar.
+     */
+    badges?: Readonly<Record<string, number>>;
 }
 
-export function BackofficeNav({ sections, capabilities }: BackofficeNavProps) {
+export function BackofficeNav({ sections, capabilities, badges = {} }: BackofficeNavProps) {
     const visible = sections.filter((section) => section.capability === ANY_CAPABILITY || capabilities.includes(section.capability));
     const current = usePage().url;
 
@@ -59,6 +65,12 @@ export function BackofficeNav({ sections, capabilities }: BackofficeNavProps) {
                             className={current === section.href ? 'menu-active' : undefined}
                         >
                             {section.label}
+                            {(badges[section.href] ?? 0) > 0 ? ' ' : null}
+                            {(badges[section.href] ?? 0) > 0 ? (
+                                <span className="badge badge-sm badge-primary">
+                                    {badges[section.href]} <span className="sr-only">pendientes</span>
+                                </span>
+                            ) : null}
                         </Link>
                     </li>
                 ))}

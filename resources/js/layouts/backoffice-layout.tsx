@@ -1,7 +1,9 @@
 import { Alert } from '@/components/ui/alert';
+import { usePendingReceipts } from '@/features/receipts/hooks/useReceiptInbox';
 import { type BackofficeSharedData } from '@/types/backoffice';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { type ReactNode, useState } from 'react';
 
 import { ANY_CAPABILITY, BackofficeNav, type NavSection } from '@/layouts/backoffice/nav';
 
@@ -25,6 +27,12 @@ import { ANY_CAPABILITY, BackofficeNav, type NavSection } from '@/layouts/backof
  *     no puede crear nada no va a regularizar nada.
  *  3. **El `status`** de la última operación, para no repetir el mismo bloque
  *     de mensaje en cada pantalla.
+ *
+ * Y el `QueryClient` de las consultas que el backoffice refresca solo —hoy,
+ * el contador de comprobantes del menú (`REQ-PAY-004` SP-1)—. Va aquí y no
+ * en cada página para que el menú y la pantalla que lo lee compartan **una**
+ * consulta: por eso las páginas que también la usan la llaman desde un hijo
+ * del marco, y no desde su propio cuerpo, que queda por encima del proveedor.
  */
 
 interface BackofficeLayoutProps {
@@ -39,6 +47,8 @@ interface BackofficeLayoutProps {
  * `OrganizationCapability::requiresOwner()` y llega resuelto en las props. Las
  * que faltan se añaden aquí con su hito.
  */
+const RECEIPTS_HREF = '/backoffice/comprobantes';
+
 const SECTIONS: NavSection[] = [
     { label: 'Panel', href: '/backoffice', capability: ANY_CAPABILITY },
     // Inventario (`REQ-BOF-020`, `REQ-BOF-023`, `REQ-BOF-024`): cuatro
@@ -50,14 +60,28 @@ const SECTIONS: NavSection[] = [
     { label: 'Catálogos', href: '/backoffice/catalogos', capability: 'products' },
     { label: 'Categorías', href: '/backoffice/categorias', capability: 'products' },
     { label: 'Etiquetas', href: '/backoffice/etiquetas', capability: 'products' },
+    // La bandeja de conciliación (`REQ-PAY-004`): de los dos roles, porque
+    // conciliar es operación diaria. Lleva el badge de los pendientes.
+    { label: 'Comprobantes', href: RECEIPTS_HREF, capability: 'receipts' },
     { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
     { label: 'Ajustes', href: '/backoffice/ajustes', capability: 'settings' },
     { label: 'Cuentas de cobro', href: '/backoffice/cuentas-de-cobro', capability: 'payment_accounts' },
     { label: 'Auditoría', href: '/backoffice/auditoria', capability: 'audit' },
 ];
 
-export default function BackofficeLayout({ title, description, children }: BackofficeLayoutProps) {
+export default function BackofficeLayout(props: BackofficeLayoutProps) {
+    const [queryClient] = useState(() => new QueryClient());
+
+    return (
+        <QueryClientProvider client={queryClient}>
+            <BackofficeFrame {...props} />
+        </QueryClientProvider>
+    );
+}
+
+function BackofficeFrame({ title, description, children }: BackofficeLayoutProps) {
     const { teamMember, status } = usePage<BackofficeSharedData>().props;
+    const pendingReceipts = usePendingReceipts(teamMember?.pendingReceipts ?? null);
 
     const organization = teamMember?.organization;
     const suspended = organization?.status === 'suspended';
@@ -84,7 +108,11 @@ export default function BackofficeLayout({ title, description, children }: Backo
                 </div>
             </header>
 
-            <BackofficeNav sections={SECTIONS} capabilities={teamMember?.capabilities ?? []} />
+            <BackofficeNav
+                sections={SECTIONS}
+                capabilities={teamMember?.capabilities ?? []}
+                badges={pendingReceipts === null ? {} : { [RECEIPTS_HREF]: pendingReceipts }}
+            />
 
             <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4">
                 {suspended ? (

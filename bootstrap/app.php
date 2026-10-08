@@ -45,6 +45,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // Los canales privados ([05 §7.7]). El endpoint de autorización es uno
+    // solo para los dos guards —el equipo hoy, el cliente con el chat de H7—,
+    // así que no resuelve ningún tenant: `outside-tenancy`, y cada canal
+    // comprueba la pertenencia contra su propio nombre (`routes/channels.php`).
+    // Lo que lo vigila es `BroadcastChannelIsolationTest`, no esta línea.
+    ->withBroadcasting(__DIR__.'/../routes/channels.php', ['middleware' => ['web', 'outside-tenancy']])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             HandleInertiaRequests::class,

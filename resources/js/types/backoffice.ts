@@ -127,6 +127,12 @@ export interface AuthenticatedTeamMember {
      */
     readonly capabilities: readonly OrganizationCapability[];
     readonly mustChangePassword: boolean;
+    /**
+     * Comprobantes que esperan al equipo: el badge de la bandeja
+     * (`REQ-PAY-004` RB-3). `null` sin la capacidad `receipts`, o fuera del
+     * propio negocio: entonces el menú no pinta cifra.
+     */
+    readonly pendingReceipts: number | null;
     readonly organization: OrganizationSummary;
 }
 

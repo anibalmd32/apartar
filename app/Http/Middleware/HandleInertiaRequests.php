@@ -11,6 +11,7 @@ use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Customer;
 use App\Models\Organization;
+use App\Models\Receipt;
 use App\Models\User;
 use App\Support\Settings;
 use Illuminate\Foundation\Inspiring;
@@ -197,12 +198,42 @@ class HandleInertiaRequests extends Middleware
                 $user->role->capabilities(),
             ),
             'mustChangePassword' => $user->must_change_password,
+            'pendingReceipts' => fn (): ?int => $this->pendingReceipts($user),
             'organization' => [
                 'name' => $organization->name,
                 'slug' => $organization->slug,
                 'status' => $organization->status->value,
             ],
         ];
+    }
+
+    /**
+     * Cuántos comprobantes esperan al equipo: el badge de la bandeja
+     * (`REQ-PAY-004` RB-3, SP-1). Viaja en cada navegación de Inertia, que es
+     * la mitad del respaldo de SP-1; la otra mitad es el sondeo de 30 s.
+     *
+     * **Solo con el tenant del propio usuario fijado**, y por eso es una
+     * *closure* que Inertia resuelve al responder, con la ruta ya resuelta: un
+     * miembro del equipo con la sesión abierta puede estar mirando el
+     * catálogo público **de otro negocio**, con el tenant de ese negocio
+     * puesto, y contar ahí sería enseñarle la cola ajena. Fuera de su negocio
+     * —o sin la capacidad de revisar comprobantes— es `null`, y el menú no
+     * pinta cifra.
+     */
+    private function pendingReceipts(User $user): ?int
+    {
+        if (! $this->context->hasOrganization() || $this->context->organizationId() !== (int) $user->organization_id) {
+            return null;
+        }
+
+        // Desactivado, ni cifra: su sesión puede seguir viva en el catálogo
+        // de su propio negocio —desactivar no la cierra, y `admin-active` solo
+        // vigila el backoffice—, y el canal de la bandeja ya lo rechaza.
+        if ($user->disabled_at !== null || ! $user->role->can(OrganizationCapability::Receipts)) {
+            return null;
+        }
+
+        return Receipt::query()->pendingReview()->count();
     }
 
     /**

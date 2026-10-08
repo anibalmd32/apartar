@@ -601,6 +601,8 @@ Esta sección no es documental: **`REQ-QAX-008` deriva sus tests de fuga de aqu�
 | `organization.{orgId}.chat` | miembro activo de esa organización |
 | `organization.{orgId}.conversation.{id}` | cliente titular **o** miembro activo de esa organización |
 
+> **El endpoint de autorización (`T-060`).** `/broadcasting/auth` se enruta en `bootstrap/app.php` con `withBroadcasting()` y los middlewares `web` + `outside-tenancy`: es **uno** para los dos guards —el equipo y, con el chat, el cliente—, así que no resuelve ningún tenant y cada canal comprueba la pertenencia contra su propio nombre. Cada canal declara sus guards (`['guards' => ['web']]` el de comprobantes; el de la conversación tendrá que declarar los dos). El canal de comprobantes exige además la capacidad `Receipts` y rechaza al miembro desactivado. `BroadcastChannelIsolationTest` recorre todo canal registrado.
+
 ---
 
 ## 8. Árbol de archivos

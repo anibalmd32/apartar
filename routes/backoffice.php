@@ -13,6 +13,7 @@ use App\Http\Controllers\Backoffice\LayawayController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductImageController;
+use App\Http\Controllers\Backoffice\ReceiptInboxController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
@@ -334,6 +335,20 @@ Route::prefix('backoffice')->group(function (): void {
                 Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
                     ->middleware('signed')
                     ->name('receipts.file');
+
+                /*
+                | La bandeja de conciliación (`REQ-PAY-004`) y su contador.
+                | Sobreviven a la suspensión por RB-9: aprobar comprobantes es
+                | justo lo que `REQ-ORG-008` RB-3 no deja bloquear por impago.
+                |
+                | `comprobantes/pendientes` es la cifra del badge, que la
+                | pantalla sondea cada 30 s mientras no haya tiempo real (SP-1).
+                | Va **antes** de cualquier `comprobantes/{receipt}` que llegue
+                | (la revisión de `T-061`), para que «pendientes» no se lea como
+                | un identificador.
+                */
+                Route::get('comprobantes', ReceiptInboxController::class)->name('receipts.index');
+                Route::get('comprobantes/pendientes', [ReceiptInboxController::class, 'pending'])->name('receipts.pending');
             });
 
             /*

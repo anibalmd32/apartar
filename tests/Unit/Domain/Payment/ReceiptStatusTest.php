@@ -22,3 +22,8 @@ it('solo espera al negocio mientras está en revisión', function (): void {
     expect(array_map(fn (ReceiptStatus $status): bool => $status->awaitsReview(), ReceiptStatus::cases()))
         ->toBe([true, false, false]);
 });
+
+it('nombra cada estado en la bandeja del negocio', function (): void {
+    expect(array_map(fn (ReceiptStatus $status): string => $status->label(), ReceiptStatus::cases()))
+        ->toBe(['En revisión', 'Aprobado', 'Rechazado']);
+});
