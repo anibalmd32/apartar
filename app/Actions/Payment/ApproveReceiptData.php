@@ -39,11 +39,25 @@ final readonly class ApproveReceiptData
         public Currency $settledCurrency,
         public ?string $rateOverride,
         public ?string $note,
+        /**
+         * **Cuánto** sobrante confirmó quien aprueba, en centavos de dólar
+         * (`REQ-PAY-005` SP-5). No un sí o un no: lo confirmado es una cifra, y
+         * si al aplicar sobra otra —se cambió el importe después de marcar la
+         * casilla, o entró otro pago entre la vista previa y el envío—, la
+         * aprobación se rechaza entera (`UnconfirmedExcessException`). Añadido
+         * en `T-061`; la revisión cazó que un booleano dejaba aprobar $640 de
+         * sobrante tras confirmar $10.
+         */
+        public ?int $confirmedExcessCents = null,
     ) {
         PaymentAmounts::assertPositive($settledAmount, $settledCurrency, 'conciliado');
 
         if ($rateOverride !== null) {
             new ManualRate($rateOverride);
+        }
+
+        if ($confirmedExcessCents !== null && $confirmedExcessCents < 1) {
+            throw new InvalidArgumentException('Un sobrante confirmado es de al menos un centavo.');
         }
 
         if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
@@ -57,5 +71,17 @@ final readonly class ApproveReceiptData
     public function settled(): Money
     {
         return Money::fromDecimalString($this->settledAmount, $this->settledCurrency);
+    }
+
+    /**
+     * La tasa escrita a mano, **solo si hay algo que convertir**: un pago en
+     * dólares no usa tasa, y guardar una manual con él lo dejaría como
+     * `rate_source = manual` en vez de con la fuente vigente (`REQ-FX-006`
+     * RB-4). La que llegue con dólares —se escribió en bolívares y luego se
+     * cambió la moneda— se ignora.
+     */
+    public function manualRate(): ?ManualRate
+    {
+        return $this->rateOverride !== null && $this->settledCurrency !== Currency::USD ? new ManualRate($this->rateOverride) : null;
     }
 }

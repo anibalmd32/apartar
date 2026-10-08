@@ -94,4 +94,20 @@ final class ReceiptFile
 
         return sprintf('%d/%s.%s', $organizationId, Str::uuid()->toString(), $extension);
     }
+
+    /**
+     * El identificador público de un comprobante: el UUID de su archivo
+     * (`REQ-LAY-022` `ReceiptRow.id`, RB-6).
+     *
+     * El cliente no ve el `id` de la fila (RB-6), pero el historial necesita
+     * nombrar cada comprobante —y encadenar un reintento con el que reemplaza
+     * (RB-5)—. El UUID ya existe, es aleatorio, no dice cuántos comprobantes
+     * tiene el negocio y no sirve para abrir nada: el archivo solo se sirve
+     * con una URL firmada por la ruta del `id`, detrás de la sesión y la
+     * policy.
+     */
+    public static function publicIdOf(string $path): string
+    {
+        return pathinfo($path, PATHINFO_FILENAME);
+    }
 }

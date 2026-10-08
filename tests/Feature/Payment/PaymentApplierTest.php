@@ -15,10 +15,12 @@ use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Payment\AppliedPayment;
+use App\Domain\Payment\ApprovalPreview;
 use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\UsageMetric;
+use App\Events\Layaway\LayawayActivated;
 use App\Events\Layaway\LayawayCaughtUp;
 use App\Models\Installment;
 use App\Models\Layaway;
@@ -346,6 +348,71 @@ final class PaymentApplierTest extends TestCase
         $this->assertSame([[1, 3_000, 'paid'], [2, 0, 'overdue']], $this->installments($layaway, 2));
         $this->assertSame(LayawayStatus::Overdue, $applied->statusAfter);
         Event::assertNotDispatched(LayawayCaughtUp::class);
+    }
+
+    /**
+     * `REQ-PAY-004` RB-6 y `REQ-PAY-005` SP-5: la vista previa de la pantalla de
+     * revisión es **la misma aplicación**, deshecha. Dice lo que luego pasa
+     * —Bs. 2.762,50 a 42,50 son $65: cuotas 1 y 2 enteras y $5 a la 3— y no
+     * deja nada escrito, ni toca el modelo que se le pasa.
+     */
+    public function test_the_preview_is_what_applying_does_and_writes_nothing(): void
+    {
+        $layaway = $this->activeLayaway();
+        $receipt = $this->receiptFor($layaway);
+        $before = [$this->installments($layaway, 5), $this->paymentsOf($layaway), $this->fresh($layaway)->paid_cents->cents];
+
+        $preview = $this->within(fn (): ApprovalPreview => app(PaymentApplier::class)->preview(
+            $layaway, new Money(276_250, Currency::VES), $this->bcv('42.50'), '2762.50', Currency::VES, $receipt,
+        ));
+
+        $this->assertSame([[1, 3_000, true], [2, 3_000, true], [3, 500, false]], array_map(
+            fn (array $allocation): array => [$allocation['number'], $allocation['cents'], $allocation['covers']],
+            $preview->allocations,
+        ));
+        $this->assertSame([6_500, '42.50000000', RateSource::Bcv, 0], [$preview->amount->cents, $preview->rate, $preview->rateSource, $preview->unallocatedCents]);
+        $this->assertSame($before, [$this->installments($layaway, 5), $this->paymentsOf($layaway), $this->fresh($layaway)->paid_cents->cents]);
+        $this->assertSame(LayawayStatus::Active, $layaway->status, 'La vista previa tocó el modelo que se le pasó.');
+
+        $applied = $this->apply($layaway, new Money(276_250, Currency::VES), $this->bcv('42.50'), '2762.50', Currency::VES);
+        $this->assertSame([6_500, 0], [$applied->payment->amount_cents_usd->cents, $applied->plan->unallocatedCents]);
+        $this->assertSame([[1, 3_000, 'paid'], [2, 3_000, 'paid'], [3, 500, 'partially_paid']], $this->installments($layaway, 3));
+    }
+
+    /**
+     * La vista previa de la inicial dice que activaría y a qué cuota iría el
+     * resto, **por número** —las cuotas que creó ya no existen— y no despacha
+     * nada: el apartado sigue esperando la inicial y nadie oyó una activación.
+     */
+    public function test_the_preview_of_a_down_payment_activates_nothing(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        Event::fake([LayawayActivated::class]);
+
+        $preview = $this->within(fn (): ApprovalPreview => app(PaymentApplier::class)->preview(
+            $layaway, new Money(8_000), $this->bcv('42.50'), '80.00', Currency::USD, $this->receiptFor($layaway),
+        ));
+
+        $this->assertTrue($preview->activates());
+        $this->assertSame([['number' => 1, 'cents' => 3_000, 'covers' => true]], $preview->allocations);
+        $this->assertSame(LayawayStatus::Active, $preview->statusAfter);
+        $this->assertSame(0, DB::table('installments')->where('layaway_id', $layaway->getKey())->count());
+        $this->assertSame('pending_down_payment', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        Event::assertNotDispatched(LayawayActivated::class);
+    }
+
+    /**
+     * Y rechaza lo mismo que la aplicación: un pago por debajo de la inicial.
+     */
+    public function test_the_preview_refuses_what_applying_refuses(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $this->expectException(PaymentNotApplicableException::class);
+
+        $this->within(fn (): ApprovalPreview => app(PaymentApplier::class)->preview(
+            $layaway, new Money(4_000), $this->bcv('42.50'), '40.00', Currency::USD, $this->receiptFor($layaway),
+        ));
     }
 
     /**

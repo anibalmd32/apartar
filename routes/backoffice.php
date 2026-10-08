@@ -14,6 +14,7 @@ use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\ReceiptInboxController;
+use App\Http\Controllers\Backoffice\ReceiptReviewController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
@@ -349,6 +350,29 @@ Route::prefix('backoffice')->group(function (): void {
                 */
                 Route::get('comprobantes', ReceiptInboxController::class)->name('receipts.index');
                 Route::get('comprobantes/pendientes', [ReceiptInboxController::class, 'pending'])->name('receipts.pending');
+
+                /*
+                | La revisión y la aprobación (`REQ-PAY-004` RB-6, `REQ-PAY-005`,
+                | `T-061`). Sobreviven a la suspensión (RB-12): aprobar es lo que
+                | no se bloquea por impago. `{receipt}` es numérico, así que
+                | «pendientes» no se lee nunca como un comprobante, se declare
+                | en el orden que se declare; y llega filtrado por el tenant: el
+                | de otra organización es `404` (SP-11).
+                |
+                | La vista previa es un `GET` sin efectos —aplica y deshace—, y
+                | la pantalla la pide al editar el importe o la tasa.
+                */
+                Route::get('comprobantes/{receipt}', [ReceiptReviewController::class, 'show'])
+                    ->whereNumber('receipt')
+                    ->name('receipts.show');
+
+                Route::get('comprobantes/{receipt}/vista-previa', [ReceiptReviewController::class, 'preview'])
+                    ->whereNumber('receipt')
+                    ->name('receipts.preview');
+
+                Route::post('comprobantes/{receipt}/aprobar', [ReceiptReviewController::class, 'approve'])
+                    ->whereNumber('receipt')
+                    ->name('receipts.approve');
             });
 
             /*

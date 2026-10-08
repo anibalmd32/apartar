@@ -109,6 +109,8 @@ export type ReceiptStatus = 'pending_review' | 'approved' | 'rejected';
  */
 export interface ReceiptInboxRow {
     readonly id: number;
+    /** La pantalla de revisión, desde donde se aprueba (RB-6, `T-061`). */
+    readonly reviewUrl: string;
     readonly status: ReceiptStatus;
     readonly statusLabel: string;
     /** RB-7: más de 48 h en revisión. Solo puede serlo un pendiente. */
@@ -166,4 +168,137 @@ export interface ReceiptInboxProps extends Paginated<ReceiptInboxRow> {
     readonly overdueAfterHours: number;
     /** La zona del negocio, para leer las horas de llegada (`REQ-ORG-006` RB-7). */
     readonly timezone: string;
+}
+
+/**
+ * Un pago del historial (`REQ-LAY-022` RB-1, RB-2, RB-7), espejo de
+ * `PaymentRowResource`: lo ven el cliente en su portal y el negocio en la
+ * revisión.
+ *
+ * `amountUsd.ves` es siempre `null`: un importe histórico **no se reconvierte**
+ * con la tasa de hoy (RB-2). Lo que pagó en bolívares está en
+ * `declaredAmount`, y la tasa con la que se convirtió, en `rateApplied` —nula
+ * en un pago en dólares, que no convirtió nada—. `note` solo en los pagos
+ * registrados por el negocio.
+ */
+export interface PaymentRow {
+    readonly settledAt: string;
+    readonly amountUsd: MoneyView;
+    readonly declaredAmount: string;
+    readonly rateApplied: string | null;
+    readonly rateSource: 'bcv' | 'parallel' | 'manual';
+    readonly rateSourceLabel: string;
+    readonly method: string;
+    readonly appliedTo: readonly number[];
+    /** Lo que pagó la inicial, si este pago la cubrió; formateado. */
+    readonly downPayment: string | null;
+    /** Lo que sobró sin asignar, si sobró; formateado. */
+    readonly unallocated: string | null;
+    readonly registeredByBusiness: boolean;
+    readonly note: string | null;
+}
+
+/**
+ * Lo que haría aprobar (`ApprovalPreview::toArray()`): la misma aplicación,
+ * deshecha. Cifras ya formateadas y la frase que lo resume.
+ */
+export interface ApprovalPreviewView {
+    readonly amount: string;
+    readonly rate: string;
+    readonly rateSource: string;
+    readonly rateSourceLabel: string;
+    readonly downPayment: string | null;
+    readonly allocations: readonly { readonly number: number; readonly amount: string; readonly covers: boolean }[];
+    /** Lo que sobraría sin asignar; con cifra, aprobar exige confirmarlo (SP-5). */
+    readonly unallocated: string | null;
+    /** La cifra exacta del sobrante, la que se manda al confirmarlo y el servidor compara. */
+    readonly unallocatedCents: number;
+    readonly statusAfter: string;
+    readonly statusAfterLabel: string;
+    readonly summary: string;
+}
+
+/** Una cuota del cronograma, en la pantalla de revisión. */
+export interface ReviewInstallment {
+    readonly number: number;
+    readonly dueDateLabel: string;
+    readonly amount: MoneyView;
+    readonly paid: MoneyView;
+    readonly status: string;
+    readonly statusLabel: string;
+}
+
+/** Las props de `pages/backoffice/receipts/Review.tsx` (`REQ-PAY-004` RB-6, `REQ-PAY-005`). */
+export interface ReceiptReviewProps {
+    readonly receipt: {
+        readonly id: number;
+        readonly status: ReceiptStatus;
+        readonly statusLabel: string;
+        readonly submittedAt: string | null;
+        readonly paidAt: string;
+        readonly method: string;
+        readonly bank: string | null;
+        readonly reference: string | null;
+        readonly note: string | null;
+        /** Sin formato, para precargar el formulario: `850.00`. */
+        readonly declaredAmount: string;
+        readonly declaredCurrency: Currency;
+        /** Formateado: `Bs. 850,00`. */
+        readonly declared: string;
+        readonly paymentAccount: PaymentAccountView | null;
+        readonly file: { readonly url: string; readonly kind: 'image' | 'pdf' };
+        readonly reviewedBy: string | null;
+        readonly rejectionReason: string | null;
+    };
+    readonly customer: { readonly fullName: string; readonly documentNumber: string; readonly phone: string } | null;
+    readonly layaway: {
+        readonly code: string;
+        readonly url: string;
+        readonly status: string;
+        readonly statusLabel: string;
+        readonly productName: string;
+        readonly total: MoneyView;
+        readonly downPayment: MoneyView;
+        readonly paid: MoneyView;
+        readonly remaining: MoneyView;
+    };
+    readonly installments: readonly ReviewInstallment[];
+    readonly payments: readonly PaymentRow[];
+    readonly rate: { readonly rate: string; readonly sourceLabel: string; readonly publishedAt: string } | null;
+    /** Con lo declarado y la tasa vigente; `null` si no se puede aprobar o no hay vista previa posible. */
+    readonly preview: ApprovalPreviewView | null;
+    /** Por qué no hay vista previa con lo declarado —sin tasa, por debajo de la inicial—. */
+    readonly previewError: string | null;
+    /** `null` si ya no espera revisión o el apartado ya no cobra. */
+    readonly approval: {
+        readonly url: string;
+        readonly previewUrl: string;
+        readonly currencies: readonly ReceiptCurrencyOption[];
+    } | null;
+    readonly inboxUrl: string;
+}
+
+/**
+ * Un comprobante del historial del cliente (`REQ-LAY-022` RB-3 a RB-8),
+ * espejo de `ReceiptRowResource`.
+ *
+ * `id` y `replacesReceiptId` son identificadores **públicos**, opacos: el de
+ * la fila no sale nunca (RB-6). `rejectionReason` es el motivo tal como lo
+ * escribió el negocio (RB-3). `fileUrl` es una URL firmada de 5 minutos
+ * (RB-4). `statusLabel` ya dice «En revisión desde el DD/MM» cuando toca
+ * (SP-6).
+ */
+export interface ReceiptRow {
+    readonly id: string;
+    /** `Y-m-d`, el día en que llegó, en el calendario del negocio. */
+    readonly submittedAt: string;
+    readonly method: string;
+    readonly reference: string | null;
+    readonly declaredAmount: string;
+    readonly paidToAccount: string | null;
+    readonly status: ReceiptStatus;
+    readonly statusLabel: string;
+    readonly rejectionReason: string | null;
+    readonly fileUrl: string;
+    readonly replacesReceiptId: string | null;
 }

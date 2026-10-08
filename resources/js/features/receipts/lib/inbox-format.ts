@@ -58,3 +58,15 @@ export function formatDay(day: string): string {
 
     return `${date}/${month}/${year}`;
 }
+
+/**
+ * Una tasa como se lee: `42.50000000` → `42,50`, `36.12345679` → `36,12345679`.
+ * Con dos decimales como mínimo y sin los ceros de relleno de
+ * `DECIMAL(18,8)`; sobre la cadena, sin pasar por `Number`.
+ */
+export function formatRate(rate: string): string {
+    const [whole = '0', fraction = ''] = rate.split('.');
+    const trimmed = fraction.replace(/0+$/, '').padEnd(2, '0');
+
+    return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${trimmed}`;
+}

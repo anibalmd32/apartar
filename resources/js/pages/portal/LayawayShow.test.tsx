@@ -57,6 +57,8 @@ function props(overrides: Partial<PortalLayawayShowProps> = {}, layaway: Partial
         paymentAccounts: [],
         catalogUrl: null,
         receiptUrl: null,
+        payments: [],
+        receipts: [],
         ...overrides,
     };
 }

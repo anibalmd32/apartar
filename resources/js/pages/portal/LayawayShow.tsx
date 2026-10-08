@@ -2,6 +2,8 @@ import { Alert } from '@/components/ui/alert';
 import { PaymentAccountList } from '@/features/catalog/components/PaymentAccountList';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { ScheduleTable } from '@/features/layaway/components/ScheduleTable';
+import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
+import { ReceiptHistory } from '@/features/receipts/components/ReceiptHistory';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalLayawayShowProps } from '@/types/portal';
 import { Link, usePage } from '@inertiajs/react';
@@ -19,6 +21,8 @@ import { Link, usePage } from '@inertiajs/react';
  *  - terminal, solo lectura, con un texto neutro (SP-3, SP-4).
  *
  * Las cuentas de cobro aparecen siempre que el apartado acepte pagos (RB-7).
+ * Al final, el historial de pagos y de comprobantes (`REQ-LAY-022`), en
+ * cualquier estado: un apartado cancelado también tiene pagos que reclamar.
  */
 export default function LayawayShow({
     business,
@@ -28,6 +32,8 @@ export default function LayawayShow({
     paymentAccounts,
     catalogUrl,
     receiptUrl,
+    payments,
+    receipts,
 }: PortalLayawayShowProps) {
     const { auth } = usePage<{ auth: { portal: { fullName: string } | null } }>().props;
     const pending = layaway.status === 'pending_down_payment';
@@ -118,6 +124,15 @@ export default function LayawayShow({
                     </div>
                 </section>
             ) : null}
+
+            <section className="card bg-base-100 shadow-sm" aria-label="Historial">
+                <div className="card-body gap-3 p-4">
+                    <h2 className="font-semibold">Tus pagos</h2>
+                    <PaymentHistory payments={payments} empty="Todavía no hay pagos acreditados en este apartado." />
+                    <h2 className="font-semibold">Tus comprobantes</h2>
+                    <ReceiptHistory receipts={receipts} />
+                </div>
+            </section>
 
             {catalogUrl !== null ? (
                 <Link href={catalogUrl} className="link link-hover text-sm">

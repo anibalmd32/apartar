@@ -177,6 +177,68 @@ final class PaymentApplier
     }
 
     /**
+     * Lo que haría `apply()` con estos datos, **sin que pase** (`REQ-PAY-004`
+     * RB-6, `REQ-PAY-005` SP-5).
+     *
+     * Ejecuta la aplicación entera —conversión, activación, reparto, cuotas,
+     * recálculo— dentro de una transacción que se deshace siempre, y devuelve
+     * lo que dejó. No es una segunda cuenta que imita a la primera: es la
+     * misma, así que el aviso de la pantalla y lo que escribe la aprobación no
+     * pueden divergir. Lo que se despacha «después del commit» —los eventos de
+     * transición— se descarta con el rollback, y el apartado que se pasa no se
+     * toca: se trabaja sobre una copia.
+     *
+     * Bloquea el apartado y sus cuotas mientras dura, igual que aprobar: dos
+     * vistas previas del mismo apartado se esperan, y ninguna ve la otra. Si
+     * la aplicación completaría el apartado, bloquea también el contador de
+     * apartados activos de la organización (`LimitEnforcer`) hasta el
+     * *rollback*: unos milisegundos en que un apartado nuevo del mismo negocio
+     * espera. Lo que no se deshace son los avisos del log de una anomalía que
+     * ya existía y el `AUTO_INCREMENT` de las filas de prueba.
+     *
+     * **Se llama sin transacción abierta** —como la llaman los controladores—:
+     * dentro de otra, un *deadlock* deja a MySQL sin el *savepoint* que el
+     * `finally` quiere deshacer, y el error que sube es ese y no el bloqueo.
+     *
+     * @throws PaymentNotApplicableException si el apartado no cobra, la conversión da cero o no cubre la inicial
+     * @throws MissingExchangeRateException si el pago es en bolívares y no hay tasa
+     */
+    public function preview(
+        Layaway $layaway,
+        Money $settled,
+        RateSnapshot|ManualRate|null $rate,
+        string $declaredAmount,
+        Currency $declaredCurrency,
+        Receipt $receipt,
+    ): ApprovalPreview {
+        DB::beginTransaction();
+
+        try {
+            $applied = $this->apply(clone $layaway, $settled, $rate, $declaredAmount, $declaredCurrency, $receipt, null, null);
+
+            /** @var array<int, Installment> $installments */
+            $installments = Installment::query()->where('layaway_id', $layaway->getKey())->get()->keyBy('id')->all();
+
+            return new ApprovalPreview(
+                amount: $applied->payment->amount_cents_usd,
+                rate: $applied->payment->rate_applied,
+                rateSource: $applied->payment->rate_source,
+                downPaymentCents: $applied->downPaymentCents,
+                allocations: array_map(fn (array $allocation): array => [
+                    'number' => $installments[$allocation['installmentId']]->number,
+                    'cents' => $allocation['cents'],
+                    'covers' => $installments[$allocation['installmentId']]->status === InstallmentStatus::Paid,
+                ], $applied->plan->allocations),
+                unallocatedCents: $applied->plan->unallocatedCents,
+                statusBefore: $applied->statusBefore,
+                statusAfter: $applied->statusAfter,
+            );
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
      * El importe en dólares y la tasa que se congela con él.
      *
      * @return array{Money, array{rate: string, source: RateSource, publishedAt: ?CarbonImmutable}}

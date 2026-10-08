@@ -29,6 +29,7 @@ export const INACTIVE_ACCOUNT: PaymentAccountView = {
 export function inboxRow(overrides: Partial<ReceiptInboxRow> = {}): ReceiptInboxRow {
     return {
         id: 1,
+        reviewUrl: '/backoffice/comprobantes/1',
         status: 'pending_review',
         statusLabel: 'En revisión',
         overdue: false,

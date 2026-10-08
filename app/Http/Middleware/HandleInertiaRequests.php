@@ -61,7 +61,14 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                // Solo el usuario del equipo, sea cual sea el guard por
+                // defecto. Hoy es `web`, y para un cliente da `null`; pero si
+                // fuera `customer` —como en los tests, tras `actingAs(...,
+                // 'customer')`— la ficha saldría entera con su `id`, su
+                // `account_id` y la IP de los términos, que es lo que
+                // `REQ-IDN-004` RB-4 y `REQ-LAY-022` RB-6 prohíben. El portal
+                // pinta su sesión con `portal`, sin identificadores (`T-061`).
+                'user' => $request->user() instanceof User ? $request->user() : null,
                 // `REQ-IDN-004` · la sesión del portal, perezosa: solo se
                 // resuelve al pintar, cuando el tenant ya está fijado.
                 'portal' => fn (): ?array => $this->portalSession(),

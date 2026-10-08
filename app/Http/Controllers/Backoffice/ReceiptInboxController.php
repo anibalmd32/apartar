@@ -57,12 +57,9 @@ use Inertia\Response;
  * `Customer` y `PaymentAccount` lo pone, y es lo que hace que la misma URL
  * enseñe a cada equipo lo suyo (`REQ-ORG-002` RB-1).
  *
- * ## Lo que no hace todavía
- *
- * **La pantalla de revisión** (RB-6: el archivo ampliable, el cronograma, el
- * saldo, los pagos previos y lo que aplicaría FIFO) es de `T-061`, junto con
- * aprobar. Hasta entonces cada fila lleva a la vista del apartado —el
- * cronograma y el saldo ya están allí— y abre el archivo firmado.
+ * Cada fila lleva a **la pantalla de revisión** (RB-6, `ReceiptReviewController`,
+ * `T-061`), donde están el archivo ampliable, el cronograma, el saldo, los
+ * pagos previos y lo que aplicaría FIFO, y desde donde se aprueba.
  */
 final class ReceiptInboxController extends Controller
 {
@@ -324,6 +321,7 @@ final class ReceiptInboxController extends Controller
 
             return [
                 'id' => (int) $receipt->getKey(),
+                'reviewUrl' => route('receipts.show', $receipt),
                 'status' => $receipt->status->value,
                 'statusLabel' => $receipt->status->label(),
                 'overdue' => $pending && $receipt->created_at !== null && $receipt->created_at->lessThan($overdueBefore),

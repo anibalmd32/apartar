@@ -55,4 +55,17 @@ final class ReceiptPolicy
     {
         return $actor instanceof User && $actor->role->can(OrganizationCapability::Receipts);
     }
+
+    /**
+     * Aprobar —y rechazar, con `T-062`— (`REQ-PAY-005` RB-2): un usuario
+     * **de esa** organización con la capacidad de conciliar. Si sigue en
+     * revisión lo decide la acción bajo el bloqueo, no esto: aquí se pregunta
+     * quién, no cuándo.
+     */
+    public function review(User|Customer $actor, Receipt $receipt): bool
+    {
+        return $actor instanceof User
+            && $actor->organization_id === (int) $receipt->organization_id
+            && $actor->role->can(OrganizationCapability::Receipts);
+    }
 }

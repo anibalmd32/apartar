@@ -1,6 +1,7 @@
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type MoneyView } from '@/types/money';
 import { type PaymentAccountView } from '@/types/payment';
+import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
 
 /**
  * Tipos del portal del cliente (`REQ-IDN-004`, `REQ-LAY-020`, `REQ-LAY-021`).
@@ -136,8 +137,12 @@ export interface PortalLayawayShowProps {
     readonly nextPaymentSuggestion: NextPaymentSuggestion | null;
     readonly paymentAccounts: readonly PaymentAccountView[];
     readonly catalogUrl: string | null;
-    /** El formulario del comprobante es de `T-059`; hasta entonces, `null`. */
+    /** El formulario del comprobante; `null` si el apartado ya no cobra. */
     readonly receiptUrl: string | null;
+    /** `REQ-LAY-022` · los pagos, del más reciente al más antiguo. */
+    readonly payments: readonly PaymentRow[];
+    /** `REQ-LAY-022` · los comprobantes, del más reciente al más antiguo. */
+    readonly receipts: readonly ReceiptRow[];
 }
 
 /** La confirmación del enlace por correo (`REQ-IDN-003` RB-9). */

@@ -1,4 +1,4 @@
-import { formatAge, formatDay, formatDeclaredAmount } from '@/features/receipts/lib/inbox-format';
+import { formatAge, formatDay, formatDeclaredAmount, formatRate } from '@/features/receipts/lib/inbox-format';
 import { expect, it } from 'vitest';
 
 /**
@@ -28,4 +28,11 @@ it('dice la antigüedad en horas hasta el umbral de atrasado, redondeando hacia 
 
 it('escribe el día declarado sin pasar por ninguna zona horaria', () => {
     expect(formatDay('2026-10-06')).toBe('06/10/2026');
+});
+
+it('escribe la tasa como se lee, sin los ceros de relleno de la columna', () => {
+    expect(formatRate('42.50000000')).toBe('42,50');
+    expect(formatRate('36.12345679')).toBe('36,12345679');
+    expect(formatRate('1.00000000')).toBe('1,00');
+    expect(formatRate('1234.5')).toBe('1.234,50');
 });

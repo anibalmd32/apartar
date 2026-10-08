@@ -19,11 +19,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Http\Resources\InstallmentRowResource;
 use App\Http\Resources\LayawaySummaryResource;
+use App\Http\Resources\PaymentRowResource;
+use App\Http\Resources\ReceiptRowResource;
 use App\Models\Catalog;
 use App\Models\Installment;
 use App\Models\Layaway;
+use App\Models\Payment;
+use App\Models\Receipt;
 use App\Queries\ActivePaymentAccountsQuery;
 use App\Support\Settings;
+use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -51,8 +56,9 @@ use Inertia\Response;
  *    (`REQ-LAY-009` RB-8), y por eso este controlador no lo lee.
  *
  * El botón de subir comprobante lleva al formulario de `T-059` mientras el
- * apartado cobre; el chat es de H7 y el historial de pagos y comprobantes de
- * `T-061`. El pago sugerido sale de `NextPayment`, el mismo que precarga el
+ * apartado cobre; el chat es de H7. **El historial** (`REQ-LAY-022`, `T-061`)
+ * son los pagos con su tasa congelada y los comprobantes con su estado, del
+ * más reciente al más antiguo; todo de este apartado, que ya es de la persona. El pago sugerido sale de `NextPayment`, el mismo que precarga el
  * importe del formulario.
  */
 final class LayawayShowController extends Controller
@@ -100,6 +106,26 @@ final class LayawayShowController extends Controller
             'catalogUrl' => $this->catalogUrl($layaway),
             // `REQ-PAY-001` RB-1 · solo si el apartado todavía cobra (SP-4).
             'receiptUrl' => $layaway->status->acceptsPayments() ? route('portal.receipts.create', ['code' => $layaway->code]) : null,
+            // `REQ-LAY-022` · el historial. Un apartado tiene tantos pagos como
+            // cuotas más alguno, así que va entero y sin paginar (SP-5).
+            'payments' => Payment::query()
+                ->where('layaway_id', $layaway->getKey())
+                ->with(['allocations.installment', 'receipt'])
+                ->latest('settled_at')
+                ->latest('id')
+                ->get()
+                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone))->resolve($request))
+                ->values()
+                ->all(),
+            'receipts' => Receipt::query()
+                ->where('layaway_id', $layaway->getKey())
+                ->with(['paymentAccount', 'replaces'])
+                ->latest('created_at')
+                ->latest('id')
+                ->get()
+                ->map(fn (Receipt $receipt): array => (new ReceiptRowResource($receipt, $timezone, CarbonImmutable::now()))->resolve($request))
+                ->values()
+                ->all(),
         ]);
     }
 

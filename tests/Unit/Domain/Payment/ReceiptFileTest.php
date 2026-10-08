@@ -77,3 +77,10 @@ it('sigue usando la constante porque no hay lector de platform_settings', functi
         .'(REQ-PAY-002 RB-5) en vez de ReceiptFile::MAX_SIZE_MB —en SubmitReceiptAction y en el formulario— y este caso se borra.',
     );
 });
+
+it('da como identificador público el UUID del archivo, sin la organización ni la extensión', function (): void {
+    $path = ReceiptFile::pathFor(42, 'jpg');
+
+    expect(ReceiptFile::publicIdOf($path))->toMatch('/^[0-9a-f-]{36}$/')
+        ->and($path)->toBe('42/'.ReceiptFile::publicIdOf($path).'.jpg');
+});

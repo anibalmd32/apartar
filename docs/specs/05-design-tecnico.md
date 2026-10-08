@@ -317,6 +317,21 @@ final class PaymentApplier
         // organización, y este es el único sitio que crea Payment.
         ?string $idempotencyKey = null,
     ): AppliedPayment;
+
+    // Añadido en T-061: lo que haría apply(), sin que pase. Ejecuta la
+    // aplicación real dentro de una transacción que siempre se deshace y
+    // devuelve lo que dejó (cuotas por número). Es la vista previa FIFO de la
+    // pantalla de revisión (REQ-PAY-004 RB-6) y la cifra del sobrante que hay
+    // que confirmar (REQ-PAY-005 SP-5): una segunda cuenta que imitara a la
+    // primera podría divergir de ella.
+    public function preview(
+        Layaway $layaway,
+        Money $settled,
+        RateSnapshot|ManualRate|null $rate,
+        string $declaredAmount,
+        Currency $declaredCurrency,
+        Receipt $receipt,
+    ): ApprovalPreview;
 }
 
 /** Resultado de aplicar un pago: qué se creó y qué quedó sin asignar. */
@@ -403,6 +418,7 @@ Importa el orden en que se llaman, porque de eso depende que las invariantes se 
 ApproveReceiptAction / RegisterManualPaymentAction
   └─ DB::transaction
        ├─ lockForUpdate() sobre el Layaway            ← siempre primero
+       ├─ lockForUpdate() sobre el Receipt, y sigue en revisión  ← T-061
        ├─ ExchangeRateService::current($org)          → RateSnapshot
        ├─ PaymentApplier::apply(...)
        │    ├─ crea Payment con el snapshot de tasa

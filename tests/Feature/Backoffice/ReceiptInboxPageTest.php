@@ -245,6 +245,7 @@ final class ReceiptInboxPageTest extends TestCase
         $this->get(route('receipts.index'))->assertInertia(fn (AssertableInertia $page) => $page->where('now', CarbonImmutable::now()->toIso8601String()));
         $this->assertSame('image', $row['file']['kind']);
         $this->assertSame(SignedFileUrl::forBackoffice($image), $row['file']['url']);
+        $this->assertSame(route('receipts.show', $image), $row['reviewUrl']);
 
         $this->assertSame('pdf', $rows[$pdf->getKey()]['file']['kind']);
         $this->assertNull($rows[$pdf->getKey()]['paymentAccount']);

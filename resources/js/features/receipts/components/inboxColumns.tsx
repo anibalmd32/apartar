@@ -142,7 +142,19 @@ export function inboxColumns(now: number): DataTableColumn<ReceiptInboxRow>[] {
             align: 'end',
         },
         { id: 'paidAt', header: 'Pagó el', cell: (row) => formatDay(row.paidAt), sortKey: 'paid_at' },
-        { id: 'status', header: 'Estado', cell: (row) => <Badge tone={STATUS_TONES[row.status]}>{row.statusLabel}</Badge> },
+        {
+            id: 'status',
+            header: 'Estado',
+            cell: (row) => (
+                <div className="flex flex-col items-start gap-1">
+                    <Badge tone={STATUS_TONES[row.status]}>{row.statusLabel}</Badge>
+                    <Link href={row.reviewUrl} className="link text-sm">
+                        {row.status === 'pending_review' ? 'Revisar' : 'Ver'}
+                    </Link>
+                </div>
+            ),
+            primary: true,
+        },
         { id: 'file', header: 'Archivo', cell: (row) => <FileCell row={row} /> },
     ];
 }
