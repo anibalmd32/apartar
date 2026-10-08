@@ -156,6 +156,27 @@ final class LayawayBalanceRecalculatorTest extends TestCase
     }
 
     /**
+     * El contrato de `recalculate()`: al volver, **el modelo que se pasó** lleva
+     * el saldo nuevo, también si quien llama ya había leído `paid_cents`. Con
+     * `setRawAttributes(..., sync: true)`, la caché del cast de `Money` volvía a
+     * escribir el valor viejo encima (`T-064`).
+     */
+    public function test_the_model_passed_in_carries_the_new_balance_even_after_reading_it(): void
+    {
+        $layaway = $this->paidDownPayment();
+        $model = $this->fresh($layaway);
+        $this->assertSame(5_000, $model->paid_cents->cents);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['paid_cents' => 4_000, 'remaining_cents' => 16_000]);
+        $model = $this->fresh($layaway);
+        $this->assertSame(4_000, $model->paid_cents->cents);
+
+        $this->recalculate($model);
+
+        $this->assertSame([5_000, 15_000], [$model->paid_cents->cents, $model->remaining_cents->cents]);
+        $this->assertFalse($model->isDirty(), 'El modelo vuelve sincronizado con la fila.');
+    }
+
+    /**
      * SP-2 · un exceso mal conciliado —cuotas con más pagado que su importe—
      * no deja `remaining_cents` negativo: se acota a cero, se registra la
      * anomalía con lo que sobra, y `diff()` la sigue reportando.

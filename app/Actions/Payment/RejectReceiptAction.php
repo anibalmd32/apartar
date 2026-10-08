@@ -15,6 +15,7 @@ use App\Models\Layaway;
 use App\Models\Receipt;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -101,7 +102,7 @@ final class RejectReceiptAction
                 ] + ($extension->wasGranted() ? ['down_payment_extended_until' => $layaway->expires_at?->toIso8601String()] : []),
             );
 
-            $receipt->setRawAttributes($locked->getAttributes(), sync: true);
+            ModelState::adopt($receipt, $locked->getAttributes());
 
             return $extension;
         });

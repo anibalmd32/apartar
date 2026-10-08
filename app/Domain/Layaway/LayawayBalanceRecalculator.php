@@ -8,6 +8,7 @@ use App\Domain\Settings\SettingKey;
 use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Payment;
+use App\Support\ModelState;
 use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -121,7 +122,10 @@ final class LayawayBalanceRecalculator
             }
 
             $fresh = $locked->fresh() ?? throw new LogicException('El apartado desapareció a mitad de su recálculo.');
-            $layaway->setRawAttributes($fresh->getAttributes(), sync: true);
+            // `ModelState::adopt()`, y no `setRawAttributes(..., sync: true)`:
+            // así el modelo vuelve con el saldo nuevo aunque quien llama ya
+            // hubiera leído `paid_cents` (`T-064`).
+            ModelState::adopt($layaway, $fresh->getAttributes());
         });
     }
 
@@ -139,23 +143,79 @@ final class LayawayBalanceRecalculator
         /** @var list<Installment> $installments */
         $installments = $current->installments()->get()->all();
 
-        $derived = $this->derive($current, $installments);
-        $fields = $this->changedColumns($this->stored($current), $derived);
+        return $this->discrepancyOf($current, $installments, $this->paidFromPayments($current));
+    }
 
-        $target = $this->targetStatus($current->status, $derived['remaining_cents'], $installments);
-
-        if ($target !== null) {
-            $fields['status'] = ['stored' => $current->status->value, 'derived' => $target->value];
+    /**
+     * `diff()` para un lote, **sin `N+1`** (`REQ-PAY-008` SP-4, `T-064`): las
+     * cuotas de todos en una consulta y lo pagado de todos en otra, agrupada.
+     * La comparación es la misma —`discrepancyOf()`—, así que la
+     * reconciliación no puede discrepar de lo que mide `diff()`.
+     *
+     * Los apartados van como los leyó quien llama, de la organización fijada.
+     *
+     * @param  list<Layaway>  $layaways
+     * @return array<int, BalanceDiscrepancy> por id de apartado, solo los descuadrados
+     */
+    public function diffMany(array $layaways): array
+    {
+        if ($layaways === []) {
+            return [];
         }
 
-        $fromPayments = $this->paidFromPayments($current);
+        $ids = array_map(fn (Layaway $layaway): int => (int) $layaway->getKey(), $layaways);
+
+        /** @var array<int, list<Installment>> $installments */
+        $installments = [];
+
+        foreach (Installment::query()->whereIn('layaway_id', $ids)->orderBy('number')->get() as $installment) {
+            $installments[(int) $installment->layaway_id][] = $installment;
+        }
+
+        $fromPayments = Payment::query()
+            ->whereIn('layaway_id', $ids)
+            ->groupBy('layaway_id')
+            ->selectRaw('layaway_id, SUM(amount_cents_usd - unallocated_cents) AS paid')
+            ->pluck('paid', 'layaway_id')
+            ->all();
+
+        $discrepancies = [];
+
+        foreach ($layaways as $layaway) {
+            $id = (int) $layaway->getKey();
+            $discrepancy = $this->discrepancyOf($layaway, $installments[$id] ?? [], (int) ($fromPayments[$id] ?? 0));
+
+            if ($discrepancy instanceof BalanceDiscrepancy) {
+                $discrepancies[$id] = $discrepancy;
+            }
+        }
+
+        return $discrepancies;
+    }
+
+    /**
+     * Lo guardado contra lo derivado de las cuotas y la inicial, más la
+     * transición que tocaría y lo que dicen los pagos.
+     *
+     * @param  list<Installment>  $installments
+     */
+    private function discrepancyOf(Layaway $layaway, array $installments, int $fromPayments): ?BalanceDiscrepancy
+    {
+        $derived = $this->derive($layaway, $installments);
+        $fields = $this->changedColumns($this->stored($layaway), $derived);
+
+        $target = $this->targetStatus($layaway->status, $derived['remaining_cents'], $installments);
+
+        if ($target !== null) {
+            $fields['status'] = ['stored' => $layaway->status->value, 'derived' => $target->value];
+        }
 
         if ($fields === [] && $fromPayments === $derived['paid_cents'] && $derived['overpaid'] === 0) {
             return null;
         }
 
         return new BalanceDiscrepancy(
-            layawayId: (int) $current->getKey(),
+            layawayId: (int) $layaway->getKey(),
             fields: $fields,
             paidFromPayments: $fromPayments,
             paidFromSchedule: $derived['paid_cents'],

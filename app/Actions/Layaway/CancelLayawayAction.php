@@ -13,6 +13,7 @@ use App\Domain\Payment\LayawayReceipts;
 use App\Models\Layaway;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -96,7 +97,7 @@ final class CancelLayawayAction
                 ] + ($rejected > 0 ? ['receipts_rejected' => $rejected] : []),
             );
 
-            $layaway->setRawAttributes($locked->getAttributes(), sync: true);
+            ModelState::adopt($layaway, $locked->getAttributes());
 
             return $layaway;
         });

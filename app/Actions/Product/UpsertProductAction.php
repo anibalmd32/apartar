@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use App\Support\TaxonomySlug;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -103,7 +104,7 @@ final class UpsertProductAction
                 // bajo ese bloqueo: un apartado que entrara entre la cuenta y
                 // la escritura se quedaría con una unidad que ya no está.
                 $locked = ProductLock::acquire((int) $product->getKey());
-                $product->setRawAttributes($locked->getAttributes(), sync: true);
+                ModelState::adopt($product, $locked->getAttributes());
                 $reserved = $product->reservedUnits();
             }
 

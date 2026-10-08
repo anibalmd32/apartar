@@ -15,6 +15,7 @@ use App\Domain\Layaway\ScheduleGenerator;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Installment;
 use App\Models\Layaway;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -147,7 +148,7 @@ final class ActivateLayawayAction
                 $this->balance->recalculate($locked);
 
                 $fresh = $locked->fresh() ?? throw new LogicException('El apartado desapareció a mitad de su activación.');
-                $layaway->setRawAttributes($fresh->getAttributes(), sync: true);
+                ModelState::adopt($layaway, $fresh->getAttributes());
 
                 return $schedule;
             });

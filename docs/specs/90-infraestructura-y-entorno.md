@@ -141,7 +141,7 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
   | Cola | Jobs |
   |---|---|
   | `high` | `FetchExchangeRate`, `ProcessSubscriptionDunning` |
-  | `default` | notificaciones, `SendWebPush`, `DispatchCatalogDigests`, `TranscodeProductImage`, `CompressReceiptImage`, `NotifyUnreadMessage`, expiración y detección de mora |
+  | `default` | notificaciones, `SendWebPush`, `DispatchCatalogDigests`, `TranscodeProductImage`, `CompressReceiptImage`, `NotifyUnreadMessage`, expiración y detección de mora, `ReconcileLayaways` (añadido en `T-064`: no figuraba; es integridad de apartados, como las dos anteriores) |
   | `exports` | `GenerateExport`, `PurgeExpiredExports` |
   | `telemetry` | `ProcessTelemetryBatch`, `LinkVisitorEventsToCustomer`, `LinkVisitorEventsToAccount`, `PurgeTelemetry`, `RecalculateUsage` |
 - RB-1b **Todo job que toque una tabla del tenant recibe la organización como parámetro explícito** y la fija con `TenantContext::setOrganization()` al arrancar, limpiándola en el `finally` (`REQ-ORG-002` RB-5 y SP-7). Un job sin tenant fijado que toque una tabla del tenant **debe fallar**, no operar sin filtro. Los jobs que recorren varias organizaciones (`ExpireLayawaysJob`, `DetectOverdueLayawaysJob`, `DispatchReminders`, `ReconcileLayaways`, `ProcessTelemetryBatch`, `RecalculateUsage`, `DispatchCatalogDigests`) usan `withoutTenantScope()` para enumerar y fijan el tenant **por elemento o por lote**, nunca uno para toda la ejecución.

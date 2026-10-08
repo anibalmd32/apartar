@@ -57,6 +57,7 @@ enum AuditEvent: string
     case LayawayCancelled = 'layaway.cancelled';
     case InstallmentRescheduled = 'installment.rescheduled';
     case LayawayDelivered = 'layaway.delivered';
+    case ReconciliationCorrected = 'reconciliation.corrected';
 
     // -------------------------------------------------------------------
     // Catálogo · H2
@@ -119,7 +120,8 @@ enum AuditEvent: string
         return match ($this) {
             self::ReceiptApproved, self::ReceiptRejected, self::PaymentRecorded,
             self::PaymentReallocated, self::LayawayCancelled,
-            self::InstallmentRescheduled, self::LayawayDelivered => AuditArea::Collections,
+            self::InstallmentRescheduled, self::LayawayDelivered,
+            self::ReconciliationCorrected => AuditArea::Collections,
 
             self::ProductPricingChanged, self::ProductStatusChanged, self::CatalogPublished,
             self::CatalogUnpublished, self::CatalogExpirationScheduled => AuditArea::Catalog,
@@ -178,6 +180,8 @@ enum AuditEvent: string
             self::LayawayCancelled => 'App\Actions\Layaway\CancelLayawayAction',
             self::InstallmentRescheduled => 'App\Actions\Layaway\RescheduleInstallmentAction',
             self::LayawayDelivered => 'App\Actions\Layaway\MarkDeliveredAction',
+            // T-064 · `layaways:reconcile --fix`, sin actor (`REQ-BOF-005` RB-7).
+            self::ReconciliationCorrected => 'App\Actions\Layaway\ReconcileLayawaysAction',
 
             // Catálogo · T-027, T-030, T-032. La expiración **no tiene job**
             // (`REQ-CAT-022` RB-6: se deriva en la consulta), así que lo que
@@ -242,6 +246,7 @@ enum AuditEvent: string
             self::LayawayCancelled => 'Apartado cancelado',
             self::InstallmentRescheduled => 'Cuota reprogramada',
             self::LayawayDelivered => 'Apartado marcado como entregado',
+            self::ReconciliationCorrected => 'Saldo o existencias corregidos por la reconciliación',
 
             self::ProductPricingChanged => 'Condiciones de pago del producto cambiadas',
             self::ProductStatusChanged => 'Estado del producto cambiado',

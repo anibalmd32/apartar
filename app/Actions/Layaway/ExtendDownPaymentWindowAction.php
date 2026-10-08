@@ -7,6 +7,7 @@ namespace App\Actions\Layaway;
 use App\Domain\Layaway\DownPaymentExtension;
 use App\Domain\Layaway\LayawayStatus;
 use App\Models\Layaway;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -52,7 +53,7 @@ final class ExtendDownPaymentWindowAction
             }
 
             $fresh = $locked->fresh() ?? throw new LogicException('El apartado desapareció a mitad de su prórroga.');
-            $layaway->setRawAttributes($fresh->getAttributes(), sync: true);
+            ModelState::adopt($layaway, $fresh->getAttributes());
 
             return $outcome;
         });

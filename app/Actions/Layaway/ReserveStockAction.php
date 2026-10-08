@@ -7,6 +7,7 @@ namespace App\Actions\Layaway;
 use App\Domain\Catalog\InsufficientStockException;
 use App\Domain\Catalog\ProductLock;
 use App\Models\Product;
+use App\Support\ModelState;
 use InvalidArgumentException;
 
 /**
@@ -56,7 +57,7 @@ final class ReserveStockAction
         // sigue puesto.
         Product::query()->whereKey($locked->getKey())->toBase()->update(['stock' => $stock]);
 
-        $locked->setRawAttributes(['stock' => $stock] + $locked->getAttributes(), sync: true);
+        ModelState::adopt($locked, ['stock' => $stock] + $locked->getAttributes());
 
         return $locked;
     }

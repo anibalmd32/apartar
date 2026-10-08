@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Jobs\DetectOverdueLayawaysJob;
 use App\Jobs\ExpireLayawaysJob;
 use App\Jobs\FetchExchangeRate;
+use App\Jobs\ReconcileLayaways;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -64,3 +65,13 @@ Schedule::job(new DetectOverdueLayawaysJob)
     ->hourly()
     ->withoutOverlapping()
     ->name('layaways:detect-overdue');
+
+/*
+| `REQ-PAY-008` RB-6, `T-064` · la reconciliación de saldos, en modo informe,
+| a las 05:30 de la plataforma (`APP_TIMEZONE`, [90] RB-5). Las correcciones
+| son del comando con `--fix`, a mano.
+*/
+Schedule::job(new ReconcileLayaways)
+    ->dailyAt('05:30')
+    ->withoutOverlapping()
+    ->name('layaways:reconcile');

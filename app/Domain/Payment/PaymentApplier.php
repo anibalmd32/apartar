@@ -24,6 +24,7 @@ use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Receipt;
 use App\Models\User;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -176,7 +177,7 @@ final class PaymentApplier
 
             $this->balance->recalculate($locked);
 
-            $layaway->setRawAttributes($locked->getAttributes(), sync: true);
+            ModelState::adopt($layaway, $locked->getAttributes());
 
             return new AppliedPayment($payment, $plan, $statusBefore, $locked->status, $downPayment);
         });

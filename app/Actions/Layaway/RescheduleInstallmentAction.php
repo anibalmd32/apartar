@@ -14,6 +14,7 @@ use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -119,7 +120,7 @@ final class RescheduleInstallmentAction
             // tienen su estado de mora (`REQ-PAY-008` RB-7).
             $this->balance->recalculate($layaway);
 
-            $installment->setRawAttributes($target->fresh()?->getAttributes() ?? $target->getAttributes(), sync: true);
+            ModelState::adopt($installment, $target->fresh()?->getAttributes() ?? $target->getAttributes());
 
             return $installment;
         });

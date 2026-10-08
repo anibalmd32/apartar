@@ -9,7 +9,7 @@ use App\Domain\Auditing\AuditEvent;
  * La lista cerrada de `REQ-BOF-005` RB-1 y —lo que de verdad importa— **el
  * mecanismo que impide que un evento sin emisor se quede olvidado**.
  *
- * El enum declara los treinta y cinco eventos y, en cada uno, la clase que lo
+ * El enum declara los treinta y seis eventos y, en cada uno, la clase que lo
  * emite. Treinta de esas clases todavía no existen: llegan con su hito. Una
  * lista de «pendientes por conectar» escrita a mano se habría quedado vieja en
  * silencio, así que lo que hay es esto — un test que **empieza a cubrir cada
@@ -96,19 +96,20 @@ it('exige que toda Action ya escrita audite el evento que declara', function (Au
  * desde su Action; `T-061` le suma `ReceiptApproved`, desde
  * `ApproveReceiptAction`, y `T-062` `ReceiptRejected` y `PaymentRecorded`,
  * desde `RejectReceiptAction` y `RegisterManualPaymentAction`; `T-063`
- * `PaymentReallocated`, desde `ReallocatePaymentAction`.
+ * `PaymentReallocated`, desde `ReallocatePaymentAction`; y `T-064`
+ * `ReconciliationCorrected`, desde `ReconcileLayawaysAction`.
  *
  * Que la cifra haya que tocarla al añadir un emisor es el punto: obliga a
  * mirar si la Action nueva audita de verdad, en vez de dejar que el conteo se
  * ajuste solo.
  */
-it('cubre hoy los veinticuatro eventos cuya Action ya existe', function (): void {
+it('cubre hoy los veinticinco eventos cuya Action ya existe', function (): void {
     $covered = array_values(array_filter(
         AuditEvent::cases(),
         fn (AuditEvent $event): bool => class_exists($event->emitter()),
     ));
 
-    expect($covered)->toHaveCount(24);
+    expect($covered)->toHaveCount(25);
 
     $areas = array_values(array_unique(
         array_map(fn (AuditEvent $event): string => $event->area()->value, $covered),
@@ -123,12 +124,13 @@ it('cubre hoy los veinticuatro eventos cuya Action ya existe', function (): void
 });
 
 /**
- * La lista cerrada de RB-1 tiene treinta y cinco casos desde `T-043`, que
- * añadió `customer.contact_updated` con su entrada en la spec. Crecer es una
+ * La lista cerrada de RB-1 tiene treinta y seis casos: `T-043` añadió
+ * `customer.contact_updated` y `T-064` `reconciliation.corrected`, cada uno con
+ * su entrada en la spec. Crecer es una
  * decisión de [30] y no de un enum, así que la cifra se afirma.
  */
-it('declara los treinta y cinco eventos de la lista cerrada', function (): void {
-    expect(AuditEvent::cases())->toHaveCount(35);
+it('declara los treinta y seis eventos de la lista cerrada', function (): void {
+    expect(AuditEvent::cases())->toHaveCount(36);
     expect(AuditEvent::CustomerContactUpdated->value)->toBe('customer.contact_updated');
 });
 

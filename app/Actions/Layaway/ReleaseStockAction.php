@@ -7,6 +7,7 @@ namespace App\Actions\Layaway;
 use App\Domain\Catalog\ProductLock;
 use App\Models\Layaway;
 use App\Models\Product;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -84,10 +85,7 @@ final class ReleaseStockAction
 
             Layaway::query()->whereKey($locked->getKey())->update(['stock_released_at' => $releasedAt]);
 
-            $layaway->setRawAttributes(
-                ['stock_released_at' => $releasedAt->format('Y-m-d H:i:s')] + $layaway->getAttributes(),
-                sync: true,
-            );
+            ModelState::adopt($layaway, ['stock_released_at' => $releasedAt->format('Y-m-d H:i:s')] + $layaway->getAttributes());
         });
     }
 

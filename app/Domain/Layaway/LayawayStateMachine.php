@@ -15,6 +15,7 @@ use App\Events\Layaway\LayawayCompleted;
 use App\Events\Layaway\LayawayExpired;
 use App\Events\Layaway\LayawayTransition;
 use App\Models\Layaway;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -127,7 +128,7 @@ final class LayawayStateMachine
             // El modelo de quien llama queda como la fila, sin pasar por la
             // guarda: los atributos se copian ya limpios.
             $fresh = $locked->fresh() ?? throw new LogicException('El apartado desapareció a mitad de su transición.');
-            $layaway->setRawAttributes($fresh->getAttributes(), sync: true);
+            ModelState::adopt($layaway, $fresh->getAttributes());
 
             event($this->eventFor($locked, $from, $to, $now));
         });

@@ -10,6 +10,7 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Models\Layaway;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ final class MarkDeliveredAction
                 );
             }
 
-            $layaway->setRawAttributes($locked->getAttributes(), sync: true);
+            ModelState::adopt($layaway, $locked->getAttributes());
 
             return $layaway;
         });
