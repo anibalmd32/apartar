@@ -99,6 +99,7 @@ final class PaymentApplier
      *
      * @param  Money  $settled  lo que el negocio confirma haber recibido, en su moneda
      * @param  string  $declaredAmount  lo declarado, con dos decimales, en `$declaredCurrency`
+     * @param  PaymentOrigin|null  $origin  cómo se pagó; sin él, el del comprobante si viene (`T-062`)
      *
      * @throws PaymentNotApplicableException si el apartado no cobra, la conversión da cero o no cubre la inicial
      * @throws MissingExchangeRateException si el pago es en bolívares y no hay tasa
@@ -114,6 +115,7 @@ final class PaymentApplier
         ?User $registeredBy,
         ?string $note,
         ?string $idempotencyKey = null,
+        ?PaymentOrigin $origin = null,
     ): AppliedPayment {
         PaymentAmounts::assertPositive($declaredAmount, $declaredCurrency, 'declarado');
 
@@ -125,7 +127,7 @@ final class PaymentApplier
             throw new InvalidArgumentException('Un pago sin comprobante dice quién lo registró (REQ-PAY-007: registered_by obligatorio).');
         }
 
-        return DB::transaction(function () use ($layaway, $settled, $rate, $declaredAmount, $declaredCurrency, $receipt, $registeredBy, $note, $idempotencyKey): AppliedPayment {
+        return DB::transaction(function () use ($layaway, $settled, $rate, $declaredAmount, $declaredCurrency, $receipt, $registeredBy, $note, $idempotencyKey, $origin): AppliedPayment {
             // RB-9 · bloqueado, y por el global scope: el de otro negocio no
             // existe para esta búsqueda.
             /** @var Layaway $locked */
@@ -164,7 +166,10 @@ final class PaymentApplier
                 ? $this->allocator->plan($locked, new Money($excess))
                 : new AllocationPlan([], 0);
 
-            $payment = $this->insertPayment($locked, $dollars, $plan, $snapshot, $declaredAmount, $declaredCurrency, $receipt, $registeredBy, $note, $idempotencyKey);
+            // Cómo se pagó: lo que diga quien llama, o el comprobante si viene.
+            $origin ??= $receipt instanceof Receipt ? PaymentOrigin::ofReceipt($receipt) : null;
+
+            $payment = $this->insertPayment($locked, $dollars, $plan, $snapshot, $declaredAmount, $declaredCurrency, $receipt, $registeredBy, $note, $idempotencyKey, $origin);
 
             $this->allocate($locked, $payment, $plan);
 
@@ -209,12 +214,14 @@ final class PaymentApplier
         RateSnapshot|ManualRate|null $rate,
         string $declaredAmount,
         Currency $declaredCurrency,
-        Receipt $receipt,
+        ?Receipt $receipt,
+        ?User $registeredBy = null,
+        ?PaymentOrigin $origin = null,
     ): ApprovalPreview {
         DB::beginTransaction();
 
         try {
-            $applied = $this->apply(clone $layaway, $settled, $rate, $declaredAmount, $declaredCurrency, $receipt, null, null);
+            $applied = $this->apply(clone $layaway, $settled, $rate, $declaredAmount, $declaredCurrency, $receipt, $registeredBy, null, null, $origin);
 
             /** @var array<int, Installment> $installments */
             $installments = Installment::query()->where('layaway_id', $layaway->getKey())->get()->keyBy('id')->all();
@@ -316,6 +323,7 @@ final class PaymentApplier
         ?User $registeredBy,
         ?string $note,
         ?string $idempotencyKey,
+        ?PaymentOrigin $origin,
     ): Payment {
         $payment = new Payment;
 
@@ -335,6 +343,7 @@ final class PaymentApplier
             'settled_at' => CarbonImmutable::now(),
             'registered_by' => $registeredBy?->getKey(),
             'note' => $note,
+            ...($origin?->toColumns() ?? []),
         ])->save();
 
         return $payment;

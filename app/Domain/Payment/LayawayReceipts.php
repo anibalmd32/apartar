@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Domain\Payment;
 
 use App\Models\Layaway;
+use App\Models\Payment;
 use App\Models\Receipt;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Lo que los comprobantes de un apartado deciden fuera del módulo de cobranza.
@@ -108,6 +110,13 @@ class LayawayReceipts
         return Receipt::query()
             ->whereIn('id', $latest)
             ->where('status', ReceiptStatus::Rejected)
+            // Desde `T-062`: un rechazo que el negocio ya resolvió registrando
+            // el pago a mano (`REQ-PAY-006` SP-3) no espera ningún reintento.
+            ->whereNotExists(fn ($payments) => $payments
+                ->selectRaw('1')
+                ->from('payments')
+                ->whereColumn('payments.layaway_id', 'receipts.layaway_id')
+                ->whereColumn('payments.created_at', '>=', DB::raw('COALESCE(receipts.reviewed_at, receipts.updated_at)')))
             ->pluck('layaway_id')
             ->map(fn (mixed $id): int => (int) $id)
             ->values()
@@ -127,6 +136,38 @@ class LayawayReceipts
      * Sin revisor: lo rechaza el sistema, no una persona. El aviso al cliente
      * es de `T-083`.
      */
+    /**
+     * El comprobante rechazado al que sustituiría uno nuevo de ese apartado
+     * (`REQ-PAY-006` RB-4), o `null`.
+     *
+     * Es el **último** comprobante del apartado, si se rechazó y **nada lo ha
+     * resuelto después**: ni otro comprobante —sería más nuevo— ni un pago
+     * que el negocio registró tras el rechazo (SP-3: el rechazo por error se
+     * resuelve con un pago manual). Sin esa segunda condición, el comprobante
+     * de la cuota siguiente, semanas después, saldría como «reintento» de uno
+     * que ya estaba cerrado.
+     *
+     * Una sola regla para quien encadena (`SubmitReceiptAction`, bajo el
+     * bloqueo del apartado) y para quien lo anuncia (el formulario del
+     * portal), y la misma que `rejectedAwaitingRetry()` aplica a las alertas.
+     */
+    public function rejectedToReplace(Layaway $layaway): ?Receipt
+    {
+        $latest = Receipt::query()->where('layaway_id', $layaway->getKey())->latest('id')->first();
+
+        if (! $latest instanceof Receipt || $latest->status !== ReceiptStatus::Rejected) {
+            return null;
+        }
+
+        $resolvedAt = $latest->reviewed_at ?? $latest->updated_at;
+        $settledSince = Payment::query()
+            ->where('layaway_id', $layaway->getKey())
+            ->when($resolvedAt !== null, fn ($query) => $query->where('created_at', '>=', $resolvedAt))
+            ->exists();
+
+        return $settledSince ? null : $latest;
+    }
+
     public function rejectPendingOnCancellation(Layaway $layaway): int
     {
         $pending = Receipt::query()

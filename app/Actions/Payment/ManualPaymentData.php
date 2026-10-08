@@ -11,6 +11,7 @@ use App\Domain\Money\InvalidRateException;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentAmounts;
 use App\Domain\Payment\PaymentMethod;
+use App\Domain\Payment\PaymentOrigin;
 use App\Models\PaymentAccount;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
@@ -48,6 +49,12 @@ final readonly class ManualPaymentData
         public CarbonImmutable $paidAt,
         string $note,
         public string $idempotencyKey,
+        /**
+         * Los centavos de sobrante que el negocio vio y confirmó (SP-7, como
+         * `REQ-PAY-005` SP-5). Añadido en `T-062`, igual que en
+         * `ApproveReceiptData`: lo confirmado es una cifra.
+         */
+        public ?int $confirmedExcessCents = null,
     ) {
         PaymentAmounts::assertPositive($amount, $currency, 'del pago');
 
@@ -61,7 +68,30 @@ final readonly class ManualPaymentData
             );
         }
 
+        if ($confirmedExcessCents !== null && $confirmedExcessCents < 1) {
+            throw new InvalidArgumentException('Un sobrante confirmado es de al menos un centavo.');
+        }
+
         $this->note = (new StaffReason($note))->text;
+    }
+
+    /**
+     * La tasa escrita a mano, **solo si hay algo que convertir**: con dólares
+     * se ignora y el pago guarda la fuente vigente (`REQ-FX-006` RB-4), como
+     * en la aprobación.
+     */
+    public function manualRate(): ?ManualRate
+    {
+        return $this->rateOverride !== null && $this->currency !== Currency::USD ? new ManualRate($this->rateOverride) : null;
+    }
+
+    /**
+     * Cómo se pagó, para guardarlo con el pago (`T-062`): es lo único que
+     * queda de un pago sin comprobante además de la nota (RB-6).
+     */
+    public function origin(): PaymentOrigin
+    {
+        return new PaymentOrigin($this->method, $this->paymentAccount?->getKey() === null ? null : (int) $this->paymentAccount->getKey(), $this->paidAt->startOfDay());
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Http\Controllers\Backoffice\CatalogController;
 use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\InstallmentController;
 use App\Http\Controllers\Backoffice\LayawayController;
+use App\Http\Controllers\Backoffice\ManualPaymentController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductImageController;
@@ -323,6 +324,15 @@ Route::prefix('backoffice')->group(function (): void {
                 Route::patch('cuotas/{installment}/reprogramar', [InstallmentController::class, 'reschedule'])->name('installments.reschedule');
 
                 /*
+                | El pago registrado a mano (`REQ-PAY-007`, `T-062`), desde la
+                | vista del apartado. Sobrevive a la suspensión (RB-8): cobrar es
+                | lo que se conserva. La vista previa es un `GET` sin efectos,
+                | como la de la aprobación.
+                */
+                Route::post('apartados/{layaway:code}/pagos', [ManualPaymentController::class, 'store'])->name('layaways.payments.store');
+                Route::get('apartados/{layaway:code}/pagos/vista-previa', [ManualPaymentController::class, 'preview'])->name('layaways.payments.preview');
+
+                /*
                 | El archivo del comprobante (`REQ-PAY-002`), para el equipo.
                 | Sobrevive a la suspensión: sin verlo no se aprueba, y aprobar
                 | comprobantes es lo que `REQ-ORG-008` RB-3 conserva.
@@ -373,6 +383,11 @@ Route::prefix('backoffice')->group(function (): void {
                 Route::post('comprobantes/{receipt}/aprobar', [ReceiptReviewController::class, 'approve'])
                     ->whereNumber('receipt')
                     ->name('receipts.approve');
+
+                // `REQ-PAY-006`, `T-062`: rechazar, con su código y su texto.
+                Route::post('comprobantes/{receipt}/rechazar', [ReceiptReviewController::class, 'reject'])
+                    ->whereNumber('receipt')
+                    ->name('receipts.reject');
             });
 
             /*

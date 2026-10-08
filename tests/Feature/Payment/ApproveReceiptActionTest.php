@@ -181,6 +181,8 @@ final class ApproveReceiptActionTest extends TestCase
 
         $this->assertInstanceOf(UnconfirmedExcessException::class, $this->refused(fn () => $this->approve($receipt, '160.00', Currency::USD, confirmedExcess: 500)));
         $this->assertSame($before, $this->snapshotOf($layaway), 'Se aprobó un sobrante de $10 confirmando $5.');
+        $this->assertInstanceOf(UnconfirmedExcessException::class, $this->refused(fn () => $this->approve($receipt, '160.00', Currency::USD, confirmedExcess: 2_000)));
+        $this->assertSame($before, $this->snapshotOf($layaway), 'Se aprobó un sobrante de $10 confirmando $20.');
 
         $applied = $this->approve($receipt, '160.00', Currency::USD, confirmedExcess: 1_000);
 
@@ -227,6 +229,7 @@ final class ApproveReceiptActionTest extends TestCase
 
         $payment = $this->within(fn (): Payment => Payment::query()->findOrFail($applied->payment->getKey()));
         $this->assertSame(['20.00', Currency::USD, '1.00000000', RateSource::Bcv], [$payment->declared_amount, $payment->declared_currency, $payment->rate_applied, $payment->rate_source]);
+        $this->assertSame(['pago_movil', '2026-09-10'], [$payment->payment_method?->value, $payment->paid_on?->toDateString()], 'El pago no guardó cómo se pagó (T-062).');
         $this->assertSame(['850.00', 'VES'], [(string) DB::table('receipts')->where('id', $receipt->getKey())->value('declared_amount'), DB::table('receipts')->where('id', $receipt->getKey())->value('declared_currency')]);
     }
 

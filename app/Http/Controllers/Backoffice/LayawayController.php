@@ -6,16 +6,24 @@ namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Layaway\CancelLayawayAction;
 use App\Actions\Layaway\MarkDeliveredAction;
+use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Layaway\IllegalLayawayTransitionException;
 use App\Domain\Layaway\LayawayNotDeliverableException;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
+use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\CancelLayawayRequest;
+use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
+use App\Http\Resources\PaymentRowResource;
 use App\Models\Customer;
 use App\Models\Installment;
 use App\Models\Layaway;
+use App\Models\Payment;
+use App\Models\PaymentAccount;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -46,7 +54,10 @@ final class LayawayController extends Controller
 {
     use ProjectsMoney;
 
-    public function __construct(private readonly TenantContext $context) {}
+    public function __construct(
+        private readonly TenantContext $context,
+        private readonly ExchangeRateService $rates,
+    ) {}
 
     public function show(Request $request, Layaway $layaway): Response
     {
@@ -104,7 +115,58 @@ final class LayawayController extends Controller
                     ] : null,
                 ];
             }, $installments),
+            // `REQ-LAY-022` · los pagos, como los ve el cliente.
+            'payments' => Payment::query()
+                ->where('layaway_id', $layaway->getKey())
+                ->with(['allocations.installment', 'receipt'])
+                ->latest('settled_at')
+                ->latest('id')
+                ->get()
+                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone))->resolve($request))
+                ->values()
+                ->all(),
+            // `REQ-PAY-007` · registrar un pago a mano, mientras el apartado cobre.
+            'manualPayment' => $layaway->status->acceptsPayments() ? $this->manualPaymentOptions($layaway, $timezone) : null,
         ]);
+    }
+
+    /**
+     * Lo que necesita el formulario del pago manual: dónde enviarlo y
+     * previsualizarlo, los métodos, las cuentas de cobro —también las
+     * desactivadas: un pago pudo llegar a una que ya no se usa—, las monedas,
+     * los días posibles y la tasa vigente.
+     *
+     * @return array<string, mixed>
+     */
+    private function manualPaymentOptions(Layaway $layaway, DateTimeZone $timezone): array
+    {
+        [$min, $max] = StoreReceiptRequest::boundsFor($layaway, $timezone);
+        $rate = $this->rates->current($this->context->organization());
+
+        return [
+            'storeUrl' => route('layaways.payments.store', $layaway),
+            'previewUrl' => route('layaways.payments.preview', $layaway),
+            'methods' => array_map(fn (PaymentMethod $method): array => [
+                'value' => $method->value,
+                'label' => $method->label(),
+                'defaultCurrency' => $method->defaultCurrency()->value,
+            ], PaymentMethod::cases()),
+            // Lo que necesita el desplegable y nada más: el titular, su
+            // documento y las instrucciones son de quien gobierna las cuentas
+            // (`REQ-ORG-003` RB-1, `owner`), y aquí entra un `member`.
+            'paymentAccounts' => PaymentAccount::query()->orderBy('position')->get()
+                ->map(fn (PaymentAccount $account): array => [
+                    'id' => (int) $account->getKey(),
+                    'methodLabel' => $account->method->label(),
+                    'identifier' => $account->identifier,
+                    'isActive' => $account->is_active,
+                ])
+                ->values()
+                ->all(),
+            'currencies' => array_map(fn (Currency $currency): array => ['value' => $currency->value, 'label' => $currency->label()], Currency::cases()),
+            'paidAt' => ['min' => $min, 'max' => $max],
+            'rate' => $rate instanceof RateSnapshot ? ['rate' => $rate->rate, 'sourceLabel' => $rate->source->label()] : null,
+        ];
     }
 
     /**

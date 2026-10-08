@@ -69,6 +69,8 @@ function props(layaway: Partial<BackofficeLayawayShowProps['layaway']> = {}): Ba
                 },
             },
         ],
+        payments: [],
+        manualPayment: null,
     };
 }
 

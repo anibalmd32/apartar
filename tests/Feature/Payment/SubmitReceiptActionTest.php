@@ -269,6 +269,29 @@ final class SubmitReceiptActionTest extends TestCase
     }
 
     /**
+     * `REQ-PAY-006` RB-4 · el reintento: si lo último que llegó del apartado
+     * se rechazó, el comprobante nuevo lo sustituye; el siguiente ya no, y un
+     * aprobado no se sustituye nunca.
+     */
+    public function test_a_retry_is_chained_to_the_rejected_receipt_it_replaces(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $approved = $this->receiptFor($layaway, ReceiptStatus::Approved);
+        $first = $this->submit($layaway, ['reference' => '1001']);
+        $this->assertNull($first->replaces_receipt_id, 'Un comprobante nuevo sin un rechazo delante no sustituye a nada.');
+
+        DB::table('receipts')->where('id', $first->getKey())->update(['status' => 'rejected', 'rejection_reason_code' => 'not_legible']);
+        // Un rechazo **más reciente en otro apartado** no es el que se sustituye.
+        $this->receiptFor($this->layawayIn($this->organization), ReceiptStatus::Rejected);
+        $retry = $this->submit($layaway, ['reference' => '1002']);
+        $next = $this->submit($layaway, ['reference' => '1003']);
+
+        $this->assertSame((int) $first->getKey(), $retry->replaces_receipt_id);
+        $this->assertNull($next->replaces_receipt_id, 'Solo el primero después del rechazo es su reintento.');
+        $this->assertNotSame((int) $approved->getKey(), $retry->replaces_receipt_id);
+    }
+
+    /**
      * `REQ-PAY-003` RB-3 · sin referencia —el efectivo— no hay criterio (b):
      * dos pagos en efectivo del mismo apartado son dos comprobantes.
      */

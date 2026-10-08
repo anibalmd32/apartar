@@ -46,6 +46,8 @@ export function reviewProps(overrides: Partial<ReceiptReviewProps> = {}): Receip
             file: { url: '/backoffice/comprobantes/9/archivo?signature=x', kind: 'image' },
             reviewedBy: null,
             rejectionReason: null,
+            replacedBy: null,
+            replaces: null,
         },
         customer: { fullName: 'María González', documentNumber: 'V12345678', phone: '+584141234567' },
         layaway: {
@@ -79,6 +81,13 @@ export function reviewProps(overrides: Partial<ReceiptReviewProps> = {}): Receip
             currencies: [
                 { value: 'USD', label: 'Dólares' },
                 { value: 'VES', label: 'Bolívares' },
+            ],
+        },
+        rejection: {
+            url: '/backoffice/comprobantes/9/rechazar',
+            codes: [
+                { value: 'not_legible', label: 'No se lee el comprobante' },
+                { value: 'other', label: 'Otro motivo' },
             ],
         },
         inboxUrl: '/backoffice/comprobantes',

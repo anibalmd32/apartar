@@ -90,6 +90,21 @@ final class ExtendDownPaymentWindowActionTest extends TestCase
     }
 
     /**
+     * El borde (`T-062`): un rechazo **en el segundo exacto** en que vence
+     * todavía está dentro del plazo, como para la expiración
+     * (`ExpireLayawaysAction`, `expires_at < now`). La prórroga queda
+     * disponible para un rechazo posterior.
+     */
+    public function test_a_rejection_at_the_exact_expiry_is_still_inside_the_window(): void
+    {
+        $layaway = $this->pendingUntil('2026-09-13 10:00:00');
+
+        $this->assertSame(DownPaymentExtension::WindowStillOpen, $this->extend($layaway, '2026-09-13 10:00:00'));
+        $this->assertNull(DB::table('layaways')->where('id', $layaway->getKey())->value('extended_at'));
+        $this->assertSame(DownPaymentExtension::Granted, $this->extend($layaway, '2026-09-13 10:00:01'));
+    }
+
+    /**
      * Un apartado que ya no espera la inicial no se prorroga.
      */
     public function test_a_layaway_not_awaiting_its_down_payment_is_not_extended(): void

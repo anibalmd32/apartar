@@ -66,6 +66,11 @@ export interface ReceiptCreateProps {
     readonly file: { readonly maxMb: number; readonly accept: string };
     readonly storeUrl: string;
     readonly backUrl: string;
+    /**
+     * El comprobante rechazado al que sustituye este envío (`REQ-PAY-006`
+     * RB-4): el último que reportó, si se rechazó. `submittedAt` es `Y-m-d`.
+     */
+    readonly replaces: { readonly submittedAt: string; readonly reason: string | null } | null;
 }
 
 /**
@@ -249,6 +254,10 @@ export interface ReceiptReviewProps {
         readonly file: { readonly url: string; readonly kind: 'image' | 'pdf' };
         readonly reviewedBy: string | null;
         readonly rejectionReason: string | null;
+        /** El reintento que lo sustituyó, si lo hay: la cadena hacia delante. */
+        readonly replacedBy: { readonly url: string; readonly submittedAt: string | null } | null;
+        /** El rechazado al que sustituye (`REQ-PAY-006` RB-4), con su motivo. */
+        readonly replaces: { readonly url: string; readonly submittedAt: string | null; readonly rejectionReason: string | null } | null;
     };
     readonly customer: { readonly fullName: string; readonly documentNumber: string; readonly phone: string } | null;
     readonly layaway: {
@@ -274,6 +283,11 @@ export interface ReceiptReviewProps {
         readonly url: string;
         readonly previewUrl: string;
         readonly currencies: readonly ReceiptCurrencyOption[];
+    } | null;
+    /** Rechazar (`REQ-PAY-006`): mientras espere revisión, cobre o no el apartado. */
+    readonly rejection: {
+        readonly url: string;
+        readonly codes: readonly { readonly value: string; readonly label: string }[];
     } | null;
     readonly inboxUrl: string;
 }

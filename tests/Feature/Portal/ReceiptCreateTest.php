@@ -6,6 +6,7 @@ namespace Tests\Feature\Portal;
 
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Payment\ReceiptStatus;
+use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Http\Controllers\Portal\ReceiptController;
 use App\Models\Customer;
@@ -104,6 +105,28 @@ final class ReceiptCreateTest extends TestCase
             ->where('file.accept', '.jpg,.jpeg,.png,.webp,.pdf')
             ->where('storeUrl', route('portal.receipts.store', ['code' => $this->layaway->code]))
             ->where('backUrl', route('portal.layaways.show', ['code' => $this->layaway->code])));
+    }
+
+    /**
+     * `REQ-PAY-006` RB-4 · si lo último que reportó se rechazó, el formulario
+     * dice a cuál sustituye, de qué día —en el calendario del negocio— y por
+     * qué.
+     */
+    public function test_the_form_says_which_rejected_receipt_it_replaces(): void
+    {
+        // El rechazo de **otro** apartado no es el de este.
+        $this->receiptFor($this->layawayIn($this->organization), ReceiptStatus::Rejected);
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page->where('replaces', null));
+
+        $this->receiptFor($this->layaway, ReceiptStatus::Rejected, [
+            'created_at' => CarbonImmutable::parse('2026-09-30 16:00:00'),
+            'rejection_reason_code' => RejectionReasonCode::NotLegible,
+            'rejection_reason' => 'La imagen está cortada.',
+        ]);
+
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('replaces.submittedAt', '2026-10-01')
+            ->where('replaces.reason', 'La imagen está cortada.'));
     }
 
     /**

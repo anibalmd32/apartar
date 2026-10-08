@@ -7,11 +7,13 @@ namespace Tests\Feature\Payment;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
+use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptStatus;
 use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\PaymentAccount;
 use App\Models\PaymentAllocation;
 use App\Models\Receipt;
 use App\Models\User;
@@ -83,6 +85,9 @@ final class PaymentModelTest extends TestCase
         $changes = [
             'layaway_id' => $otherLayaway->getKey(),
             'receipt_id' => $receipt->getKey(),
+            'payment_method' => PaymentMethod::EfectivoUsd,
+            'payment_account_id' => $this->within(fn (): PaymentAccount => PaymentAccount::factory()->create())->getKey(),
+            'paid_on' => now()->subDays(2)->toDateString(),
             'idempotency_key' => '6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f',
             'amount_cents_usd' => new Money(1),
             'unallocated_cents' => new Money(1),

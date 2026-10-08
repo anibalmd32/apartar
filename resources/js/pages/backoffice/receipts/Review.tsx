@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { ApprovalForm } from '@/features/receipts/components/ApprovalForm';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
+import { RejectForm } from '@/features/receipts/components/RejectForm';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatDocumentNumber, formatPhone } from '@/lib/identity-format';
@@ -63,6 +64,31 @@ function ReceiptPanel({ receipt, customer }: ReceiptReviewProps) {
                     <img src={receipt.file.url} alt="Captura del comprobante" className="bg-base-200 max-h-[32rem] w-full rounded object-contain" />
                 )}
 
+                {receipt.replacedBy !== null ? (
+                    <Alert tone="info">
+                        <span>
+                            Lo sustituyó el{' '}
+                            <Link href={receipt.replacedBy.url} className="link">
+                                comprobante del {receipt.replacedBy.submittedAt}
+                            </Link>
+                            .
+                        </span>
+                    </Alert>
+                ) : null}
+
+                {receipt.replaces !== null ? (
+                    <Alert tone="info" className="flex-col items-start gap-1">
+                        <span>
+                            Reintento del{' '}
+                            <Link href={receipt.replaces.url} className="link">
+                                comprobante del {receipt.replaces.submittedAt}
+                            </Link>
+                            , que se rechazó.
+                        </span>
+                        {receipt.replaces.rejectionReason !== null ? <span>Motivo: {receipt.replaces.rejectionReason}</span> : null}
+                    </Alert>
+                ) : null}
+
                 <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
                     <dt className="opacity-70">Cliente</dt>
                     <dd>
@@ -100,7 +126,7 @@ function ReceiptPanel({ receipt, customer }: ReceiptReviewProps) {
     );
 }
 
-function LayawayPanel({ receipt, layaway, installments, payments, rate, preview, previewError, approval }: ReceiptReviewProps) {
+function LayawayPanel({ receipt, layaway, installments, payments, rate, preview, previewError, approval, rejection }: ReceiptReviewProps) {
     return (
         <section className="flex flex-col gap-4">
             <div className="card bg-base-100 shadow-sm">
@@ -166,6 +192,15 @@ function LayawayPanel({ receipt, layaway, installments, payments, rate, preview,
                     )}
                 </div>
             </div>
+
+            {rejection !== null ? (
+                <div className="card bg-base-100 shadow-sm">
+                    <div className="card-body gap-3">
+                        <h2 className="card-title text-base">Rechazar</h2>
+                        <RejectForm rejection={rejection} />
+                    </div>
+                </div>
+            ) : null}
 
             <div className="card bg-base-100 shadow-sm">
                 <div className="card-body gap-3">

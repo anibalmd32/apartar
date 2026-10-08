@@ -180,7 +180,7 @@ Antes del detalle, la forma del sistema, porque todo lo demás se deduce de aqu�
 | 28 | `layaways` | `organization_id`, `code`, `idempotency_key`, `customer_id`, `product_id`, `catalog_id?`, `quantity`, `unit_price_cents`, `down_payment_cents`, `installments_count`, `frequency_days`, `product_name_snapshot`, `product_sku_snapshot`, `total_cents`, `paid_cents`, `remaining_cents`, `status`, `expires_at?`, `extended_at?`, `activated_at?`, `next_due_date?`, `completed_at?`, `cancelled_at?`, `cancellation_reason?`, `delivered_at?`, `stock_released_at?` | **`UNIQUE(code)` global**, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, status, next_due_date)`, `INDEX(organization_id, customer_id)` |
 | 29 | `installments` | `organization_id`, `layaway_id`, `number`, `due_date`, `amount_cents`, `paid_cents`, `status`, `paid_at?` | `UNIQUE(organization_id, layaway_id, number)`, `INDEX(organization_id, status, due_date)` |
 | 30 | `receipts` | `organization_id`, `layaway_id`, `customer_id`, `payment_account_id?`, `payment_method`, `bank?`, `reference?`, `paid_at`, `declared_amount`, `declared_currency`, `note?`, `file_path`, `file_hash`, `file_mime`, `file_size`, `status`, `reviewed_by?`, `reviewed_at?`, `rejection_reason_code?`, `rejection_reason?`, `replaces_receipt_id?` | `UNIQUE(organization_id, file_hash)`, `UNIQUE(organization_id, bank, reference)`, `INDEX(organization_id, status, created_at)` |
-| 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `idempotency_key?`, `amount_cents_usd`, `unallocated_cents`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, settled_at)` |
+| 31 | `payments` | `organization_id`, `layaway_id`, `receipt_id?`, `payment_method?`, `payment_account_id?`, `paid_on?`, `idempotency_key?`, `amount_cents_usd`, `unallocated_cents`, `declared_currency`, `declared_amount`, `rate_applied`, `rate_source`, `rate_published_at?`, `settled_at`, `registered_by?`, `note?` | `UNIQUE(organization_id, receipt_id)`, `UNIQUE(organization_id, idempotency_key)`, `INDEX(organization_id, settled_at)` |
 | 32 | `payment_allocations` | `organization_id`, `payment_id`, `installment_id`, `amount_cents` | `INDEX(organization_id, payment_id)`, `INDEX(organization_id, installment_id)` |
 
 > `layaways.product_id` con FK `restrict` (`REQ-LAY-002` RB-6). `receipts.replaces_receipt_id` autorreferencia nullable.
@@ -316,6 +316,10 @@ final class PaymentApplier
         // INSERT: payments.idempotency_key es inmutable y UNIQUE por
         // organización, y este es el único sitio que crea Payment.
         ?string $idempotencyKey = null,
+        // Añadido en T-062: cómo se pagó (método, cuenta de cobro, día), que
+        // queda en el pago. Nulo al aprobar: sale del comprobante. Sin él, un
+        // pago manual no guardaba nada de eso (REQ-PAY-007 RB-6).
+        ?PaymentOrigin $origin = null,
     ): AppliedPayment;
 
     // Añadido en T-061: lo que haría apply(), sin que pase. Ejecuta la
@@ -330,7 +334,11 @@ final class PaymentApplier
         RateSnapshot|ManualRate|null $rate,
         string $declaredAmount,
         Currency $declaredCurrency,
-        Receipt $receipt,
+        // Corregido en T-062: también sin comprobante, con el negocio como
+        // quien registra, para la vista previa del pago manual (SP-7).
+        ?Receipt $receipt,
+        ?User $registeredBy = null,
+        ?PaymentOrigin $origin = null,
     ): ApprovalPreview;
 }
 

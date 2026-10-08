@@ -1,5 +1,7 @@
-import { type MoneyView } from '@/types/money';
+import { type Currency, type MoneyView } from '@/types/money';
+import { type PaymentMethod } from '@/types/payment';
 import { type LayawayStatus } from '@/types/portal';
+import { type PaymentRow } from '@/types/receipt';
 
 /**
  * Un apartado visto por el negocio (`REQ-LAY-009`, `REQ-LAY-010`,
@@ -48,8 +50,33 @@ export interface BackofficeInstallmentRow {
     readonly reschedule: RescheduleOption | null;
 }
 
+/**
+ * Lo que necesita el formulario del pago manual (`REQ-PAY-007`). Las cuentas
+ * van todas, con las desactivadas marcadas: un pago pudo llegar a una que ya
+ * no se usa. `paidAt` son días del negocio, `Y-m-d`.
+ */
+export interface ManualPaymentOptions {
+    readonly storeUrl: string;
+    readonly previewUrl: string;
+    readonly methods: readonly { readonly value: PaymentMethod; readonly label: string; readonly defaultCurrency: Currency }[];
+    /** Lo justo para elegirla: los datos del titular son de quien gobierna las cuentas. */
+    readonly paymentAccounts: readonly {
+        readonly id: number;
+        readonly methodLabel: string;
+        readonly identifier: string;
+        readonly isActive: boolean;
+    }[];
+    readonly currencies: readonly { readonly value: Currency; readonly label: string }[];
+    readonly paidAt: { readonly min: string; readonly max: string };
+    readonly rate: { readonly rate: string; readonly sourceLabel: string } | null;
+}
+
 export interface BackofficeLayawayShowProps {
     readonly layaway: BackofficeLayaway;
     readonly customer: { readonly fullName: string; readonly documentNumber: string; readonly phone: string } | null;
     readonly installments: readonly BackofficeInstallmentRow[];
+    /** `REQ-LAY-022` · los pagos, como los ve el cliente. */
+    readonly payments: readonly PaymentRow[];
+    /** `null` si el apartado ya no cobra. */
+    readonly manualPayment: ManualPaymentOptions | null;
 }

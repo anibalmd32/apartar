@@ -6,6 +6,7 @@ namespace App\Actions\Payment;
 
 use App\Domain\Payment\DuplicateCriterion;
 use App\Domain\Payment\DuplicateReceiptException;
+use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\ReceiptStatus;
@@ -54,7 +55,11 @@ use Throwable;
  *     organización sale **del apartado**, no del contexto, y la extensión del
  *     tipo real, no del nombre que trajo el archivo.
  *  5. **El comprobante**, en `pending_review`, con lo que declaró el cliente
- *     tal cual: el importe sin convertir (RB-5) y la fecha como el día que es.
+ *     tal cual —el importe sin convertir (RB-5) y la fecha como el día que
+ *     es—, **y encadenado al rechazado al que sustituye** (`REQ-PAY-006`
+ *     RB-4): si el último comprobante del apartado está rechazado y nadie lo
+ *     resolvió con un pago, este es su reintento. Se mira bajo el bloqueo del apartado, así que dos envíos a la
+ *     vez no se encadenan los dos al mismo.
  *  6. **La recompresión, después del commit** (`REQ-PAY-002` RB-6): un job
  *     despachado dentro de la transacción podría correr antes de que la fila
  *     exista para su conexión, o correr para una fila que se deshizo. Solo
@@ -110,6 +115,7 @@ final class SubmitReceiptAction
 
     public function __construct(
         private readonly TenantContext $context,
+        private readonly LayawayReceipts $receipts,
     ) {}
 
     /**
@@ -143,6 +149,10 @@ final class SubmitReceiptAction
                     throw new DuplicateReceiptException($criterion);
                 }
 
+                // RB-4 de `REQ-PAY-006` · el reintento de un rechazado que nada
+                // ha resuelto todavía (`LayawayReceipts::rejectedToReplace()`).
+                $replaces = $this->receipts->rejectedToReplace($layaway)?->getKey();
+
                 // Se apunta **antes** de escribir: si la escritura se queda a
                 // medias y lanza, lo que haya llegado al disco también se borra.
                 $stored = ReceiptFile::pathFor((int) $layaway->organization_id, $extension);
@@ -154,6 +164,7 @@ final class SubmitReceiptAction
                     'layaway_id' => $layaway->getKey(),
                     'customer_id' => $layaway->customer_id,
                     'payment_account_id' => $data->paymentAccount?->getKey(),
+                    'replaces_receipt_id' => $replaces,
                     'payment_method' => $data->method,
                     'bank' => $data->bank,
                     'reference' => $data->reference,

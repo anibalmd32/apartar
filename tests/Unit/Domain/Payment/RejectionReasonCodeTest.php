@@ -20,3 +20,8 @@ it('nombra cada motivo sin repetir ninguno', function (): void {
     expect(array_unique($labels))->toHaveCount(7)
         ->and(RejectionReasonCode::LayawayCancelled->label())->toBe('El apartado fue cancelado');
 });
+
+it('ofrece al equipo todos menos el del rechazo automático al cancelar', function (): void {
+    expect(RejectionReasonCode::chosenByStaff())->toHaveCount(6)
+        ->not->toContain(RejectionReasonCode::LayawayCancelled);
+});

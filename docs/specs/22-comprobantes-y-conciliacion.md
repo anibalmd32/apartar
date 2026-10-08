@@ -424,7 +424,7 @@ final readonly class ApproveReceiptData
 - SP-1 Rechazo de un comprobante ya procesado → `422`.
 - SP-2 Motivo demasiado corto → `422`.
 - SP-3 Rechazo por error del negocio → no hay "deshacer"; se resuelve con pago manual y nota, o pidiendo al cliente que reporte de nuevo (que fallará por duplicado y forzará el pago manual, `REQ-PAY-003` SP-4).
-- SP-4 Cadena larga de reintentos → permitida; la UI colapsa la cadena y muestra el último estado.
+- SP-4 Cadena larga de reintentos → permitida; la UI ~~colapsa la cadena y muestra el último estado~~ enseña cada eslabón con su estado y enlaza el anterior y el siguiente. *(Corregido en `T-062`: ver la nota de abajo.)*
 - SP-5 Rechazo concurrente con una aprobación → el bloqueo serializa; la segunda recibe `422`.
 - SP-6 Rechazo automático por cancelación del apartado → usa `layaway_cancelled` con texto estándar y **no** cuenta para la prórroga.
 - SP-7 Comprobante de otra organización → `404`.
@@ -439,6 +439,15 @@ final readonly class ApproveReceiptData
 - Tipos esperados: `RejectionReasonCode`, `RejectReceiptAction`, `ReceiptAlreadyProcessedException`.
 - Anti-`SHALLOW`: `RejectReceiptAction::handle()` (estado, motivo, prórroga condicional, auditoría, notificación) supera 4 líneas; `RejectionReasonCode::label()` junto al enum.
 - Tests: persiste código y texto; archivo conservado; notificación con motivo íntegro; prórroga solo si la ventana venció; doble proceso falla; cadena vinculada; rechazado no se puede aprobar; comprobante ajeno da `404`.
+
+> **Cómo quedó, en `T-062`.**
+> - **`RejectReceiptAction::handle()` devuelve la `DownPaymentExtension`** (la prórroga de RB-6, o por qué no la hubo), y se comporta como la aprobación alrededor: la misma policy (`ReceiptPolicy::review`), el mismo orden de bloqueo —apartado y después comprobante— y `ReceiptAlreadyProcessedException` bajo el bloqueo (SP-1, SP-5, RB-8).
+> - **El código `layaway_cancelled` no lo elige nadie** (SP-6): `RejectionReasonCode::chosenByStaff()` es la lista del formulario, y la acción lo rechaza aunque llegue a mano.
+> - **El reintento se encadena solo** (RB-4): si el último comprobante del apartado está rechazado **y nada lo ha contestado después** —un pago registrado a mano tras el rechazo también lo contesta—, el nuevo lo sustituye (`replaces_receipt_id`), mirado bajo el bloqueo del apartado en `SubmitReceiptAction` (`LayawayReceipts::rejectedToReplace()`). No hace falta que el cliente diga a cuál sustituye —y así no puede señalar uno ajeno—. La alerta «rechazado sin reintento» de `REQ-LAY-023` usa la misma regla, así que un pago manual también la apaga. El formulario del portal dice a cuál sustituye y por qué, y la revisión enseña la cadena **en los dos sentidos**: «sustituye a…» y «lo sustituyó…».
+> - **SP-4 no colapsa la cadena, y se corrige arriba.** Cada eslabón es un intento de pago distinto —con la misma referencia el segundo ni llega (RB-5)—, y cada rechazo trae un motivo que el cliente necesita leer (RB-3): colapsarla a «el último estado» escondería justo eso. El historial del portal la enseña entera, y la revisión enlaza el anterior y el siguiente.
+> - **El mismo pago no se puede reportar otra vez** (RB-5, `REQ-PAY-003` RB-5): el formulario del reintento lo avisa —«si es el mismo pago, con la misma referencia, escríbele al negocio para que lo registre»—, porque si no el cliente lo descubre con el duplicado. Es la vía de SP-3.
+> - **El aviso al negocio dice qué pasó con el plazo de la inicial** (RB-6): prorrogado 24 h, ya prorrogado una vez —y entonces vencerá si no llega—, o todavía dentro de plazo. El borde se alinea con la expiración: un rechazo **en el segundo exacto** en que vence está todavía dentro (`ExtendDownPaymentWindowAction` con `>=`, igual que `ExpireLayawaysAction` con `expires_at < now`); antes ese segundo daba una prórroga a una ventana que la expiración aún tenía por abierta.
+> - **El aviso al cliente con el motivo íntegro** (RB-3, la notificación del gate) **es de `T-083`**, como todos los avisos de cobro; el motivo ya lo ve en su historial (`REQ-LAY-022` RB-3). `ReceiptRejectedNotification` no se escribió: no hay registro de envíos ni canal todavía, y `RejectReceiptAction` no emite ningún evento del que colgarla.
 
 ---
 
@@ -504,6 +513,16 @@ final readonly class ManualPaymentData
 - Tipos esperados: `ManualPaymentData`, `PaymentApplier`, `Payment` con `receipt_id` nulo y `registered_by`.
 - Anti-`SHALLOW`: cubierto por `PaymentApplier::apply()` (`REQ-PAY-005`).
 - Tests: crea pago sin `receipt_id` con `registered_by`; nota obligatoria; activa el apartado desde `pending_down_payment`; `idempotencyKey` evita el duplicado; aparece etiquetado en el historial del cliente; **produce el mismo resultado que la aprobación para el mismo importe** (test de equivalencia de RB-2); apartado ajeno da `404`; funciona con organización suspendida.
+
+> **Cómo quedó, en `T-062`.**
+> - **El pago guarda cómo se pagó**: `payments` gana `payment_method`, `payment_account_id` y `paid_on` (`2026_10_08_000101`), nulas, inmutables, y rellenadas desde su comprobante en los pagos que ya existían. `ManualPaymentData` pedía el método, la cuenta y la fecha y no tenían dónde guardarse: se habrían validado y perdido, y un pago sin comprobante no tiene otra evidencia (RB-6). Viajan como `PaymentOrigin` hasta `PaymentApplier::apply()` —el único que escribe pagos, entero en el `INSERT`—: del comprobante al aprobar y del formulario al registrar a mano. Así los dos caminos dejan **la misma fila**, que es lo que compara el test de equivalencia (RB-2) salvo el comprobante, quién registró, la clave y la nota. Corregido en [05 §4].
+> - **`RegisterManualPaymentAction::handle()` devuelve `Payment`**, como dice el contrato: un doble clic (SP-5) devuelve el pago que ya existía con esa clave —antes de abrir la transacción, y también si dos envíos se cruzan y el único de la tabla elige uno—, y ahí no hay una aplicación nueva que devolver.
+> - **La cuenta de cobro** se comprueba contra el negocio del apartado (`REQ-ORG-002` RB-7): el formulario la busca por el global scope —la ajena no existe y vuelve como `422` en su campo— y la acción lanza `CrossTenantRelationException` si llega una de otro negocio con el modelo en la mano. **La fecha** se acota en el calendario del negocio, del día de creación del apartado a hoy (SP-6), con los mismos bordes que el comprobante.
+> - **SP-7, como la aprobación**: el sobrante se confirma por su cifra (`confirmedExcessCents`), con la misma vista previa (`PaymentApplier::preview()` con el negocio como quien registra). Y una tasa manual con dólares se ignora.
+> - **Una cuenta de cobro con pagos tampoco se borra** (`REQ-ORG-007` RB-6): `RecordedReceipts::existFor()` pregunta también a `payments`, y la clave es `restrict`.
+> - **La clave de idempotencia identifica un pago, no un formulario** (SP-5). Si la clave ya registró **otro** pago —otro apartado, otro importe u otra moneda—, no es un doble clic: `IdempotencyKeyReusedException` (`422` en el importe) en vez de devolver un pago que el negocio tomaría por este. Y el formulario estrena clave tras cada registro: Inertia conserva el estado del componente al volver a la misma página, y con la clave vieja el segundo pago real de la visita se habría dado por registrado sin escribirse. El «ya registrado» se mira también **bajo el bloqueo del apartado**: un envío cruzado que espera al ganador encuentra su pago antes de preguntar si el apartado todavía cobra.
+> - **La auditoría** (RB-5) guarda el importe, cómo se pagó, el reparto, el sobrante, el cambio de estado, la nota y la tasa manual si la hubo. La cuenta va como `payment_account`, **sin** `_id`: `AuditProperties` redacta toda clave que contenga `account_id` —la cuenta global del cliente, `REQ-ACC-007`— y esta es la cuenta de cobro del propio negocio, que se perdía como `[redactado]`.
+> - **El aviso al cliente (RB-7) es de `T-083`.**
 
 ---
 

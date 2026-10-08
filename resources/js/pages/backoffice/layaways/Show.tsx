@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { CancelLayawayDialog } from '@/features/layaway/components/CancelLayawayDialog';
 import { RescheduleInstallmentDialog } from '@/features/layaway/components/RescheduleInstallmentDialog';
+import { ManualPaymentForm } from '@/features/receipts/components/ManualPaymentForm';
+import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type BackofficeLayawayShowProps } from '@/types/layaway-backoffice';
 import { useForm, usePage } from '@inertiajs/react';
@@ -17,7 +19,7 @@ import { useForm, usePage } from '@inertiajs/react';
  * la acción, bajo el bloqueo del apartado. Los listados de cobranza que traen
  * hasta aquí son de `T-065`.
  */
-export default function LayawayShow({ layaway, customer, installments }: BackofficeLayawayShowProps) {
+export default function LayawayShow({ layaway, customer, installments, payments, manualPayment }: BackofficeLayawayShowProps) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const delivery = useForm({});
 
@@ -105,6 +107,22 @@ export default function LayawayShow({ layaway, customer, installments }: Backoff
                     </div>
                 </section>
             ) : null}
+
+            {manualPayment !== null ? (
+                <section className="card bg-base-100 shadow-sm" aria-label="Registrar un pago">
+                    <div className="card-body gap-3">
+                        <h2 className="card-title text-base">Registrar un pago</h2>
+                        <ManualPaymentForm options={manualPayment} />
+                    </div>
+                </section>
+            ) : null}
+
+            <section className="card bg-base-100 shadow-sm" aria-label="Pagos">
+                <div className="card-body gap-3">
+                    <h2 className="card-title text-base">Pagos</h2>
+                    <PaymentHistory payments={payments} empty="Este apartado todavía no tiene pagos." />
+                </div>
+            </section>
         </BackofficeLayout>
     );
 }

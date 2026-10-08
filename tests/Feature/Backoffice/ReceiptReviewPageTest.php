@@ -260,6 +260,65 @@ final class ReceiptReviewPageTest extends TestCase
     }
 
     /**
+     * `REQ-PAY-006` por HTTP: el rechazo vuelve a la bandeja; el motivo corto,
+     * el código automático o uno ya resuelto vuelven a su campo. La pantalla
+     * ofrece rechazar mientras espere revisión y enseña la cadena del
+     * reintento.
+     */
+    public function test_rejecting_from_the_review_screen(): void
+    {
+        $layaway = $this->activeLayaway();
+        $receipt = $this->receiptFor($layaway);
+        $this->actingAs($this->member)->from(route('receipts.show', $receipt));
+
+        $this->get(route('receipts.show', $receipt))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('rejection.url', route('receipts.reject', $receipt))
+            ->has('rejection.codes', 6));
+
+        $this->post(route('receipts.reject', $receipt), ['code' => 'not_legible', 'reason' => 'Corta'])->assertSessionHasErrors('reason');
+        $this->post(route('receipts.reject', $receipt), ['code' => 'layaway_cancelled', 'reason' => 'La imagen está cortada.'])->assertSessionHasErrors('code');
+
+        $this->post(route('receipts.reject', $receipt), ['code' => 'not_legible', 'reason' => 'La imagen está cortada.'])
+            ->assertRedirect(route('receipts.index'))
+            ->assertSessionHas('status', 'Comprobante rechazado: el cliente verá tu explicación y podrá reportar de nuevo.');
+
+        $this->post(route('receipts.reject', $receipt), ['code' => 'not_legible', 'reason' => 'La imagen está cortada.'])
+            ->assertSessionHasErrors(['reason' => 'Este comprobante ya fue rechazado por Ana Pérez.']);
+
+        $retry = $this->receiptFor($layaway, attributes: ['replaces_receipt_id' => $receipt->getKey()]);
+        $this->get(route('receipts.show', $retry))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('receipt.replaces.url', route('receipts.show', $receipt))
+            ->where('receipt.replaces.rejectionReason', 'La imagen está cortada.'));
+        // Y hacia delante: el rechazado enlaza el reintento que lo sustituyó.
+        $this->get(route('receipts.show', $receipt))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('rejection', null)
+            ->where('receipt.replacedBy.url', route('receipts.show', $retry)));
+        $this->get(route('receipts.show', $retry))->assertInertia(fn (AssertableInertia $page) => $page->where('receipt.replacedBy', null));
+    }
+
+    /**
+     * `REQ-LAY-006` RB-3 en el aviso: quien rechaza sabe qué pasó con el plazo
+     * de la inicial —dentro de plazo, prorrogado 24 horas, o ya prorrogado y a
+     * punto de vencer—.
+     */
+    public function test_the_rejection_says_what_happened_to_the_down_payment_window(): void
+    {
+        $open = $this->layawayIn($this->organization);
+        $late = $this->layawayIn($this->organization);
+        DB::table('layaways')->where('id', $open->getKey())->update(['expires_at' => '2026-09-11 10:00:00']);
+        DB::table('layaways')->where('id', $late->getKey())->update(['expires_at' => '2026-09-10 09:00:00']);
+        [$inTime, $first, $second] = [$this->receiptFor($open), $this->receiptFor($late), $this->receiptFor($late)];
+        $this->actingAs($this->member);
+        $reject = fn (Receipt $receipt) => $this->post(route('receipts.reject', $receipt), ['code' => 'not_legible', 'reason' => 'La imagen está cortada.']);
+        $prefix = 'Comprobante rechazado: el cliente verá tu explicación y podrá reportar de nuevo.';
+
+        $reject($inTime)->assertSessionHas('status', $prefix.' La inicial todavía está dentro de su plazo.');
+        $reject($first)->assertSessionHas('status', $prefix.' Como el plazo de la inicial ya había vencido, el apartado tiene 24 horas más para pagarla.');
+        $this->withoutOrganization();
+        $reject($second)->assertSessionHas('status', $prefix.' El plazo de la inicial ya se prorrogó una vez: si no llega, el apartado vencerá.');
+    }
+
+    /**
      * RB-12: con la organización suspendida se revisa y se aprueba.
      */
     public function test_it_works_with_the_organization_suspended(): void

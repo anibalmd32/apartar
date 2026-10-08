@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
 
@@ -49,11 +50,17 @@ use App\Models\Receipt;
 class RecordedReceipts
 {
     /**
-     * Indica si esa cuenta tiene algún comprobante asociado, por el global
-     * scope del tenant.
+     * Indica si esa cuenta tiene algún comprobante **o algún pago** asociado,
+     * por el global scope del tenant.
+     *
+     * Los pagos desde `T-062`: un pago registrado a mano dice a qué cuenta le
+     * pagaron, y es la misma prueba que un comprobante. La columna tiene
+     * `restrictOnDelete`, así que sin esta pregunta borrar la cuenta sería un
+     * `500` en vez de la desactivación de RB-6.
      */
     public function existFor(PaymentAccount $account): bool
     {
-        return Receipt::query()->where('payment_account_id', $account->getKey())->exists();
+        return Receipt::query()->where('payment_account_id', $account->getKey())->exists()
+            || Payment::query()->where('payment_account_id', $account->getKey())->exists();
     }
 }

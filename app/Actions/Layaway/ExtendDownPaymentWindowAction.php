@@ -70,7 +70,11 @@ final class ExtendDownPaymentWindowAction
         }
 
         // RB-3 · solo si la ventana ya había vencido al rechazar.
-        if ($layaway->expires_at !== null && $layaway->expires_at->greaterThan($rejectedAt)) {
+        // Abierta **también en el instante exacto** en que vence: es la misma
+        // regla que la expiración (`ExpireLayawaysAction`, `expires_at < now`).
+        // Al revés, un rechazo justo en ese segundo daba una prórroga a una
+        // ventana que la expiración todavía tenía por abierta (`T-062`).
+        if ($layaway->expires_at !== null && $layaway->expires_at->greaterThanOrEqualTo($rejectedAt)) {
             return DownPaymentExtension::WindowStillOpen;
         }
 

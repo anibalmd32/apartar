@@ -37,4 +37,16 @@ enum RejectionReasonCode: string
             self::Other => 'Otro motivo',
         };
     }
+
+    /**
+     * Los que puede elegir quien rechaza (`REQ-PAY-006` RB-1): todos menos el
+     * del rechazo automático al cancelar el apartado (SP-6), que solo pone el
+     * sistema. Una lista del tipo, no del formulario.
+     *
+     * @return list<self>
+     */
+    public static function chosenByStaff(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $code): bool => $code !== self::LayawayCancelled));
+    }
 }

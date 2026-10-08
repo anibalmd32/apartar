@@ -11,6 +11,7 @@ use App\Domain\Layaway\NextPayment;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Payment\DuplicateReceiptException;
+use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentNotApplicableException;
@@ -25,6 +26,7 @@ use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Http\Resources\LayawaySummaryResource;
 use App\Models\Layaway;
+use App\Models\Receipt;
 use App\Queries\ActivePaymentAccountsQuery;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -79,6 +81,7 @@ final class ReceiptController extends Controller
         private readonly LimitEnforcer $limits,
         private readonly ActivePaymentAccountsQuery $paymentAccounts,
         private readonly CurrentRate $rate,
+        private readonly LayawayReceipts $layawayReceipts,
     ) {}
 
     public function create(Request $request, string $code, PortalContext $portal): Response
@@ -113,6 +116,10 @@ final class ReceiptController extends Controller
             'file' => ['maxMb' => ReceiptFile::MAX_SIZE_MB, 'accept' => ReceiptFile::ACCEPT],
             'storeUrl' => route('portal.receipts.store', ['code' => $layaway->code]),
             'backUrl' => route('portal.layaways.show', ['code' => $layaway->code]),
+            // `REQ-PAY-006` RB-4 · si lo último que reportó se rechazó, este
+            // envío lo sustituye: se dice cuál y por qué, para corregir lo que
+            // hay que corregir. El enlace lo hace `SubmitReceiptAction`.
+            'replaces' => $this->rejectedToReplace($layaway, $organization->timezone),
         ]);
     }
 
@@ -173,5 +180,24 @@ final class ReceiptController extends Controller
     private static function decimal(Money $amount): string
     {
         return sprintf('%d.%02d', intdiv($amount->cents, 100), $amount->cents % 100);
+    }
+
+    /**
+     * El comprobante rechazado al que sustituiría este envío, o `null`.
+     *
+     * @return array{submittedAt: string, reason: string|null}|null
+     */
+    private function rejectedToReplace(Layaway $layaway, string $timezone): ?array
+    {
+        $previous = $this->layawayReceipts->rejectedToReplace($layaway);
+
+        if (! $previous instanceof Receipt) {
+            return null;
+        }
+
+        return [
+            'submittedAt' => ($previous->created_at ?? now())->setTimezone($timezone)->toDateString(),
+            'reason' => $previous->rejection_reason ?? $previous->rejection_reason_code?->label(),
+        ];
     }
 }

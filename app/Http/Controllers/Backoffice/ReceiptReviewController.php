@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Payment\ApproveReceiptAction;
 use App\Actions\Payment\ApproveReceiptData;
+use App\Actions\Payment\RejectReceiptAction;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Layaway\DownPaymentExtension;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
@@ -20,10 +22,12 @@ use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptAlreadyProcessedException;
+use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\ApproveReceiptRequest;
+use App\Http\Requests\Backoffice\RejectReceiptRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Http\Resources\PaymentRowResource;
 use App\Models\Customer;
@@ -101,6 +105,13 @@ final class ReceiptReviewController extends Controller
                 'previewUrl' => route('receipts.preview', $receipt),
                 'currencies' => array_map(fn (Currency $currency): array => ['value' => $currency->value, 'label' => $currency->label()], Currency::cases()),
             ] : null,
+            // `REQ-PAY-006` · mientras espere revisión se puede rechazar, cobre o
+            // no el apartado: el comprobante de uno que ya no cobra solo se
+            // puede rechazar.
+            'rejection' => $receipt->status->awaitsReview() ? [
+                'url' => route('receipts.reject', $receipt),
+                'codes' => array_map(fn (RejectionReasonCode $code): array => ['value' => $code->value, 'label' => $code->label()], RejectionReasonCode::chosenByStaff()),
+            ] : null,
             'inboxUrl' => route('receipts.index'),
         ]);
     }
@@ -155,6 +166,40 @@ final class ReceiptReviewController extends Controller
      * motivo en el campo que la causó; el éxito vuelve a la bandeja con lo que
      * se acreditó.
      */
+    /**
+     * Rechaza (`REQ-PAY-006`). Uno ya resuelto vuelve al formulario con el
+     * nombre de quien lo resolvió; el éxito vuelve a la bandeja diciendo si se
+     * concedió la prórroga de la inicial (RB-6).
+     */
+    public function reject(RejectReceiptRequest $request, Receipt $receipt, RejectReceiptAction $action): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $extension = $action->handle($receipt, $request->code(), $request->reason(), $actor);
+        } catch (ReceiptAlreadyProcessedException $exception) {
+            return back()->withErrors(['reason' => $exception->getMessage()]);
+        }
+
+        return redirect()->route('receipts.index')->with('status', 'Comprobante rechazado: el cliente verá tu explicación y podrá reportar de nuevo.'.$this->extensionNote($extension));
+    }
+
+    /**
+     * Qué pasó con el plazo de la inicial al rechazar (`REQ-LAY-006` RB-3):
+     * la prórroga, o por qué no la hubo —una ya concedida significa que, si la
+     * inicial no llega, el apartado vence—.
+     */
+    private function extensionNote(DownPaymentExtension $extension): string
+    {
+        return match ($extension) {
+            DownPaymentExtension::Granted => ' Como el plazo de la inicial ya había vencido, el apartado tiene 24 horas más para pagarla.',
+            DownPaymentExtension::AlreadyExtended => ' El plazo de la inicial ya se prorrogó una vez: si no llega, el apartado vencerá.',
+            DownPaymentExtension::WindowStillOpen => ' La inicial todavía está dentro de su plazo.',
+            DownPaymentExtension::NotAwaitingDownPayment => '',
+        };
+    }
+
     public function approve(ApproveReceiptRequest $request, Receipt $receipt, ApproveReceiptAction $action): RedirectResponse
     {
         /** @var User $actor */
@@ -268,6 +313,18 @@ final class ReceiptReviewController extends Controller
             ],
             'reviewedBy' => $receipt->reviewer?->name,
             'rejectionReason' => $receipt->rejection_reason ?? $receipt->rejection_reason_code?->label(),
+            // `REQ-PAY-006` RB-4 · la cadena, también de este lado: a cuál
+            // sustituye, cuándo llegó aquel y por qué se rechazó.
+            // Y hacia delante: el reintento que lo sustituyó, si lo hay.
+            'replacedBy' => ($retry = $receipt->retries()->latest('id')->first()) instanceof Receipt ? [
+                'url' => route('receipts.show', $retry),
+                'submittedAt' => $retry->created_at?->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            ] : null,
+            'replaces' => $receipt->replaces instanceof Receipt ? [
+                'url' => route('receipts.show', $receipt->replaces),
+                'submittedAt' => $receipt->replaces->created_at?->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+                'rejectionReason' => $receipt->replaces->rejection_reason ?? $receipt->replaces->rejection_reason_code?->label(),
+            ] : null,
         ];
     }
 

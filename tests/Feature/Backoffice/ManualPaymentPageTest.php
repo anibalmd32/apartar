@@ -1,0 +1,257 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Backoffice;
+
+use App\Domain\Exchange\RateSource;
+use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Tenancy\OrganizationStatus;
+use App\Models\ExchangeRate;
+use App\Models\Organization;
+use App\Models\Payment;
+use App\Models\PaymentAccount;
+use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\CreatesLayaways;
+use Tests\TestCase;
+
+/**
+ * El pago registrado a mano, desde la vista del apartado (`T-062`,
+ * `REQ-PAY-007`).
+ *
+ * La mecánica la prueban `RegisterManualPaymentActionTest` y
+ * `PaymentApplierTest`; aquí, el formulario: lo que trae la pantalla, cada
+ * negativa en su campo, el doble envío y la vista previa. El negocio está en
+ * `Asia/Tokyo` y el reloj en una hora en que Caracas y Tokio dicen días
+ * distintos.
+ */
+final class ManualPaymentPageTest extends TestCase
+{
+    use CreatesLayaways, RefreshDatabase;
+
+    private const NOTE = 'Pago en efectivo recibido en tienda por Ana.';
+
+    private Organization $organization;
+
+    private User $member;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Las 12:00 de Caracas del 10/09 son la 01:00 del 11/09 en Tokio.
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10 12:00:00', 'America/Caracas'));
+        $this->organization = $this->subscribe(Organization::factory()->create(['timezone' => 'Asia/Tokyo']));
+        $this->member = $this->withinOrganization($this->organization, fn (): User => User::factory()->create());
+        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '42.50000000', 'published_at' => CarbonImmutable::now()->subHour()]);
+        $this->withoutOrganization();
+    }
+
+    protected function tearDown(): void
+    {
+        CarbonImmutable::setTestNow();
+
+        parent::tearDown();
+    }
+
+    /**
+     * La vista del apartado trae el formulario mientras cobre: los días
+     * posibles en el calendario **del negocio**, las cuentas —también las
+     * desactivadas— y la tasa vigente. Un apartado que ya no cobra no lo trae.
+     */
+    public function test_the_layaway_view_offers_the_form_while_it_collects(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->withinOrganization($this->organization, fn () => PaymentAccount::factory()->create(['is_active' => false]));
+        $completed = $this->layawayIn($this->organization, LayawayStatus::Completed);
+        $this->withoutOrganization();
+
+        $this->actingAs($this->member)->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('manualPayment.storeUrl', route('layaways.payments.store', $layaway))
+            ->where('manualPayment.paidAt.max', '2026-09-11')
+            ->where('manualPayment.paymentAccounts.0.isActive', false)
+            ->where('manualPayment.rate.rate', '42.50000000')
+            ->has('payments', 0));
+
+        $this->get(route('layaways.show', $completed))->assertInertia(fn (AssertableInertia $page) => $page->where('manualPayment', null));
+    }
+
+    /**
+     * El *happy path*: registrar vuelve a la vista del apartado con lo que se
+     * acreditó, y el pago aparece en su historial con su método.
+     */
+    public function test_recording_a_payment_returns_to_the_layaway(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->actingAs($this->member);
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '80.00']))
+            ->assertRedirect(route('layaways.show', $layaway))
+            ->assertSessionHas('status', 'Pago registrado: $80.00 (inicial de $50.00; $30.00 a la cuota 1).');
+
+        $this->withoutOrganization();
+        $this->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('payments.0.method', 'Efectivo en dólares')
+            ->where('payments.0.registeredByBusiness', true)
+            ->where('payments.0.note', self::NOTE));
+    }
+
+    /**
+     * RB-1, SP-1, SP-2, SP-6: cada negativa en su campo —la nota corta, el
+     * importe de cero, la fecha futura o anterior al apartado, la cuenta de
+     * otro negocio— y ninguna escribe nada.
+     */
+    public function test_each_refusal_comes_back_in_its_field(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $foreign = $this->withinOrganization($this->neighbourOrganization(), fn (): PaymentAccount => PaymentAccount::factory()->create());
+        $this->withoutOrganization();
+        $this->actingAs($this->member)->from(route('layaways.show', $layaway));
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['note' => 'Efectivo']))->assertSessionHasErrors('note');
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '0.00']))->assertSessionHasErrors('amount');
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2026-09-12']))
+            ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser futura.']);
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2026-09-09']))
+            ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser anterior a la creación del apartado.']);
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['payment_account' => (string) $foreign->getKey()]))
+            ->assertSessionHasErrors(['payment_account' => 'Esa cuenta de cobro no es de tu negocio.']);
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '40.00']))->assertSessionHasErrors('amount');
+
+        $this->assertSame(0, DB::table('payments')->count());
+    }
+
+    /**
+     * SP-7 por HTTP: el sobrante vuelve a su confirmación con la cifra hasta
+     * confirmar **esa** cifra —ni menos ni más—, y entonces se registra.
+     */
+    public function test_an_excess_comes_back_to_its_confirmation_until_confirmed(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $payload = $this->payload(['amount' => '250.00']);
+        $this->actingAs($this->member)->from(route('layaways.show', $layaway));
+
+        $this->post(route('layaways.payments.store', $layaway), $payload)->assertSessionHasErrors('confirm_excess');
+        $this->post(route('layaways.payments.store', $layaway), [...$payload, 'confirm_excess' => '6000'])->assertSessionHasErrors('confirm_excess');
+        $this->assertSame(0, DB::table('payments')->count());
+
+        $this->post(route('layaways.payments.store', $layaway), [...$payload, 'confirm_excess' => '5000'])->assertRedirect(route('layaways.show', $layaway));
+        $this->assertSame(5_000, (int) DB::table('payments')->value('unallocated_cents'));
+    }
+
+    /**
+     * SP-3 y RB-6 por HTTP: bolívares con la tasa escrita a mano, a una cuenta
+     * del negocio; el pago guarda cómo se pagó —método, cuenta y día en el
+     * calendario del negocio—.
+     */
+    public function test_bolivars_with_a_hand_written_rate_to_an_own_account(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $account = $this->withinOrganization($this->organization, fn (): PaymentAccount => PaymentAccount::factory()->create());
+        $this->withoutOrganization();
+
+        $this->actingAs($this->member)->post(route('layaways.payments.store', $layaway), $this->payload([
+            'method' => 'pago_movil',
+            'payment_account' => (string) $account->getKey(),
+            'amount' => '2000.00',
+            'currency' => 'VES',
+            'rate' => '40.00',
+        ]))->assertRedirect(route('layaways.show', $layaway));
+
+        $payment = $this->withinOrganization($this->organization, fn (): Payment => Payment::query()->sole());
+        $this->assertSame(
+            ['pago_movil', $account->getKey(), '2026-09-11', 5_000, 'manual'],
+            [$payment->payment_method?->value, $payment->payment_account_id, $payment->paid_on?->toDateString(), $payment->amount_cents_usd->cents, $payment->rate_source->value],
+        );
+    }
+
+    /**
+     * SP-5 por HTTP: la clave que ya registró otro pago no lo devuelve como si
+     * fuera este; lo dice en el importe.
+     */
+    public function test_a_key_that_recorded_another_payment_says_so(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $payload = $this->payload(['amount' => '50.00']);
+        $this->actingAs($this->member)->from(route('layaways.show', $layaway));
+
+        $this->post(route('layaways.payments.store', $layaway), $payload)->assertRedirect(route('layaways.show', $layaway));
+        $this->withoutOrganization();
+        $this->post(route('layaways.payments.store', $layaway), [...$payload, 'amount' => '30.00'])
+            ->assertSessionHasErrors(['amount' => 'Este formulario ya registró otro pago. Recarga la página para registrar uno nuevo.']);
+
+        $this->assertSame(1, DB::table('payments')->count());
+    }
+
+    /**
+     * SP-5: el doble envío con la misma clave registra un pago.
+     */
+    public function test_a_double_submit_records_one_payment(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $payload = $this->payload(['amount' => '50.00']);
+        $this->actingAs($this->member);
+
+        $this->post(route('layaways.payments.store', $layaway), $payload)->assertRedirect(route('layaways.show', $layaway));
+        $this->withoutOrganization();
+        $this->post(route('layaways.payments.store', $layaway), $payload)->assertRedirect(route('layaways.show', $layaway));
+
+        $this->assertSame(1, DB::table('payments')->count());
+    }
+
+    /**
+     * La vista previa del pago manual: la misma aplicación deshecha, con el
+     * sobrante en cifra para confirmarlo, y sin escribir nada.
+     */
+    public function test_the_preview_says_what_recording_would_do(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->actingAs($this->member);
+
+        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '80.00', 'currency' => 'USD']))
+            ->assertOk()->assertJsonPath('preview.summary', 'Activará el apartado con la inicial de $50.00; se aplicará a la cuota 1.');
+        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '250.00', 'currency' => 'USD']))
+            ->assertOk()->assertJsonPath('preview.unallocatedCents', 5_000);
+        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '40.00', 'currency' => 'USD']))->assertStatus(422);
+        $this->getJson(route('layaways.payments.preview', $layaway).'?amount[]=1&currency=USD')->assertStatus(422);
+        // Cero no llega a la aplicación —que lo rechazaría con un `500`—.
+        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '0.00', 'currency' => 'USD']))->assertStatus(422);
+
+        $this->assertSame(0, DB::table('payments')->count());
+        $this->assertSame('pending_down_payment', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+    }
+
+    /**
+     * RB-8: con la organización suspendida se registra.
+     */
+    public function test_it_works_with_the_organization_suspended(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->organization->forceFill(['status' => OrganizationStatus::Suspended])->save();
+
+        $this->actingAs($this->member)->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '50.00']))
+            ->assertRedirect(route('layaways.show', $layaway));
+    }
+
+    /**
+     * @param  array<string, string>  $overrides
+     * @return array<string, string>
+     */
+    private function payload(array $overrides = []): array
+    {
+        return [
+            'method' => 'efectivo_usd',
+            'amount' => '30.00',
+            'currency' => 'USD',
+            'paid_at' => '2026-09-11',
+            'note' => self::NOTE,
+            'idempotency_key' => (string) Str::uuid(),
+            ...$overrides,
+        ];
+    }
+}

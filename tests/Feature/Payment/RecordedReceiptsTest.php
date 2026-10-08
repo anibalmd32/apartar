@@ -57,6 +57,22 @@ final class RecordedReceiptsTest extends TestCase
     }
 
     /**
+     * Desde `T-062`, un pago registrado a mano a esa cuenta también cuenta: es
+     * la misma prueba de a dónde se pagó, y la clave es `restrict`.
+     */
+    public function test_an_account_with_a_manual_payment_has_one_too(): void
+    {
+        $account = $this->withinOrganization($this->organization, fn (): PaymentAccount => PaymentAccount::factory()->create());
+        $layaway = $this->layawayIn($this->organization);
+        $this->withinOrganization($this->organization, fn () => \App\Models\Payment::factory()->createOne([
+            'layaway_id' => $layaway->getKey(),
+            'payment_account_id' => $account->getKey(),
+        ]));
+
+        $this->assertTrue($this->withinOrganization($this->organization, fn (): bool => (new RecordedReceipts)->existFor($account)));
+    }
+
+    /**
      * Y la base lo respalda: la clave es `restrict`, así que ni un `DELETE`
      * directo se lleva una cuenta con comprobantes.
      */

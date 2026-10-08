@@ -65,6 +65,7 @@ export function receiptProps(overrides: Partial<ReceiptCreateProps> = {}): Recei
         file: { maxMb: 5, accept: '.jpg,.jpeg,.png,.webp,.pdf' },
         storeUrl: '/mi-cuenta/apartados/AP-7K3M9QRT/comprobante',
         backUrl: '/mi-cuenta/apartados/AP-7K3M9QRT',
+        replaces: null,
         ...overrides,
     };
 }

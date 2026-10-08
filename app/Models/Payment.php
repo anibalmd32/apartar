@@ -8,6 +8,7 @@ use App\Casts\MoneyCast;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
+use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\BelongsToOrganization;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -42,6 +43,9 @@ use LogicException;
  * @property int $organization_id
  * @property int $layaway_id
  * @property int|null $receipt_id nulo en un pago manual
+ * @property PaymentMethod|null $payment_method cómo se pagó (`T-062`): el del comprobante, o el que escribió el negocio
+ * @property int|null $payment_account_id a qué cuenta del negocio
+ * @property \Illuminate\Support\Carbon|null $paid_on el día del pago, en el calendario de quien pagó
  * @property string|null $idempotency_key la del formulario del pago manual (`REQ-PAY-007` SP-5)
  * @property Money $amount_cents_usd lo que entra en el balance
  * @property Money $unallocated_cents lo que no cupo en el saldo (`REQ-PAY-005` RB-6); no es crédito y no cuenta en `paid_cents` (`T-057`)
@@ -67,6 +71,9 @@ class Payment extends Model
     public const IMMUTABLE_COLUMNS = [
         'layaway_id',
         'receipt_id',
+        'payment_method',
+        'payment_account_id',
+        'paid_on',
         'idempotency_key',
         'amount_cents_usd',
         'unallocated_cents',
@@ -153,6 +160,8 @@ class Payment extends Model
             'rate_source' => RateSource::class,
             'rate_published_at' => 'datetime',
             'settled_at' => 'datetime',
+            'payment_method' => PaymentMethod::class,
+            'paid_on' => 'date',
         ];
     }
 }

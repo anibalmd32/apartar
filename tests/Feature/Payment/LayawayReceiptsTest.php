@@ -9,6 +9,7 @@ use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Models\Layaway;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Receipt;
 use Closure;
 use Illuminate\Database\QueryException;
@@ -98,6 +99,44 @@ final class LayawayReceiptsTest extends TestCase
     }
 
     /**
+     * `REQ-PAY-006` RB-4 (`T-062`): el comprobante al que sustituye un
+     * reintento es el **último** del apartado, si está rechazado y nada lo ha
+     * contestado después —ni otro comprobante ni un pago registrado a mano
+     * tras el rechazo—. Un pago **anterior** al rechazo no lo contesta.
+     */
+    public function test_the_receipt_a_retry_replaces(): void
+    {
+        $none = $this->layawayIn($this->organization);
+        $pending = $this->layawayIn($this->organization);
+        $approved = $this->layawayIn($this->organization);
+        $waiting = $this->layawayIn($this->organization);
+        $settled = $this->layawayIn($this->organization);
+        $paidBefore = $this->layawayIn($this->organization);
+        $this->receiptFor($pending, ReceiptStatus::Rejected);
+        $this->receiptFor($pending);
+        $this->receiptFor($approved, ReceiptStatus::Rejected);
+        $this->receiptFor($approved, ReceiptStatus::Approved);
+        $this->receiptFor($waiting, ReceiptStatus::Approved);
+        $rejected = $this->receiptFor($waiting, ReceiptStatus::Rejected);
+        $this->rejectedAt($settled, '2026-09-10 09:00:00');
+        $this->paymentAt($settled, '2026-09-10 10:00:00');
+        $this->paymentAt($paidBefore, '2026-09-10 08:00:00');
+        $stillWaiting = $this->rejectedAt($paidBefore, '2026-09-10 09:00:00');
+
+        $replaced = $this->within(fn (): array => array_map(
+            fn (Layaway $layaway): ?int => $this->receipts->rejectedToReplace($layaway)?->getKey(),
+            [$none, $pending, $approved, $waiting, $settled, $paidBefore],
+        ));
+
+        $this->assertSame([null, null, null, $rejected->getKey(), null, $stillWaiting->getKey()], $replaced);
+        // La alerta de `REQ-LAY-023` dice lo mismo: el pago a mano la contesta.
+        $this->assertSame(
+            [(int) $waiting->getKey(), (int) $paidBefore->getKey()],
+            $this->within(fn (): array => $this->receipts->rejectedAwaitingRetry([$waiting, $settled, $paidBefore])),
+        );
+    }
+
+    /**
      * `REQ-LAY-009` SP-3: al cancelar, los que esperan revisión se rechazan
      * con `layaway_cancelled` y sin revisor; los demás no se tocan.
      */
@@ -131,6 +170,16 @@ final class LayawayReceiptsTest extends TestCase
         $this->expectException(QueryException::class);
 
         $this->receiptFor($this->layawayIn($this->organization), attributes: ['bank' => null]);
+    }
+
+    private function rejectedAt(Layaway $layaway, string $at): Receipt
+    {
+        return $this->receiptFor($layaway, ReceiptStatus::Rejected, ['reviewed_at' => $at, 'updated_at' => $at]);
+    }
+
+    private function paymentAt(Layaway $layaway, string $at): void
+    {
+        $this->within(fn (): Payment => Payment::factory()->createOne(['layaway_id' => $layaway->getKey(), 'created_at' => $at]));
     }
 
     /**

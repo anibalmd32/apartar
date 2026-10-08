@@ -65,7 +65,9 @@ final class PaymentRowResource extends JsonResource
             'rateApplied' => $inDollars ? null : $payment->rate_applied,
             'rateSource' => $payment->rate_source->value,
             'rateSourceLabel' => $payment->rate_source->label(),
-            'method' => $payment->receipt?->payment_method->label() ?? 'Registrado por el negocio',
+            // Cómo se pagó: lo guarda el pago desde `T-062`; los de antes lo
+            // sacan de su comprobante.
+            'method' => $payment->payment_method?->label() ?? $payment->receipt?->payment_method->label() ?? 'Registrado por el negocio',
             'appliedTo' => $payment->allocations
                 ->map(fn (PaymentAllocation $allocation): ?int => $allocation->installment?->number)
                 ->filter()
