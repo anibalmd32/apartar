@@ -13,10 +13,12 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Consumo materializado de una métrica por organización (`REQ-SUB-003`).
  *
- * Tabla del tenant, una fila por métrica. Aquí solo se crea y se inicializa en
- * cero al dar de alta la suscripción (`REQ-SUB-002` RB-5); quien la mueve
- * —`UsageCalculator`, dentro de la transacción de cada mutación— y quien la
- * hace cumplir —`LimitEnforcer`— llegan con H5.
+ * Tabla del tenant, una fila por métrica. Nace con la suscripción, con lo que
+ * la organización consume en ese instante (`REQ-SUB-002` RB-5). La mueven las
+ * mutaciones con `LimitEnforcer::adjust()` en su propia transacción, y
+ * `UsageCalculator` la vuelve a medir —`storage_mb` tras cada archivo, todo
+ * cada noche—. Desde `T-066` es **lo único** que `LimitEnforcer` lee para
+ * decidir y para pintar.
  *
  * @property int $id
  * @property int $organization_id

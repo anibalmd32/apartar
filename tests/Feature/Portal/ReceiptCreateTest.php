@@ -15,6 +15,7 @@ use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
+use App\Models\Subscription;
 use App\Providers\AppServiceProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -282,17 +283,48 @@ final class ReceiptCreateTest extends TestCase
 
     /**
      * RB-10, RB-11 · con el negocio suspendido y la cuota de almacenamiento
-     * agotada, el comprobante del cliente se acepta igual.
+     * agotada **de verdad** —un plan de 1 MB con 5 MB ya ocupados—, el
+     * comprobante del cliente se acepta igual, y lo que pesa **se cuenta**: el
+     * contador queda por encima del techo (`REQ-SUB-008` RB-6, «se registra el
+     * exceso»).
      */
     public function test_a_suspended_business_with_exhausted_storage_still_receives_receipts(): void
     {
         $this->organization->forceFill(['status' => OrganizationStatus::Suspended])->save();
-        $this->withinOrganization($this->organization, fn () => DB::table('usage_counters')->updateOrInsert(
-            ['organization_id' => $this->organization->getKey(), 'metric' => 'storage_mb'],
-            ['value' => 1_000_000, 'computed_at' => now(), 'created_at' => now(), 'updated_at' => now()],
-        ));
+        $this->withinOrganization($this->organization, function (): void {
+            Subscription::query()->firstOrFail()->plan->forceFill(['max_storage_mb' => 1])->save();
+            Receipt::factory()->create(['layaway_id' => $this->layaway->getKey(), 'file_size' => 5 * 1024 * 1024]);
+        });
+        $this->recalculateUsage($this->organization);
+        $this->assertSame(5, $this->storageCounter());
 
         $this->post($this->storeUrl(), $this->payload())->assertSessionHasNoErrors()->assertRedirect();
+
+        $this->assertSame(2, $this->withinOrganization($this->organization, fn (): int => Receipt::query()->count()));
+        $this->assertSame(6, $this->storageCounter());
+    }
+
+    /**
+     * `REQ-SUB-003` SP-4 · el comprobante subido suma `storage_mb` en cuanto se
+     * confirma, sin esperar al recálculo de la noche.
+     */
+    public function test_a_receipt_adds_its_weight_to_the_storage_counter(): void
+    {
+        $this->assertSame(0, $this->storageCounter());
+
+        $this->post($this->storeUrl(), $this->payload())->assertSessionHasNoErrors();
+
+        $bytes = $this->withinOrganization($this->organization, fn (): int => Receipt::query()->sole()->file_size);
+        $this->assertGreaterThan(0, $bytes);
+        $this->assertSame((int) ceil($bytes / (1024 * 1024)), $this->storageCounter());
+    }
+
+    private function storageCounter(): int
+    {
+        return (int) DB::table('usage_counters')
+            ->where('organization_id', $this->organization->getKey())
+            ->where('metric', 'storage_mb')
+            ->value('value');
     }
 
     /**

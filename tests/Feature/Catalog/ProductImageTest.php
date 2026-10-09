@@ -13,6 +13,7 @@ use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\Conversions\ConversionCollection;
 use Spatie\MediaLibrary\Conversions\FileManipulator;
@@ -295,6 +296,37 @@ final class ProductImageTest extends TestCase
 
         Storage::disk('public')->assertMissing($path);
         $this->assertSame(0, $this->imagesOf($product)->count());
+    }
+
+    /**
+     * `REQ-SUB-003` RB-5 · subir y borrar vuelven a sumar `storage_mb` en el
+     * acto: unos bytes ya son un mega empezado, y sin imágenes, cero.
+     */
+    public function test_uploading_and_deleting_an_image_move_the_storage_counter(): void
+    {
+        $product = $this->product();
+
+        $this->actingAs($this->owner())
+            ->post($this->url($product), ['images' => [$this->image('foto.png')]])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, $this->storageCounter());
+
+        $media = $this->imagesOf($product)->sole();
+
+        $this->actingAs($this->owner())
+            ->delete("/backoffice/productos/{$product->getKey()}/imagenes/{$media->getKey()}")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, $this->storageCounter());
+    }
+
+    private function storageCounter(): int
+    {
+        return (int) DB::table('usage_counters')
+            ->where('organization_id', $this->organization->getKey())
+            ->where('metric', 'storage_mb')
+            ->value('value');
     }
 
     /**

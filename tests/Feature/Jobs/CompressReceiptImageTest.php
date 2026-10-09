@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Receipt;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
@@ -62,6 +63,33 @@ final class CompressReceiptImageTest extends TestCase
         $this->assertSame(strlen($contents), $stored->file_size);
         $this->assertSame($hash, $stored->file_hash, 'Recomprimir cambió el hash (REQ-PAY-003 RB-7).');
         $this->assertSame([$stored->file_path], Storage::disk(Receipt::DISK)->allFiles(), 'Quedó el temporal en el disco.');
+    }
+
+    /**
+     * `REQ-SUB-003` SP-4 · recomprimir **baja** `storage_mb` en el acto. El
+     * comprobante declara 3 MB —lo que pesaba la foto del móvil— y tras la
+     * recompresión pesa unos KB: el contador pasa de 3 a 1 sin esperar a la
+     * noche.
+     */
+    public function test_recompressing_lowers_the_storage_counter(): void
+    {
+        $receipt = $this->storedReceipt($this->receiptImage(3000, 1500), 'image/jpeg');
+        DB::table('receipts')->where('id', $receipt->getKey())->update(['file_size' => 3 * 1024 * 1024]);
+        $this->recalculateUsage($this->organization);
+        $this->assertSame(3, $this->storageCounter());
+
+        $this->compressNow($receipt);
+
+        $this->assertLessThan(1024 * 1024, $this->fresh($receipt)->file_size);
+        $this->assertSame(1, $this->storageCounter());
+    }
+
+    private function storageCounter(): int
+    {
+        return (int) DB::table('usage_counters')
+            ->where('organization_id', $this->organization->getKey())
+            ->where('metric', 'storage_mb')
+            ->value('value');
     }
 
     /**

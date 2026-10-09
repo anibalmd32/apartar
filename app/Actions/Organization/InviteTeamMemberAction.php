@@ -88,8 +88,9 @@ final class InviteTeamMemberAction
 
             // El cupo se materializa en la misma transacción (`REQ-SUB-003`
             // RB-3): quien mire el equipo un instante después ve «2 de 5», no
-            // el número de antes de invitar.
-            $this->limits->synchronise(UsageMetric::Users);
+            // el número de antes de invitar. Una fila nueva es una unidad más,
+            // sin que haga falta volver a contar.
+            $this->limits->adjust(UsageMetric::Users, 1);
 
             // RB-1 · quién abrió la puerta del negocio y a quién. `properties`
             // no lleva la huella del enlace: es lo que abre esa puerta, y RB-5
@@ -155,9 +156,27 @@ final class InviteTeamMemberAction
         $this->assertStillPending($member);
 
         DB::transaction(function () use ($member, $actor): void {
-            $member->delete();
+            // El contador primero y la fila después, como todas las que mueven
+            // `users` (`LimitEnforcer::lockCounter()`).
+            $this->limits->lockCounter(UsageMetric::Users);
 
-            $this->limits->synchronise(UsageMetric::Users);
+            // La fila, releída con bloqueo: dos revocaciones simultáneas
+            // leerían las dos «pendiente» en el modelo de su petición y
+            // liberarían dos unidades por una sola invitación. La segunda
+            // encuentra la fila ya borrada —o ya aceptada— y no toca nada.
+            $locked = User::query()->whereKey($member->getKey())->lockForUpdate()->first();
+
+            if (! $locked instanceof User) {
+                return;
+            }
+
+            $this->assertStillPending($locked);
+
+            $locked->delete();
+
+            if ($locked->disabled_at === null) {
+                $this->limits->adjust(UsageMetric::Users, -1);
+            }
 
             // La fila se borra (RB-6 de `REQ-ORG-004`), así que **esta entrada
             // es todo lo que queda** de que esa invitación existió. Se escribe

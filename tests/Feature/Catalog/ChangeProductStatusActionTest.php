@@ -8,12 +8,14 @@ use App\Actions\Product\ChangeProductStatusAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\IncompleteProductException;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Subscription\UsageMetric;
 use App\Jobs\TranscodeProductImage;
 use App\Models\AuditEntry;
 use App\Models\Catalog;
 use App\Models\Category;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Models\UsageCounter;
 use App\Models\User;
 use App\Support\Media\TenantPathGenerator;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -67,6 +69,37 @@ final class ChangeProductStatusActionTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // El cupo `products` (`REQ-SUB-003` RB-3, SP-2)
+    // ------------------------------------------------------------------
+
+    /**
+     * Archivar libera una unidad y restaurar la vuelve a ocupar, en la misma
+     * transacción; publicar y despublicar no la mueven, porque el borrador ya
+     * cuenta. Repetir un paso no mueve nada.
+     */
+    public function test_archiving_frees_a_products_slot_and_restoring_takes_it_back(): void
+    {
+        $product = $this->publishable();
+        $this->recalculateUsage();
+        $this->assertSame(1, $this->productsCounter());
+
+        $this->changer()->publish($product, $this->actor);
+        $this->assertSame(1, $this->productsCounter());
+
+        $this->changer()->archive($product, $this->actor);
+        $this->assertSame(0, $this->productsCounter());
+
+        app(ChangeProductStatusAction::class)->archive($product, $this->actor);
+        $this->assertSame(0, $this->productsCounter());
+
+        app(ChangeProductStatusAction::class)->restore($product, $this->actor);
+        $this->assertSame(1, $this->productsCounter());
+
+        app(ChangeProductStatusAction::class)->restore($product, $this->actor);
+        $this->assertSame(1, $this->productsCounter());
+    }
+
+    // ------------------------------------------------------------------
     // La matriz (RB-1, SP-4)
     // ------------------------------------------------------------------
 
@@ -80,32 +113,22 @@ final class ChangeProductStatusActionTest extends TestCase
      */
     public function test_the_matrix_accepts_the_five_legitimate_steps(): void
     {
+        // Sembrados antes de `changer()`, que cuadra el contador con ellos.
+        [$draft, $toArchive, $published, $publishedToArchive, $archived] = [
+            $this->publishable(),
+            Product::factory()->create(),
+            Product::factory()->published()->create(),
+            Product::factory()->published()->create(),
+            Product::factory()->archived()->create(),
+        ];
+
         $status = $this->changer();
 
-        $this->assertSame(
-            ProductStatus::Published,
-            $status->publish($this->publishable(), $this->actor)->status,
-        );
-
-        $this->assertSame(
-            ProductStatus::Archived,
-            $status->archive(Product::factory()->create(), $this->actor)->status,
-        );
-
-        $this->assertSame(
-            ProductStatus::Draft,
-            $status->unpublish(Product::factory()->published()->create(), $this->actor)->status,
-        );
-
-        $this->assertSame(
-            ProductStatus::Archived,
-            $status->archive(Product::factory()->published()->create(), $this->actor)->status,
-        );
-
-        $this->assertSame(
-            ProductStatus::Draft,
-            $status->restore(Product::factory()->archived()->create(), $this->actor)->status,
-        );
+        $this->assertSame(ProductStatus::Published, $status->publish($draft, $this->actor)->status);
+        $this->assertSame(ProductStatus::Archived, $status->archive($toArchive, $this->actor)->status);
+        $this->assertSame(ProductStatus::Draft, $status->unpublish($published, $this->actor)->status);
+        $this->assertSame(ProductStatus::Archived, $status->archive($publishedToArchive, $this->actor)->status);
+        $this->assertSame(ProductStatus::Draft, $status->restore($archived, $this->actor)->status);
     }
 
     /**
@@ -568,6 +591,11 @@ final class ChangeProductStatusActionTest extends TestCase
      * corregir— y el rótulo es cómo se nombra en el resumen, que es lo que lee
      * quien está en el listado.
      */
+    private function productsCounter(): int
+    {
+        return (int) UsageCounter::query()->where('metric', UsageMetric::Products)->value('value');
+    }
+
     private function assertMissingToPublish(Product $product, string $field, string $label): void
     {
         try {
@@ -620,8 +648,14 @@ final class ChangeProductStatusActionTest extends TestCase
         return new UploadedFile($path, 'foto.png', 'image/png', null, true);
     }
 
+    /**
+     * Cuadra antes el contador de `products` (`T-066`): las factories no
+     * ocupan su unidad, y archivar una que nunca se sumó la restaría de cero.
+     */
     private function changer(): ChangeProductStatusAction
     {
+        $this->recalculateUsage();
+
         return app(ChangeProductStatusAction::class);
     }
 }

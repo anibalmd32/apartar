@@ -250,6 +250,7 @@ final class TeamDeactivationTest extends TestCase
 
         // Se llenan los tres sitios con gente nueva.
         $this->withinOrganization($this->organization, fn () => User::factory()->count(2)->create());
+        $this->recalculateUsage($this->organization);
 
         $this->actingAs($owner)
             ->postJson('/backoffice/equipo/'.$member->getKey().'/activar')
@@ -272,6 +273,7 @@ final class TeamDeactivationTest extends TestCase
         [$owner] = $this->team();
 
         $this->withinOrganization($this->organization, fn () => User::factory()->create());
+        $this->recalculateUsage($this->organization);
 
         $small = Plan::factory()->create(['name' => 'Pequeño', 'position' => 0, 'max_users' => 1]);
 
@@ -336,6 +338,9 @@ final class TeamDeactivationTest extends TestCase
             User::factory()->create(['name' => 'Zoe Empleada']),
         ]);
 
+        // Las factories no mueven el contador, que desde `T-066` es lo único
+        // que decide: se cuadra como lo cuadra la noche.
+        $this->recalculateUsage($this->organization);
         $this->withoutOrganization();
 
         return $team;

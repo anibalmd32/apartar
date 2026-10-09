@@ -12,7 +12,9 @@ use App\Domain\Tenancy\LastOwnerException;
 use App\Domain\Tenancy\LastOwnerGuard;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -69,14 +71,34 @@ final class DisableTeamMemberAction
             return $member;
         }
 
+        // El contador primero, **antes** que las filas de los `owner` que
+        // coge la guarda: invitar coge el contador y después inserta en el
+        // hueco de esas filas, y con el orden al revés las dos peticiones se
+        // esperaban en cruz (`LimitEnforcer::lockCounter()`).
+        return DB::transaction(fn (): User => $this->disable($member, $actor));
+    }
+
+    private function disable(User $member, User $actor): User
+    {
+        $this->limits->lockCounter(UsageMetric::Users);
+
         return $this->guard->whileKeepingAnOwner($member, 'desactivar', function () use ($member, $actor): User {
+            // Releída con bloqueo, por lo mismo que la reactivación: dos bajas
+            // simultáneas liberarían dos unidades por una persona.
+            $locked = User::query()->whereKey($member->getKey())->lockForUpdate()->firstOrFail();
+            ModelState::adopt($member, $locked->getAttributes());
+
+            if ($member->disabled_at !== null) {
+                return $member;
+            }
+
             $member->forceFill(['disabled_at' => now()])->save();
 
             // RB-5 · la baja **libera** su unidad del límite `users`, en la
             // misma transacción del bloqueo. La sesión abierta de esa persona
             // cae en su siguiente petición sin que nadie más haga nada:
             // `EnsureAdminIsActive` mira esta columna en cada una (RB-2).
-            $this->limits->synchronise(UsageMetric::Users);
+            $this->limits->adjust(UsageMetric::Users, -1);
 
             // RB-1 · quitarle el acceso a alguien es de las cosas que el dueño
             // va a querer poder fechar: «desde cuándo no entra» es la primera

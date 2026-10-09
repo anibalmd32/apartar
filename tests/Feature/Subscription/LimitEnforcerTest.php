@@ -68,6 +68,7 @@ final class LimitEnforcerTest extends TestCase
         $this->withinOrganization($this->organization, function (): void {
             User::factory()->owner()->create();
             User::factory()->invited()->create();
+            $this->recalculateUsage();
 
             $this->assertSame(2, $this->enforcer()->usageOf(UsageMetric::Users)->used);
             $this->assertSame(3, $this->enforcer()->remaining(UsageMetric::Users));
@@ -84,12 +85,13 @@ final class LimitEnforcerTest extends TestCase
         $this->withinOrganization($this->organization, function (): void {
             User::factory()->owner()->create();
             $member = User::factory()->create();
+            $this->recalculateUsage();
 
-            $this->assertSame(2, $this->enforcer()->synchronise(UsageMetric::Users));
+            $this->assertSame(2, $this->enforcer()->usageOf(UsageMetric::Users)->used);
 
             $member->forceFill(['disabled_at' => now()])->save();
+            $this->recalculateUsage();
 
-            $this->assertSame(1, $this->enforcer()->synchronise(UsageMetric::Users));
             $this->assertSame(1, $this->enforcer()->usageOf(UsageMetric::Users)->used);
         });
     }
@@ -130,6 +132,7 @@ final class LimitEnforcerTest extends TestCase
 
         $this->withinOrganization($this->organization, function (): void {
             User::factory()->owner()->create();
+            $this->recalculateUsage();
 
             try {
                 DB::transaction(fn () => $this->enforcer()->assertCanCreate(UsageMetric::Users));
@@ -156,6 +159,7 @@ final class LimitEnforcerTest extends TestCase
 
         $this->withinOrganization($this->organization, function (): void {
             User::factory()->owner()->create();
+            $this->recalculateUsage();
 
             try {
                 DB::transaction(fn () => $this->enforcer()->assertCanCreate(UsageMetric::Users));
@@ -208,29 +212,37 @@ final class LimitEnforcerTest extends TestCase
             DB::transaction(fn () => $this->enforcer()->assertCanCreate(UsageMetric::Users));
 
             // La comprobación llegó hasta el final —no se cortó en el estado
-            // de la suscripción— y por el camino dejó el contador cuadrado.
-            $this->assertSame(1, (int) UsageCounter::query()->where('metric', UsageMetric::Users)->value('value'));
+            // de la suscripción—: bloqueó el contador, y como no existía, lo
+            // creó para poder bloquearlo.
+            $this->assertTrue(UsageCounter::query()->where('metric', UsageMetric::Users)->exists());
         });
     }
 
     /**
-     * El contador queda con lo medido, en la misma transacción
-     * (`REQ-SUB-003` RB-3). Se inyecta una deriva —el registro deja los seis en
-     * cero con el `owner` ya creado— y se comprueba que la comprobación la
-     * corrige en vez de fiarse de ella.
+     * Desde `T-066` **el contador es el camino único** (`REQ-SUB-003` RB-1):
+     * la comprobación no vuelve a contar, ni para decidir ni para corregir. Se
+     * inyecta una deriva y se ve que decide con ella y la deja como estaba;
+     * quien la corrige es el recálculo (RB-4), y después decide con lo medido.
+     *
+     * Hasta `T-066` era al revés —contaba la tabla y reescribía el
+     * contador—, y este caso afirmaba esa reescritura.
      */
-    public function test_the_locked_check_rewrites_a_drifted_counter(): void
+    public function test_the_locked_check_trusts_the_counter_and_the_recalculation_corrects_it(): void
     {
-        $this->subscribeTo(maxUsers: 5);
+        $this->subscribeTo(maxUsers: 3);
 
         $this->withinOrganization($this->organization, function (): void {
             User::factory()->count(3)->create();
 
-            UsageCounter::query()->where('metric', UsageMetric::Users)->update(['value' => 0]);
-
             DB::transaction(fn () => $this->enforcer()->assertCanCreate(UsageMetric::Users));
 
-            $this->assertSame(3, (int) UsageCounter::query()->where('metric', UsageMetric::Users)->value('value'));
+            $this->assertSame(0, (int) UsageCounter::query()->where('metric', UsageMetric::Users)->value('value'));
+
+            $this->recalculateUsage();
+
+            $this->expectException(PlanLimitReachedException::class);
+
+            DB::transaction(fn () => $this->enforcer()->assertCanCreate(UsageMetric::Users));
         });
     }
 
@@ -245,6 +257,7 @@ final class LimitEnforcerTest extends TestCase
 
         $this->withinOrganization($this->organization, function (): void {
             User::factory()->owner()->create();
+            $this->recalculateUsage();
 
             $state = $this->enforcer()->state();
 
@@ -280,12 +293,11 @@ final class LimitEnforcerTest extends TestCase
     }
 
     /**
-     * Las cuatro métricas cuyas tablas no existen **ya se hacen cumplir**,
-     * contra el valor materializado. Es el comportamiento definitivo: cuando
-     * `T-066` mantenga los contadores, este será el único camino, y lo que
-     * añadirá esa tarea es la medida, no la aplicación del techo.
+     * Una métrica se hace cumplir contra su valor materializado, sea cual sea:
+     * lo que pinta `usageOf()` y lo que decide `assertCanCreate()` son la
+     * misma cifra.
      */
-    public function test_a_metric_without_a_table_yet_is_enforced_from_its_counter(): void
+    public function test_a_metric_is_enforced_from_its_counter(): void
     {
         $plan = Plan::factory()->create(['max_products' => 2]);
         $this->subscribeTo(plan: $plan);
@@ -295,10 +307,6 @@ final class LimitEnforcerTest extends TestCase
 
             $this->assertSame(2, $this->enforcer()->usageOf(UsageMetric::Products)->used);
             $this->assertSame(0, $this->enforcer()->remaining(UsageMetric::Products));
-
-            // Y `synchronise()` la deja como estaba en vez de ponerla a cero:
-            // no saber medir algo no es lo mismo que medir cero.
-            $this->assertSame(2, $this->enforcer()->synchronise(UsageMetric::Products));
 
             $this->expectException(PlanLimitReachedException::class);
 
@@ -349,6 +357,8 @@ final class LimitEnforcerTest extends TestCase
         $this->subscribeTo(maxUsers: 5);
 
         $this->withinOrganization($this->organization, fn () => User::factory()->owner()->create());
+        $this->recalculateUsage($this->organization);
+        $this->recalculateUsage($this->neighbourOrganization());
 
         $ours = $this->withinOrganization(
             $this->organization,
@@ -357,7 +367,7 @@ final class LimitEnforcerTest extends TestCase
 
         $theirs = $this->withinOrganization(
             $this->neighbourOrganization(),
-            fn (): int => $this->enforcer()->synchronise(UsageMetric::Users),
+            fn (): int => $this->enforcer()->usageOf(UsageMetric::Users)->used,
         );
 
         $this->assertSame(1, $ours);

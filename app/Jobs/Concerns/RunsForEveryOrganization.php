@@ -12,10 +12,15 @@ use Closure;
  * Recorre las organizaciones fijando el tenant **por elemento**
  * (`REQ-INF-003` RB-1b).
  *
- * Es el otro mecanismo, el de los siete jobs programados que no trabajan sobre
- * una organización sino sobre todas: `ExpireLayawaysJob`,
+ * Es el otro mecanismo, el de los jobs programados que no trabajan sobre una
+ * organización sino sobre todas: `ExpireLayawaysJob`,
  * `DetectOverdueLayawaysJob`, `DispatchReminders`, `ReconcileLayaways`,
- * `ProcessTelemetryBatch`, `RecalculateUsage` y `DispatchCatalogDigests`.
+ * `ProcessTelemetryBatch` y `DispatchCatalogDigests`.
+ *
+ * `RecalculateUsage` **no** lo usa (`T-066`): mide por lotes de doscientas
+ * organizaciones con una consulta agregada por métrica (`REQ-SUB-003` SP-7),
+ * que es RB-1b «por lote», desde `app/Queries/Platform` y sin fijar ningún
+ * tenant. Fijarlo por organización serían seis consultas por negocio.
  *
  * Lo que RB-1b prohíbe es el atajo evidente: fijar **una** organización para
  * toda la ejecución, o peor, correr sin tenant y filtrar a mano. Un job que

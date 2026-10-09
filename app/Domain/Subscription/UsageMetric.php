@@ -85,6 +85,27 @@ enum UsageMetric: string
     }
 
     /**
+     * Indica si el consumo **baja solo con el reloj**, sin que nadie escriba
+     * nada.
+     *
+     * Es `catalogs`: un catálogo caduca a su hora (`REQ-CAT-022` RB-6), sin job
+     * y sin escritura, y en ese instante deja de contar. El contador lo mueven
+     * publicar y despublicar, así que un catálogo caducado sigue sumando hasta
+     * que el recálculo lo ve. Por eso el contador de esta métrica **puede estar
+     * por encima** de lo medido sin que eso sea una deriva —lo es si está por
+     * debajo—, y por eso se recalcula cada hora además de cada noche.
+     */
+    public function shrinksWithTime(): bool
+    {
+        return match ($this) {
+            self::Catalogs => true,
+
+            self::Users, self::Products, self::ActiveLayaways,
+            self::StorageMb, self::PaymentAccounts => false,
+        };
+    }
+
+    /**
      * Unidad en la que se cuenta, para que la UI no la invente.
      */
     public function unit(): string

@@ -6,12 +6,16 @@ namespace App\Actions\Product;
 
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\IncompleteProductException;
+use App\Domain\Catalog\ProductLock;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Subscription\LimitEnforcer;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Product;
 use App\Models\User;
 use App\Rules\CoherentFinancingTerms;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -71,10 +75,10 @@ use Illuminate\Validation\ValidationException;
  *
  * ## Lo que no está y tiene dueño
  *
- * **El cupo del plan de RB-8 no se ajusta aquí.** Archivar libera y restaurar
- * reclama (SP-4), pero quien mide la métrica `products` es `T-066` y quien
- * inserta las llamadas a `LimitEnforcer` es `T-067`. Hoy esa métrica responde
- * «sin límite», así que una llamada adelantada haría cumplir una ficción.
+ * **El cupo del plan de RB-8 se mueve pero no se comprueba aquí.** Archivar
+ * libera y restaurar reclama (SP-4): desde `T-066` el contador `products` se
+ * mueve en la transacción de cada paso. Comprobar que restaurar cabe es de
+ * `T-067`, que inserta las llamadas a `assertCanCreate()`.
  *
  * **El `404` de SP-1 tampoco.** Lo de esta clase es el mecanismo —el estado— y
  * la consulta que lo respeta; la respuesta HTTP de un `draft` o un `archived`
@@ -85,7 +89,10 @@ final class ChangeProductStatusAction
 {
     use LogsSensitiveActivity;
 
-    public function __construct(private readonly TenantContext $context) {}
+    public function __construct(
+        private readonly TenantContext $context,
+        private readonly LimitEnforcer $limits,
+    ) {}
 
     /**
      * Publica el producto, si está completo (RB-5, SP-3, SP-5).
@@ -332,11 +339,32 @@ final class ChangeProductStatusAction
         }
 
         return DB::transaction(function () use ($product, $status, $actor, $extra): Product {
+            // El estado de partida, releído con el producto bloqueado: decide
+            // cuánto se mueve el cupo `products` (`REQ-SUB-003` RB-3), y dos
+            // archivados simultáneos que lo leyeran del modelo de su petición
+            // liberarían dos unidades por un producto. La matriz se vuelve a
+            // comprobar sobre lo releído por lo mismo.
+            ModelState::adopt($product, ProductLock::acquire((int) $product->getKey())->getAttributes());
+
+            if ($product->status === $status) {
+                return $product;
+            }
+
+            $this->assertStepIsAllowed($product, $status);
+
+            $from = $product->status;
             $columns = array_keys($extra);
 
             $before = ['status' => $product->status->value] + $this->valuesOf($product, $columns);
 
             $product->editedBy($actor)->forceFill(['status' => $status] + $extra)->save();
+
+            // SP-2 · archivar libera una unidad y restaurar la vuelve a ocupar;
+            // publicar y despublicar no mueven nada, porque el borrador cuenta.
+            $this->limits->adjust(
+                UsageMetric::Products,
+                (int) $status->countsTowardPlanLimit() - (int) $from->countsTowardPlanLimit(),
+            );
 
             $this->audit(
                 AuditEvent::ProductStatusChanged,

@@ -55,3 +55,13 @@ it('contesta solo por el estado, sin fecha ni existencias', function (): void {
         expect($reflection->getMethod($method)->getNumberOfParameters())->toBe(0);
     }
 });
+
+/**
+ * `REQ-SUB-003` RB-2 · el borrador consume cupo `products`; el archivado no
+ * (SP-2): archivar es la forma de liberar sitio sin perder nada.
+ */
+it('consume cupo del plan todo lo que no está archivado', function (): void {
+    expect(ProductStatus::Draft->countsTowardPlanLimit())->toBeTrue();
+    expect(ProductStatus::Published->countsTowardPlanLimit())->toBeTrue();
+    expect(ProductStatus::Archived->countsTowardPlanLimit())->toBeFalse();
+});

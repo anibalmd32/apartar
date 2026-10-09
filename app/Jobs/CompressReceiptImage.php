@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Domain\Payment\ReceiptFile;
+use App\Domain\Subscription\UsageCalculator;
+use App\Domain\Subscription\UsageMetric;
+use App\Domain\Tenancy\TenantContext;
 use App\Jobs\Concerns\RunsInTenantContext;
 use App\Models\Receipt;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -117,8 +120,18 @@ final class CompressReceiptImage implements ShouldQueue
                 return;
             }
 
-            if (self::compresses($receipt->file_mime)) {
-                $this->compress($receipt);
+            if (! self::compresses($receipt->file_mime)) {
+                return;
+            }
+
+            $this->compress($receipt);
+
+            // `REQ-SUB-003` SP-4 · la recompresión baja `storage_mb`. Un fallo
+            // al medir no deshace la recompresión: la noche lo cuadra.
+            try {
+                app(UsageCalculator::class)->refresh(app(TenantContext::class)->organization(), UsageMetric::StorageMb);
+            } catch (Throwable $exception) {
+                report($exception);
             }
         });
     }

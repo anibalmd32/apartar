@@ -10,6 +10,8 @@ use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\ReceiptStatus;
+use App\Domain\Subscription\UsageCalculator;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Events\ReceiptSubmitted;
 use App\Jobs\CompressReceiptImage;
@@ -96,8 +98,9 @@ use Throwable;
  *
  *  - **No mira la cuota de almacenamiento del plan** (RB-10, SP-12): la
  *    subida de un comprobante de cliente nunca se rechaza por ella. El peso
- *    lo mide `T-066`; bloquear aquí rompería la cobranza, y el perjudicado
- *    sería el cliente.
+ *    **sí se cuenta** —`storage_mb` se vuelve a sumar tras el `COMMIT`
+ *    (`T-066`)—; bloquear aquí rompería la cobranza, y el perjudicado sería
+ *    el cliente.
  *  - **No pregunta por la suspensión del negocio** (RB-11): el portal del
  *    cliente sigue funcionando con la organización `suspended`.
  *  - **No emite `receipt_uploaded`** (RB-8): la telemetría es de `T-084`.
@@ -116,6 +119,7 @@ final class SubmitReceiptAction
     public function __construct(
         private readonly TenantContext $context,
         private readonly LayawayReceipts $receipts,
+        private readonly UsageCalculator $usage,
     ) {}
 
     /**
@@ -189,6 +193,7 @@ final class SubmitReceiptAction
                 });
 
                 $this->compressAfterCommit($receipt, $mime);
+                $this->measureStorageAfterCommit();
                 $this->announceAfterCommit($receipt, $layaway->code);
 
                 return $receipt;
@@ -311,6 +316,35 @@ final class SubmitReceiptAction
         } catch (Throwable $exception) {
             report($exception);
         }
+    }
+
+    /**
+     * Vuelve a sumar `storage_mb` cuando la transacción se confirme
+     * (`REQ-SUB-003` SP-4, `REQ-PAY-002` RB-10).
+     *
+     * **Suma, nunca decide**: aquí no hay `assertCanCreate()`, y no es un
+     * olvido. Un comprobante de cliente se acepta con la cuota agotada
+     * (`REQ-PAY-001` RB-10): bloquearlo rompería la cobranza del negocio y el
+     * perjudicado sería su cliente. Lo que pesa se cuenta igual, para que el
+     * negocio lo vea.
+     *
+     * Después del `COMMIT` porque la medida del almacenamiento tiene que abrir
+     * su propia transacción (`UsageCalculator`), y registrado detrás del
+     * despacho de la recompresión: con la cola `sync` el archivo ya llega
+     * recomprimido. Y como el despacho, un fallo aquí se informa y la subida
+     * sigue siendo un éxito: el recálculo de la noche cuadra la cifra.
+     */
+    private function measureStorageAfterCommit(): void
+    {
+        $organization = $this->context->organization();
+
+        DB::afterCommit(function () use ($organization): void {
+            try {
+                $this->usage->refresh($organization, UsageMetric::StorageMb);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
     }
 
     /**

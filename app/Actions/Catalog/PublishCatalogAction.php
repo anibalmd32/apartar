@@ -7,6 +7,8 @@ namespace App\Actions\Catalog;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\CatalogNotPublishableException;
 use App\Domain\Subscription\CreationSuspendedException;
+use App\Domain\Subscription\LimitEnforcer;
+use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\OrganizationStatus;
@@ -15,6 +17,7 @@ use App\Models\Catalog;
 use App\Models\PaymentAccount;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -37,13 +40,11 @@ use Illuminate\Support\Facades\Gate;
  *  5. email del `owner` verificado — SP-4 · aquí
  *  6. organización no suspendida — SP-9 · aquí
  *
- * **El cuarto no está y no se simula.** La métrica `catalogs` responde hoy
- * «sin límite» a propósito: `LimitEnforcer::measure()` devuelve `null` para
- * ella hasta que `T-066` escriba el conteo, y `T-067` es quien inserta las
- * llamadas. Adelantarlo aquí haría cumplir una ficción, o peor, escribiría un
- * contador que la tarea del contador tendría que desmontar. Lo que sí está es
- * el sitio: una línea `assertCanCreate(UsageMetric::Catalogs)` dentro de la
- * transacción de `apply()`, que es donde el contador se lee bloqueado.
+ * **El cuarto no está y no se simula.** Desde `T-066` publicar **mueve** el
+ * contador `catalogs` —uno más al pasar de borrador o caducado a publicado—,
+ * pero no lo **comprueba**: insertar las llamadas es de `T-067`. Lo que sí
+ * está es el sitio: una línea `assertCanCreate(UsageMetric::Catalogs)` dentro
+ * de la transacción de `apply()`, que es donde el contador se lee bloqueado.
  *
  * ## El orden de las comprobaciones es parte de la respuesta
  *
@@ -82,7 +83,11 @@ final class PublishCatalogAction
 {
     use LogsSensitiveActivity;
 
-    public function __construct(private readonly TenantContext $context) {}
+    public function __construct(
+        private readonly TenantContext $context,
+        private readonly LimitEnforcer $limits,
+        private readonly UsageCalculator $usage,
+    ) {}
 
     /**
      * Publica el catálogo, o actualiza su visibilidad y su caducidad.
@@ -255,26 +260,46 @@ final class PublishCatalogAction
      */
     private function apply(Catalog $catalog, PublishCatalogData $data, User $actor): Catalog
     {
-        $before = $this->snapshotOf($catalog);
+        return DB::transaction(function () use ($catalog, $data, $actor): Catalog {
+            // Lo primero, el contador `catalogs` recontado y bloqueado: los
+            // catálogos caducan solos y el contador puede llevar uno que ya no
+            // cuenta (`UsageCalculator::recountLocked()`). Antes que la fila
+            // del catálogo, para que dos publicaciones se serialicen aquí.
+            $this->usage->recountLocked(UsageMetric::Catalogs);
 
-        $attributes = [
-            'is_listed' => $data->isListed,
-            'expires_at' => $data->expiresAt,
-            'published_at' => $catalog->published_at ?? now(),
-        ];
+            // El catálogo, releído con bloqueo: si ya contaba o no es lo que
+            // decide cuánto se mueve el cupo `catalogs` (`REQ-SUB-003` RB-3),
+            // y dos publicaciones simultáneas del mismo borrador que lo
+            // leyeran del modelo de su petición sumarían dos por uno.
+            ModelState::adopt($catalog, Catalog::query()->whereKey($catalog->getKey())->lockForUpdate()->firstOrFail()->getAttributes());
 
-        return DB::transaction(function () use ($catalog, $attributes, $before, $actor): Catalog {
+            $before = $this->snapshotOf($catalog);
+            $counted = $catalog->visibility()->countsTowardPlanLimit();
+
             // `T-067` inserta aquí su línea: el cupo se comprueba con el
             // contador bloqueado dentro de esta misma transacción, que es lo
             // que impide que dos publicaciones simultáneas gasten un solo
-            // hueco ([05 §5]).
-            $catalog->editedBy($actor)->forceFill($attributes)->save();
+            // hueco ([05 §5]). Solo cuando `$counted` es falso: cambiar la
+            // fecha de un catálogo que ya está publicado no ocupa nada nuevo.
+            $catalog->editedBy($actor)->forceFill([
+                'is_listed' => $data->isListed,
+                'expires_at' => $data->expiresAt,
+                'published_at' => $catalog->published_at ?? now(),
+            ])->save();
 
             $after = $this->snapshotOf($catalog);
 
             if ($after === $before) {
                 return $catalog;
             }
+
+            // De borrador o caducado a publicado, uno más; de publicado a
+            // publicado con otra fecha, cero. Sobre la cifra recién recontada,
+            // así que un caducado que se republica no cuenta dos veces.
+            $this->limits->adjust(
+                UsageMetric::Catalogs,
+                (int) $catalog->visibility()->countsTowardPlanLimit() - (int) $counted,
+            );
 
             $this->audit(
                 AuditEvent::CatalogPublished,

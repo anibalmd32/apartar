@@ -316,10 +316,15 @@ final class PaymentAccountPageTest extends TestCase
 
     private function existingAccount(): PaymentAccount
     {
-        return $this->withinOrganization(
+        $account = $this->withinOrganization(
             $this->organization,
             fn (): PaymentAccount => PaymentAccount::factory()->create(),
         );
+
+        // La factory no ocupa su unidad del plan; la noche sí la cuadraría.
+        $this->recalculateUsage($this->organization);
+
+        return $account;
     }
 
     private function owner(): User

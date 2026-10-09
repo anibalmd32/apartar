@@ -14,6 +14,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\PaymentAccount;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +42,9 @@ use Illuminate\Support\Facades\Gate;
  *  - `assertCanCreate()` va **dentro de la transacción que escribe**, porque el
  *    contador se lee bloqueado con `FOR UPDATE` y un `lockForUpdate()` en
  *    *autocommit* no serializa nada;
- *  - `synchronise()` va al terminar de mutar, **en esa misma transacción**.
+ *  - `adjust()` va al terminar de mutar, **en esa misma transacción**, con
+ *    la diferencia que la escritura produjo sobre la cuenta releída con
+ *    bloqueo (`T-066`).
  *
  * Lo que consume cupo es una cuenta **activa**, que es lo que mide la métrica.
  * De ahí que crear una desactivada no lo gaste y **reactivarla sí**: es la
@@ -101,6 +104,15 @@ final class UpsertPaymentAccountAction
         Gate::forUser($actor)->authorize('managePaymentAccounts', $this->context->organization());
 
         return DB::transaction(function () use ($data, $account, $actor): PaymentAccount {
+            // La cuenta, releída con bloqueo: si estaba activa o no es lo que
+            // decide si se ocupa o se libera una unidad, y dos guardados
+            // simultáneos que lo leyeran del modelo de su petición contarían
+            // la misma activación dos veces.
+            if ($account instanceof PaymentAccount) {
+                $locked = PaymentAccount::query()->whereKey($account->getKey())->lockForUpdate()->firstOrFail();
+                ModelState::adopt($account, $locked->getAttributes());
+            }
+
             $wasActive = $account instanceof PaymentAccount && $account->is_active;
             $before = $this->auditedFieldsOf($account);
 
@@ -150,8 +162,9 @@ final class UpsertPaymentAccountAction
 
             // El consumo se materializa en la misma transacción
             // (`REQ-SUB-003` RB-3): quien mire la pantalla un instante después
-            // ve «2 de 3 cuentas», no la cifra de antes de guardar.
-            $this->limits->synchronise(UsageMetric::PaymentAccounts);
+            // ve «2 de 3 cuentas», no la cifra de antes de guardar. Editar una
+            // que ya contaba mueve cero.
+            $this->limits->adjust(UsageMetric::PaymentAccounts, (int) $data->isActive - (int) $wasActive);
 
             return $account;
         });
@@ -182,6 +195,16 @@ final class UpsertPaymentAccountAction
         $inUse = $this->receipts->existFor($account);
 
         DB::transaction(function () use ($account, $inUse, $actor): void {
+            // Releída con bloqueo: borrar dos veces la misma cuenta activa
+            // liberaría dos unidades. La segunda ya no la encuentra.
+            $locked = PaymentAccount::query()->whereKey($account->getKey())->lockForUpdate()->first();
+
+            if (! $locked instanceof PaymentAccount) {
+                return;
+            }
+
+            ModelState::adopt($account, $locked->getAttributes());
+            $wasActive = $account->is_active;
             $before = $this->auditedFieldsOf($account);
 
             if ($inUse) {
@@ -206,8 +229,11 @@ final class UpsertPaymentAccountAction
             // RB-5 · las dos ramas liberan la unidad, porque la métrica cuenta
             // las **activas**: una cuenta desactivada ya no ocupa sitio en el
             // plan, y cobrarle por ella al negocio sería cobrarle por un dato
-            // que conservamos nosotros para nuestra propia trazabilidad.
-            $this->limits->synchronise(UsageMetric::PaymentAccounts);
+            // que conservamos nosotros para nuestra propia trazabilidad. Una
+            // que ya estaba apagada no ocupaba nada y no libera nada.
+            if ($wasActive) {
+                $this->limits->adjust(UsageMetric::PaymentAccounts, -1);
+            }
         });
 
         if ($inUse) {

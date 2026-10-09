@@ -144,7 +144,7 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
   | `default` | notificaciones, `SendWebPush`, `DispatchCatalogDigests`, `TranscodeProductImage`, `CompressReceiptImage`, `NotifyUnreadMessage`, expiración y detección de mora, `ReconcileLayaways` (añadido en `T-064`: no figuraba; es integridad de apartados, como las dos anteriores) |
   | `exports` | `GenerateExport`, `PurgeExpiredExports` |
   | `telemetry` | `ProcessTelemetryBatch`, `LinkVisitorEventsToCustomer`, `LinkVisitorEventsToAccount`, `PurgeTelemetry`, `RecalculateUsage` |
-- RB-1b **Todo job que toque una tabla del tenant recibe la organización como parámetro explícito** y la fija con `TenantContext::setOrganization()` al arrancar, limpiándola en el `finally` (`REQ-ORG-002` RB-5 y SP-7). Un job sin tenant fijado que toque una tabla del tenant **debe fallar**, no operar sin filtro. Los jobs que recorren varias organizaciones (`ExpireLayawaysJob`, `DetectOverdueLayawaysJob`, `DispatchReminders`, `ReconcileLayaways`, `ProcessTelemetryBatch`, `RecalculateUsage`, `DispatchCatalogDigests`) usan `withoutTenantScope()` para enumerar y fijan el tenant **por elemento o por lote**, nunca uno para toda la ejecución.
+- RB-1b **Todo job que toque una tabla del tenant recibe la organización como parámetro explícito** y la fija con `TenantContext::setOrganization()` al arrancar, limpiándola en el `finally` (`REQ-ORG-002` RB-5 y SP-7). Un job sin tenant fijado que toque una tabla del tenant **debe fallar**, no operar sin filtro. Los jobs que recorren varias organizaciones (`ExpireLayawaysJob`, `DetectOverdueLayawaysJob`, `DispatchReminders`, `ReconcileLayaways`, `ProcessTelemetryBatch`, `RecalculateUsage`, `DispatchCatalogDigests`) usan `withoutTenantScope()` para enumerar y fijan el tenant **por elemento o por lote**, nunca uno para toda la ejecución. *(`RecalculateUsage`, desde `T-066`, es el caso «por lote» sin fijar tenant: mide doscientas organizaciones con una consulta agregada por métrica desde `app/Queries/Platform`, acotada a los ids del lote —`REQ-SUB-003` SP-7—; fijar el tenant de cada una serían seis consultas por negocio.)*
 - RB-2 El worker consume en orden estricto de prioridad: mientras haya trabajos en `high`, no toca `default`.
 - RB-3 `--max-time=3600` recicla el proceso cada hora para evitar fugas de memoria; `restart: unless-stopped` lo relanza.
 - RB-4 `tries = 3` con backoff exponencial por defecto; los jobs que agotan reintentos van a `failed_jobs` y **nunca** bloquean la cola.
@@ -161,6 +161,7 @@ Redes: `traefik_proxy` (externa, solo `nginx` y `reverb`) e `internal` (interna,
   | `subscriptions:issue-renewals` | diario 07:15 | plataforma |
   | `subscriptions:apply-downgrades` | diario 07:30 | plataforma |
   | `subscriptions:recalculate-usage` | diario 02:00 | plataforma |
+  | `subscriptions:recalculate-usage:catalogs` | cada hora, y cuarto (añadido en `T-066`: los catálogos caducan solos, `REQ-SUB-003` RB-4) | plataforma |
   | `telemetry:purge` | diario 03:00 | plataforma |
   | `exports:purge` | diario 04:00 | plataforma |
   | `push:purge-stale` | semanal, lunes 04:30 | plataforma |

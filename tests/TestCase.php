@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Tests\Concerns\CreatesNeighbourOrganization;
 use Tests\Concerns\FailsOnCounterDrift;
 use Tests\Concerns\FakesPwnedPasswords;
+use Tests\Concerns\RecalculatesUsage;
 
 /**
  * Caso base de toda la suite.
@@ -24,7 +25,7 @@ use Tests\Concerns\FakesPwnedPasswords;
  */
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesNeighbourOrganization, FailsOnCounterDrift, FakesPwnedPasswords;
+    use CreatesNeighbourOrganization, FailsOnCounterDrift, FakesPwnedPasswords, RecalculatesUsage;
 
     protected function setUp(): void
     {

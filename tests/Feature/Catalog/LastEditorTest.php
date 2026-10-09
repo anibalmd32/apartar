@@ -175,6 +175,9 @@ final class LastEditorTest extends TestCase
         $product = Product::factory()->create($attributes);
         $product->editedBy($author)->forceFill(['name' => $product->name.' ·'])->save();
 
+        // La factory no ocupa su unidad de `products`; archivarlo la libera.
+        $this->recalculateUsage();
+
         return $product->refresh();
     }
 

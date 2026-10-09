@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Settings;
 
+use App\Domain\Subscription\UsageMetric;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
@@ -67,6 +69,10 @@ class ProfileUpdateTest extends TestCase
     {
         $user = User::factory()->create();
 
+        // `T-066` · su unidad del plan se libera con el borrado; la factory no
+        // la ocupó, así que se cuadra antes.
+        $this->recalculateUsage($user->organization);
+
         $response = $this
             ->actingAs($user)
             ->delete('/settings/profile', [
@@ -79,6 +85,10 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+        $this->assertSame(0, (int) DB::table('usage_counters')
+            ->where('organization_id', $user->organization_id)
+            ->where('metric', UsageMetric::Users->value)
+            ->value('value'));
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

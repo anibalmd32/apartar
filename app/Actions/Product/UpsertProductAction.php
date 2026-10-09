@@ -8,6 +8,8 @@ use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\ProductLock;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Catalog\TaxonomyByName;
+use App\Domain\Subscription\LimitEnforcer;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Category;
@@ -60,11 +62,9 @@ use Illuminate\Validation\ValidationException;
  *
  * ## Lo que no está y tiene dueño
  *
- * **El límite del plan de RB-8 no se comprueba aquí**, y es deliberado:
- * `LimitEnforcer` existe con su firma definitiva desde `T-011`, pero quien
- * inserta las doce llamadas es `T-067` y quien enseña a `measure()` a contar
- * `products` es `T-066`. Hoy esa métrica responde «sin límite», así que una
- * llamada adelantada haría cumplir una ficción.
+ * **El límite del plan de RB-8 no se comprueba aquí**, y es deliberado: el
+ * alta **mueve** el contador `products` desde `T-066`, pero quien inserta
+ * las doce llamadas a `assertCanCreate()` es `T-067`.
  *
  * **La completitud de RB-5 tampoco.** Imagen, categoría, descripción y
  * condiciones válidas se comprueban **enteras** en la transición a
@@ -79,6 +79,7 @@ final class UpsertProductAction
         private readonly TenantContext $context,
         private readonly TaxonomyByName $taxonomy,
         private readonly SyncSpecificationsAction $specifications,
+        private readonly LimitEnforcer $limits,
     ) {}
 
     /**
@@ -138,6 +139,10 @@ final class UpsertProductAction
                 // alta que entregara el producto publicado escondería ese paso.
                 $product = (new Product)->editedBy($actor)->forceFill($attributes + ['status' => ProductStatus::Draft]);
                 $product->save();
+
+                // El borrador ya cuenta (`REQ-SUB-003` RB-2): una fila nueva
+                // es una unidad más de `products`, en esta misma transacción.
+                $this->limits->adjust(UsageMetric::Products, 1);
             }
 
             // `sync` y no `attach`: la lista que llega es la lista completa, y

@@ -40,7 +40,7 @@ use App\Models\Receipt;
  * Aquí la guarda iba **al revés**: si `receipts` existía y este cuerpo seguía
  * sin sustituirse, **lanzaba**. Es la convención de fallo cerrado que ya rige las
  * declaraciones de superficie y de suspensión de las rutas y el `match` sin
- * `default` de `LimitEnforcer::measure()`: lo que no se ha decidido se para,
+ * `default` de `UsageAggregates::measure()`: lo que no se ha decidido se para,
  * no se deja pasar. Un despliegue que reviente en el primer test es barato; una
  * regla de trazabilidad de dinero apagada en silencio no lo es.
  *

@@ -79,4 +79,22 @@ enum ProductStatus: string
             self::Draft, self::Archived => false,
         };
     }
+
+    /**
+     * Si consume cupo del límite `products` del plan (`REQ-SUB-003` RB-2:
+     * «no archivados y no borrados lógicamente»).
+     *
+     * **El borrador cuenta**, y no es un descuido: es un producto que el
+     * negocio tiene, no uno que esté vendiendo, y el techo es de lo primero.
+     * Si contara solo lo publicado, cualquier plan admitiría un inventario
+     * infinito con publicar a ratos. Archivar es la forma de liberar sitio
+     * sin perder nada (SP-2).
+     */
+    public function countsTowardPlanLimit(): bool
+    {
+        return match ($this) {
+            self::Draft, self::Published => true,
+            self::Archived => false,
+        };
+    }
 }

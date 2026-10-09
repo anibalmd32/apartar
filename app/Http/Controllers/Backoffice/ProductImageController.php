@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Backoffice;
 use App\Actions\Product\SyncImageOrderAction;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Subscription\UsageCalculator;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
@@ -21,6 +23,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Throwable;
 
 /**
  * Las fotos de un producto (`REQ-BOF-022`).
@@ -37,13 +40,11 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * el séptimo se corta, los seis primeros son fotos que el negocio ya subió y
  * tirarlas sería perderle el trabajo por un problema de red que no es suyo.
  *
- * ## La cuota de almacenamiento no se comprueba aquí, todavía
+ * ## La cuota de almacenamiento se cuenta, pero no se comprueba aquí, todavía
  *
- * RB-8 y SP-7 la exigen, y `LimitEnforcer` existe con su firma definitiva
- * desde `T-011` — pero **`T-066`** es quien enseña a `measure()` a contar
- * `storage_mb` y **`T-067`** quien inserta las doce llamadas. Hoy esa métrica
- * responde «sin límite», así que una llamada adelantada haría cumplir una
- * ficción. Está anotado en el plan y no se tapa con un conteo a mano.
+ * RB-8 y SP-7 la exigen. Desde `T-066` subir y borrar vuelven a sumar
+ * `storage_mb` en cuanto el archivo está en el disco; comprobar que cabe
+ * —la llamada a `assertCanCreate()`— es de **`T-067`**, que inserta las doce.
  *
  * El `{product}` se resuelve ya filtrado por el tenant, así que el
  * identificador de otra organización da `404` y no `403` (SP-9,
@@ -51,7 +52,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 final class ProductImageController extends Controller
 {
-    public function __construct(private readonly TenantContext $context) {}
+    public function __construct(
+        private readonly TenantContext $context,
+        private readonly UsageCalculator $usage,
+    ) {}
 
     /**
      * Sube las fotos y encola sus conversiones (RB-1, RB-3, SP-5).
@@ -60,8 +64,17 @@ final class ProductImageController extends Controller
     {
         $this->authorizeInventory($request);
 
-        foreach ($request->images() as $file) {
-            $this->attach($product, $file);
+        // `REQ-SUB-003` RB-5 · el almacenamiento es derivado: se vuelve a
+        // sumar en cuanto los originales están en el disco, sin esperar a la
+        // noche. En el `finally` porque cada archivo es su propia unidad
+        // (SP-5): si el séptimo falla, los seis primeros se quedan y pesan.
+        // Las conversiones no cuentan (ver `UsageAggregates`).
+        try {
+            foreach ($request->images() as $file) {
+                $this->attach($product, $file);
+            }
+        } finally {
+            $this->measureStorage();
         }
 
         return $this->back($product, 'Imágenes subidas. Las versiones optimizadas se generan en segundo plano.');
@@ -109,6 +122,8 @@ final class ProductImageController extends Controller
         // sola línea sobre «cuál es la principal»: la principal es la primera.
         $order->handle($product->fresh() ?? $product, [], $actor);
 
+        $this->measureStorage();
+
         return $this->back($product, 'Imagen eliminada.');
     }
 
@@ -150,6 +165,21 @@ final class ProductImageController extends Controller
      *    RB-4), para que una ficha nunca llegue al cliente con diez imágenes
      *    sin describir.
      */
+    /**
+     * Vuelve a sumar `storage_mb` sin convertir un fallo en el error de la
+     * petición: la imagen ya se subió o ya se borró, y responder `500` a algo
+     * que sí ocurrió solo invita a repetirlo. Se informa, y el recálculo de
+     * la noche cuadra la cifra.
+     */
+    private function measureStorage(): void
+    {
+        try {
+            $this->usage->refresh($this->context->organization(), UsageMetric::StorageMb);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
+
     private function attach(Product $product, UploadedFile $file): void
     {
         $position = $product->getMedia(Product::IMAGES)->count() + 1;

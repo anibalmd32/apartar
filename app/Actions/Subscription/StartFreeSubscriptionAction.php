@@ -7,6 +7,7 @@ namespace App\Actions\Subscription;
 use App\Domain\Subscription\MissingFreePlanException;
 use App\Domain\Subscription\OrganizationAlreadySubscribedException;
 use App\Domain\Subscription\SubscriptionStatus;
+use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
@@ -49,7 +50,10 @@ final class StartFreeSubscriptionAction
      */
     public const FREE_PLAN_CODE = 'free';
 
-    public function __construct(private readonly TenantContext $context) {}
+    public function __construct(
+        private readonly TenantContext $context,
+        private readonly UsageCalculator $usage,
+    ) {}
 
     /**
      * @throws MissingFreePlanException si la base no tiene el plan Free
@@ -89,18 +93,27 @@ final class StartFreeSubscriptionAction
     }
 
     /**
-     * Deja las seis métricas de `REQ-SUB-003` RB-2 a cero.
+     * Deja las seis métricas de `REQ-SUB-003` RB-2 con lo que la organización
+     * consume en este instante.
      *
      * Se escriben ahora y no cuando alguien cree el primer producto porque el
      * consumo se **lee** antes de que se escriba nada: el backoffice muestra
      * «0 de 30 productos» desde la primera pantalla.
+     *
+     * **Medido, no a cero** (`REQ-SUB-002` RB-5, corregido en `T-066`): en el
+     * registro el `owner` ya existe cuando llega la suscripción, y un `users`
+     * a cero lo contradiría desde el primer minuto —y le regalaría al negocio
+     * una invitación de más, porque desde `T-066` el contador es lo único que
+     * decide—. Para una organización recién creada es cero en todo lo demás.
+     * Medir aquí, dentro de la transacción del alta, es seguro: nadie más
+     * puede escribir todavía en una organización que no se ha confirmado.
      */
     private function initialiseCounters(DateTimeInterface $computedAt): void
     {
         foreach (UsageMetric::cases() as $metric) {
             UsageCounter::query()->create([
                 'metric' => $metric,
-                'value' => 0,
+                'value' => $this->usage->measure($metric),
                 'computed_at' => $computedAt,
             ]);
         }

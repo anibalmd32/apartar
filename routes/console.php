@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Subscription\UsageMetric;
 use App\Jobs\DetectOverdueLayawaysJob;
 use App\Jobs\ExpireLayawaysJob;
 use App\Jobs\FetchExchangeRate;
+use App\Jobs\RecalculateUsage;
 use App\Jobs\ReconcileLayaways;
 use Illuminate\Support\Facades\Schedule;
 
@@ -75,3 +77,20 @@ Schedule::job(new ReconcileLayaways)
     ->dailyAt('05:30')
     ->withoutOverlapping()
     ->name('layaways:reconcile');
+
+/*
+| `REQ-SUB-003` RB-4, `T-066` · el recálculo del consumo desde cero, a las
+| 02:00 de la plataforma ([90] RB-5): corrige la deriva de las seis métricas.
+| Y cada hora, solo `catalogs`, que bajan solos cuando un catálogo caduca
+| (`UsageMetric::shrinksWithTime()`): esperar a la noche dejaría a un negocio
+| con su cupo ocupado por una campaña que terminó a las nueve de la mañana.
+*/
+Schedule::job(new RecalculateUsage)
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->name('subscriptions:recalculate-usage');
+
+Schedule::job(new RecalculateUsage(metric: UsageMetric::Catalogs))
+    ->hourlyAt(15)
+    ->withoutOverlapping()
+    ->name('subscriptions:recalculate-usage:catalogs');

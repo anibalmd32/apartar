@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Subscription;
 
-use App\Models\PaymentAccount;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use LogicException;
@@ -39,37 +37,21 @@ use LogicException;
  * cerrar, y un `lockForUpdate()` en *autocommit* no bloquea nada más allá de
  * su propia consulta. Llamar sin transacción **lanza**.
  *
- * ## Por qué vuelve a contar en vez de fiarse del contador
+ * ## Lo que decide es el contador, y nada más
  *
  * `REQ-SUB-003` RB-1 materializa el consumo en `usage_counters` para que
- * comprobar un límite no cueste seis agregados, y ese contador se sigue
- * escribiendo aquí: `synchronise()` lo deja con lo medido dentro de la
- * transacción de cada mutación (RB-3), y la comprobación con bloqueo también.
- * Pero tanto para **decidir** como para **pintar**, el enforcer vuelve a
- * contar la métrica de su propia tabla.
+ * comprobar un límite no cueste seis agregados, y desde `T-066` **el valor
+ * materializado es el camino único**: para decidir (`assertCanCreate()`, con
+ * la fila bloqueada) y para pintar (`state()`, `usageOf()`). Lo mantienen
+ * las mutaciones —con `adjust()`, en su misma transacción (RB-3)— y
+ * `UsageCalculator`, que mide de verdad cada noche y corrige la deriva (RB-4).
  *
- * El motivo es de hoy y no de siempre: quien mantiene el valor materializado
- * frente a la deriva es el recálculo diario de `UsageCalculator`, que llega con
- * `T-066`, y las llamadas de las otras once acciones de `REQ-SUB-004` RB-3, que
- * llegan con `T-067`. Hasta entonces el contador solo lo mueve esta tarea, así
- * que arrastra lo que nadie ha cuadrado —el registro de una organización, sin
- * ir más lejos, deja los seis en cero con el `owner` ya creado—. Hacer cumplir
- * un techo contra una cifra que nadie mantiene es hacer cumplir una ficción, y
- * pintarla al lado de la lista que la contradice es peor: nadie vuelve a
- * creerse ese número.
- *
- * Contar una vez, por un índice, cuesta lo que cuesta, y **no puede
- * equivocarse**. Lo que serializa es el bloqueo, no el conteo. Cuando `T-066`
- * mantenga los contadores, el valor materializado pasa a ser el camino único y
- * la medida se queda donde tiene que estar: en `UsageCalculator`.
- *
- * ## Qué métricas sabe medir
- *
- * Las de las tablas que existen: `users` y `payment_accounts`. Las otras
- * cuatro —catálogos, productos, apartados y almacenamiento— no tienen tabla
- * todavía, así que `measure()` devuelve `null` para ellas y el enforcer cae en
- * el valor materializado, que es el comportamiento definitivo una vez `T-066`
- * lo mantenga. Añadirlas es añadir su brazo al `match`.
+ * Hasta `T-066` el enforcer volvía a contar `users` y `payment_accounts` en
+ * sus tablas porque nadie más mantenía la cifra. Ya no: la medida vive en
+ * `UsageCalculator` y en una sola definición (`UsageAggregates`), y contar
+ * aquí además sería una segunda definición de «lleno» —y una que, dentro de la
+ * transacción de una Action, **no ve lo que acaba de confirmar la rival** en
+ * `REPEATABLE READ`—. Lo que serializa es el bloqueo, no el conteo.
  *
  * ## De dónde sale la organización
  *
@@ -204,13 +186,9 @@ final class LimitEnforcer
     /**
      * Estado de una métrica: lo consumido frente al techo del plan.
      *
-     * Lo consumido se **mide** cuando se puede medir, y solo cae en el valor
-     * materializado cuando no. La diferencia importa hoy y desaparecerá con
-     * `T-066`: una organización recién registrada tiene su `owner` dentro y
-     * los seis contadores a cero, así que leer el contador pintaría «0 de 3
-     * usuarios» en la pantalla de Equipo con tres nombres debajo. Una cifra
-     * que se contradice con lo que se ve al lado no es una cifra optimista,
-     * es una que nadie vuelve a creerse.
+     * Lo consumido es el valor materializado, sin bloqueo: es lo mismo que
+     * decide `assertCanCreate()`, y por eso la pantalla nunca dice «queda uno»
+     * a quien después recibe el `422`.
      */
     public function usageOf(UsageMetric $metric, ?Subscription $subscription = null): UsageState
     {
@@ -218,46 +196,26 @@ final class LimitEnforcer
 
         return UsageState::of(
             $metric,
-            $this->measure($metric) ?? $this->materialisedUsage($metric),
+            $this->materialisedUsage($metric),
             $subscription->plan->limitFor($metric),
         );
-    }
-
-    /**
-     * Mide la métrica de verdad y deja el contador con ese valor.
-     *
-     * La llaman las acciones **al terminar de mutar y dentro de su misma
-     * transacción** (`REQ-SUB-003` RB-3): invitar y reactivar suben `users`,
-     * revocar y desactivar lo bajan. Que el ajuste ocurra ahí y no en un job
-     * diferido es lo que hace que la siguiente comprobación —o la siguiente
-     * pantalla— vea la cifra correcta y no la de hace un minuto.
-     *
-     * Devuelve el valor que queda escrito.
-     */
-    public function synchronise(UsageMetric $metric): int
-    {
-        $measured = $this->measure($metric);
-
-        if ($measured === null) {
-            return $this->materialisedUsage($metric);
-        }
-
-        $counter = $this->counterFor($metric);
-
-        $counter->forceFill(['value' => $measured, 'computed_at' => now()])->save();
-
-        return $measured;
     }
 
     /**
      * Mueve el contador de una métrica **incremental** en `$delta` unidades,
      * y devuelve el valor que queda escrito.
      *
-     * Es el movimiento de `REQ-SUB-003` RB-3 para las métricas que `measure()`
-     * todavía no sabe contar: `active_layaways` la suben la creación del
-     * apartado (`T-045`) y la baja `LayawayStateMachine` al pasar a un
-     * terminal (`REQ-LAY-005` RB-6). La reconciliación que corrige la deriva
-     * es de `T-066`; esto es la cuenta del día a día.
+     * Es el movimiento de `REQ-SUB-003` RB-3 para las cinco métricas exactas:
+     * lo llama cada Action que crea, borra o cambia de estado algo que cuenta,
+     * con la diferencia que su escritura produjo —`+1` al invitar, `-1` al
+     * archivar, `0` al editar un catálogo que ya estaba publicado—. Quien
+     * corrige la deriva que se le escape es `UsageCalculator`; esto es la
+     * cuenta del día a día.
+     *
+     * **La diferencia se calcula con la fila de lo que cambia bloqueada**, no
+     * con el modelo que llegó de la petición: dos desactivaciones simultáneas
+     * del mismo miembro leerían las dos «activo», restarían las dos, y el
+     * contador quedaría una unidad por debajo para siempre.
      *
      * Con la fila **bloqueada y dentro de la transacción** de la mutación, por
      * lo mismo que `assertCanCreate()`: dos movimientos simultáneos leerían el
@@ -309,37 +267,42 @@ final class LimitEnforcer
         return $value;
     }
 
+    /**
+     * Coge la fila del contador para el resto de la transacción, sin moverla.
+     *
+     * Para fijar el **orden de bloqueo** de una métrica cuando la mutación
+     * tiene que bloquear también otras filas. Con `users` es lo primero que
+     * hacen todas las que lo mueven (invitar, revocar, desactivar, reactivar,
+     * borrar la propia cuenta): desactivar coge además las filas de los
+     * `owner` (`LastOwnerGuard`) y su hueco en el índice, que es donde invitar
+     * inserta, y con el orden al revés las dos se esperaban en cruz. Contador
+     * primero, filas después, en todas: se serializan en el contador y nadie
+     * espera lo que otro ya tiene.
+     *
+     * @throws LogicException si no hay transacción abierta
+     */
+    public function lockCounter(UsageMetric $metric): void
+    {
+        $this->assertInsideTransaction('lockCounter', $metric);
+
+        $this->counterFor($metric, locked: true);
+    }
+
     // -------------------------------------------------------------------
     // El contador
     // -------------------------------------------------------------------
 
     /**
-     * Consumo real, con la fila del contador bloqueada para el resto de la
-     * transacción.
-     *
-     * El orden es el que importa: **primero el bloqueo, después la medida**.
-     * Al revés, dos peticiones contarían a la vez antes de que ninguna
-     * bloqueara, y las dos leerían el mismo «queda uno».
+     * Valor materializado, con la fila del contador bloqueada para el resto
+     * de la transacción.
      */
     private function lockedUsage(UsageMetric $metric): int
     {
-        $counter = $this->counterFor($metric, locked: true);
-
-        $measured = $this->measure($metric);
-
-        if ($measured === null) {
-            return $counter->value;
-        }
-
-        if ($measured !== $counter->value) {
-            $counter->forceFill(['value' => $measured, 'computed_at' => now()])->save();
-        }
-
-        return $measured;
+        return $this->counterFor($metric, locked: true)->value;
     }
 
     /**
-     * Valor materializado, sin bloquear ni medir.
+     * Valor materializado, sin bloquear.
      */
     private function materialisedUsage(UsageMetric $metric): int
     {
@@ -377,38 +340,6 @@ final class LimitEnforcer
             'value' => 0,
             'computed_at' => now(),
         ]);
-    }
-
-    /**
-     * Consumo real de una métrica, o `null` si su tabla todavía no existe.
-     *
-     * Las definiciones son las de `REQ-SUB-003` RB-2 **al pie de la letra**:
-     *
-     *  - `users` cuenta los activos (`disabled_at` nulo) **e incluye las
-     *    invitaciones pendientes**, que son filas de `users` sin contraseña y
-     *    sin desactivar. No hace falta sumarlas aparte: una invitación
-     *    pendiente ya es una fila activa, y esa es justamente la razón de que
-     *    consuma cupo desde que se envía (`REQ-ORG-004` RB-2);
-     *  - `payment_accounts` cuenta las activas.
-     *
-     * El `match` es exhaustivo y sin `default`: una métrica nueva tiene que
-     * decidir de qué lado cae en vez de caer por descuido en el `null`, que es
-     * el lado que no hace cumplir nada.
-     */
-    private function measure(UsageMetric $metric): ?int
-    {
-        return match ($metric) {
-            UsageMetric::Users => User::query()->whereNull('disabled_at')->count(),
-
-            UsageMetric::PaymentAccounts => PaymentAccount::query()->where('is_active', true)->count(),
-
-            // Sus tablas llegan con sus hitos; `T-066` añade estos cuatro
-            // brazos junto al recálculo diario.
-            UsageMetric::Catalogs,
-            UsageMetric::Products,
-            UsageMetric::ActiveLayaways,
-            UsageMetric::StorageMb => null,
-        };
     }
 
     // -------------------------------------------------------------------

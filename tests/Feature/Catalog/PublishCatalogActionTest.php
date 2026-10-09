@@ -166,14 +166,62 @@ final class PublishCatalogActionTest extends TestCase
             .'publicar con el cupo agotado responde 422 con el plan que lo desbloquea.',
         );
 
-        // Y mientras tanto publicar funciona sin contador de por medio: no se
-        // materializa ninguna fila de `usage_counters` para la métrica.
+        // Y mientras tanto publicar funciona aunque el contador diga que no
+        // cabe: lo **recuenta y lo mueve** (`T-066`) —de la cifra inventada a
+        // la de verdad, y uno más—, pero no lo comprueba.
+        UsageCounter::factory()->forMetric(UsageMetric::Catalogs, 1_000)->create();
         $catalog = $this->ready();
 
         $this->publish()->handle($catalog, $this->data(), $this->actor);
 
         $this->assertSame(CatalogVisibility::Listed, $catalog->refresh()->visibility());
-        $this->assertFalse(UsageCounter::query()->where('metric', UsageMetric::Catalogs)->exists());
+        $this->assertSame(1, $this->catalogsCounter());
+    }
+
+    /**
+     * `REQ-SUB-003` RB-3, SP-6 · el cupo `catalogs` se mueve en la transacción
+     * de cada publicación: publicar un borrador suma uno, cambiar la fecha o la
+     * vitrina de uno ya publicado no suma nada, despublicar resta uno, y
+     * republicar vuelve a sumar.
+     */
+    public function test_publishing_and_unpublishing_move_the_catalogs_counter(): void
+    {
+        UsageCounter::factory()->forMetric(UsageMetric::Catalogs)->create();
+        $catalog = $this->ready();
+
+        $this->publish()->handle($catalog, $this->data(), $this->actor);
+        $this->assertSame(1, $this->catalogsCounter());
+
+        $this->publish()->handle($catalog, new PublishCatalogData(isListed: false, expiresAt: CarbonImmutable::now()->addWeek()), $this->actor);
+        $this->assertSame(1, $this->catalogsCounter());
+
+        app(UnpublishCatalogAction::class)->handle($catalog, $this->actor);
+        $this->assertSame(0, $this->catalogsCounter());
+
+        app(UnpublishCatalogAction::class)->handle($catalog, $this->actor);
+        $this->assertSame(0, $this->catalogsCounter());
+
+        $this->publish()->handle($catalog, $this->data(), $this->actor);
+        $this->assertSame(1, $this->catalogsCounter());
+    }
+
+    /**
+     * Uno caducado ya no cuenta para la medida: republicarlo con fecha nueva
+     * suma uno, y despublicarlo no resta nada —el recálculo es quien descuenta
+     * lo que caduca (`UsageMetric::shrinksWithTime()`)—.
+     */
+    public function test_an_expired_catalog_moves_the_counter_like_a_draft(): void
+    {
+        UsageCounter::factory()->forMetric(UsageMetric::Catalogs)->create();
+        $catalog = $this->ready();
+        $catalog->forceFill(['published_at' => now()->subWeek(), 'expires_at' => now()->subDay()])->save();
+
+        app(UnpublishCatalogAction::class)->handle($catalog, $this->actor);
+        $this->assertSame(0, $this->catalogsCounter());
+
+        $catalog->forceFill(['published_at' => now()->subWeek(), 'expires_at' => now()->subDay()])->save();
+        $this->publish()->handle($catalog, new PublishCatalogData(isListed: true, expiresAt: CarbonImmutable::now()->addWeek()), $this->actor);
+        $this->assertSame(1, $this->catalogsCounter());
     }
 
     /**
@@ -388,6 +436,11 @@ final class PublishCatalogActionTest extends TestCase
         }
 
         $this->fail('Se esperaba que la publicación se rechazara y no lo hizo.');
+    }
+
+    private function catalogsCounter(): int
+    {
+        return (int) UsageCounter::query()->where('metric', UsageMetric::Catalogs)->value('value');
     }
 
     private function data(): PublishCatalogData

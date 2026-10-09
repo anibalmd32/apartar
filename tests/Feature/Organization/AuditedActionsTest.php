@@ -111,6 +111,7 @@ final class AuditedActionsTest extends TestCase
     {
         $owner = $this->owner();
         $member = User::factory()->create(['name' => 'Luis Mora']);
+        $this->recalculateUsage();
 
         app(DisableTeamMemberAction::class)->handle($member, $owner);
 

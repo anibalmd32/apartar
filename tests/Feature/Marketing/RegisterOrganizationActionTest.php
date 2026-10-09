@@ -10,6 +10,7 @@ use App\Actions\Subscription\StartFreeSubscriptionAction;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\MissingFreePlanException;
 use App\Domain\Subscription\SubscriptionStatus;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Domain\Tenancy\SlugTakenException;
@@ -120,16 +121,20 @@ final class RegisterOrganizationActionTest extends TestCase
     }
 
     /**
-     * Y los contadores de consumo nacen en cero, porque el alta de la
-     * suscripción es parte de la misma transacción (`REQ-SUB-002` RB-5).
+     * Y los contadores de consumo nacen **con lo que hay** —el `owner` ya
+     * ocupa su unidad de `users`, lo demás es cero—, porque el alta de la
+     * suscripción es parte de la misma transacción (`REQ-SUB-002` RB-5,
+     * corregido en `T-066`: antes nacían todos en cero y el contador
+     * contradecía a la pantalla de Equipo desde el primer minuto).
      */
-    public function test_it_starts_the_usage_counters_at_zero(): void
+    public function test_it_starts_the_usage_counters_with_what_it_has(): void
     {
         $organization = $this->register();
 
         $this->withinOrganization($organization, function (): void {
             $this->assertSame(6, UsageCounter::query()->count());
-            $this->assertSame(0, UsageCounter::query()->sum('value'));
+            $this->assertSame(1, (int) UsageCounter::query()->where('metric', UsageMetric::Users)->value('value'));
+            $this->assertSame(1, (int) UsageCounter::query()->sum('value'));
         });
     }
 

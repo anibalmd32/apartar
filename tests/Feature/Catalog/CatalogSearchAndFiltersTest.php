@@ -555,6 +555,10 @@ final class CatalogSearchAndFiltersTest extends TestCase
         return Product::factory()->published()->create([
             'name' => $name,
             'slug' => Str::slug($name),
+            // Solo cifras: el SKU aleatorio de la factory son diez letras y
+            // cifras, y de vez en cuando trae «TV» y la búsqueda por «tv» lo
+            // encuentra (falló así en la ronda paralela de `T-066`).
+            'sku' => 'SKU-'.random_int(1_000_000, 9_999_999),
             'category_id' => $category?->getKey(),
             ...$attributes,
         ]);

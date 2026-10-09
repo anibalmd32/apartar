@@ -57,3 +57,14 @@ it('no lista en la vitrina nada que no sea accesible', function (): void {
 
     expect($inconsistent)->toBe([]);
 });
+
+/**
+ * `REQ-SUB-003` RB-2 · consumen el cupo `catalogs` los publicados, en la
+ * vitrina o fuera; ni el borrador ni el caducado.
+ */
+it('consume cupo del plan solo lo publicado y vigente', function (): void {
+    expect(array_values(array_filter(
+        CatalogVisibility::cases(),
+        fn (CatalogVisibility $state): bool => $state->countsTowardPlanLimit(),
+    )))->toBe([CatalogVisibility::Listed, CatalogVisibility::Unlisted]);
+});

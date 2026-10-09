@@ -75,4 +75,22 @@ enum CatalogVisibility: string
     {
         return $this === self::Listed;
     }
+
+    /**
+     * Si consume cupo del límite `catalogs` del plan (`REQ-SUB-003` RB-2:
+     * «publicados, `Listed` o `Unlisted`; los borradores no cuentan»).
+     *
+     * Coincide hoy con `isPubliclyAccessible()` y aun así es otra pregunta,
+     * por lo mismo que `LayawayStatus::countsTowardPlanLimit()`: una es de la
+     * cara pública y otra de la suscripción. **El caducado no cuenta**: la
+     * campaña terminó y nadie la ve, y cobrarle el sitio al negocio sería
+     * obligarle a despublicar algo que ya no se publica.
+     */
+    public function countsTowardPlanLimit(): bool
+    {
+        return match ($this) {
+            self::Listed, self::Unlisted => true,
+            self::Draft, self::Expired => false,
+        };
+    }
 }

@@ -153,8 +153,15 @@ final class DisableTeamMemberActionTest extends TestCase
         $this->action()->handle($theirs, $owner);
     }
 
+    /**
+     * Cuadra antes el contador de `users` (`T-066`): las factories no ocupan
+     * su unidad, y desde que el contador es lo único que decide, sembrar tres
+     * usuarios con factories sin cuadrarlo sería probar con un plan vacío.
+     */
     private function action(): DisableTeamMemberAction
     {
+        $this->recalculateUsage();
+
         return app(DisableTeamMemberAction::class);
     }
 }

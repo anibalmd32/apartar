@@ -10,6 +10,7 @@ use App\Domain\Subscription\PlanLimitReachedException;
 use App\Domain\Subscription\UsageMetric;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -57,6 +58,20 @@ final class EnableTeamMemberAction
         }
 
         return DB::transaction(function () use ($member, $actor): User {
+            // El contador primero y la fila de la persona después, como todas
+            // las que mueven `users` (`LimitEnforcer::lockCounter()`). La
+            // fila, releída: dos reactivaciones simultáneas sumarían dos
+            // unidades por una sola persona. La segunda la encuentra ya activa
+            // y no hace nada.
+            $this->limits->lockCounter(UsageMetric::Users);
+
+            $locked = User::query()->whereKey($member->getKey())->lockForUpdate()->firstOrFail();
+            ModelState::adopt($member, $locked->getAttributes());
+
+            if ($member->disabled_at === null) {
+                return $member;
+            }
+
             $this->limits->assertCanCreate(UsageMetric::Users);
 
             $member->forceFill([
@@ -64,7 +79,7 @@ final class EnableTeamMemberAction
                 'must_change_password' => true,
             ])->save();
 
-            $this->limits->synchronise(UsageMetric::Users);
+            $this->limits->adjust(UsageMetric::Users, 1);
 
             // RB-1 · devolverle el acceso a alguien es la operación simétrica
             // de retirárselo, y se audita igual: entre una y otra hay una

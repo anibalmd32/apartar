@@ -9,12 +9,14 @@ use App\Actions\Product\UpsertProductAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Money\Money;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Models\AuditEntry;
 use App\Models\Category;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Tag;
+use App\Models\UsageCounter;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,6 +62,29 @@ final class UpsertProductActionTest extends TestCase
         $this->assertSame('taladro-bosch-gsb', $product->slug);
         $this->assertSame(25_000, $product->price_cents->cents);
         $this->assertNull($product->published_at);
+    }
+
+    /**
+     * `REQ-SUB-003` RB-3 · el alta ocupa una unidad de `products` en su misma
+     * transacción —el borrador ya cuenta—, y editar no mueve nada. Si el alta
+     * se deshace (un SKU repetido), el contador tampoco se movió.
+     */
+    public function test_creating_takes_a_products_slot_and_editing_does_not(): void
+    {
+        $product = $this->upsert()->handle($this->data(name: 'Taladro', sku: 'T-1'), $this->actor);
+        $this->assertSame(1, $this->productsCounter());
+
+        $this->upsert()->handle($this->data(name: 'Taladro percutor', sku: 'T-1'), $this->actor, $product);
+        $this->assertSame(1, $this->productsCounter());
+
+        try {
+            $this->upsert()->handle($this->data(name: 'Otro', sku: 'T-1'), $this->actor);
+            $this->fail('El SKU repetido debió rechazarse.');
+        } catch (ValidationException) {
+            // Lo esperado.
+        }
+
+        $this->assertSame(1, $this->productsCounter());
     }
 
     /**
@@ -381,5 +406,10 @@ final class UpsertProductActionTest extends TestCase
     private function upsert(): UpsertProductAction
     {
         return app(UpsertProductAction::class);
+    }
+
+    private function productsCounter(): int
+    {
+        return (int) UsageCounter::query()->where('metric', UsageMetric::Products)->value('value');
     }
 }

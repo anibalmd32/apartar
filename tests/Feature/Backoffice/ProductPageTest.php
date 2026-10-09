@@ -243,6 +243,7 @@ final class ProductPageTest extends TestCase
     public function test_archiving_a_product_works_from_the_listing(): void
     {
         $product = $this->inTenant(fn (): Product => Product::factory()->published()->create());
+        $this->recalculateUsage($this->organization);
 
         $this->actingAs($this->owner())
             ->post("/backoffice/productos/{$product->getKey()}/archivar")

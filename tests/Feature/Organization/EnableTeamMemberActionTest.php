@@ -145,8 +145,15 @@ final class EnableTeamMemberActionTest extends TestCase
         $this->assertSame(2, (int) User::query()->where('role', 'owner')->whereNull('disabled_at')->count());
     }
 
+    /**
+     * Cuadra antes el contador de `users` (`T-066`): las factories no ocupan
+     * su unidad, y desde que el contador es lo único que decide, sembrar tres
+     * usuarios con factories sin cuadrarlo sería probar con un plan vacío.
+     */
     private function action(): EnableTeamMemberAction
     {
+        $this->recalculateUsage();
+
         return app(EnableTeamMemberAction::class);
     }
 }

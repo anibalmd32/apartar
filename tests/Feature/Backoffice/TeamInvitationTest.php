@@ -132,6 +132,7 @@ final class TeamInvitationTest extends TestCase
         $owner = $this->owner();
 
         $this->withinOrganization($this->organization, fn () => User::factory()->invited()->count(2)->create());
+        $this->recalculateUsage($this->organization);
 
         $this->actingAs($owner)
             ->postJson('/backoffice/equipo', ['name' => 'Cuarta', 'email' => 'cuarta@ejemplo.test', 'role' => 'member'])
@@ -152,6 +153,7 @@ final class TeamInvitationTest extends TestCase
 
         $owner = $this->owner();
         $this->withinOrganization($this->organization, fn () => User::factory()->count(2)->create());
+        $this->recalculateUsage($this->organization);
 
         $this->actingAs($owner)
             ->postJson('/backoffice/equipo', ['name' => 'Cuarta', 'email' => 'cuarta@ejemplo.test', 'role' => 'member'])
@@ -173,6 +175,7 @@ final class TeamInvitationTest extends TestCase
 
             return User::factory()->invited()->create();
         });
+        $this->recalculateUsage($this->organization);
 
         // Tres de tres: el plan está lleno y con él no cabe nadie más.
         $this->actingAs($owner)
@@ -265,6 +268,7 @@ final class TeamInvitationTest extends TestCase
             User::factory()->create(['name' => 'Activa']);
             User::factory()->disabled()->create(['name' => 'Inactiva']);
         });
+        $this->recalculateUsage($this->organization);
 
         $this->actingAs($owner)
             ->get('/backoffice/equipo')
