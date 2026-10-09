@@ -1,0 +1,155 @@
+import { FILTER_DEBOUNCE_MS } from '@/features/data-table/hooks/useDebouncedFilter';
+import CustomerIndex from '@/pages/backoffice/customers/Index';
+import CustomerShow from '@/pages/backoffice/customers/Show';
+import { directoryProps, directoryRow, profileProps } from '@/test/t065-fixtures';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { type ReactNode } from 'react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+
+/**
+ * El directorio y el perfil de clientes (`REQ-BOF-040`, `REQ-BOF-041`) y la
+ * fusión desde el perfil (`REQ-IDN-006` RB-8), `T-065`.
+ */
+
+const { routerGet, post } = vi.hoisted(() => ({ routerGet: vi.fn(), post: vi.fn() }));
+
+vi.mock('@inertiajs/react', async () => {
+    const { useState } = await import('react');
+
+    return {
+        usePage: () => ({ url: '/backoffice/clientes', props: { errors: {}, currency: { display: 'usd_primary', rate: { rate: null } } } }),
+        router: { get: routerGet, post: vi.fn(), on: () => () => undefined },
+        Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
+            <a href={href} className={className}>
+                {children}
+            </a>
+        ),
+        useForm: <T extends Record<string, unknown>>(initial: T) => {
+            const [data, setState] = useState(initial);
+            const setData = (key: keyof T | T, value?: unknown) =>
+                setState((previous) => (typeof key === 'object' ? (key as T) : { ...previous, [key]: value }));
+
+            return { data, setData, errors: {}, processing: false, post: (url: string) => post(url, data) };
+        },
+    };
+});
+
+vi.mock('@/layouts/backoffice-layout', () => ({ default: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
+
+beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.stubGlobal('fetch', vi.fn());
+    routerGet.mockReset();
+    post.mockReset();
+});
+
+afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+});
+
+/** RB-2, RB-5, RB-8 · la fila con sus agregados, la mora destacada y la cuenta solo si la hay. */
+it('el directorio pinta los agregados y destaca la mora', () => {
+    render(
+        <CustomerIndex
+            {...directoryProps([
+                directoryRow({ hasLinkedAccount: true }),
+                directoryRow({ id: 8, name: 'Luis Rojas', overdueInstallments: 1, inArrears: false }),
+            ])}
+        />,
+    );
+
+    const row = within(screen.getAllByRole('row')[1]!);
+    expect(row.getByRole('link', { name: 'María González' })).toHaveAttribute('href', '/backoffice/clientes/7');
+    expect(row.getByText('V-12.345.678')).toBeInTheDocument();
+    expect(row.getByText('Cuenta vinculada')).toBeInTheDocument();
+    expect(row.getByText('1')).toHaveClass('badge-warning');
+    expect(row.getByText('En mora')).toHaveClass('badge-error');
+
+    // Vencida pero dentro de la gracia: no está en mora.
+    expect(within(screen.getAllByRole('row')[2]!).queryByText('En mora')).not.toBeInTheDocument();
+});
+
+/** RB-4 · los filtros van a la URL; la búsqueda, tras la pausa. */
+it('el directorio filtra por mora y busca tras la pausa', async () => {
+    render(<CustomerIndex {...directoryProps([])} />);
+
+    fireEvent.click(screen.getByLabelText('Con mora'));
+    expect(routerGet.mock.calls[0]?.[1]).toMatchObject({ overdue: '1' });
+
+    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: '0414-1234567' } });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(FILTER_DEBOUNCE_MS + 10);
+    });
+    expect(routerGet.mock.calls.at(-1)?.[1]).toMatchObject({ q: '0414-1234567' });
+});
+
+/** RB-1, RB-2 · el perfil con su contacto y su balance. */
+it('el perfil pinta el contacto y el balance', () => {
+    render(<CustomerShow {...profileProps()} />);
+
+    expect(screen.getByRole('link', { name: '0414-1234567' })).toHaveAttribute('href', 'tel:+584141234567');
+    expect(screen.getByText('Sin correo')).toBeInTheDocument();
+    expect(screen.getByText('$120.00')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ver más' })).not.toBeInTheDocument();
+});
+
+/** SP-2 · una lista cortada lo dice y trae 20 más; una completa, no. */
+it('el perfil ofrece ver más en las listas cortadas', () => {
+    render(<CustomerShow {...profileProps({ lists: { paymentsTotal: 0, receiptsTotal: 23, moreUrl: '/backoffice/clientes/7?mostrar=40' } })} />);
+
+    const receipts = within(screen.getByRole('region', { name: 'Comprobantes' }));
+    expect(receipts.getByText(/Se muestran los 0 más recientes de 23/)).toBeInTheDocument();
+    expect(receipts.getByRole('link', { name: 'Ver más' })).toHaveAttribute('href', '/backoffice/clientes/7?mostrar=40');
+    expect(within(screen.getByRole('region', { name: 'Pagos' })).queryByRole('link', { name: 'Ver más' })).not.toBeInTheDocument();
+});
+
+/**
+ * RB-8 · fusionar: buscar la otra ficha, ver qué movería, y confirmar
+ * escribiendo su documento. Una pareja con dos cuentas no se ofrece.
+ */
+it('la fusión se confirma escribiendo el documento de la absorbida', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+        new Response(
+            JSON.stringify({
+                candidates: [
+                    {
+                        id: 9,
+                        name: 'María Gonzales',
+                        document: 'V-22.222.222',
+                        phone: '+584141234567',
+                        moves: { layaways: 1, receipts: 2, login_tokens: 0, account_moves: false },
+                        blocked: false,
+                    },
+                    {
+                        id: 10,
+                        name: 'María G.',
+                        document: 'V-33.333.333',
+                        phone: '+584141234567',
+                        moves: { layaways: 0, receipts: 0, login_tokens: 0, account_moves: false },
+                        blocked: true,
+                    },
+                ],
+            }),
+        ),
+    );
+    render(<CustomerShow {...profileProps()} />);
+
+    fireEvent.change(screen.getByLabelText('Buscar la ficha duplicada'), { target: { value: 'maría' } });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(FILTER_DEBOUNCE_MS + 10);
+    });
+
+    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/backoffice/clientes/7/fusionar/candidatas?q=mar%C3%ADa');
+    expect(await screen.findByText('Movería 1 apartados y 2 comprobantes.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /María G\. · V-33\.333\.333/ })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /María Gonzales · V-22\.222\.222/ }));
+    const merge = screen.getByRole('button', { name: 'Fusionar las fichas' });
+    expect(merge).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Para confirmar, escribe el documento V-22.222.222'), { target: { value: 'V-22.222.222' } });
+    fireEvent.click(merge);
+
+    expect(post).toHaveBeenCalledWith('/backoffice/clientes/7/fusionar', { absorbed: 9, confirmation: 'V-22.222.222' });
+});

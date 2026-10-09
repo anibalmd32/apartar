@@ -8,7 +8,13 @@ use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
 use App\Http\Controllers\Backoffice\CatalogController;
 use App\Http\Controllers\Backoffice\CategoryController;
+use App\Http\Controllers\Backoffice\CollectionController;
+use App\Http\Controllers\Backoffice\CustomerController;
+use App\Http\Controllers\Backoffice\CustomerMergeController;
+use App\Http\Controllers\Backoffice\CustomerShowController;
+use App\Http\Controllers\Backoffice\DashboardController;
 use App\Http\Controllers\Backoffice\InstallmentController;
+use App\Http\Controllers\Backoffice\LayawayCodeController;
 use App\Http\Controllers\Backoffice\LayawayController;
 use App\Http\Controllers\Backoffice\ManualPaymentController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
@@ -21,8 +27,8 @@ use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
 use App\Http\Controllers\ReceiptFileController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 | Backoffice del negocio ([05 §7.4], `REQ-BOF-001`).
@@ -62,7 +68,7 @@ Route::prefix('backoffice')->group(function (): void {
             | aviso y el enlace para regularizar. Bloquearlo dejaría al equipo
             | sin saber por qué no puede hacer nada.
             */
-            Route::get('/', fn () => Inertia::render('backoffice/Dashboard'))
+            Route::get('/', DashboardController::class)
                 ->middleware('during-suspension')
                 ->name('dashboard');
 
@@ -283,6 +289,15 @@ Route::prefix('backoffice')->group(function (): void {
             | tenant, así que el identificador de otra organización da `404` y
             | no `403` (SP-7, `REQ-ORG-002` RB-6): no se confirma que exista.
             */
+            /*
+            | Fusionar fichas (`REQ-IDN-006`, `T-065`): de los dos roles
+            | (`CustomerPolicy::merge`), y **fuera de `during-suspension`**:
+            | reescribir las fichas de clientes no es cobrar ni aprobar
+            | (`REQ-ORG-008` RB-3), y puede esperar a que se regularice el
+            | pago.
+            */
+            Route::post('clientes/{customer}/fusionar', [CustomerMergeController::class, 'store'])->whereNumber('customer')->name('customers.merge');
+
             Route::get('categorias', [CategoryController::class, 'index'])->name('categories.index');
             Route::post('categorias', [CategoryController::class, 'store'])->name('categories.store');
 
@@ -319,6 +334,27 @@ Route::prefix('backoffice')->group(function (): void {
             | listados de cobranza que llevan a ella son de `T-065`.
             */
             Route::middleware('during-suspension')->group(function (): void {
+                // La cartera (`REQ-BOF-042`, `T-065`): lectura de la cobranza,
+                // que sobrevive a la suspensión (RB-9).
+                Route::get('cobranza', CollectionController::class)->name('collections.index');
+
+                /*
+                | Clientes (`REQ-BOF-040`, `REQ-BOF-041`, `T-065`): el
+                | directorio y el perfil, en lectura, que es cobrar. `{customer}`
+                | llega filtrado por el tenant —la de otro negocio, `404`—; una
+                | ficha absorbida por una fusión ya no existe, y el `missing()`
+                | de la ruta la lleva a la superviviente (SP-3).
+                | Reenviar el código de un apartado también es cobrar.
+                */
+                Route::get('clientes', [CustomerController::class, 'index'])->name('customers.index');
+                Route::get('clientes/{customer}', CustomerShowController::class)
+                    ->whereNumber('customer')
+                    ->missing(fn (Request $request) => CustomerShowController::redirectMerged($request))
+                    ->name('customers.show');
+                Route::get('clientes/{customer}/fusionar/candidatas', [CustomerMergeController::class, 'candidates'])->whereNumber('customer')->name('customers.merge.candidates');
+                Route::post('apartados/{layaway:code}/reenviar-codigo', LayawayCodeController::class)
+                    ->middleware('throttle:reenvio-codigo')
+                    ->name('layaways.resend-code');
                 Route::get('apartados/{layaway:code}', [LayawayController::class, 'show'])->name('layaways.show');
                 Route::post('apartados/{layaway:code}/cancelar', [LayawayController::class, 'cancel'])->name('layaways.cancel');
                 Route::post('apartados/{layaway:code}/entregar', [LayawayController::class, 'deliver'])->name('layaways.deliver');

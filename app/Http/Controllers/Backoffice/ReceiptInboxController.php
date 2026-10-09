@@ -16,6 +16,7 @@ use App\Models\Customer;
 use App\Models\Layaway;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
+use App\Support\BusinessDay;
 use App\Support\SignedFileUrl;
 use App\Support\TableState;
 use Carbon\CarbonImmutable;
@@ -265,36 +266,17 @@ final class ReceiptInboxController extends Controller
         $timezone = $this->context->organization()->timezone;
         $asDate = fn (CarbonImmutable $date): string => $date->toDateString();
 
-        $from = $state->filter('from', $request->query('from'), fn (mixed $raw): ?CarbonImmutable => $this->dayIn($raw, $timezone), $asDate);
+        $from = $state->filter('from', $request->query('from'), fn (mixed $raw): ?CarbonImmutable => BusinessDay::parse($raw, $timezone), $asDate);
 
         if ($from instanceof CarbonImmutable) {
             $query->where('receipts.created_at', '>=', $from->startOfDay()->setTimezone(config('app.timezone')));
         }
 
-        $to = $state->filter('to', $request->query('to'), fn (mixed $raw): ?CarbonImmutable => $this->dayIn($raw, $timezone), $asDate);
+        $to = $state->filter('to', $request->query('to'), fn (mixed $raw): ?CarbonImmutable => BusinessDay::parse($raw, $timezone), $asDate);
 
         if ($to instanceof CarbonImmutable) {
             $query->where('receipts.created_at', '<=', $to->endOfDay()->setTimezone(config('app.timezone')));
         }
-    }
-
-    /**
-     * Un `AAAA-MM-DD` como día de esa zona, o `null` si no es una fecha que
-     * exista: el 31 de febrero no se convierte en el 3 de marzo.
-     */
-    private function dayIn(mixed $raw, string $timezone): ?CarbonImmutable
-    {
-        if (! is_string($raw) || preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $parts) !== 1) {
-            return null;
-        }
-
-        if (! checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1])) {
-            return null;
-        }
-
-        $day = CarbonImmutable::createFromFormat('!Y-m-d', $raw, $timezone);
-
-        return $day instanceof CarbonImmutable ? $day : null;
     }
 
     /**

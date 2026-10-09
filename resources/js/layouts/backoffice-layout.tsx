@@ -63,6 +63,10 @@ const SECTIONS: NavSection[] = [
     // La bandeja de conciliación (`REQ-PAY-004`): de los dos roles, porque
     // conciliar es operación diaria. Lleva el badge de los pendientes.
     { label: 'Comprobantes', href: RECEIPTS_HREF, capability: 'receipts' },
+    // La cobranza y los clientes (`REQ-BOF-042`, `REQ-BOF-040`, `T-065`): de
+    // los dos roles, operación diaria.
+    { label: 'Cobranza', href: '/backoffice/cobranza', capability: 'collections' },
+    { label: 'Clientes', href: '/backoffice/clientes', capability: 'customers' },
     { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
     { label: 'Ajustes', href: '/backoffice/ajustes', capability: 'settings' },
     { label: 'Cuentas de cobro', href: '/backoffice/cuentas-de-cobro', capability: 'payment_accounts' },

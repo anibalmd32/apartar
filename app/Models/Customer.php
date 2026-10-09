@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Support\DocumentKind;
+use Database\Factories\CustomerFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
 
@@ -63,6 +65,9 @@ class Customer extends Model implements AuthenticatableContract
 {
     use Authenticatable;
     use BelongsToOrganization;
+
+    /** @use HasFactory<CustomerFactory> */
+    use HasFactory;
 
     /** `REQ-IDN-004` RB-4 · el token de sesión no viaja en ninguna respuesta. */
     protected $hidden = ['remember_token'];

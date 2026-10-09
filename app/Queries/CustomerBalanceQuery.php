@@ -7,6 +7,7 @@ namespace App\Queries;
 use App\Domain\Account\PortalContext;
 use App\Domain\Layaway\DueCalendar;
 use App\Domain\Tenancy\TenantContext;
+use App\Models\Customer;
 use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Organization;
@@ -86,6 +87,20 @@ final class CustomerBalanceQuery
         });
 
         return $blocks;
+    }
+
+    /**
+     * El balance de **una** ficha en el negocio fijado: el del perfil del
+     * backoffice (`REQ-BOF-041` RB-2, `T-065`). Es el mismo cálculo que un
+     * bloque del portal —la misma consulta, el mismo `BusinessBalance`—, así
+     * que el negocio y el cliente no pueden ver dos cifras distintas.
+     */
+    public function forCustomer(Customer $customer): BusinessBalance
+    {
+        $organization = $this->context->organization();
+        $calendar = DueCalendar::of($organization, $this->settings);
+
+        return new BusinessBalance($organization, $this->layawaysOf([(int) $customer->getKey()], $calendar), $calendar);
     }
 
     /**

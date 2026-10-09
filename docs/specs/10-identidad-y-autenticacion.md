@@ -260,6 +260,8 @@ final readonly class CustomerContactData
 - SP-1 Acceso a `/mi-cuenta` sin ninguna sesión → redirección a `/mi-cuenta/acceso` preservando `intended`.
 - SP-2 Sesión `customer` de una ficha fusionada (`REQ-IDN-006`) → el middleware la reapunta a la superviviente.
 - SP-3 Sesión `customer` de una ficha borrada por una fusión → misma resolución que SP-2; nunca un `500`.
+
+> **SP-2 y SP-3, en `T-065`.** El proveedor del guard (`TenantAwareUserProvider`) resuelve el id de una ficha absorbida a su superviviente por `customer_merges` —sin tenant, como el resto del proveedor: el id es la clave de `customers`, único en la plataforma—, y `EnsurePortalSession` guarda el id nuevo en la sesión y la regenera, como en cualquier cambio de identidad. El «recordarme» de 30 días hace la misma vuelta (`retrieveByToken()`), comprobado contra **el token que tenía la absorbida**, guardado en su fusión (`absorbed_remember_token`): conocer el id de una ficha borrada no abre nada.
 - SP-4 Ambas sesiones presentes → prevalece `account` (`REQ-ACC-005` RB-4).
 - SP-5 Cliente intentando el backoffice → `403`.
 - SP-6 Petición Inertia con sesión caducada → `409` (RB-8).
@@ -370,6 +372,17 @@ final readonly class CustomerContactData
 - Anti-`SHALLOW`: `MergeCustomersAction::handle()` (traslado de seis relaciones, resolución del vínculo de cuenta, transacción, auditoría) supera 4 líneas.
 - Tests: mueve las seis relaciones; ambas vinculadas a cuentas distintas se rechaza; fusión entre organizaciones imposible (test de fuga); rechaza consigo misma; concurrencia serializada; rollback total; auditoría escrita.
 
+> **Cómo quedó, en `T-065`.**
+> - **Lo que se mueve hoy** (RB-2): `layaways` —y con ellos sus `payments`, que cuelgan del apartado y no de la ficha—, `receipts` y `customer_login_tokens`. **Los `messages` y los `telemetry_events` no existen todavía**: moverlos es de quien los crea, **`T-080`** (la conversación, y RB-3: fusionarla en orden cronológico) y **`T-084`** (la telemetría de la ficha). Las dos tareas lo tienen anotado en el plan.
+> - **La absorbida se borra, y queda `customer_merges`** —organización, id y documento de la absorbida, superviviente, quién—, porque tres cosas necesitan saber adónde fue después de borrada: su URL del backoffice (`REQ-BOF-041` SP-3), su sesión del portal (`REQ-IDN-004` SP-2, SP-3) y su documento con el código de un apartado (`REQ-IDN-008` SP-6). Las fusiones que apuntaban a la absorbida pasan a la superviviente: la tabla queda aplanada, y `CustomerMerge::survivorOf()` sigue la cadena con un guardia contra ciclos.
+> - **RB-4**: si solo la absorbida tiene cuenta, el vínculo pasa —primero se suelta y después se ata, por el único `(organization_id, account_id)`—; si las dos tienen cuentas distintas, `CannotMergeCustomerException`.
+> - **SP-4, el bloqueo, y en qué orden**: dentro de la transacción se bloquean primero los apartados y los enlaces de acceso de la absorbida y **después** las dos fichas, en orden de id. Es el orden del resto de la aplicación —un comprobante bloquea su apartado y luego toca la ficha; un enlace de acceso, su token y luego la ficha—; al revés, una subida o un clic a mitad de la fusión se habrían bloqueado en cruz con ella. Lo que el orden no evite —la clave ajena de una inserción concurrente— lo absorbe la transacción, que se repite hasta tres veces con sus comprobaciones. Un test con una segunda conexión de verdad comprueba que la fusión espera a la ficha y a sus apartados y no mueve nada a medias.
+> - **RB-8**: la confirmación es el documento de la absorbida, normalizado (`22.222.222` es `V22222222`). **Primero se autoriza** (`CustomerPolicy::merge`) y después se compara: quien no puede fusionar recibe `403`, no la respuesta de si el documento que escribió era el de esa ficha.
+> - **SP-1, SP-2**: los rechazos vuelven al perfil con el error en el campo `merge` —el `422` de Inertia— y la ficha de otro negocio es `404` por el binding.
+> - **La fusión espera a que el negocio pague** (`REQ-ORG-008` RB-3): reescribir fichas no es cobrar, y la ruta está fuera de `during-suspension`. El perfil y la búsqueda de candidatas sí funcionan suspendido.
+> - **La auditoría** (`customer.merged`) guarda lo movido y lo que de la absorbida no se mueve: nombre, documento, teléfono, correo, aceptación de términos y alta. Las entradas de auditoría cuyo sujeto era la absorbida siguen apuntando a su id, que ya no existe; el perfil de la superviviente no las enseña.
+> - **Una ficha nueva con el documento absorbido vuelve a ser otra ficha.** `ResolveCustomerAction` no consulta `customer_merges`: el documento absorbido pudo ser una cédula mal escrita que es la de **otra persona real**, y llevarla a la superviviente colgaría el apartado de esa persona de una ficha ajena y le sobrescribiría el contacto (RB-4 de `REQ-IDN-001`). Un duplicado que se vuelve a fusionar es el daño menor. Si la fusión confirma entre la lectura y el bloqueo de un apartado con ese documento, ese apartado falla con la `LogicException` de `ResolveCustomerAction` —una ventana de milisegundos— y el reintento crea la ficha.
+
 ---
 
 ### REQ-IDN-007 · Normalización y validación de documento y teléfono
@@ -417,6 +430,8 @@ final readonly class CustomerContactData
 - SP-4 Ceros a la izquierda → se conservan (RB-7).
 - SP-5 Teléfono con prefijo internacional distinto de `+58` → `422` en esta iteración.
 - SP-6 Búsqueda con cadena no normalizable → se degrada a `LIKE` sobre nombre, email y teléfono, sin error.
+
+> **SP-6, en `T-065`** (`CustomerSearch`, la caja del directorio y de la cobranza): solo cifras → documento o teléfono que las contienen; con `@` → el correo que lo contiene; cualquier otra cosa → cada palabra en el nombre, o el correo que la contiene. Los comodines de `LIKE` que escribe la persona se escapan.
 - SP-7 Teléfono fijo con código de área inválido → `422`.
 
 **Fuera de alcance inmediato**
@@ -466,6 +481,8 @@ final readonly class CustomerContactData
 - SP-4 Rate limit excedido → `429` con `Retry-After`.
 - SP-5 Cliente que perdió el código → se le indica pedirlo por el chat del negocio o por su email de confirmación; el negocio puede reenviárselo desde el perfil del cliente.
 - SP-6 Código de un apartado de una ficha que fue absorbida en una fusión → resuelve a la ficha superviviente (`REQ-IDN-006`).
+
+> **SP-5 y SP-6, en `T-065`.** SP-5: el negocio reenvía el código desde el perfil del cliente (`ResendLayawayCodeAction`), solo al correo de la ficha y como mucho tres veces por hora y apartado (`REQ-BOF-041`). SP-6: el apartado ya apunta a la superviviente, así que el código lleva a ella; si el documento escrito no es el suyo pero es **el de una ficha que ella absorbió** (`customer_merges.absorbed_document_number`), la sesión se abre igual: la persona entra con el documento con el que apartó. El límite de intentos sigue en `StartScopedSessionRequest`, antes de llegar aquí. Si se fusionaron por error dos personas distintas, la absorbida conserva el acceso a lo de la superviviente —la fusión no se deshace (fuera de alcance)—: es la razón de que RB-8 de `REQ-IDN-006` pida escribir el documento para confirmar.
 - SP-7 Confusión de caracteres al transcribir el código → el alfabeto excluye `0`, `O`, `1` e `I` precisamente por esto, y la entrada normaliza a mayúsculas e ignora guiones y espacios.
 - SP-8 Cliente con fichas en dos negocios usando el código de uno → sesión acotada a **ese** negocio; para ver el otro necesita su código, o conectar Google y reclamar ambas (`REQ-ACC-004`).
 

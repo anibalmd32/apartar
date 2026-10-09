@@ -82,6 +82,17 @@ final class Settings
     }
 
     /**
+     * Los días de gracia de la organización activa (`REQ-LAY-007` RB-1): la
+     * detección de mora, la cobranza y el directorio cuentan con el mismo.
+     */
+    public function graceDays(): int
+    {
+        $days = $this->get(SettingKey::GracePeriodDays);
+
+        return is_numeric($days) ? (int) $days : (int) SettingKey::GracePeriodDays->defaultValue();
+    }
+
+    /**
      * Las diez claves de la organización activa, resueltas.
      *
      * @return array<string, mixed>

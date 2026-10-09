@@ -12,6 +12,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Hashing\Hasher;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -58,7 +59,7 @@ class AppServiceProvider extends ServiceProvider
         // al usuario antes de saber su organización, así que consulta `users`
         // sin el filtro de tenancy; el resto de `User::query()` sí lo lleva.
         Auth::provider('tenant-aware', function (Application $app, array $config): TenantAwareUserProvider {
-            /** @var class-string<\Illuminate\Database\Eloquent\Model> $model */
+            /** @var class-string<Model> $model */
             $model = $config['model'];
 
             return new TenantAwareUserProvider($app->make(Hasher::class), $model);
@@ -97,6 +98,25 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('apartados', fn (Request $request) => Limit::perMinute(self::LAYAWAY_SUBMISSIONS_PER_MINUTE)->by($request->ip() ?? 'sin-ip'));
         RateLimiter::for('comprobantes', fn (Request $request) => Limit::perHour(self::RECEIPT_SUBMISSIONS_PER_HOUR)
             ->by('ficha:'.(Auth::guard('customer')->id() ?? $request->ip() ?? 'sin-ip')));
+        RateLimiter::for('reenvio-codigo', fn (Request $request) => Limit::perHour(self::CODE_RESENDS_PER_HOUR)
+            ->by('apartado:'.self::routeKeyOf($request->route('layaway'))));
+    }
+
+    /**
+     * Reenvíos del código de un apartado por hora y **por apartado**
+     * (`REQ-IDN-008` SP-5, `T-065`). El correo sale a nombre del negocio al
+     * buzón del cliente: tres cubren a quien lo perdió y lo vuelve a perder;
+     * sin techo, un clic repetido le llenaría la bandeja.
+     */
+    public const CODE_RESENDS_PER_HOUR = 3;
+
+    private static function routeKeyOf(mixed $bound): string
+    {
+        return match (true) {
+            $bound instanceof Model => (string) $bound->getKey(),
+            is_string($bound) => $bound,
+            default => 'sin-apartado',
+        };
     }
 
     /**

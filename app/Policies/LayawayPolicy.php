@@ -23,6 +23,15 @@ use App\Models\User;
  */
 final class LayawayPolicy
 {
+    /**
+     * Ver la cartera —la cobranza de `REQ-BOF-042`—: la misma capacidad que
+     * gestionarla. Lo que se ve ya llega acotado a la organización.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->disabled_at === null && $user->role->can(OrganizationCapability::Collections);
+    }
+
     public function manage(User $user, Layaway $layaway): bool
     {
         return $user->organization_id === (int) $layaway->organization_id

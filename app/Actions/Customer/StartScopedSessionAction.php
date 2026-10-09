@@ -9,6 +9,7 @@ use App\Domain\Customer\AccessVerificationFailedException;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use App\Models\Customer;
+use App\Models\CustomerMerge;
 use App\Models\Layaway;
 use App\Support\DocumentNumber;
 use App\Support\LayawayCode;
@@ -47,9 +48,9 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  * la organización suspendida o cerrada (RB-8): aquí no se pregunta ni por el
  * estado del apartado ni por el del negocio.
  *
- * La ficha absorbida por una fusión (SP-6) se resolverá aquí cuando exista la
- * fusión (`REQ-IDN-006`, `T-065`): hoy un apartado siempre apunta a una ficha
- * viva.
+ * La ficha absorbida por una fusión (SP-6, `REQ-IDN-006`): su apartado ya
+ * apunta a la superviviente, y el documento con el que se apartó sigue
+ * abriendo la sesión porque queda en `customer_merges`.
  */
 final class StartScopedSessionAction
 {
@@ -84,6 +85,16 @@ final class StartScopedSessionAction
             $customer = $layaway instanceof Layaway
                 ? Customer::query()->whereKey($layaway->customer_id)->where('document_number', $document->value)->first()
                 : null;
+
+            // `REQ-IDN-008` SP-6 · el documento de una ficha que se fusionó con
+            // la del apartado: la persona entra con el documento con el que
+            // apartó, y llega a la superviviente.
+            if (! $customer instanceof Customer && $layaway instanceof Layaway && CustomerMerge::query()
+                ->where('survivor_customer_id', $layaway->customer_id)
+                ->where('absorbed_document_number', $document->value)
+                ->exists()) {
+                $customer = Customer::query()->find($layaway->customer_id);
+            }
 
             if (! $customer instanceof Customer) {
                 throw new AccessVerificationFailedException('el documento no es el de la ficha del apartado');

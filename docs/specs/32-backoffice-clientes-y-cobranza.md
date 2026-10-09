@@ -92,6 +92,14 @@ enum ExportStatus: string { case Queued = 'queued'; case Processing = 'processin
 - Anti-`SHALLOW`: `CustomerDirectoryQuery::search()` (detección de criterio, normalización de documento y teléfono, agregación, orden de prioridad) supera 4 líneas.
 - Tests: búsqueda por los cuatro criterios; documento y teléfono con formatos variados; sin `N+1`; orden de prioridad de cobranza; el `Resource` no expone `account_id`; **el documento de un cliente de otra organización no devuelve resultados** (fuga); filtro por catálogo de origen.
 
+> **Cómo quedó, en `T-065`.**
+> - **Una caja, `CustomerSearch`**, compartida con la cobranza (`REQ-BOF-042` RB-3), y en este orden: teléfono (E.164, SP-3); **solo cifras** (`12.345.678`, `0414123`, `4567`): el documento **o** el teléfono que las contienen; documento con su letra, exacto (SP-2); correo, exacto sin mayúsculas; nombre, cada palabra en cualquier orden. Las cifras sueltas son un añadido a RB-1: lo que se dicta por teléfono llega a trozos, y una cédula sin letra puede ser también medio teléfono —`0414123` es las dos cosas—. Esa búsqueda es `LIKE '%…%'` y no usa el índice de SP-5: dentro de una organización recorre sus fichas, que es aceptable; si un negocio llega a cientos de miles, se cambia por prefijos por tipo de documento.
+> - **Los agregados, como subconsultas correlacionadas** sobre `customers` (RB-3): una consulta por página sea cual sea el número de filas, y cada subconsulta atada a la organización de la fila. Paginación simple (SP-5).
+> - **«Vencida» y «en mora» son dos cosas.** La columna «Cuotas vencidas» (RB-2) cuenta como el portal (`CustomerBalanceQuery`): sin cubrir y anterior al «hoy» del negocio. «Con mora» (RB-4), el destacado (RB-5) y la tarjeta «Clientes en mora» del panel son **vencida y pasada la gracia del negocio** (`REQ-LAY-007` RB-1): una cuota de ayer, dentro de la gracia, está vencida pero el cliente no está en mora. La gracia se lee en un solo sitio, `Settings::graceDays()`, el mismo que usan la detección de mora y la cobranza.
+> - **«Vencimiento próximo»** llega hasta el primer recordatorio previo (`DueCalendar::lastSoonDay()`, como el portal), y **el rango filtra el próximo vencimiento**, el que pinta la fila —no cualquier cuota dentro del rango—.
+> - **Orden** (RB-6): cuotas vencidas descendente, luego el próximo vencimiento —los que no tienen ninguno, al final—, nombre e id para que sea estable.
+> - **RB-9**: `CustomerPolicy::viewAny()` —capacidad `Customers` y usuario no deshabilitado—. Los dos roles entran.
+
 ---
 
 ### REQ-BOF-041 · Perfil de cliente y balance consolidado
@@ -139,6 +147,17 @@ enum ExportStatus: string { case Queued = 'queued'; case Processing = 'processin
 - Anti-`SHALLOW`: cubierto por `CustomerBalanceQuery` (`REQ-LAY-020`); el controlador aporta la composición de las cinco listas y las acciones disponibles.
 - Tests: el balance del perfil coincide con el del portal para la misma ficha (equivalencia); motivos íntegros visibles para el negocio; ficha absorbida redirige; URL firmada de 15 min; **no se filtra actividad en otras organizaciones** (test de RB-9); acción sobre estado ya cambiado da `422`; ficha ajena da `404`.
 
+> **Cómo quedó, en `T-065`.**
+> - **El balance es el del portal** (RB-2): `CustomerBalanceQuery::forCustomer()` devuelve el mismo `BusinessBalance` que pinta el cliente, y un test compara los dos para la misma ficha.
+> - **Las listas** (RB-3, RB-4, SP-2): apartados activos enteros; historial de terminales, pagos y comprobantes cortados en 20 —los más recientes— y **«Ver más» de 20 en 20** con `?mostrar=` hasta 200 (`CustomerShowController::LIST_MAX`): más que eso es una exportación. Cada lista cortada dice cuántas hay.
+> - **RB-5, acciones**: cada apartado enlaza a su vista (`backoffice/layaways/Show`, de `T-053`), que es donde están cancelar, entregar y reprogramar —no se duplican—; registrar pago manual está en la vista del comprobante (`T-062`); **reenviar el código** y **fusionar** están en el perfil. El push puntual es de **`T-083`** y el chat de **`T-080`** (`conversationId: null` hasta entonces); los catálogos que sigue (RB-8, `subscriptions: []`) son de **H6**.
+> - **Reenviar el código** (SP-5 de `REQ-IDN-008`, SP-7): `ResendLayawayCodeAction` lo manda **solo al correo de la ficha**, con `LayawayCodeNotification` —una propia, no la del alta: no es un apartado nuevo—; sin correo, el aviso de dictarlo. Con techo: **tres por hora y por apartado** (`throttle:reenvio-codigo`, `AppServiceProvider::CODE_RESENDS_PER_HOUR`); el cuarto es `429`. Sin él, un clic repetido llenaría el buzón del cliente con correos a nombre del negocio.
+> - **RB-6**: el motivo íntegro y quién: el revisor del comprobante y, para una cancelación, el causante de su auditoría (`layaway.cancelled`); sin causante, «El sistema».
+> - **RB-7**: `SignedFileUrl::forBackoffice()` de 15 minutos. **SP-4 queda abierto**: no se comprueba que el archivo exista —sería una llamada al almacenamiento por fila—; un archivo perdido da el error al abrirlo. Lo cierra quien toque la retención de comprobantes (`REQ-PAY-002`, **`T-086`**, Salud).
+> - **SP-3**: la ruta tiene un `missing()` que, si el id es de una ficha absorbida (`customer_merges`, siguiendo la cadena), redirige a la superviviente con un aviso; si no, `404`.
+> - **SP-5**: lo cubren las acciones que ya existían —cada una valida estado y devuelve su `422`—; el perfil no añade operaciones propias que puedan pisarse, salvo la fusión, que se bloquea por filas (`REQ-IDN-006` SP-4).
+> - **RB-9, SP-6**: todo pasa por el global scope, también un comprobante de otro negocio que apuntara por error a esta ficha (test).
+
 ---
 
 ### REQ-BOF-042 · Filtros operativos de cobranza
@@ -173,7 +192,7 @@ enum ExportStatus: string { case Queued = 'queued'; case Processing = 'processin
 
 **Sad paths y edge cases**
 - SP-1 Preset sin resultados → estado vacío con la definición exacta del preset.
-- SP-2 Rango invertido (`dueFrom > dueTo`) → `422`.
+- SP-2 Rango invertido (`dueFrom > dueTo`) → ~~`422`~~ no se aplica ninguno de los dos extremos, y la tabla dice que se ignoraron (`REQ-BOF-045` SP-4). `CollectionFilters` sí lo rechaza (`InvalidArgumentException`) para quien lo construya a mano —la exportación, el envío segmentado—. *(Corregido en `T-065`: ver la nota de abajo.)*
 - SP-3 Preset combinado con un rango que lo contradice → se aplican ambos (intersección) y la UI advierte que puede quedar vacío.
 - SP-4 Cambio del ajuste de gracia entre la vista y la exportación → la exportación recalcula con el vigente al ejecutarse y registra el valor usado en la cabecera del archivo.
 - SP-5 Cuota de un apartado cancelado → excluida por RB-5.
@@ -191,6 +210,16 @@ enum ExportStatus: string { case Queued = 'queued'; case Processing = 'processin
 - Tipos esperados: `CollectionFilters`, `CollectionPreset`, `CollectionRow`.
 - Anti-`SHALLOW`: `CollectionFilters::apply()` (los seis presets, rango, estados, búsqueda, catálogo, con la gracia y la zona de la organización) y `CollectionPreset::label()` superan 4 líneas.
 - Tests: un test por preset con datos en los límites exactos de fecha; rango invertido rechazado; terminales excluidos; **la vista y la exportación devuelven el mismo conjunto** (equivalencia, garantía de RB-1); dos organizaciones con parámetros distintos; nunca devuelve cuotas de otra organización (fuga); funciona con `suspended`.
+
+> **Cómo quedó, en `T-065`.**
+> - **Las filas son cuotas sin cubrir** (RB-6): una cuota pagada entera no es cartera aunque venza hoy; «Pagado» puede ser parcial. Los presets y la lista sin preset ven los apartados que cobran —`active` y `overdue`; `pending_down_payment` aún no tiene cuotas que cobrar— (RB-5); el filtro de estado elige uno.
+> - **`completed_not_delivered` lista apartados, no cuotas**: un apartado pagado sin entregar puede no tener cuotas —financiado en cero—, y una lista de cuotas no lo vería. `CollectionFilters::query()` devuelve la forma que toca, `installments()` o `layaways()`, y la pantalla cambia de columnas. El rango libre, con ese preset, filtra `completed_at` en días **del negocio**.
+> - **Los bordes, en la zona y con la gracia del negocio** (RB-4, SP-7): `overdue_over_15_days` es `due_date < hoy − gracia − 15`; «en 7 días» es de hoy a hoy + 7, ambos incluidos (ocho días: la tarjeta del panel «Vencen esta semana» es este preset); las quincenas, del 1 al 15 y del 16 al último del mes en curso. Un test por preset en sus bordes exactos, con el negocio en Tokio y el reloj en Caracas para que un «hoy» de la aplicación se note.
+> - **SP-2 se separó en dos** (ver arriba): `CollectionFilters` sigue rechazando un rango invertido, pero **la pantalla no responde `422`**: es una página que se abre desde un enlace —el panel, un compañero (RB-7)— y un error de validación en un `GET` no tiene formulario al que volver. Lo que no se puede usar —un preset o una fecha que no existen, una categoría o catálogo de otro negocio, un rango invertido— no se aplica y se anota en `meta.ignoredFilters`, como en el resto de tablas (`REQ-BOF-045` SP-4). Del rango invertido se descartan **los dos extremos**: quedarse con uno sería un filtro que nadie pidió.
+> - **RB-1, equivalencia**: la pantalla no filtra por su cuenta. Un test por preset comprueba que sus filas son exactamente las de `CollectionFilters`, en su orden. La exportación (**`T-070`**) y el envío segmentado (**`T-083`**) tienen que construir un `CollectionFilters` y pedirle `query()`; el test de equivalencia de la exportación es de `T-070`.
+> - **RB-6, acciones rápidas**: el apartado enlaza a su vista, y el teléfono se copia o se marca. Registrar pago vive en la vista del comprobante (`T-062`); **el push puntual es de `T-083`** y **abrir el chat de `T-080`**.
+> - **RB-9**: la ruta está en `during-suspension`; la autoriza `LayawayPolicy::viewAny()` —capacidad `Collections`, usuario no deshabilitado—.
+> - Los días de atraso se cuentan en el calendario del negocio, como en el portal.
 
 ---
 
@@ -334,6 +363,17 @@ export type DashboardWarning =
 - Tipos esperados: `DashboardMetrics`, `DashboardWarning`, `DashboardMetricsQuery`, `DashboardWarningsQuery`, `PlanState`.
 - Anti-`SHALLOW`: `DashboardMetricsQuery::compute()` (métricas, caché, aislamiento de fallos) y `DashboardWarningsQuery::forOrganization()` (las siete condiciones de RB-4, incluida la evidencia de venta perdida) superan 4 líneas.
 - Tests: cada métrica con datos sembrados; "cobrado del mes" usa `amount_cents_usd` y la zona de la organización; los enlaces llevan al filtro equivalente (equivalencia con `CollectionFilters`); **cada uno de los siete `warnings` se dispara en su condición y no fuera de ella**; `plan_limit_blocking_sales` requiere evidencia real (test de RB-5); caché de 60 s; Redis caído funciona; fallo de una métrica no rompe la página.
+
+> **Cómo quedó, en `T-065`.**
+> - **Cada tarjeta sale de la consulta de su lista** (RB-3): «Vencen esta semana» es el preset `due_within_7_days` de `CollectionFilters`, con su importe pendiente; «Mora de más de 15 días» cuenta los **apartados** distintos del preset `overdue_over_15_days` —la lista a la que lleva es de cuotas, así que puede mostrar más filas que la cifra—; «Completados sin entregar», su preset; «Clientes en mora», el directorio con «con mora» (mora con gracia, ver `REQ-BOF-040`). Un test compara cifra y lista.
+> - **RB-2**: `amount_cents_usd` con `settled_at` en el mes **del negocio**, convertido a la zona de la aplicación para la consulta.
+> - **RB-4, seis de los siete avisos**: sin cuenta de cobro activa; catálogo publicado, vigente y sin productos publicados (como mucho tres nombrados); productos publicados en ningún catálogo; tasa obsoleta, con sus horas; factura vencida; correo del dueño sin verificar. **`plan_limit_blocking_sales` es de `T-067`**: RB-5 exige evidencia de una venta perdida —un apartado rechazado por el límite en los últimos 7 días— y nadie registra todavía esos rechazos; `T-067` inserta los límites en las acciones, y con ellos el registro y el aviso. **La factura vencida se lee del estado de la suscripción** (`past_due`, `grace` o `suspended`, con el fin del período como fecha) hasta que existan las facturas (**`T-069`**).
+> - **RB-6**: las métricas del plan al 80 % o más, destacadas. **RB-1**: la tasa, con su antigüedad.
+> - **RB-7, SP-3, SP-4**: una consulta agregada por métrica, cada una aislada —la que falla es `null`, un guion— y el conjunto en caché 60 s por organización. **Una pasada con una métrica caída no se guarda**: el guion duraría un minuto y, si la que cae es la de avisos, una lista vacía parecería «no hay avisos». Sin caché, se calcula igual.
+> - **SP-5**: lo que el negocio arregla —una cuenta de cobro, el correo verificado— puede tardar hasta 60 s en desaparecer del panel; la caché es de la spec y no se invalida por evento. El badge en tiempo real de los comprobantes (RB-9) ya existía.
+> - **RB-10, SP-7**: la suspensión la anuncia el banner del layout, y el aviso de factura vencida sale primero en la lista.
+> - **Lo que todavía no existe vuelve `null`** y no se pinta: mensajes sin leer (**`T-080`**) y suscriptores (**H6**).
+> - **SP-1**: mientras al negocio le falte una cuenta de cobro, un producto o un catálogo publicado, el checklist de arranque va **encima** de las tarjetas, no en su lugar: las cifras en cero también dicen algo, y cuando aparece el primer comprobante tiene que verse.
 
 ---
 

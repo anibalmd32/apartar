@@ -8,7 +8,6 @@ use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\OverdueSummary;
-use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Installment;
 use App\Models\Layaway;
@@ -201,8 +200,6 @@ final class DetectOverdueAction
 
     private function graceDays(): int
     {
-        $days = $this->settings->get(SettingKey::GracePeriodDays);
-
-        return is_numeric($days) ? (int) $days : (int) SettingKey::GracePeriodDays->defaultValue();
+        return $this->settings->graceDays();
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,8 +32,18 @@ final class EnsurePortalSession
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! Auth::guard('customer')->check()) {
+        $guard = Auth::guard('customer');
+
+        if (! $guard->check()) {
             return redirect()->guest(route('portal.access'));
+        }
+
+        // `REQ-IDN-004` SP-2 · una sesión de una ficha absorbida por una fusión
+        // llega con la superviviente (`TenantAwareUserProvider`): la sesión
+        // pasa a guardar su id, y la fusión no se vuelve a buscar.
+        if ($guard instanceof SessionGuard && (string) $request->session()->get($guard->getName()) !== (string) $guard->id()) {
+            $request->session()->put($guard->getName(), $guard->id());
+            $request->session()->migrate(true);
         }
 
         return $next($request);
