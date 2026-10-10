@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Subscription;
 
 use App\Domain\Catalog\CatalogVisibility;
+use App\Domain\Export\ExportStatus;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Subscription\LimitEnforcer;
@@ -12,6 +13,7 @@ use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
 use App\Jobs\RecalculateUsage;
 use App\Models\Catalog;
+use App\Models\ExportJob;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
@@ -166,6 +168,28 @@ final class UsageCalculatorTest extends TestCase
 
         // 2 MiB y 500.000 bytes: 2,48 MB, que son 3 y no 2.
         $this->assertSame(3, $this->measured(UsageMetric::StorageMb));
+    }
+
+    /**
+     * `T-070` · las exportaciones **vigentes** suman en la misma cuenta, en
+     * bytes y redondeando una vez; una caducada (su archivo ya se purgó), una
+     * en curso o una fallida no pesan, ni las del vecino.
+     */
+    public function test_storage_adds_the_live_exports(): void
+    {
+        $mb = 1024 * 1024;
+
+        $this->withinOrganization($this->organization, function () use ($mb): void {
+            Receipt::factory()->create(['file_size' => $mb]);
+            ExportJob::factory()->completed(bytes: 600_000)->create();
+            ExportJob::factory()->completed(bytes: 9 * $mb)->create(['status' => ExportStatus::Expired]);
+            ExportJob::factory()->create(['status' => ExportStatus::Processing, 'file_size' => 9 * $mb]);
+            ExportJob::factory()->create(['status' => ExportStatus::Failed, 'file_size' => 9 * $mb]);
+        });
+        $this->withinOrganization($this->neighbourOrganization(), fn () => ExportJob::factory()->completed(bytes: 9 * $mb)->create());
+
+        // 1 MiB y 600.000 bytes: 1,57 MB, que son 2.
+        $this->assertSame(2, $this->measured(UsageMetric::StorageMb));
     }
 
     public function test_storage_is_zero_without_files(): void

@@ -3,6 +3,7 @@ import { directoryColumns } from '@/features/customers/components/directoryColum
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useDebouncedFilter } from '@/features/data-table/hooks/useDebouncedFilter';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
+import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type CustomerDirectoryFilters, type CustomerIndexProps } from '@/types/customers';
 
@@ -24,6 +25,7 @@ export default function CustomerIndex({ rows, meta, options }: CustomerIndexProp
         <BackofficeLayout title="Clientes" description="Busca a tus clientes por cédula, teléfono, correo o nombre.">
             <section className="card bg-base-100 shadow-sm">
                 <div className="card-body gap-4">
+                    <ExportButton type="customers" filters={meta.filters} />
                     <DataTable
                         label="Directorio de clientes"
                         table={table}

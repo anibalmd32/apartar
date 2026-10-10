@@ -127,3 +127,18 @@ it('declara las facturas y los comprobantes de la suscripción en su organizaci�
     expect(SchemaInspector::hasUniqueOn('subscription_receipts', 'organization_id', 'bank', 'reference'))->toBeTrue();
     expect(SchemaInspector::hasUniqueOn('subscription_receipts', 'file_hash'))->toBeFalse();
 });
+
+/**
+ * `T-070` · las exportaciones son del tenant (`REQ-BOF-043`): su organización,
+ * el peso del archivo en `BIGINT` (`storage_mb`) y los dos índices de lo que
+ * se pregunta —una en curso por tipo (RB-10) y la purga (RB-7)—.
+ */
+it('declara export_jobs en su organización', function (): void {
+    $columns = SchemaInspector::columns('export_jobs');
+
+    expect($columns)->toHaveKey(TenantScope::COLUMN);
+    expect(array_keys($columns))->toContain('requested_by', 'type', 'status', 'filters', 'file_path', 'file_size', 'row_count', 'error_message', 'expires_at');
+    expect(strtolower($columns['file_size']['type_name']))->toBe('bigint');
+    expect(array_map(fn (array $index): array => $index['columns'], SchemaInspector::indexes('export_jobs')))
+        ->toContain(['organization_id', 'type', 'status'], ['status', 'expires_at']);
+});

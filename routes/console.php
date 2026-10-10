@@ -7,6 +7,7 @@ use App\Jobs\DetectOverdueLayawaysJob;
 use App\Jobs\ExpireLayawaysJob;
 use App\Jobs\FetchExchangeRate;
 use App\Jobs\IssueRenewalInvoices;
+use App\Jobs\PurgeExpiredExports;
 use App\Jobs\RecalculateUsage;
 use App\Jobs\ReconcileLayaways;
 use Illuminate\Support\Facades\Schedule;
@@ -105,3 +106,12 @@ Schedule::job(new IssueRenewalInvoices)
     ->dailyAt('06:00')
     ->withoutOverlapping()
     ->name('subscriptions:issue-renewal-invoices');
+
+/*
+| `REQ-BOF-043` RB-7, `T-070` · las exportaciones se purgan a los siete días,
+| a las 03:00 de la plataforma, y su espacio deja de contar en `storage_mb`.
+*/
+Schedule::job(new PurgeExpiredExports)
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->name('exports:purge-expired');

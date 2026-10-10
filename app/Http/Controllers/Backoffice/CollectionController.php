@@ -15,10 +15,8 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Installment;
 use App\Models\Layaway;
-use App\Queries\CollectionFilters;
-use App\Support\BusinessDay;
+use App\Queries\CollectionFilterInput;
 use App\Support\PhoneNumber;
-use App\Support\TableState;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\Request;
@@ -51,7 +49,8 @@ final class CollectionController extends Controller
         Gate::forUser($request->user())->authorize('viewAny', Layaway::class);
 
         $state = $this->tableState($request);
-        $filters = $this->filters($request, $state);
+        // `T-070` · la misma lectura que la exportación (`CollectionFilterInput`).
+        $filters = CollectionFilterInput::resolve($request->query->all(), $state);
         $timezone = new DateTimeZone($this->context->organization()->timezone);
         $today = CarbonImmutable::now($timezone)->startOfDay();
         $listsLayaways = $filters->preset?->listsLayaways() === true;
@@ -76,45 +75,6 @@ final class CollectionController extends Controller
             'definition' => $filters->preset?->definition(),
             'options' => fn (): array => $this->options(),
         ]);
-    }
-
-    /**
-     * Lo que pidió la URL, ya resuelto. Lo que no vale queda fuera y anotado.
-     *
-     * @param  TableState<*>  $state
-     */
-    private function filters(Request $request, TableState $state): CollectionFilters
-    {
-        $timezone = $this->context->organization()->timezone;
-        $asDate = fn (CarbonImmutable $day): string => $day->toDateString();
-
-        $preset = $state->filter('preset', $request->query('preset'), fn (mixed $raw): ?CollectionPreset => is_string($raw) ? CollectionPreset::tryFrom($raw) : null);
-        // SP-2 · un «hasta» anterior al «desde» no es un rango: no se aplica
-        // ninguno de los dos, y los dos quedan anotados.
-        $fromDay = BusinessDay::parse($request->query('from'), $timezone);
-        $toDay = BusinessDay::parse($request->query('to'), $timezone);
-        $inverted = $fromDay !== null && $toDay !== null && $toDay->lessThan($fromDay);
-        $from = $state->filter('from', $request->query('from'), fn (mixed $raw): ?CarbonImmutable => $inverted ? null : BusinessDay::parse($raw, $timezone), $asDate);
-        $to = $state->filter('to', $request->query('to'), fn (mixed $raw): ?CarbonImmutable => $inverted ? null : BusinessDay::parse($raw, $timezone), $asDate);
-        $status = $state->filter('status', $request->query('status'), fn (mixed $raw): ?LayawayStatus => is_string($raw) ? LayawayStatus::tryFrom($raw) : null);
-        $search = $state->filter('q', $request->query('q'), fn (mixed $raw): ?string => is_string($raw) && mb_strlen(trim($raw)) <= 100 ? trim($raw) : null);
-        $category = $state->filter('category', $request->query('category'), fn (mixed $raw): ?int => $this->ownId(Category::class, $raw));
-        $catalog = $state->filter('catalog', $request->query('catalog'), fn (mixed $raw): ?int => $this->ownId(Catalog::class, $raw));
-
-        return new CollectionFilters($preset, $from, $to, $status instanceof LayawayStatus ? [$status] : [], $search, $category, $catalog);
-    }
-
-    /**
-     * El id, si es de un registro de esta organización (el global scope lo
-     * decide); `null` si no.
-     *
-     * @param  class-string<Category>|class-string<Catalog>  $model
-     */
-    private function ownId(string $model, mixed $raw): ?int
-    {
-        $id = filter_var($raw, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-
-        return is_int($id) && $model::query()->whereKey($id)->exists() ? $id : null;
     }
 
     /**

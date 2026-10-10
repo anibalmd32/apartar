@@ -2,6 +2,7 @@ import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collecti
 import { installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
 import { useCollectionFilters } from '@/features/collections/hooks/useCollectionFilters';
 import { DataTable } from '@/features/data-table/components/DataTable';
+import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type CollectionIndexProps, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
@@ -55,6 +56,7 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
     return (
         <section className="card bg-base-100 shadow-sm">
             <div className="card-body gap-4">
+                <ExportButton type="collections" filters={props.meta.filters} />
                 <DataTable
                     label={props.label}
                     table={table}

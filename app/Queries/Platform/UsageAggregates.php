@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Queries\Platform;
 
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Export\ExportStatus;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Models\Catalog;
+use App\Models\ExportJob;
 use App\Models\Layaway;
 use App\Models\PaymentAccount;
 use App\Models\Product;
@@ -149,8 +151,8 @@ final class UsageAggregates
     }
 
     /**
-     * Comprobantes más imágenes de producto, en bytes, y convertido a MB al
-     * final.
+     * Comprobantes, imágenes de producto y exportaciones vigentes (`T-070`),
+     * en bytes, y convertido a MB al final.
      *
      * `media` es polimórfica y **no tiene `organization_id`**: la organización
      * de una imagen es la de su producto, así que se une por
@@ -197,10 +199,18 @@ final class UsageAggregates
             ->groupBy('products.organization_id')
             ->selectRaw('products.organization_id AS organization, SUM(media.size) AS total'), $locking);
 
+        // `T-070` · las exportaciones **vigentes**: terminadas y sin purgar.
+        // Una caducada ya no tiene archivo, y una en curso todavía no pesa.
+        $exports = $this->totals(ExportJob::query()->withoutTenantScope()
+            ->where('status', ExportStatus::Completed)
+            ->whereIn('organization_id', $organizationIds)
+            ->groupBy('organization_id')
+            ->selectRaw('organization_id AS organization, SUM(file_size) AS total'), $locking);
+
         $bytes = [];
 
         foreach ($organizationIds as $organization) {
-            $bytes[$organization] = (int) ($receipts[$organization] ?? 0) + (int) ($media[$organization] ?? 0);
+            $bytes[$organization] = (int) ($receipts[$organization] ?? 0) + (int) ($media[$organization] ?? 0) + (int) ($exports[$organization] ?? 0);
         }
 
         return $bytes;

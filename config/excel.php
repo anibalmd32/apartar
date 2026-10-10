@@ -259,7 +259,11 @@ return [
         | Drivers: memory|illuminate|batch
         |
         */
-        'driver' => env('EXCEL_CACHE_DRIVER', 'memory'),
+        // `T-070` · `batch` y no `memory`: una exportación de 34.000 filas
+        // (`REQ-BOF-043`) son cientos de miles de celdas, y con todas en
+        // memoria el worker se queda sin los 512 MB de `php.ini`. `batch`
+        // las vuelca a la caché cuando pasa del límite de abajo.
+        'driver' => env('EXCEL_CACHE_DRIVER', 'batch'),
 
         /*
         |--------------------------------------------------------------------------

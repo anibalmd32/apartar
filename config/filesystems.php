@@ -58,6 +58,28 @@ return [
             'visibility' => 'private',
         ],
 
+        // `REQ-BOF-043` RB-5 (`T-070`) · las exportaciones a Excel: privado,
+        // bajo la carpeta de cada organización, y servido solo por la ruta
+        // firmada de descarga.
+        //
+        // Permisos legibles por otros usuarios del contenedor, y no los 0700 /
+        // 0600 de «private»: el archivo lo escribe el worker de la cola, que
+        // hoy corre como `root`, y lo sirve PHP-FPM como `www-data`. Con 0700
+        // la descarga daba siempre `410` (lo cazó el e2e de `T-070`). Sigue
+        // fuera de la raíz web y solo sale por la ruta firmada. Cuando el
+        // worker corra como `www-data` (`T-087`), puede volver a 0700.
+        'exports' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/exports'),
+            'serve' => false,
+            'throw' => true,
+            'visibility' => 'private',
+            'permissions' => [
+                'file' => ['public' => 0644, 'private' => 0644],
+                'dir' => ['public' => 0755, 'private' => 0755],
+            ],
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

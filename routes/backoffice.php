@@ -13,6 +13,7 @@ use App\Http\Controllers\Backoffice\CustomerController;
 use App\Http\Controllers\Backoffice\CustomerMergeController;
 use App\Http\Controllers\Backoffice\CustomerShowController;
 use App\Http\Controllers\Backoffice\DashboardController;
+use App\Http\Controllers\Backoffice\ExportController;
 use App\Http\Controllers\Backoffice\InstallmentController;
 use App\Http\Controllers\Backoffice\LayawayCodeController;
 use App\Http\Controllers\Backoffice\LayawayController;
@@ -110,6 +111,30 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('suscripcion/facturas/{invoice}/comprobante', [SubscriptionInvoiceController::class, 'storeReceipt'])
                 ->middleware(['during-suspension', 'throttle:20,60'])
                 ->name('subscription.invoices.receipt');
+
+            /*
+            | `T-070` · las exportaciones a Excel (`REQ-BOF-043`). Pedir una es
+            | función de pago (`plan-feature:excel_export`: `403` con el motivo
+            | por API, de vuelta con `planFeature` en una visita de Inertia) y
+            | no sobrevive a la suspensión: es crear. La lista y la descarga sí,
+            | y no preguntan por el plan: lo ya generado se descarga hasta que
+            | caduque aunque se baje a Free (SP-12). La descarga va firmada y,
+            | además, solo para su organización (RB-12).
+            */
+            Route::get('exportaciones', [ExportController::class, 'index'])
+                ->middleware('during-suspension')
+                ->name('exports.index');
+
+            // Con tope (revisión de `T-070`): RB-10 deja una en curso por tipo, pero
+            // pedirlas en cadena ocuparía el worker y llenaría la cuota.
+            Route::post('exportaciones', [ExportController::class, 'store'])
+                ->middleware(['plan-feature:excel_export', 'throttle:30,60'])
+                ->name('exports.store');
+
+            Route::get('exportaciones/{export}/descargar', [ExportController::class, 'download'])
+                ->middleware(['during-suspension', 'signed'])
+                ->whereNumber('export')
+                ->name('exports.download');
 
             Route::post('logout', [LoginController::class, 'destroy'])
                 ->middleware('during-suspension')

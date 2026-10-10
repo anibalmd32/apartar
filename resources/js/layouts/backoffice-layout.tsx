@@ -68,6 +68,8 @@ const SECTIONS: NavSection[] = [
     // los dos roles, operación diaria.
     { label: 'Cobranza', href: '/backoffice/cobranza', capability: 'collections' },
     { label: 'Clientes', href: '/backoffice/clientes', capability: 'customers' },
+    // `T-070` · los Excel pedidos desde la cobranza, los clientes y el inventario.
+    { label: 'Exportaciones', href: '/backoffice/exportaciones', capability: 'collections' },
     { label: 'Equipo', href: '/backoffice/equipo', capability: 'team' },
     { label: 'Ajustes', href: '/backoffice/ajustes', capability: 'settings' },
     { label: 'Cuentas de cobro', href: '/backoffice/cuentas-de-cobro', capability: 'payment_accounts' },

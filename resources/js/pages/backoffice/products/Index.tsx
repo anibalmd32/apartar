@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
+import { ExportButton } from '@/features/exports/components/ExportButton';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import { INVENTORY_FILTER_LABELS, InventoryFilters } from '@/features/products/components/InventoryFilters';
 import { inventoryColumns } from '@/features/products/components/inventoryColumns';
@@ -72,9 +73,12 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses }
                     <header className="flex flex-wrap items-baseline justify-between gap-2">
                         <h2 className="card-title text-base">Tu inventario</h2>
 
-                        <Link className="btn btn-primary btn-sm" href="/backoffice/productos/crear">
-                            Nuevo producto
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <ExportButton type="inventory" filters={meta.filters} />
+                            <Link className="btn btn-primary btn-sm" href="/backoffice/productos/crear">
+                                Nuevo producto
+                            </Link>
+                        </div>
                     </header>
 
                     <DataTable

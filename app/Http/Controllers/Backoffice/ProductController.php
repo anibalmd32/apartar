@@ -27,10 +27,9 @@ use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Tag;
 use App\Models\User;
+use App\Queries\InventoryFilters;
 use App\Queries\SpecificationGroupsQuery;
 use App\Support\Settings;
-use App\Support\TableState;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -87,21 +86,6 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 final class ProductController extends Controller
 {
     use ProjectsMoney, ResolvesTableState;
-
-    /**
-     * Existencias por debajo de las cuales el listado avisa (RB-9).
-     *
-     * Es un umbral de presentación y no una regla de negocio: `REQ-BOF-020` no
-     * fija la cifra, y el filtro existe para que el negocio encuentre rápido lo
-     * que se le está acabando.
-     */
-    private const LOW_STOCK = 5;
-
-    /**
-     * Caracteres de la búsqueda que se usan; lo que pase se recorta sin error.
-     * Un SKU o un nombre no llegan ni a la mitad.
-     */
-    private const MAX_SEARCH = 100;
 
     public function __construct(
         private readonly TenantContext $context,
@@ -537,7 +521,8 @@ final class ProductController extends Controller
 
         $query = Product::query()->with(['category', 'editor:id,name'])->withCount('catalogs')->withReservedUnits();
 
-        $this->applyFilters($query, $request, $state);
+        // `T-070` · la misma definición que la exportación (`InventoryFilters`).
+        InventoryFilters::resolve($request->query->all(), $state)->apply($query);
 
         /** @var InventorySort $sort */
         $sort = $state->sort;
@@ -552,82 +537,6 @@ final class ProductController extends Controller
             'rows' => array_map(fn (Product $product): array => $this->listRow($product), $products),
             'meta' => $this->tableMeta($page, $state),
         ];
-    }
-
-    /**
-     * Los cinco filtros de RB-9, cada uno resuelto contra lo que existe.
-     *
-     * Un valor que no se puede usar —un estado inventado, la categoría o la
-     * etiqueta de otra organización, un identificador que ya no existe— **se
-     * ignora y se avisa** (`REQ-BOF-045` SP-4). La categoría y la etiqueta se
-     * buscan con el global scope puesto, así que la de otro negocio no existe
-     * aquí y no se distingue de una borrada: distinguirlas confirmaría que la
-     * del vecino existe.
-     *
-     * @param  Builder<Product>  $query
-     * @param  TableState<InventorySort>  $state
-     */
-    private function applyFilters(Builder $query, Request $request, TableState $state): void
-    {
-        $status = $state->filter('status', $request->query('status'), fn (mixed $raw): ?ProductStatus => is_string($raw) ? ProductStatus::tryFrom($raw) : null);
-
-        if ($status instanceof ProductStatus) {
-            $query->where('products.status', $status);
-        }
-
-        $category = $state->filter('category', $request->query('category'), fn (mixed $raw): ?int => $this->existingId(Category::query(), $raw));
-
-        if ($category !== null) {
-            $query->where('products.category_id', $category);
-        }
-
-        $tag = $state->filter('tag', $request->query('tag'), fn (mixed $raw): ?int => $this->existingId(Tag::query(), $raw));
-
-        if ($tag !== null) {
-            $query->whereHas('tags', fn (Builder $tags): Builder => $tags->whereKey($tag));
-        }
-
-        $lowStock = $state->filter('low_stock', $request->query('low_stock'), fn (mixed $raw): ?bool => $raw === '1' ? true : null);
-
-        if ($lowStock === true) {
-            $query->where('products.stock', '<=', self::LOW_STOCK);
-        }
-
-        $search = $state->filter('q', $request->query('q'), fn (mixed $raw): ?string => is_string($raw) && trim($raw) !== ''
-            ? mb_substr(trim($raw), 0, self::MAX_SEARCH)
-            : null);
-
-        if (is_string($search)) {
-            // La búsqueda del backoffice es por nombre y SKU (RB-9), con
-            // `LIKE` y no con el `FULLTEXT` de la tabla: aquel está pensado
-            // para la búsqueda del catálogo público, que ordena por relevancia
-            // sobre textos largos (`REQ-CAT-002`). Aquí lo que se busca es un
-            // código que la persona ya conoce. Los comodines de `LIKE` que
-            // escriba se buscan como texto.
-            $like = '%'.addcslashes($search, '%_\\').'%';
-
-            $query->where(function (Builder $nested) use ($like): void {
-                $nested->where('products.name', 'like', $like)->orWhere('products.sku', 'like', $like);
-            });
-        }
-    }
-
-    /**
-     * El identificador si es de una fila de la organización activa, o `null`.
-     *
-     * @template TModel of \Illuminate\Database\Eloquent\Model
-     *
-     * @param  Builder<TModel>  $query
-     */
-    private function existingId(Builder $query, mixed $raw): ?int
-    {
-        if (! is_string($raw) || ! ctype_digit($raw) || strlen($raw) > 18) {
-            return null;
-        }
-
-        $id = $query->whereKey((int) $raw)->value('id');
-
-        return is_numeric($id) ? (int) $id : null;
     }
 
     /**
@@ -708,11 +617,7 @@ final class ProductController extends Controller
     {
         return array_map(fn (ProductStatus $status): array => [
             'value' => $status->value,
-            'label' => match ($status) {
-                ProductStatus::Draft => 'Borrador',
-                ProductStatus::Published => 'Publicado',
-                ProductStatus::Archived => 'Archivado',
-            },
+            'label' => $status->label(),
         ], ProductStatus::cases());
     }
 

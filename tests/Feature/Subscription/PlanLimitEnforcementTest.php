@@ -17,6 +17,7 @@ use App\Domain\Subscription\PlanLimitReachedException;
 use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Jobs\GenerateExport;
 use App\Jobs\TranscodeProductImage;
 use App\Models\Catalog;
 use App\Models\Organization;
@@ -31,6 +32,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -410,14 +412,27 @@ final class PlanLimitEnforcementTest extends TestCase
      */
     public function test_points_9_to_12_a_paid_feature_answers_403_with_the_plan_that_has_it(): void
     {
-        foreach ([PlanFeature::ExcelExport, PlanFeature::WebPush, PlanFeature::SubscriberDigest, PlanFeature::FullAnalytics] as $feature) {
+        // `T-070` · el punto 9 ya tiene su ruta de verdad: pedir una exportación.
+        // Las otras tres siguen con su ruta de atrezo hasta que lleguen
+        // (`T-083`, `T-078`, `T-085`).
+        $pending = [PlanFeature::WebPush, PlanFeature::SubscriberDigest, PlanFeature::FullAnalytics];
+
+        foreach ($pending as $feature) {
             Route::middleware(['web', 'auth', 'tenant', 'plan-feature:'.$feature->value])
                 ->get('/backoffice/_atrezo/'.$feature->value, fn (): string => 'dentro');
         }
 
         $this->withoutOrganization();
+        Queue::fake();
 
-        foreach ([PlanFeature::ExcelExport, PlanFeature::WebPush, PlanFeature::SubscriberDigest, PlanFeature::FullAnalytics] as $feature) {
+        $this->actingAs($this->owner)
+            ->postJson('/backoffice/exportaciones', ['type' => 'collections'])
+            ->assertForbidden()
+            ->assertJsonPath('feature.feature', PlanFeature::ExcelExport->value)
+            ->assertJsonPath('feature.minimumPlanName', 'Pro')
+            ->assertJsonPath('message', fn (string $message): bool => str_contains($message, 'exportación a Excel'));
+
+        foreach ($pending as $feature) {
             $this->actingAs($this->owner)
                 ->getJson('/backoffice/_atrezo/'.$feature->value)
                 ->assertForbidden()
@@ -426,9 +441,14 @@ final class PlanLimitEnforcementTest extends TestCase
                 ->assertJsonPath('message', fn (string $message): bool => str_contains($message, mb_strtolower(mb_substr($feature->label(), 0, 1)).mb_substr($feature->label(), 1)));
         }
 
+        Queue::assertNothingPushed();
         $this->withinOrganization($this->organization, fn () => $this->plan->forceFill(['features' => PlanFeature::only(PlanFeature::cases())])->save());
+        $this->withoutOrganization();
 
-        foreach ([PlanFeature::ExcelExport, PlanFeature::WebPush, PlanFeature::SubscriberDigest, PlanFeature::FullAnalytics] as $feature) {
+        $this->actingAs($this->owner)->postJson('/backoffice/exportaciones', ['type' => 'collections'])->assertStatus(202);
+        Queue::assertPushed(GenerateExport::class);
+
+        foreach ($pending as $feature) {
             $this->actingAs($this->owner)->get('/backoffice/_atrezo/'.$feature->value)->assertOk()->assertSee('dentro');
         }
     }

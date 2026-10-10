@@ -90,6 +90,11 @@ final class CrossTenantAccessTest extends TestCase
             .'otra persona o de otro negocio lo afirma `PortalLayawayIsolationTest`. El formulario del comprobante '
             .'(`T-059`, `GET` y `POST /mi-cuenta/apartados/{code}/comprobante`) busca igual, y su `404` lo afirma '
             .'`PortalReceiptIsolationTest`.',
+        'export' => 'La descarga de una exportación (`T-070`, `GET /backoffice/exportaciones/{export}/descargar`). '
+            .'`REQ-BOF-043` SP-9 pide `403` y no `404` para una URL firmada válida abierta desde otro negocio: el '
+            .'enlace existe, lo que falta es permiso. Por eso no se resuelve con el binding del modelo —que daría el '
+            .'`404` que este mecanismo espera— sino buscándola en la organización del tenant, y lo ajeno o inexistente '
+            .'es `403`. Lo afirma `ExportControllerTest::test_another_business_gets_403_with_a_valid_signed_link`.',
     ];
 
     /**

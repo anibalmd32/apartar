@@ -29,9 +29,11 @@ use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Exceptions\RegisterErrorViewPaths;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -220,6 +222,21 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return back()->withErrors(['plan' => $exception->getMessage()])->with('planFeature', $body);
+        });
+
+        // `T-070` · REQ-BOF-043 SP-3: el enlace de descarga caducado es 403, con
+        // la salida a la lista de exportaciones, que firma uno nuevo. Las demás
+        // firmas inválidas siguen con la respuesta de siempre.
+        $exceptions->render(function (InvalidSignatureException $exception, Request $request): ?SymfonyResponse {
+            if (! $request->routeIs('exports.download')) {
+                return null;
+            }
+
+            // El espacio `errors::` (la plantilla `minimal`) solo existe
+            // mientras Laravel pinta una excepción por su cuenta.
+            (new RegisterErrorViewPaths)();
+
+            return response()->view('errors.expired-link', [], 403);
         });
 
         // REQ-SUB-004 RB-8: suspendida no se crea nada. Es 403 y no 422 porque

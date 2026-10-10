@@ -97,4 +97,20 @@ enum ProductStatus: string
             self::Archived => false,
         };
     }
+
+    /**
+     * Cómo se nombra en el backoffice y en el Excel del inventario.
+     *
+     * Aquí desde `T-070`, que es el segundo consumidor: el filtro de la tabla
+     * lo tenía escrito en `ProductController`, y una segunda copia es el
+     * censo que se queda corto en silencio (06 · «Cómo leer este plan»).
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Draft => 'Borrador',
+            self::Published => 'Publicado',
+            self::Archived => 'Archivado',
+        };
+    }
 }
