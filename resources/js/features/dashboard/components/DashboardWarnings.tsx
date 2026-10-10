@@ -80,8 +80,8 @@ function WarningText({ warning }: { warning: DashboardWarning }) {
             return (
                 <span>
                     Tu suscripción tiene una factura vencida{warning.dueDate !== null ? ` desde el ${formatDay(warning.dueDate)}` : ''}.{' '}
-                    <Link href="/backoffice/suscripcion" className="link">
-                        Regulariza el pago
+                    <Link href="/backoffice/suscripcion/facturas" className="link">
+                        Págala
                     </Link>
                 </span>
             );

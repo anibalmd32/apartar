@@ -6,6 +6,7 @@ use App\Domain\Subscription\UsageMetric;
 use App\Jobs\DetectOverdueLayawaysJob;
 use App\Jobs\ExpireLayawaysJob;
 use App\Jobs\FetchExchangeRate;
+use App\Jobs\IssueRenewalInvoices;
 use App\Jobs\RecalculateUsage;
 use App\Jobs\ReconcileLayaways;
 use Illuminate\Support\Facades\Schedule;
@@ -94,3 +95,13 @@ Schedule::job(new RecalculateUsage(metric: UsageMetric::Catalogs))
     ->hourlyAt(15)
     ->withoutOverlapping()
     ->name('subscriptions:recalculate-usage:catalogs');
+
+/*
+| `REQ-SUB-006` RB-8, `T-069` · las facturas de renovación, siete días antes
+| del fin del período, a las 06:00 de la plataforma. Idempotente: un día que
+| no corra lo recupera el siguiente.
+*/
+Schedule::job(new IssueRenewalInvoices)
+    ->dailyAt('06:00')
+    ->withoutOverlapping()
+    ->name('subscriptions:issue-renewal-invoices');

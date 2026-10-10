@@ -9,6 +9,7 @@ use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
+use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
@@ -21,6 +22,7 @@ use App\Models\PaymentAccount;
 use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Models\SubscriptionInvoice;
 use App\Models\UsageCounter;
 use App\Models\User;
 use App\Queries\CollectionFilters;
@@ -146,15 +148,33 @@ final class DashboardTest extends TestCase
         Cache::flush();
         app()->forgetInstance(CurrentRate::class);
 
-        foreach ([SubscriptionStatus::PastDue, SubscriptionStatus::Suspended] as $unpaid) {
-            $this->within(fn () => Subscription::query()->update(['status' => $unpaid, 'current_period_end' => CarbonImmutable::parse('2026-09-25 10:00:00', 'Asia/Tokyo')]));
-            $this->assertSame([['kind' => 'invoice_overdue', 'dueDate' => '2026-09-25']], $this->warnings(), "Suscripción {$unpaid->value}.");
-        }
+        // `T-069` · una factura emitida, sin pagar y vencida en el día del
+        // negocio; la más antigua, con su vencimiento. El estado de la
+        // suscripción ya no cuenta.
+        $this->within(fn () => Subscription::query()->update(['status' => SubscriptionStatus::PastDue]));
+        $this->assertSame([], $this->warnings(), 'Sin factura no hay factura vencida.');
 
-        // `T-068` · `grace` es una bajada de plan programada, no una deuda.
-        $this->within(fn () => Subscription::query()->update(['status' => SubscriptionStatus::Grace]));
-        $this->assertSame([], $this->warnings(), 'Una bajada programada no es una factura vencida.');
+        $later = $this->within(fn (): SubscriptionInvoice => SubscriptionInvoice::factory()->create(['due_date' => CarbonImmutable::now('Asia/Tokyo')->subDays(2)->toDateString()]));
+        $this->within(fn () => SubscriptionInvoice::factory()->create(['due_date' => '2026-09-25']));
+        $this->assertSame([['kind' => 'invoice_overdue', 'dueDate' => '2026-09-25']], $this->warnings(), 'La más antigua.');
 
+        $this->within(fn () => SubscriptionInvoice::query()->where('due_date', '2026-09-25')->update(['status' => InvoiceStatus::UnderReview]));
+        $this->assertSame([['kind' => 'invoice_overdue', 'dueDate' => $later->due_date->toDateString()]], $this->warnings(), 'Con el comprobante en revisión ya pagó: no avisa.');
+
+        $this->within(fn () => SubscriptionInvoice::query()->update(['status' => InvoiceStatus::Paid]));
+        $this->within(fn () => SubscriptionInvoice::factory()->create(['due_date' => CarbonImmutable::now('Asia/Tokyo')->toDateString()]));
+        $this->assertSame([], $this->warnings(), 'Pagadas, o vence hoy en el día del negocio: no está vencida.');
+
+        // Ayer en Tokio es todavía hoy en la plataforma: vencida en el día del negocio.
+        $yesterday = CarbonImmutable::now('Asia/Tokyo')->subDay()->toDateString();
+        $this->assertSame($yesterday, CarbonImmutable::now()->toDateString());
+        $this->within(fn () => SubscriptionInvoice::factory()->create(['due_date' => $yesterday]));
+        $this->assertSame([['kind' => 'invoice_overdue', 'dueDate' => $yesterday]], $this->warnings());
+
+        $this->within(fn () => SubscriptionInvoice::query()->where('due_date', $yesterday)->update(['status' => InvoiceStatus::Void]));
+        $this->assertSame([], $this->warnings(), 'Una anulada no se debe.');
+
+        $this->within(fn () => SubscriptionInvoice::query()->delete());
         $this->within(fn () => Subscription::query()->update(['status' => SubscriptionStatus::Active]));
 
         DB::table('users')->where('id', $this->owner->getKey())->update(['email_verified_at' => null]);

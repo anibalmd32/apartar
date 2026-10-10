@@ -25,13 +25,13 @@ use Illuminate\Database\Seeder;
  * escribe en MB y GB —200 MB, 5 GB, 25 GB— y aquí se convierte una sola vez,
  * donde se ve la cuenta.
  *
- * **Los tres planes se siembran a `price_cents = 0`, y eso es deliberado.** La
- * matriz aprobada fija límites y funciones pero **no fija precios**: no hay
- * ninguna cifra en [03 §5] ni en `REQ-SUB-001` RB-3. Inventar aquí un importe
- * para Pro sería decidir el precio del producto en un seeder. El precio es un
- * dato ajustable sin desplegar (RB-1) y cambiarlo no altera las suscripciones
- * vigentes ni las facturas emitidas (RB-7), así que ponerlo cuando exista es
- * un `UPDATE`.
+ * **Los precios los fijó el negocio en `T-069`**: Pro **$15** y Business
+ * **$39** al mes, en dólares (`REQ-SUB-001` RB-3b, `REQ-SUB-006` RB-4). Hasta
+ * entonces los tres valían cero, a propósito: la matriz aprobada no traía
+ * cifras e inventarlas aquí habría sido decidir el precio del producto en un
+ * seeder. Cambiarlo es un dato ajustable sin desplegar (RB-1) que no altera
+ * las facturas ya emitidas (RB-7); pero que llegue también aquí, que es
+ * donde la matriz se coteja (`PricingPageTest`).
  */
 class PlanSeeder extends Seeder
 {
@@ -83,7 +83,7 @@ class PlanSeeder extends Seeder
             [
                 'code' => 'pro',
                 'name' => 'Pro',
-                'price_cents' => 0,
+                'price_cents' => 1_500,
                 'interval' => 'monthly',
                 'is_public' => true,
                 'position' => 2,
@@ -111,7 +111,7 @@ class PlanSeeder extends Seeder
             [
                 'code' => 'business',
                 'name' => 'Business',
-                'price_cents' => 0,
+                'price_cents' => 3_900,
                 'interval' => 'monthly',
                 'is_public' => true,
                 'position' => 3,

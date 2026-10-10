@@ -171,8 +171,12 @@ final class ExchangeRateService
      * Sale del mismo sitio que el default del ajuste de cada organización, y
      * no de una constante aparte: dos censos del valor inicial divergirían el
      * día que alguien cambie uno.
+     *
+     * Pública desde `T-069`: las facturas de la suscripción se cobran con la
+     * tasa **de plataforma** (`REQ-SUB-006` RB-4), y sin tasa hay que decir
+     * de qué fuente falta.
      */
-    private function platformSource(): RateSource
+    public function platformSource(): RateSource
     {
         $default = SettingKey::ExchangeRateSource->defaultValue();
 

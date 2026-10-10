@@ -130,29 +130,27 @@ final class PricingPageTest extends TestCase
     }
 
     /**
-     * **`REQ-SUB-001` RB-3b, marcado al revés.** Hoy los planes de pago están
-     * a `0` porque su precio está sin decidir, y la página, hecha bien, dice
-     * «Gratis» en los tres. Este caso afirma ese estado para que **deje de
-     * ser verdad en voz alta**: el día que se fijen los precios en el seeder
-     * —que es donde vive la matriz— se pone rojo, y quien lo vea tiene que
-     * revisar qué enseña `/precios`.
+     * **`REQ-SUB-001` RB-3b, cerrado en `T-069`.** Los precios se fijaron en
+     * el seeder —Pro $15 y Business $39 al mes, en dólares— y la página los
+     * dice con su periodo; Free sigue diciendo «Gratis». El caso que afirmaba
+     * que estaban sin decidir se puso rojo, como estaba previsto, y este lo
+     * sustituye.
      *
-     * Limitación: un precio fijado **solo** con un `UPDATE` en producción no
-     * pasa por aquí. Por eso el mensaje pide también llevar la cifra al
-     * seeder, que es lo que mantiene la matriz cotejable.
+     * Limitación que sigue en pie: un precio cambiado **solo** con un `UPDATE`
+     * en producción no pasa por aquí; la matriz se coteja en el seeder.
      */
-    public function test_the_paid_plans_are_still_unpriced(): void
+    public function test_the_paid_plans_show_their_monthly_price(): void
     {
-        $priced = Plan::query()->public()->whereIn('code', ['pro', 'business'])->where('price_cents', '!=', 0)->pluck('code')->all();
-
-        $this->assertSame([], $priced, 'Los precios de Pro y Business ya están fijados (REQ-SUB-001 RB-3b, REQ-SUB-006). '
-            .'Revisa qué enseña /precios en la fila del precio y cómo lo dice —el periodo, la moneda, si hace falta '
-            .'aclarar la facturación— y sustituye este caso por uno que afirme el precio de verdad.');
+        $this->assertSame(
+            ['free' => 0, 'pro' => 1_500, 'business' => 3_900],
+            Plan::query()->public()->orderBy('position')->pluck('price_cents', 'code')->map(fn (mixed $cents): int => (int) $cents)->all(),
+        );
 
         $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
             ->where('plans.0.priceLabel', 'Gratis')
-            ->where('plans.1.priceLabel', 'Gratis')
-            ->where('plans.2.priceLabel', 'Gratis'));
+            ->where('plans.1.priceLabel', '$15.00 al mes')
+            ->where('plans.1.isFree', false)
+            ->where('plans.2.priceLabel', '$39.00 al mes'));
     }
 
     /** Un precio distinto de cero se escribe con su cifra y su periodo. */

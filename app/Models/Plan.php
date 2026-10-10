@@ -171,12 +171,22 @@ class Plan extends Model
      * suponer un mes: un plan anual cobrado como mensual sería una factura mal
      * emitida, y eso no se descubre mirando la pantalla.
      *
+     * **El día de anclaje** (`T-069`): encadenar renovaciones desde el fin del
+     * período anterior con `addMonthNoOverflow` pierde el día para siempre
+     * —el 31 de enero acaba el 28 de febrero, y desde ahí todo es día 28—. Con
+     * `$anchorDay`, el mes siguiente vuelve a su día si lo tiene: del 28 de
+     * febrero con ancla 31, al 31 de marzo.
+     *
+     * @param  int|null  $anchorDay  el día del mes en que caen los períodos
+     *
      * @throws LogicException con un intervalo que no se sabe medir
      */
-    public function periodEndFrom(CarbonInterface $start): CarbonImmutable
+    public function periodEndFrom(CarbonInterface $start, ?int $anchorDay = null): CarbonImmutable
     {
         return match ($this->interval) {
-            'monthly' => $start->toImmutable()->addMonthNoOverflow(),
+            'monthly' => $anchorDay === null
+                ? $start->toImmutable()->addMonthNoOverflow()
+                : $start->toImmutable()->addMonthNoOverflow()->day(1)->day(min($anchorDay, $start->toImmutable()->addMonthNoOverflow()->daysInMonth)),
             default => throw new LogicException(sprintf('El plan %s tiene un intervalo «%s» que nadie sabe medir.', $this->code, $this->interval)),
         };
     }

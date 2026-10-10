@@ -106,3 +106,24 @@ it('declara usage_counters con una fila por métrica', function (): void {
 it('guarda el consumo sin signo', function (): void {
     expect(SchemaInspector::columns('usage_counters')['value']['type'])->toContain('unsigned');
 });
+
+/**
+ * `T-069` · las facturas y los comprobantes de la suscripción son tablas del
+ * tenant ([05 §4] bloque 2): `subscription_invoices` con
+ * `INDEX(organization_id, due_date)`, y `subscription_receipts` con sus dos
+ * únicos **compuestos con la organización**, que es la elección entre las dos
+ * que dejaba la nota de [05 §4] —llevar la columna obliga a que el único la
+ * incluya— y la que hace el bloqueo de duplicados el mismo de `receipts`.
+ */
+it('declara las facturas y los comprobantes de la suscripción en su organización', function (): void {
+    foreach (['subscription_invoices', 'subscription_receipts'] as $table) {
+        expect(SchemaInspector::columns($table))->toHaveKey(TenantScope::COLUMN);
+    }
+
+    expect(array_keys(SchemaInspector::columns('subscription_invoices')))->toContain(
+        'plan_id', 'kind', 'period_start', 'period_end', 'amount_cents', 'paid_cents', 'currency', 'status', 'due_date', 'issued_at', 'paid_at', 'voided_at',
+    );
+    expect(SchemaInspector::hasUniqueOn('subscription_receipts', 'organization_id', 'file_hash'))->toBeTrue();
+    expect(SchemaInspector::hasUniqueOn('subscription_receipts', 'organization_id', 'bank', 'reference'))->toBeTrue();
+    expect(SchemaInspector::hasUniqueOn('subscription_receipts', 'file_hash'))->toBeFalse();
+});

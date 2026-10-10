@@ -29,6 +29,11 @@ export default function Pricing({ plans }: PricingProps) {
             <header className="mb-8 text-center">
                 <h1 className="text-3xl font-bold">Planes y precios</h1>
                 <p className="mt-2 opacity-80">Compara lo que incluye cada plan. Todos traen el sistema de apartado.</p>
+                {/* `T-069` · cómo se cobra (`REQ-SUB-006` RB-1, RB-4): sin tarjeta, como cobra el negocio. */}
+                <p className="mt-1 text-sm opacity-70">
+                    Precios en dólares, cada mes. Se paga con pago móvil o transferencia, también en bolívares a la tasa del día: sin tarjeta
+                    internacional. Empiezas gratis y subes de plan cuando lo necesites.
+                </p>
             </header>
 
             <ul className="grid gap-4 md:grid-cols-3">

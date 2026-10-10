@@ -99,19 +99,21 @@ it('exige que toda Action ya escrita audite el evento que declara', function (Au
  * `PaymentReallocated`, desde `ReallocatePaymentAction`; `T-064`
  * `ReconciliationCorrected`, desde `ReconcileLayawaysAction`; y `T-065`
  * `CustomerMerged`, desde `MergeCustomersAction`. `T-068` abre el de
- * Suscripción con `SubscriptionPlanChanged`, desde `ChangePlanAction`.
+ * Suscripción con `SubscriptionPlanChanged`, desde `ChangePlanAction`, y
+ * `T-069` le suma `SubscriptionInvoiceIssued` y `SubscriptionInvoicePaid`,
+ * desde `IssueInvoiceAction` y `ApproveSubscriptionReceiptAction`.
  *
  * Que la cifra haya que tocarla al añadir un emisor es el punto: obliga a
  * mirar si la Action nueva audita de verdad, en vez de dejar que el conteo se
  * ajuste solo.
  */
-it('cubre hoy los veintisiete eventos cuya Action ya existe', function (): void {
+it('cubre hoy los veintinueve eventos cuya Action ya existe', function (): void {
     $covered = array_values(array_filter(
         AuditEvent::cases(),
         fn (AuditEvent $event): bool => class_exists($event->emitter()),
     ));
 
-    expect($covered)->toHaveCount(27);
+    expect($covered)->toHaveCount(29);
 
     $areas = array_values(array_unique(
         array_map(fn (AuditEvent $event): string => $event->area()->value, $covered),

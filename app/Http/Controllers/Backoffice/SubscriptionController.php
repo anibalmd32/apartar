@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Subscription\ChangePlanAction;
+use App\Domain\Subscription\OrganizationDocumentRequiredException;
 use App\Domain\Subscription\PlanChangePreview;
 use App\Domain\Subscription\PlanDowngradeNeedsConfirmationException;
 use App\Domain\Subscription\PlanFeature;
@@ -26,7 +27,8 @@ use Inertia\Response;
  * `GET /backoffice/suscripcion` y `POST /backoffice/suscripcion/cambiar`
  * (`REQ-SUB-001`, `REQ-SUB-003` RB-6, RB-7, `REQ-SUB-004` RB-7,
  * `REQ-SUB-005`, `T-067`, `T-068`): el plan contratado, lo consumido de cada
- * métrica, las funciones, y el cambio de plan con su previsualización.
+ * métrica, las funciones, y el cambio de plan con su previsualización. Las
+ * facturas tienen su página (`SubscriptionInvoiceController`, `T-069`).
  *
  * Es el destino de cada «Ver planes» —el `422` del límite, `LimitBanner`, el
  * aviso de suspensión del layout—, y por eso **sobrevive a la suspensión**: es
@@ -37,7 +39,8 @@ use Inertia\Response;
  * Lo que sí viaja aquí es **cada plan del escaparate con su previsualización
  * ya calculada** (`PlanChangePreview`): la pantalla enseña lo que excede antes
  * de pulsar (RB-5) sin pedir nada más, y la acción vuelve a calcularlo al
- * confirmar. Las facturas son de `T-069`.
+ * confirmar. Las facturas tienen su página (`SubscriptionInvoiceController`,
+ * `T-069`).
  */
 final class SubscriptionController extends Controller
 {
@@ -51,6 +54,7 @@ final class SubscriptionController extends Controller
         return Inertia::render('backoffice/subscription/Show', [
             'pricingUrl' => route('pricing'),
             'canChangePlan' => Gate::allows('changePlan', $subscription),
+            'invoicesUrl' => Gate::allows('viewInvoices', $subscription) ? route('subscription.invoices.index') : null,
             'timezone' => app(TenantContext::class)->organization()->timezone,
             'scheduledChange' => $this->scheduledChange($subscription),
             'plans' => Plan::query()->public()->get()
@@ -75,6 +79,9 @@ final class SubscriptionController extends Controller
             $after = $change->handle($context->organization(), $request->plan(), $actor, $request->confirmed());
         } catch (PlanDowngradeNeedsConfirmationException $exception) {
             throw ValidationException::withMessages(['confirmed' => $exception->getMessage()]);
+        } catch (OrganizationDocumentRequiredException $exception) {
+            // `REQ-SUB-006` RB-5, SP-4 · el RIF se pide antes de subir.
+            throw ValidationException::withMessages(['plan' => $exception->getMessage()]);
         }
 
         return to_route('subscription.show')->with('status', $this->outcome($before, $after));

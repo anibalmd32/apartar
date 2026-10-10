@@ -6,7 +6,10 @@ namespace Tests\Feature\Subscription;
 
 use App\Actions\Subscription\ChangePlanAction;
 use App\Domain\Auditing\AuditEvent;
+use App\Domain\Subscription\InvoiceKind;
+use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\LimitEnforcer;
+use App\Domain\Subscription\OrganizationDocumentRequiredException;
 use App\Domain\Subscription\PlanChangeDirection;
 use App\Domain\Subscription\PlanChangePreview;
 use App\Domain\Subscription\PlanDowngradeNeedsConfirmationException;
@@ -21,6 +24,7 @@ use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Models\SubscriptionInvoice;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -344,21 +348,103 @@ final class ChangePlanActionTest extends TestCase
     }
 
     /**
-     * Subir sin cobrar sería regalar el plan: con precio y sin facturas
-     * (`T-069`), no se aplica.
+     * RB-2, `REQ-SUB-006` · subir a un plan con precio emite su factura en el
+     * acto, en la misma transacción: por un período que empieza hoy, con
+     * vencimiento hoy en el día del negocio, por el precio del plan. Al mismo
+     * plan no hay factura (SP-4), y bajar tampoco factura.
      */
-    public function test_a_priced_plan_cannot_be_given_away_before_invoicing(): void
+    public function test_upgrading_to_a_priced_plan_issues_its_invoice(): void
     {
+        $this->pro->forceFill(['price_cents' => 1_500])->save();
+        // A las 12:00 de la plataforma, en Kiritimati (+14) ya es el día siguiente: vence hoy **del negocio**.
+        $this->organization->forceFill(['timezone' => 'Pacific/Kiritimati'])->save();
+
+        $subscription = $this->change($this->pro);
+
+        $invoice = $this->within(fn (): SubscriptionInvoice => SubscriptionInvoice::query()->sole());
+        $this->assertTrue($subscription->plan->is($this->pro));
+        $this->assertSame(InvoiceKind::PlanChange, $invoice->kind);
+        $this->assertSame(1_500, $invoice->amount_cents);
+        $this->assertSame(InvoiceStatus::Pending, $invoice->status);
+        $this->assertSame($this->pro->getKey(), $invoice->plan_id);
+        $this->assertEquals($subscription->current_period_start, $invoice->period_start);
+        $this->assertEquals($subscription->current_period_end, $invoice->period_end);
+        $this->assertSame('2026-10-10', $invoice->due_date->toDateString());
+        $this->assertNotSame(CarbonImmutable::now()->toDateString(), $invoice->due_date->toDateString(), 'El día de la plataforma no es el del negocio.');
+        $this->assertSame(SubscriptionStatus::Active, $subscription->status, 'Mientras se paga sigue al día; el impago lo persigue T-071 desde el vencimiento.');
+
+        $this->change($this->pro);
+        $this->change($this->free);
+        $this->assertSame(1, $this->within(fn (): int => SubscriptionInvoice::query()->count()), 'Ni el mismo plan ni bajar facturan.');
+    }
+
+    /**
+     * Revisión de `T-069` · un cambio de plan anula lo que deja sin
+     * sentido: al subir, la renovación ya emitida del plan que se deja y la
+     * factura del cambio anterior que nadie pagó (Free → Pro → Business no
+     * son dos deudas); al bajar o revertir, la renovación del plan que ya no
+     * se renueva. **Lo vencido no se toca** (SP-3), ni nada en impago.
+     */
+    public function test_a_plan_change_voids_the_invoices_it_supersedes_but_never_a_debt(): void
+    {
+        $this->pro->forceFill(['price_cents' => 1_500])->save();
+        $this->business->forceFill(['price_cents' => 3_900])->save();
+
+        $this->change($this->pro);
+        $renewal = $this->within(fn (): SubscriptionInvoice => SubscriptionInvoice::factory()->forPlan($this->pro)->create([
+            'period_start' => CarbonImmutable::parse('2026-11-09 12:00:00'),
+            'period_end' => CarbonImmutable::parse('2026-12-09 12:00:00'),
+            'due_date' => '2026-11-09',
+        ]));
+        $debt = $this->within(fn (): SubscriptionInvoice => SubscriptionInvoice::factory()->forPlan($this->pro)->create(['due_date' => '2026-10-01']));
+
+        $this->change($this->business);
+
+        $statuses = $this->within(fn (): array => SubscriptionInvoice::query()->orderBy('id')->pluck('status', 'id')->map(fn (InvoiceStatus $status): string => $status->value)->all());
+        $this->assertSame('void', $statuses[$renewal->getKey()], 'La renovación de Pro ya no corresponde.');
+        $this->assertSame('pending', $statuses[$debt->getKey()], 'Lo vencido sigue siendo una deuda (SP-3).');
+        $this->assertSame(['void', 'pending'], array_values(array_diff_key($statuses, [$renewal->getKey() => 0, $debt->getKey() => 0])), 'La factura de Pro sin pagar se anula; la de Business, recién emitida, queda.');
+        $this->assertSame(ChangePlanAction::SUPERSEDED_REASON, $this->within(fn (): ?string => SubscriptionInvoice::query()->whereKey($renewal->getKey())->value('void_reason')));
+
+        // Bajar anula la renovación de Business ya emitida: la pasada emite la del plan que toca.
+        $businessRenewal = $this->within(fn (): SubscriptionInvoice => SubscriptionInvoice::factory()->forPlan($this->business)->create([
+            'period_start' => CarbonImmutable::parse('2026-11-09 12:00:00'),
+            'period_end' => CarbonImmutable::parse('2026-12-09 12:00:00'),
+            'due_date' => '2026-11-09',
+        ]));
+        $this->change($this->pro);
+        $this->assertSame(InvoiceStatus::Void, $businessRenewal->fresh()?->status);
+
+        // En impago no se anula nada: eso lo decide el impago.
+        $this->within(fn () => Subscription::query()->update(['status' => SubscriptionStatus::PastDue, 'scheduled_plan_id' => null, 'scheduled_plan_at' => null]));
+        $kept = $this->within(fn (): SubscriptionInvoice => SubscriptionInvoice::factory()->forPlan($this->business)->create([
+            'period_start' => CarbonImmutable::parse('2026-11-09 12:00:00'),
+            'period_end' => CarbonImmutable::parse('2026-12-09 12:00:00'),
+            'due_date' => '2026-11-09',
+        ]));
+        $this->change($this->pro);
+        $this->assertSame(InvoiceStatus::Pending, $kept->fresh()?->status);
+    }
+
+    /**
+     * `REQ-SUB-006` RB-5, SP-4 · sin RIF no se emite la primera factura, y
+     * por eso no se sube: el negocio se queda en su plan y se le dice qué
+     * falta. Free no factura, así que a un plan sin precio sí se sube.
+     */
+    public function test_a_priced_upgrade_without_a_tax_id_is_refused_before_anything_changes(): void
+    {
+        $this->organization->forceFill(['document' => null])->save();
         $this->pro->forceFill(['price_cents' => 1_500])->save();
 
         try {
             $this->change($this->pro);
-            $this->fail('Sin facturas, un plan con precio no se aplica.');
-        } catch (\LogicException $exception) {
-            $this->assertStringContainsString('T-069', $exception->getMessage());
+            $this->fail('Sin RIF no se emite la primera factura.');
+        } catch (OrganizationDocumentRequiredException) {
+            $this->assertTrue($this->subscription()->plan->is($this->free));
+            $this->assertSame(0, $this->within(fn (): int => SubscriptionInvoice::query()->count()));
         }
 
-        $this->assertTrue($this->subscription()->plan->is($this->free));
+        $this->assertTrue($this->change($this->business)->plan->is($this->business), 'Business vale cero en este test: no hay factura y no hace falta el RIF.');
     }
 
     /**
@@ -453,21 +539,6 @@ final class ChangePlanActionTest extends TestCase
 
         $this->assertEquals(CarbonImmutable::now(), $subscription->scheduled_plan_at);
         $this->assertTrue($subscription->plan->is($this->pro));
-    }
-
-    /**
-     * Lo aplazado, con un test que se pone rojo cuando llega (06 · «Cómo leer
-     * este plan»): la factura del plan nuevo (RB-2) es de `T-069`.
-     */
-    public function test_the_upgrade_invoice_is_still_pending(): void
-    {
-        $this->assertFalse(
-            class_exists('App\Actions\Subscription\IssueInvoiceAction'),
-            'T-069: IssueInvoiceAction ya existe. Llámala en ChangePlanAction::upgrade(), dentro de su transacción '
-            .'(REQ-SUB-005 RB-2: «la factura del nuevo plan se emite en el acto»), decide en qué estado queda la '
-            .'suscripción mientras se paga (el happy path dice `past_due`), y sustituye este test por el que afirma '
-            .'que subir emite la factura y que al mismo plan no (SP-4).',
-        );
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Queries;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\Catalog;
@@ -14,7 +15,7 @@ use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\PlanLimitRejection;
 use App\Models\Product;
-use App\Models\Subscription;
+use App\Models\SubscriptionInvoice;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,9 +30,8 @@ use Illuminate\Database\Eloquent\Builder;
  * Los siete. `plan_limit_blocking_sales` exige **evidencia de una venta
  * perdida** —un apartado rechazado por el límite en los últimos 7 días
  * (RB-5)—, que anota `CreateLayawayAction` en `plan_limit_rejections` desde
- * `T-067`. La factura vencida se
- * lee hoy del estado de la suscripción (`past_due`, `suspended`) con el fin del
- * período como fecha; la factura de verdad es de `T-069`.
+ * `T-067`. La factura vencida es, desde `T-069`, una factura emitida y sin
+ * pagar con el vencimiento pasado, y su fecha es la de esa factura.
  */
 final class DashboardWarningsQuery
 {
@@ -80,14 +80,20 @@ final class DashboardWarningsQuery
             $warnings[] = ['kind' => 'stale_exchange_rate', 'ageHours' => (int) $snapshot->publishedAt->diffInHours(CarbonImmutable::now())];
         }
 
-        // `REQ-SUB-007` RB-2 · la suscripción no se ha pagado; también
-        // suspendida, que es la misma factura más tarde (RB-10: el aviso de
-        // pago va primero). `grace` no: desde `T-068` es una bajada de plan
-        // programada (`REQ-SUB-005` RB-3), no una deuda.
-        $subscription = Subscription::query()->latest('id')->first();
+        // `REQ-SUB-007` RB-2, `T-069` · una factura de la suscripción emitida,
+        // sin pagar y con el vencimiento pasado **en el día del negocio**: la
+        // más antigua, con su vencimiento, y el aviso lleva a pagarla. Una con
+        // el comprobante en revisión no avisa —el negocio ya pagó y espera a
+        // la plataforma— (RB-10: el aviso de pago va primero).
+        $overdue = SubscriptionInvoice::query()
+            ->where('status', InvoiceStatus::Pending)
+            ->where('due_date', '<', CarbonImmutable::now($organization->timezone)->toDateString())
+            ->orderBy('due_date')
+            ->orderBy('id')
+            ->first();
 
-        if ($subscription instanceof Subscription && $subscription->status->isDelinquent()) {
-            $warnings[] = ['kind' => 'invoice_overdue', 'dueDate' => $subscription->current_period_end?->setTimezone($organization->timezone)->toDateString()];
+        if ($overdue instanceof SubscriptionInvoice) {
+            $warnings[] = ['kind' => 'invoice_overdue', 'dueDate' => $overdue->due_date->toDateString()];
         }
 
         // `REQ-SUB-004` SP-2, RB-5 (`T-067`) · un límite del plan está

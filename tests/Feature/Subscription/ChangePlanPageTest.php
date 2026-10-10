@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
+use App\Domain\Subscription\OrganizationDocumentRequiredException;
 use App\Domain\Subscription\PlanChangePreview;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationRole;
@@ -156,6 +157,24 @@ final class ChangePlanPageTest extends TestCase
         $this->post('/backoffice/suscripcion/cambiar', ['plan' => 'free'])
             ->assertSessionHasNoErrors()
             ->assertSessionHas('status', 'Ya estás en Free.');
+    }
+
+    /**
+     * `REQ-SUB-006` RB-5, SP-4 · sin RIF, subir a un plan con precio vuelve
+     * con el error bajo `plan` —no un `500`— y el plan no cambia.
+     */
+    public function test_a_priced_upgrade_without_a_tax_id_comes_back_asking_for_it(): void
+    {
+        Plan::query()->where('code', 'pro')->update(['price_cents' => 1_500]);
+        $this->organization->forceFill(['document' => null])->save();
+
+        $this->actingAs($this->owner)
+            ->from('/backoffice/suscripcion')
+            ->post('/backoffice/suscripcion/cambiar', ['plan' => 'pro'])
+            ->assertRedirect('/backoffice/suscripcion')
+            ->assertSessionHasErrors(['plan' => OrganizationDocumentRequiredException::MESSAGE]);
+
+        $this->assertSame('free', $this->withinOrganization($this->organization, fn (): string => Subscription::query()->firstOrFail()->plan->code));
     }
 
     /** SP-8 · cambiar de plan sobrevive a la suspensión: es una vía de regularizar. */

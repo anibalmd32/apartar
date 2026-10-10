@@ -25,6 +25,7 @@ use App\Http\Controllers\Backoffice\ReceiptInboxController;
 use App\Http\Controllers\Backoffice\ReceiptReviewController;
 use App\Http\Controllers\Backoffice\SettingsController;
 use App\Http\Controllers\Backoffice\SubscriptionController;
+use App\Http\Controllers\Backoffice\SubscriptionInvoiceController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
 use App\Http\Controllers\ReceiptFileController;
@@ -93,6 +94,22 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('suscripcion/cambiar', [SubscriptionController::class, 'change'])
                 ->middleware('during-suspension')
                 ->name('subscription.change');
+
+            /*
+            | `T-069` · el historial de facturas y el pago de cada una. Las dos
+            | sobreviven a la suspensión: pagar es lo que la levanta
+            | (REQ-SUB-007 RB-5). Las gobierna la capacidad `billing`.
+            */
+            Route::get('suscripcion/facturas', [SubscriptionInvoiceController::class, 'index'])
+                ->middleware('during-suspension')
+                ->name('subscription.invoices.index');
+
+            // Con tope: estos comprobantes no consumen `storage_mb` y una
+            // factura admite varios en revisión (SP-8), así que sin él no
+            // habría límite a lo que se guarda (revisión de `T-069`).
+            Route::post('suscripcion/facturas/{invoice}/comprobante', [SubscriptionInvoiceController::class, 'storeReceipt'])
+                ->middleware(['during-suspension', 'throttle:20,60'])
+                ->name('subscription.invoices.receipt');
 
             Route::post('logout', [LoginController::class, 'destroy'])
                 ->middleware('during-suspension')

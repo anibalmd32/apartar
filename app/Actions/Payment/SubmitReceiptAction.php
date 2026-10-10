@@ -6,6 +6,7 @@ namespace App\Actions\Payment;
 
 use App\Domain\Payment\DuplicateCriterion;
 use App\Domain\Payment\DuplicateReceiptException;
+use App\Domain\Payment\DuplicateReceipts;
 use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
@@ -17,7 +18,6 @@ use App\Events\ReceiptSubmitted;
 use App\Jobs\CompressReceiptImage;
 use App\Models\Layaway;
 use App\Models\Receipt;
-use App\Rules\RealMimeType;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -111,11 +111,6 @@ use Throwable;
  */
 final class SubmitReceiptAction
 {
-    /** El nombre que Laravel da a los únicos de `receipts` (migración de `T-054`). */
-    private const HASH_INDEX = 'receipts_organization_id_file_hash_unique';
-
-    private const REFERENCE_INDEX = 'receipts_organization_id_bank_reference_unique';
-
     public function __construct(
         private readonly TenantContext $context,
         private readonly LayawayReceipts $receipts,
@@ -133,7 +128,7 @@ final class SubmitReceiptAction
     public function handle(SubmitReceiptData $data): Receipt
     {
         $file = $data->file;
-        [$mime, $extension] = $this->typeOf($file);
+        [$mime, $extension] = ReceiptFile::typeOf($file);
         $hash = ReceiptFile::fingerprint($file);
         $disk = Storage::disk(Receipt::DISK);
         $stored = null;
@@ -227,11 +222,9 @@ final class SubmitReceiptAction
      */
     public function duplicateOf(string $fileHash, ?string $bank, ?string $reference): ?DuplicateCriterion
     {
-        if ($this->fileTaken($fileHash)) {
-            return DuplicateCriterion::FileHash;
-        }
-
-        return $this->referenceTaken($bank, $reference) ? DuplicateCriterion::BankReference : null;
+        // `T-069` · la regla vive en `DuplicateReceipts`, que comparte con
+        // los comprobantes de suscripción (`REQ-SUB-006` RB-2).
+        return DuplicateReceipts::criterionFor(Receipt::query(), $fileHash, $bank, $reference);
     }
 
     /**
@@ -239,7 +232,7 @@ final class SubmitReceiptAction
      */
     public function fileTaken(string $fileHash): bool
     {
-        return Receipt::query()->where('file_hash', $fileHash)->exists();
+        return DuplicateReceipts::fileTaken(Receipt::query(), $fileHash);
     }
 
     /**
@@ -253,43 +246,7 @@ final class SubmitReceiptAction
      */
     public function referenceTaken(?string $bank, ?string $reference): bool
     {
-        return $reference !== null && Receipt::query()->where('bank', $bank)->where('reference', $reference)->exists();
-    }
-
-    /**
-     * El tipo real del archivo, por su contenido, y la extensión con que se
-     * guarda, que sale de ese tipo y no del nombre.
-     *
-     * Es la misma comprobación que `RealMimeType::receipts()` hace en el
-     * formulario, repetida aquí porque lo que entra en el disco lo decide esta
-     * acción: si un formulario se olvida de la regla, un ejecutable no tiene
-     * que acabar guardado como comprobante.
-     *
-     * @return array{0: string, 1: string}
-     *
-     * @throws InvalidArgumentException si no es un tipo de comprobante o pasa del tamaño máximo
-     */
-    private function typeOf(UploadedFile $file): array
-    {
-        $mime = (string) $file->getMimeType();
-        $extensions = RealMimeType::RECEIPT_TYPES[$mime] ?? null;
-
-        if ($extensions === null) {
-            throw new InvalidArgumentException(sprintf(
-                'El archivo es %s, que no es un tipo de comprobante (REQ-PAY-002 RB-5). El formulario tenía que haberlo rechazado con RealMimeType::receipts().',
-                $mime,
-            ));
-        }
-
-        if ((int) $file->getSize() > ReceiptFile::MAX_SIZE_MB * 1024 * 1024) {
-            throw new InvalidArgumentException(sprintf(
-                'El archivo pesa %d bytes y el máximo de un comprobante es de %d MB (REQ-PAY-002 RB-5).',
-                (int) $file->getSize(),
-                ReceiptFile::MAX_SIZE_MB,
-            ));
-        }
-
-        return [$mime, $extensions[0]];
+        return DuplicateReceipts::referenceTaken(Receipt::query(), $bank, $reference);
     }
 
     /**
@@ -424,11 +381,7 @@ final class SubmitReceiptAction
      */
     private function duplicateFrom(UniqueConstraintViolationException $exception): Throwable
     {
-        $criterion = match (true) {
-            str_contains($exception->getMessage(), self::HASH_INDEX) => DuplicateCriterion::FileHash,
-            str_contains($exception->getMessage(), self::REFERENCE_INDEX) => DuplicateCriterion::BankReference,
-            default => null,
-        };
+        $criterion = DuplicateReceipts::fromViolation($exception, (new Receipt)->getTable());
 
         return $criterion === null ? $exception : new DuplicateReceiptException($criterion, $exception);
     }

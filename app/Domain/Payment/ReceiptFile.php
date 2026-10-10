@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Rules\RealMimeType;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -93,6 +94,44 @@ final class ReceiptFile
         }
 
         return sprintf('%d/%s.%s', $organizationId, Str::uuid()->toString(), $extension);
+    }
+
+    /**
+     * El tipo real del archivo, por su contenido, y la extensión con que se
+     * guarda, que sale de ese tipo y no del nombre.
+     *
+     * Es la misma comprobación que `RealMimeType::receipts()` hace en el
+     * formulario, repetida en la acción que guarda porque lo que entra en el
+     * disco lo decide ella: si un formulario se olvida de la regla, un
+     * ejecutable no tiene que acabar guardado como comprobante. Aquí desde
+     * `T-069`, que la comparten los comprobantes de clientes y los de
+     * suscripción (`REQ-SUB-006` RB-2).
+     *
+     * @return array{0: string, 1: string}
+     *
+     * @throws InvalidArgumentException si no es un tipo de comprobante o pasa del tamaño máximo
+     */
+    public static function typeOf(UploadedFile $file): array
+    {
+        $mime = (string) $file->getMimeType();
+        $extensions = RealMimeType::RECEIPT_TYPES[$mime] ?? null;
+
+        if ($extensions === null) {
+            throw new InvalidArgumentException(sprintf(
+                'El archivo es %s, que no es un tipo de comprobante (REQ-PAY-002 RB-5). El formulario tenía que haberlo rechazado con RealMimeType::receipts().',
+                $mime,
+            ));
+        }
+
+        if ((int) $file->getSize() > self::MAX_SIZE_MB * 1024 * 1024) {
+            throw new InvalidArgumentException(sprintf(
+                'El archivo pesa %d bytes y el máximo de un comprobante es de %d MB (REQ-PAY-002 RB-5).',
+                (int) $file->getSize(),
+                self::MAX_SIZE_MB,
+            ));
+        }
+
+        return [$mime, $extensions[0]];
     }
 
     /**

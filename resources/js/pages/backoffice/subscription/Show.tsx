@@ -7,6 +7,7 @@ import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatUsage } from '@/lib/plan';
 import { type PlanFeature, type PlanOption, type ScheduledPlanChange, type UsageMetric } from '@/types/plan';
+import { Link } from '@inertiajs/react';
 
 interface SubscriptionShowProps {
     readonly pricingUrl: string;
@@ -15,6 +16,8 @@ interface SubscriptionShowProps {
     readonly plans: readonly PlanOption[];
     /** La zona del negocio, para que las fechas se lean el mismo día que en el mensaje del servidor. */
     readonly timezone: string;
+    /** `T-069` · el historial de facturas, para quien gobierna la facturación. */
+    readonly invoicesUrl: string | null;
 }
 
 const STATUS_LABELS = {
@@ -38,7 +41,7 @@ const STATUS_LABELS = {
  * pulsar (`REQ-SUB-005` RB-5); y una bajada programada se puede deshacer desde
  * el aviso (RB-7).
  */
-export default function SubscriptionShow({ pricingUrl, canChangePlan, scheduledChange, plans, timezone }: SubscriptionShowProps) {
+export default function SubscriptionShow({ pricingUrl, canChangePlan, scheduledChange, plans, timezone, invoicesUrl }: SubscriptionShowProps) {
     const plan = usePlanLimits();
     const state = plan.state;
 
@@ -64,9 +67,16 @@ export default function SubscriptionShow({ pricingUrl, canChangePlan, scheduledC
                                 ))}
                             </ul>
 
-                            <a className="link text-sm" href={pricingUrl}>
-                                Compara los planes
-                            </a>
+                            <div className="flex flex-wrap gap-4 text-sm">
+                                <a className="link" href={pricingUrl}>
+                                    Compara los planes
+                                </a>
+                                {invoicesUrl !== null ? (
+                                    <Link className="link" href={invoicesUrl}>
+                                        Facturas y pagos
+                                    </Link>
+                                ) : null}
+                            </div>
                         </div>
                     </section>
 

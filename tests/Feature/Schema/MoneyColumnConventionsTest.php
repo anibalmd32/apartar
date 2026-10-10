@@ -118,7 +118,11 @@ it('nombra con _cents toda columna que hable de dinero', function (): void {
         // pago, junto a `declared_amount` en otra moneda, y renombrarlo
         // rompería ese contrato (`T-054`). El tipo lo comprueba el caso de
         // `BIGINT` de abajo.
-        if (in_array($column['name'], ['declared_amount', 'amount_cents_usd'], true)) {
+        //
+        // `settled_amount` (`subscription_receipts`, `T-069`) es de la misma
+        // especie que `declared_amount`: lo que la plataforma concilió, en la
+        // moneda en que llegó, al lado de `settled_cents_usd` en dólares.
+        if (in_array($column['name'], ['declared_amount', 'amount_cents_usd', 'settled_amount'], true)) {
             continue;
         }
 
@@ -141,6 +145,8 @@ it('declara toda tasa de cambio como DECIMAL(18,8) y ningún otro decimal sin mo
     // decimales en su moneda, y cabe un pago en bolívares de catorce cifras.
     $declaredDecimals = [
         'declared_amount' => 'decimal(16,2)',
+        // `T-069` · lo conciliado de un comprobante de suscripción, en su moneda.
+        'settled_amount' => 'decimal(16,2)',
     ];
 
     $offenders = [];

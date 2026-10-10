@@ -60,6 +60,8 @@ it('pinta los avisos con su acción', () => {
 
     expect(screen.getByRole('region', { name: 'Avisos' })).toBeInTheDocument();
     expect(screen.getByText(/factura vencida desde el 25\/09\/2026/)).toBeInTheDocument();
+    // `T-069` · el aviso lleva a pagar la factura, no a la página del plan.
+    expect(screen.getByRole('link', { name: 'Págala' })).toHaveAttribute('href', '/backoffice/suscripcion/facturas');
     expect(screen.getByRole('link', { name: 'Añade una' })).toHaveAttribute('href', '/backoffice/cuentas-de-cobro');
 });
 
