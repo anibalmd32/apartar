@@ -7,10 +7,13 @@ namespace App\Models;
 use App\Domain\Subscription\PlanAllowance;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Subscription\UsageMetric;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\PlanFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 /**
  * Un plan del catálogo comercial (`REQ-SUB-001`).
@@ -157,6 +160,39 @@ class Plan extends Model
             PlanFeature::cases(),
             fn (PlanFeature $feature): bool => $this->hasFeature($feature),
         ));
+    }
+
+    /**
+     * Fin del período que empieza en `$start`, según el intervalo del plan
+     * (`REQ-SUB-005` RB-2, `T-068`).
+     *
+     * Solo existe el mensual: los planes anuales están fuera de alcance
+     * (`REQ-SUB-005`). Un intervalo que no se reconoce **lanza** en lugar de
+     * suponer un mes: un plan anual cobrado como mensual sería una factura mal
+     * emitida, y eso no se descubre mirando la pantalla.
+     *
+     * @throws LogicException con un intervalo que no se sabe medir
+     */
+    public function periodEndFrom(CarbonInterface $start): CarbonImmutable
+    {
+        return match ($this->interval) {
+            'monthly' => $start->toImmutable()->addMonthNoOverflow(),
+            default => throw new LogicException(sprintf('El plan %s tiene un intervalo «%s» que nadie sabe medir.', $this->code, $this->interval)),
+        };
+    }
+
+    /**
+     * Indica si este plan va **por encima** de otro en el escaparate: es lo
+     * que hace de un cambio una subida o una bajada (`REQ-SUB-005` RB-2, RB-3).
+     *
+     * Se compara la posición, que es el orden en que `/precios` los compara, y
+     * no el código (`REQ-SUB-001` RB-1). Tampoco el precio: hoy los tres
+     * valen cero (RB-3b), y comparar importes diría que todo cambio es al
+     * mismo plan.
+     */
+    public function ranksAbove(self $other): bool
+    {
+        return $this->position > $other->position;
     }
 
     /**

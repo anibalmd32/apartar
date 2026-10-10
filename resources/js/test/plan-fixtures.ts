@@ -1,4 +1,4 @@
-import { type PlanFeature, type PlanState, type PlanStateOffers, type UsageMetric, type UsageState } from '@/types/plan';
+import { type PlanFeature, type PlanOption, type PlanState, type PlanStateOffers, type UsageMetric, type UsageState } from '@/types/plan';
 
 /** Los nombres con los que el servidor manda las métricas (`UsageMetric::label()`). */
 export const METRIC_LABELS: Readonly<Record<UsageMetric, string>> = {
@@ -58,6 +58,29 @@ export function planState(overrides: Partial<PlanState & PlanStateOffers> = {}):
         },
         featureLabels: FEATURE_LABELS,
         metricLabels: METRIC_LABELS,
+        ...overrides,
+    };
+}
+
+/** Un plan del escaparate como opción de cambio (`T-068`): Pro, una subida sin nada que exceda. */
+export function planOption(overrides: Partial<PlanOption> = {}): PlanOption {
+    return {
+        code: 'pro',
+        name: 'Pro',
+        priceCents: 0,
+        limits: { users: 5, catalogs: 10, products: 300, active_layaways: 200, storage_mb: 5120, payment_accounts: 5 },
+        productsPerCatalog: 100,
+        features: ['excel_export'],
+        isCurrent: false,
+        isScheduled: false,
+        preview: {
+            direction: 'upgrade',
+            effectiveAt: '2026-10-09T12:00:00-04:00',
+            excesses: [],
+            productsPerCatalog: null,
+            lostFeatures: [],
+            gainedFeatures: ['excel_export'],
+        },
         ...overrides,
     };
 }

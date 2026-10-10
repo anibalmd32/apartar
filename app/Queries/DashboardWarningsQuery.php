@@ -7,7 +7,6 @@ namespace App\Queries;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSnapshot;
-use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\Catalog;
@@ -31,7 +30,7 @@ use Illuminate\Database\Eloquent\Builder;
  * perdida** —un apartado rechazado por el límite en los últimos 7 días
  * (RB-5)—, que anota `CreateLayawayAction` en `plan_limit_rejections` desde
  * `T-067`. La factura vencida se
- * lee hoy del estado de la suscripción (`past_due`, `grace`) con el fin del
+ * lee hoy del estado de la suscripción (`past_due`, `suspended`) con el fin del
  * período como fecha; la factura de verdad es de `T-069`.
  */
 final class DashboardWarningsQuery
@@ -83,10 +82,11 @@ final class DashboardWarningsQuery
 
         // `REQ-SUB-007` RB-2 · la suscripción no se ha pagado; también
         // suspendida, que es la misma factura más tarde (RB-10: el aviso de
-        // pago va primero).
+        // pago va primero). `grace` no: desde `T-068` es una bajada de plan
+        // programada (`REQ-SUB-005` RB-3), no una deuda.
         $subscription = Subscription::query()->latest('id')->first();
 
-        if ($subscription instanceof Subscription && in_array($subscription->status, [SubscriptionStatus::PastDue, SubscriptionStatus::Grace, SubscriptionStatus::Suspended], true)) {
+        if ($subscription instanceof Subscription && $subscription->status->isDelinquent()) {
             $warnings[] = ['kind' => 'invoice_overdue', 'dueDate' => $subscription->current_period_end?->setTimezone($organization->timezone)->toDateString()];
         }
 

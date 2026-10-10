@@ -76,12 +76,23 @@ Route::prefix('backoffice')->group(function (): void {
             /*
             | `T-067` · el plan, su consumo y sus funciones: el destino de
             | cada «Ver planes». Sobrevive a la suspensión por lo mismo que el
-            | panel: es donde se regulariza (REQ-ORG-008 RB-3). Cambiar de
-            | plan es de T-068.
+            | panel: es donde se regulariza (REQ-ORG-008 RB-3).
             */
             Route::get('suscripcion', [SubscriptionController::class, 'show'])
                 ->middleware('during-suspension')
                 ->name('subscription.show');
+
+            /*
+            | `T-068` · cambiar de plan también sobrevive a la suspensión:
+            | subir es una vía de regularizar (REQ-SUB-005 SP-8), y bajar a
+            | Free la otra (REQ-SUB-007 SP-8: con la factura sin pagar la
+            | bajada vence en el acto; levantar la suspensión al aplicarla es
+            | de T-071/T-072). Quién puede, lo decide la policy dentro de la
+            | acción (RB-1).
+            */
+            Route::post('suscripcion/cambiar', [SubscriptionController::class, 'change'])
+                ->middleware('during-suspension')
+                ->name('subscription.change');
 
             Route::post('logout', [LoginController::class, 'destroy'])
                 ->middleware('during-suspension')

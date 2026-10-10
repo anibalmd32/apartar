@@ -78,8 +78,13 @@ it('apunta a plans sin borrado en cascada', function (): void {
         fn (array $key): bool => $key['foreign_table'] === 'plans',
     ));
 
-    expect($planKey)->toHaveCount(1);
-    expect(strtolower((string) $planKey[0]['on_delete']))->not->toBe('cascade');
+    // `plan_id` y, desde `T-068`, `scheduled_plan_id`: un plan programado
+    // tampoco se borra, se despublica.
+    expect(array_map(fn (array $key): array => $key['columns'], $planKey))->toEqualCanonicalizing([['plan_id'], ['scheduled_plan_id']]);
+
+    foreach ($planKey as $key) {
+        expect(strtolower((string) $key['on_delete']))->not->toBe('cascade');
+    }
 });
 
 /**

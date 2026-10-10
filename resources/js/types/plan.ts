@@ -120,3 +120,57 @@ export interface PlanSharedProps {
 
 /** La pantalla de suscripción, destino de cada «Ver planes» (`T-067`). */
 export const SUBSCRIPTION_URL = '/backoffice/suscripcion';
+
+/** Adónde se manda el cambio de plan (`REQ-SUB-005`, `T-068`). */
+export const CHANGE_PLAN_URL = '/backoffice/suscripcion/cambiar';
+
+/**
+ * Una métrica cuyo contador pasa del techo del plan destino, y qué le pasará
+ * (`REQ-SUB-005` RB-5): despublicar es lo único que la degradación hace sola
+ * (`REQ-SUB-008` RB-2); todo lo demás se conserva y bloquea crear más.
+ */
+export interface PlanExcess {
+    readonly metric: UsageMetric;
+    readonly used: number;
+    readonly limit: number;
+    readonly excess: number;
+    readonly consequence: 'unpublish' | 'block_creation';
+}
+
+/** Espejo de `PlanChangePreview::toArray()` (`T-068`). */
+export interface PlanChangePreview {
+    readonly direction: 'upgrade' | 'downgrade' | 'same';
+    /** Cuándo aplica: ahora al subir, el fin del período al bajar. */
+    readonly effectiveAt: string | null;
+    readonly excesses: readonly PlanExcess[];
+    /** Los catálogos con más productos que el techo por catálogo del destino. */
+    readonly productsPerCatalog: {
+        readonly limit: number;
+        readonly catalogs: readonly { readonly name: string; readonly slug: string; readonly products: number }[];
+        readonly count: number;
+    } | null;
+    readonly lostFeatures: readonly PlanFeature[];
+    readonly gainedFeatures: readonly PlanFeature[];
+}
+
+/** Un plan del escaparate como opción de cambio, con su previsualización ya calculada. */
+export interface PlanOption {
+    readonly code: string;
+    readonly name: string;
+    readonly priceCents: number;
+    readonly limits: Readonly<Record<UsageMetric, PlanLimit>>;
+    readonly productsPerCatalog: PlanLimit;
+    readonly features: readonly PlanFeature[];
+    readonly isCurrent: boolean;
+    readonly isScheduled: boolean;
+    readonly preview: PlanChangePreview;
+}
+
+/** La bajada programada, si la hay (`REQ-SUB-005` RB-3, RB-7). */
+export interface ScheduledPlanChange {
+    readonly planCode: string;
+    readonly planName: string;
+    readonly effectiveAt: string | null;
+    /** Bajar a Free es cancelar el plan de pago (RB-4). */
+    readonly isCancellation: boolean;
+}

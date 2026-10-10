@@ -146,10 +146,14 @@ final class DashboardTest extends TestCase
         Cache::flush();
         app()->forgetInstance(CurrentRate::class);
 
-        foreach ([SubscriptionStatus::PastDue, SubscriptionStatus::Grace, SubscriptionStatus::Suspended] as $unpaid) {
+        foreach ([SubscriptionStatus::PastDue, SubscriptionStatus::Suspended] as $unpaid) {
             $this->within(fn () => Subscription::query()->update(['status' => $unpaid, 'current_period_end' => CarbonImmutable::parse('2026-09-25 10:00:00', 'Asia/Tokyo')]));
             $this->assertSame([['kind' => 'invoice_overdue', 'dueDate' => '2026-09-25']], $this->warnings(), "Suscripción {$unpaid->value}.");
         }
+
+        // `T-068` · `grace` es una bajada de plan programada, no una deuda.
+        $this->within(fn () => Subscription::query()->update(['status' => SubscriptionStatus::Grace]));
+        $this->assertSame([], $this->warnings(), 'Una bajada programada no es una factura vencida.');
 
         $this->within(fn () => Subscription::query()->update(['status' => SubscriptionStatus::Active]));
 

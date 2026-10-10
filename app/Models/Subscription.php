@@ -31,7 +31,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $current_period_end nulo en Free: sin fecha de fin
  * @property \Illuminate\Support\Carbon|null $grace_ends_at
  * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property int|null $scheduled_plan_id plan al que baja, si hay una bajada programada (`REQ-SUB-005` RB-3)
+ * @property \Illuminate\Support\Carbon|null $scheduled_plan_at desde cuándo se aplica esa bajada
  * @property-read Plan $plan
+ * @property-read Plan|null $scheduledPlan
  */
 class Subscription extends Model
 {
@@ -52,6 +55,8 @@ class Subscription extends Model
         'current_period_end',
         'grace_ends_at',
         'cancelled_at',
+        'scheduled_plan_id',
+        'scheduled_plan_at',
     ];
 
     /**
@@ -66,7 +71,27 @@ class Subscription extends Model
             'current_period_end' => 'datetime',
             'grace_ends_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'scheduled_plan_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Plan al que baja cuando venza el período, si hay una bajada programada
+     * (`REQ-SUB-005` RB-3). La aplica `T-072`; revertirla es vaciarla (RB-7).
+     *
+     * @return BelongsTo<Plan, $this>
+     */
+    public function scheduledPlan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class, 'scheduled_plan_id');
+    }
+
+    /**
+     * Indica si hay una bajada de plan esperando a aplicarse.
+     */
+    public function hasScheduledChange(): bool
+    {
+        return $this->scheduled_plan_id !== null;
     }
 
     /**

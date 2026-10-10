@@ -56,12 +56,26 @@ final class StartFreeSubscriptionAction
     ) {}
 
     /**
+     * El plan de la capa gratuita, resuelto por su identificador estable, o
+     * `null` si la base no lo tiene.
+     *
+     * Es el único sitio que lo nombra (`PlansAreDataTest`). Lo usa también
+     * `T-068`: Free es el suelo —ir a Free es siempre bajar, y bajar a Free es
+     * cancelar el plan de pago (`REQ-SUB-005` RB-4)—, y eso se pregunta
+     * comparando **la fila**, no el código.
+     */
+    public static function freePlan(): ?Plan
+    {
+        return Plan::query()->where('code', self::FREE_PLAN_CODE)->first();
+    }
+
+    /**
      * @throws MissingFreePlanException si la base no tiene el plan Free
      * @throws OrganizationAlreadySubscribedException si la organización ya tiene suscripción
      */
     public function handle(Organization $organization): Subscription
     {
-        $plan = Plan::query()->where('code', self::FREE_PLAN_CODE)->first();
+        $plan = self::freePlan();
 
         if (! $plan instanceof Plan) {
             throw MissingFreePlanException::withCode(self::FREE_PLAN_CODE);
