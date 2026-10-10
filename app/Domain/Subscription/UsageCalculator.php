@@ -144,6 +144,24 @@ final class UsageCalculator
     }
 
     /**
+     * Cuántos MB **más** de `storage_mb` ocuparía un archivo de `$bytes` en
+     * la organización activa, con el total medido con bloqueo compartido y
+     * redondeado **una vez**, con el archivo dentro (`T-067`).
+     *
+     * Sumar el MB redondeado de lo que hay y el del archivo rechazaría lo que
+     * cabe: con 98,1 MB ocupados de 100, uno de 1,5 MB sumaría 99 + 2. Se
+     * llama con el contador ya cogido (`recountLocked()`), dentro de la
+     * transacción que va a adjuntar.
+     */
+    public function megabytesAdded(int $bytes): int
+    {
+        $organization = $this->context->organizationId();
+        $current = $this->aggregates->bytesPer([$organization], locking: true)[$organization];
+
+        return UsageAggregates::megabytes($current + $bytes) - UsageAggregates::megabytes($current);
+    }
+
+    /**
      * Recalcula un lote de organizaciones: **una consulta agregada por
      * métrica para todo el lote** (SP-7), los contadores bloqueados mientras
      * tanto, y una escritura por contador que no cuadraba.

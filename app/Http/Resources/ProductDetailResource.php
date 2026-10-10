@@ -81,8 +81,13 @@ final class ProductDetailResource extends JsonResource
     /**
      * @param  list<PaymentAccountView>  $paymentAccounts  las activas del negocio, en su orden
      */
-    public function __construct(Product $product, private readonly Catalog $catalog, private readonly array $paymentAccounts)
-    {
+    public function __construct(
+        Product $product,
+        private readonly Catalog $catalog,
+        private readonly array $paymentAccounts,
+        // `REQ-SUB-004` RB-4 · `LimitEnforcer::acceptsLayaways()`.
+        private readonly bool $businessAccepts = true,
+    ) {
         parent::__construct($product);
     }
 
@@ -98,7 +103,7 @@ final class ProductDetailResource extends JsonResource
             $product->installments_count,
             $product->frequency_days,
         );
-        $reason = UnavailableReason::of($product, $plan);
+        $reason = UnavailableReason::of($product, $plan, $this->businessAccepts);
 
         return [
             'slug' => $product->slug,

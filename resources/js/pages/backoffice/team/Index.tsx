@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
+import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import { TeamMemberRow } from '@/features/tenancy/components/TeamMemberRow';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatUsage } from '@/lib/plan';
@@ -87,6 +88,9 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
                             </a>
                         </Alert>
                     ) : null}
+
+                    {/* RB-7 · entre el 80 % y el techo; en el techo, el aviso de arriba. */}
+                    {!usage.isAtLimit ? <LimitBanner metric="users" /> : null}
 
                     <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={submit} noValidate>
                         <TextField

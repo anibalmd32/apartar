@@ -62,9 +62,9 @@ use Illuminate\Validation\ValidationException;
  *
  * ## Lo que no está y tiene dueño
  *
- * **El límite del plan de RB-8 no se comprueba aquí**, y es deliberado: el
- * alta **mueve** el contador `products` desde `T-066`, pero quien inserta
- * las doce llamadas a `assertCanCreate()` es `T-067`.
+ * **El límite del plan de RB-8 se comprueba al crear** (`T-067`), con el
+ * contador `products` bloqueado y antes de escribir nada, y el alta lo mueve
+ * en la misma transacción (`T-066`). Editar no ocupa sitio y no pregunta.
  *
  * **La completitud de RB-5 tampoco.** Imagen, categoría, descripción y
  * condiciones válidas se comprueban **enteras** en la transición a
@@ -97,6 +97,13 @@ final class UpsertProductAction
 
         return DB::transaction(function () use ($data, $actor, $product): Product {
             $reserved = 0;
+
+            // `REQ-SUB-004` RB-3 (`T-067`) · un producto nuevo ocupa una
+            // unidad de `products`: el cupo, lo primero, antes de escribir
+            // nada —ni la categoría que se crea al vuelo—. Editar no ocupa.
+            if (! $product instanceof Product) {
+                $this->limits->assertCanCreate(UsageMetric::Products);
+            }
 
             if ($product instanceof Product) {
                 // `REQ-LAY-003` RB-8 · el producto se bloquea **antes que

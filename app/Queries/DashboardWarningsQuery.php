@@ -8,10 +8,12 @@ use App\Domain\Catalog\ProductStatus;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Subscription\SubscriptionStatus;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\Catalog;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
+use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\User;
@@ -25,10 +27,10 @@ use Illuminate\Database\Eloquent\Builder;
  * eso cada aviso sale solo en su condición (el gate pide un test por cada uno
  * en su condición y fuera de ella), y sin avisos la sección no existe (SP-6).
  *
- * Seis de los siete, desde ya. `plan_limit_blocking_sales` exige **evidencia
- * de una venta perdida** —un apartado rechazado por el límite en los últimos
- * 7 días (RB-5)— y nadie registra todavía esos rechazos: llega con `T-067`,
- * que inserta los límites en las acciones y su aviso. La factura vencida se
+ * Los siete. `plan_limit_blocking_sales` exige **evidencia de una venta
+ * perdida** —un apartado rechazado por el límite en los últimos 7 días
+ * (RB-5)—, que anota `CreateLayawayAction` en `plan_limit_rejections` desde
+ * `T-067`. La factura vencida se
  * lee hoy del estado de la suscripción (`past_due`, `grace`) con el fin del
  * período como fecha; la factura de verdad es de `T-069`.
  */
@@ -36,6 +38,9 @@ final class DashboardWarningsQuery
 {
     /** Cuántos catálogos vacíos se nombran: un aviso por cada uno, sin inundar. */
     public const MAX_EMPTY_CATALOGS = 3;
+
+    /** Hasta cuándo un apartado rechazado por el límite cuenta como venta perdida (RB-5). */
+    public const LOST_SALE_DAYS = 7;
 
     public function __construct(private readonly CurrentRate $rate) {}
 
@@ -83,6 +88,18 @@ final class DashboardWarningsQuery
 
         if ($subscription instanceof Subscription && in_array($subscription->status, [SubscriptionStatus::PastDue, SubscriptionStatus::Grace, SubscriptionStatus::Suspended], true)) {
             $warnings[] = ['kind' => 'invoice_overdue', 'dueDate' => $subscription->current_period_end?->setTimezone($organization->timezone)->toDateString()];
+        }
+
+        // `REQ-SUB-004` SP-2, RB-5 (`T-067`) · un límite del plan está
+        // rechazando apartados: **solo con evidencia**, un rechazo anotado en
+        // los últimos 7 días, y nunca por estar cerca del techo. Uno por
+        // métrica, con ella, para que el aviso diga cuál.
+        foreach (PlanLimitRejection::query()
+            ->where('occurred_at', '>=', CarbonImmutable::now()->subDays(self::LOST_SALE_DAYS))
+            ->distinct()
+            ->orderBy('metric')
+            ->pluck('metric') as $metric) {
+            $warnings[] = ['kind' => 'plan_limit_blocking_sales', 'metric' => $metric instanceof UsageMetric ? $metric->value : (string) $metric];
         }
 
         // `REQ-ORG-001` RB-5 · el correo del dueño sin verificar: ni recupera la cuenta ni recibe avisos.

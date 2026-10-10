@@ -49,3 +49,22 @@ it('enciende solo las que se le piden', function (): void {
     expect($features['custom_domain'])->toBeFalse();
     expect($features)->toHaveCount(6);
 });
+
+/**
+ * `T-067` · cada función tiene su nombre para una persona, distinto de su
+ * clave, y los seis son distintos entre sí: `/precios`, el `403` y las
+ * pantallas del plan leen de aquí.
+ */
+it('nombra cada función para una persona', function (): void {
+    $labels = PlanFeature::labels();
+
+    expect($labels)->toHaveCount(6);
+    expect(array_unique($labels))->toHaveCount(6);
+
+    foreach (PlanFeature::cases() as $feature) {
+        expect($labels[$feature->value])->toBe($feature->label())->not->toBe($feature->value);
+    }
+
+    expect(PlanFeature::ExcelExport->label())->toBe('Exportación a Excel');
+    expect(PlanFeature::CustomDomain->label())->toBe('Dominio propio');
+});

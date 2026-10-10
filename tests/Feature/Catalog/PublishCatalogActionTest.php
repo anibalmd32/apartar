@@ -11,13 +11,17 @@ use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\CatalogNotPublishableException;
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Subscription\CreationSuspendedException;
+use App\Domain\Subscription\PlanLimitReachedException;
+use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\AuditEntry;
 use App\Models\Catalog;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
+use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Subscription;
 use App\Models\UsageCounter;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -53,6 +57,8 @@ final class PublishCatalogActionTest extends TestCase
         $this->organization = Organization::factory()->create();
 
         $this->actingAsOrganization($this->organization);
+        // `T-067` · crear, publicar y componer preguntan al plan.
+        $this->subscribeWithoutLimits();
 
         $this->actor = User::factory()->owner()->create();
     }
@@ -141,41 +147,87 @@ final class PublishCatalogActionTest extends TestCase
     }
 
     /**
-     * Requisito 4 · **cupo del plan: pendiente de `T-067`**.
-     *
-     * No se simula y no se da por hecho. `LimitEnforcer` responde hoy «sin
-     * límite» para la métrica `catalogs` porque `measure()` devuelve `null`
-     * hasta que `T-066` escriba el conteo; adelantar la llamada aquí haría
-     * cumplir una ficción y escribiría un contador que esa tarea tendría que
-     * desmontar.
-     *
-     * Lo que este caso fija es el **estado de hoy**: publicar no consume cupo
-     * ni lo comprueba. El día que `T-067` inserte su línea, este test se cae y
-     * quien la inserte tendrá que venir aquí a escribir el de verdad — que es
-     * exactamente lo que se quiere que ocurra.
+     * Requisito 4 · SP-3 de `REQ-BOF-024` (`T-067`) · con el cupo
+     * `catalogs` agotado, publicar responde con el plan que lo desbloquea y
+     * con la salida sin cambiar de plan: despublicar otro. **Solo cuentan los
+     * publicados**: un borrador no ocupa (`REQ-BOF-024` RB-8), y despublicar
+     * libera el sitio (`REQ-CAT-022` RB-7).
      */
-    public function test_the_plan_quota_requirement_is_not_enforced_yet(): void
+    public function test_publishing_with_the_quota_exhausted_names_the_plan_that_unlocks_it(): void
     {
-        // Sin comentarios: la acción **nombra** la llamada para decir dónde
-        // irá, y un `grep` sobre el texto crudo confundiría la nota con la
-        // implementación.
-        $this->assertStringNotContainsString(
-            'assertCanCreate(',
-            php_strip_whitespace(base_path('app/Actions/Catalog/PublishCatalogAction.php')),
-            'El cupo `catalogs` es de T-067. Si ya lo has insertado, sustituye este caso por el test de SP-3: '
-            .'publicar con el cupo agotado responde 422 con el plan que lo desbloquea.',
-        );
+        $this->capCatalogsAt(1);
+        Plan::factory()->create(['code' => 'pro-sp3', 'name' => 'Pro', 'position' => 2, 'max_catalogs' => 10]);
 
-        // Y mientras tanto publicar funciona aunque el contador diga que no
-        // cabe: lo **recuenta y lo mueve** (`T-066`) —de la cifra inventada a
-        // la de verdad, y uno más—, pero no lo comprueba.
-        UsageCounter::factory()->forMetric(UsageMetric::Catalogs, 1_000)->create();
+        $first = $this->ready();
+        $this->ready();
+        $second = $this->ready();
+
+        $this->publish()->handle($first, $this->data(), $this->actor);
+
+        try {
+            $this->publish()->handle($second, $this->data(), $this->actor);
+            $this->fail('Se publicó un segundo catálogo con el cupo de uno.');
+        } catch (PlanLimitReachedException $exception) {
+            $this->assertSame(UsageMetric::Catalogs, $exception->metric);
+            $this->assertSame(1, $exception->used);
+            $this->assertSame(1, $exception->limit);
+            $this->assertSame('pro-sp3', $exception->minimumPlan?->code);
+            $this->assertStringContainsString('despublicar otro catálogo', $exception->toArray()['suggestion']);
+        }
+
+        $this->assertSame(CatalogVisibility::Draft, $second->refresh()->visibility());
+
+        // Despublicar libera, y entonces cabe.
+        app(UnpublishCatalogAction::class)->handle($first->refresh(), $this->actor);
+        $this->publish()->handle($second, $this->data(), $this->actor);
+
+        $this->assertSame(CatalogVisibility::Listed, $second->refresh()->visibility());
+        $this->assertSame(1, $this->catalogsCounter());
+    }
+
+    /**
+     * El panel de publicación avisa del cupo **antes** de pulsar, con la misma
+     * pregunta al plan; y no al que ya está publicado, que no ocupa nada
+     * nuevo (revisión de `T-067`).
+     */
+    public function test_the_publish_panel_shows_the_quota_before_pressing(): void
+    {
+        $this->capCatalogsAt(1);
+        $published = $this->ready();
+        $draft = $this->ready();
+        $this->publish()->handle($published, $this->data(), $this->actor);
+
+        $this->assertArrayHasKey('plan', $this->publish()->blockersFor($draft->refresh()));
+        $this->assertStringContainsString('despublicar otro catálogo', $this->publish()->blockersFor($draft)['plan']);
+        $this->assertArrayNotHasKey('plan', $this->publish()->blockersFor($published->refresh()));
+    }
+
+    /**
+     * Cambiar la fecha o la vitrina de uno **ya publicado** no ocupa nada
+     * nuevo: con el cupo justo, se puede.
+     */
+    public function test_editing_a_published_catalog_does_not_ask_for_a_slot(): void
+    {
+        $this->capCatalogsAt(1);
         $catalog = $this->ready();
 
         $this->publish()->handle($catalog, $this->data(), $this->actor);
+        $this->publish()->handle($catalog->refresh(), new PublishCatalogData(isListed: false, expiresAt: CarbonImmutable::now()->addWeek()), $this->actor);
 
-        $this->assertSame(CatalogVisibility::Listed, $catalog->refresh()->visibility());
-        $this->assertSame(1, $this->catalogsCounter());
+        $this->assertSame(CatalogVisibility::Unlisted, $catalog->refresh()->visibility());
+    }
+
+    /**
+     * RB-8 de `REQ-SUB-004` · con la suscripción suspendida no se publica
+     * nada, haya sitio o no.
+     */
+    public function test_a_suspended_subscription_cannot_publish(): void
+    {
+        Subscription::query()->update(['status' => SubscriptionStatus::Suspended->value]);
+
+        $this->expectException(CreationSuspendedException::class);
+
+        $this->publish()->handle($this->ready(), $this->data(), $this->actor);
     }
 
     /**
@@ -436,6 +488,11 @@ final class PublishCatalogActionTest extends TestCase
         }
 
         $this->fail('Se esperaba que la publicación se rechazara y no lo hizo.');
+    }
+
+    private function capCatalogsAt(int $limit): void
+    {
+        Subscription::query()->firstOrFail()->plan->forceFill(['max_catalogs' => $limit])->save();
     }
 
     private function catalogsCounter(): int

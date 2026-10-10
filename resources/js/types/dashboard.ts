@@ -1,6 +1,6 @@
 import { type RateView } from '@/types/exchange';
 import { type MoneyView } from '@/types/money';
-import { type PlanState, type UsageMetric } from '@/types/plan';
+import { type PlanState, type PlanStateOffers, type UsageMetric } from '@/types/plan';
 
 /**
  * Los avisos del panel (`REQ-BOF-044` RB-4): condiciones con las que el negocio
@@ -31,7 +31,7 @@ export interface DashboardMetrics {
     readonly completedNotDelivered: number | null;
     readonly unreadMessages: number | null;
     readonly rate: RateView | null;
-    readonly plan: PlanState | null;
+    readonly plan: (PlanState & PlanStateOffers) | null;
     readonly warnings: readonly DashboardWarning[];
     readonly subscribers: { readonly total: number; readonly last7Days: number } | null;
     /** El checklist de arranque (SP-1, `REQ-ORG-001`). */

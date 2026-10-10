@@ -223,6 +223,8 @@ export interface SpecificationFormRow {
 - Anti-`SHALLOW`: `SyncImageOrderAction::handle()` (pertenencia al tenant, recálculo de orden, promoción de principal) supera 4 líneas; el controlador concentra límite, tipo y cuota.
 - Tests: límite de 10; tamaño y MIME rechazados; borrar la principal promueve la siguiente; publicado sin imágenes rechazado; **cuota agotada rechaza la subida del negocio pero no la del comprobante de un cliente** (test de los dos lados); borrar libera cuota; la ruta incluye el `organization_id`; producto ajeno da `404`.
 
+> **Cómo quedó, en `T-067`.** **RB-8, SP-7 · la cuota de almacenamiento se comprueba archivo a archivo**: antes de adjuntar cada uno, `assertCanCreate(StorageMb, $mb)` con lo que pesa **ese** archivo —redondeado hacia arriba, como la medida— en la transacción que lo adjunta; después se vuelve a medir, para que el siguiente compare con lo ya subido. Con la cuota agotada, los ya subidos se quedan y la pantalla vuelve con el motivo. Un fallo al medir no convierte la subida en un `500`.
+
 ---
 
 ### REQ-BOF-023 · Gestión de categorías y etiquetas
@@ -327,3 +329,5 @@ export interface SpecificationFormRow {
 - Tipos esperados: `CatalogVisibility`, `PublishCatalogData`, `CatalogProductOrder`, `SlugLockedException`, `CatalogNotPublishableException`.
 - Anti-`SHALLOW`: cubierto por `PublishCatalogAction::handle()` y `SyncCatalogProductsAction::handle()` (`REQ-CAT-022`, `REQ-CAT-023`); el controlador aporta la composición del estado derivado, el conteo de suscriptores y el alcance potencial.
 - Tests: publicar vacío rechazado; sin cuenta de cobro rechazado; cupo agotado rechazado; **los borradores no consumen cupo** (test de RB-8); slug bloqueado tras publicar; badge correcto en los cuatro estados; producto archivado marcado no visible; conteo de suscriptores presente y alcance potencial en Free; catálogo ajeno da `404`; `suspended` bloquea la publicación.
+
+> **Cómo quedó, en `T-067`.** **SP-3**: publicar con el cupo agotado vuelve a la pantalla con el mensaje del plan —qué permite el suyo y cuál lo desbloquea— y la salida sin cambiar de plan, «despublica otro catálogo para liberar su sitio» (`UsageMetric::freeUpHint()`), en `errors.plan` y en el aviso del layout (`UpgradePrompt`). **RB-8**: el borrador no ocupa. Y la lista de catálogos avisa a partir del 80 % (`LimitBanner`).

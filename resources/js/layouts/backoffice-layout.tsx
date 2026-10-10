@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePendingReceipts } from '@/features/receipts/hooks/useReceiptInbox';
 import { type BackofficeSharedData } from '@/types/backoffice';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -125,16 +126,18 @@ function BackofficeFrame({ title, description, children }: BackofficeLayoutProps
                             Tu suscripción está suspendida por falta de pago. Puedes cobrar y aprobar comprobantes, pero no crear cosas nuevas.
                         </span>
 
-                        {/* La pantalla de suscripción llega con su hito; el
-                            enlace ya apunta a su URL definitiva para que el
-                            aviso esté completo el día que exista. */}
-                        <a className="btn btn-sm btn-warning" href="/backoffice/suscripcion">
+                        <Link className="btn btn-sm btn-warning" href="/backoffice/suscripcion">
                             Regularizar el pago
-                        </a>
+                        </Link>
                     </Alert>
                 ) : null}
 
                 {status ? <Alert tone="success">{status}</Alert> : null}
+
+                {/* `T-067` · el último rechazo por plan —un cupo agotado, una
+                    función que falta—, con su salida. Aquí y no en cada
+                    formulario: el límite es del negocio, no de un campo. */}
+                <UpgradePrompt />
 
                 <section className="flex flex-col gap-1">
                     <h1 className="text-xl font-semibold">{title}</h1>

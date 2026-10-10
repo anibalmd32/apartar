@@ -169,6 +169,8 @@ export interface ImageSet {
 - Anti-`SHALLOW`: `ProductDetailResource::toArray()` (importes, agrupación de ficha técnica, cuentas de cobro, motivo de indisponibilidad, relacionados) supera 4 líneas junto a su clase.
 - Tests: la cuota mostrada coincide con el cronograma real que generaría el apartado; producto fuera del catálogo da `404`; producto de otra organización da `404` (fuga); las cuentas de cobro activas aparecen y las inactivas no; el motivo de límite de plan no revela el plan (`REQ-SUB-004` RB-4); sin ficha técnica no se renderiza la sección; toggle reproyecta sin petición.
 
+> **Cómo quedó, en `T-067`.** **RB-7 · el tercer motivo, el del negocio, ya se alcanza**: la ficha pregunta a `LimitEnforcer::acceptsLayaways()` —el cupo de apartados activos, una suscripción que no admite crear y la organización suspendida— y, si el negocio no puede recibir apartados, `UnavailableReason::BusinessUnavailable` va **primero**, para cualquier producto, con su mensaje neutro (`REQ-SUB-004` RB-4). Lo que autoriza sigue siendo `assertCanCreate()` dentro de `CreateLayawayAction`; esto solo evita ofrecer un formulario que se va a rechazar.
+
 ---
 
 ### REQ-CAT-004 · Visualización de la ficha técnica dinámica

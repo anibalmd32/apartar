@@ -46,6 +46,8 @@ final class SyncCatalogProductsActionTest extends TestCase
         $this->organization = Organization::factory()->create();
 
         $this->actingAsOrganization($this->organization);
+        // `T-067` · crear, publicar y componer preguntan al plan.
+        $this->subscribeWithoutLimits();
 
         $this->actor = User::factory()->owner()->create();
     }

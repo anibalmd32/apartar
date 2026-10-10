@@ -43,6 +43,44 @@ enum PlanFeature: string
     case CustomDomain = 'custom_domain';
 
     /**
+     * Cómo se llama la función para una persona (`T-067`).
+     *
+     * Vive aquí y no en cada pantalla por la convención de «una lista de
+     * casos es una propiedad del tipo»: `/precios`, el `403` de una función
+     * que el plan no incluye, `LimitBanner` y `UpgradePrompt` nombran las
+     * mismas seis, y la copia que se queda corta no falla: dice otra cosa. El
+     * `match` no lleva `default`, para que una séptima tenga que decir aquí
+     * cómo se llama.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Branding => 'Tu logo y tu color, sin el sello de Apartar',
+            self::ExcelExport => 'Exportación a Excel',
+            self::WebPush => 'Notificaciones push',
+            self::SubscriberDigest => 'Resumen de novedades para quienes siguen tus catálogos',
+            self::FullAnalytics => 'Analítica completa',
+            self::CustomDomain => 'Dominio propio',
+        };
+    }
+
+    /**
+     * Las seis con su nombre, para la interfaz.
+     *
+     * @return array<string, string>
+     */
+    public static function labels(): array
+    {
+        $labels = [];
+
+        foreach (self::cases() as $feature) {
+            $labels[$feature->value] = $feature->label();
+        }
+
+        return $labels;
+    }
+
+    /**
      * Todas en `false`: el punto de partida de un plan sin funciones de pago.
      *
      * @return array<string, bool>

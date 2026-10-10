@@ -92,7 +92,7 @@ final class PricingController extends Controller
             // SP-1 · sin `features` la lista sale vacía, no con un error:
             // `enabledFeatures()` ya lo resuelve así.
             'features' => array_map(
-                fn (PlanFeature $feature): string => $this->featureLabel($feature),
+                fn (PlanFeature $feature): string => $feature->label(),
                 $plan->enabledFeatures(),
             ),
         ];
@@ -148,23 +148,5 @@ final class PricingController extends Controller
             'label' => $metric->label($limit ?? 2),
             'limit' => $limit,
         ];
-    }
-
-    /**
-     * Cómo se llama cada función para quien todavía no es cliente.
-     *
-     * El `match` no lleva `default`: una séptima función tiene que decir aquí
-     * cómo se llama, y PHPStan no deja olvidarlo.
-     */
-    private function featureLabel(PlanFeature $feature): string
-    {
-        return match ($feature) {
-            PlanFeature::Branding => 'Tu logo y tu color, sin el sello de Apartar',
-            PlanFeature::ExcelExport => 'Exportación a Excel',
-            PlanFeature::WebPush => 'Notificaciones push',
-            PlanFeature::SubscriberDigest => 'Resumen de novedades para quienes siguen tus catálogos',
-            PlanFeature::FullAnalytics => 'Analítica completa',
-            PlanFeature::CustomDomain => 'Dominio propio',
-        };
     }
 }

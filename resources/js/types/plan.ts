@@ -52,3 +52,71 @@ export interface PlanState {
     readonly usage: Readonly<Record<UsageMetric, UsageState>>;
     readonly features: readonly PlanFeature[];
 }
+
+/** Un plan del escaparate que se ofrece como salida, ya resuelto por el servidor. */
+export interface PlanOffer {
+    readonly planCode: string;
+    readonly planName: string;
+}
+
+/**
+ * Lo que `LimitBanner` y `UpgradePrompt` necesitan para decir algo útil **sin
+ * decidir nada** (`REQ-SUB-004` RB-1, `T-067`): el plan que da más sitio a
+ * cada métrica que pasa del 80 % (`REQ-SUB-003` RB-7), el más barato que
+ * incluye cada función que falta, y los nombres de unas y otras, que son del
+ * servidor (`PlanFeature::label()`, `UsageMetric::label()`).
+ */
+export interface PlanStateOffers {
+    readonly upgrades: Readonly<Partial<Record<UsageMetric, PlanOffer | null>>>;
+    readonly featureUpgrades: Readonly<Partial<Record<PlanFeature, PlanOffer | null>>>;
+    readonly featureLabels: Readonly<Record<PlanFeature, string>>;
+    readonly metricLabels: Readonly<Record<UsageMetric, string>>;
+}
+
+/** El techo por catálogo, que no es una `UsageMetric` (`max_products_per_catalog`). */
+export type LimitKey = UsageMetric | 'products_per_catalog';
+
+/**
+ * El rechazo por cupo, tal como lo deja en la sesión el render de
+ * `PlanLimitReachedException` (`bootstrap/app.php`) para un formulario.
+ */
+export interface PlanLimitRejection {
+    readonly message: string;
+    readonly limit: {
+        readonly metric: LimitKey;
+        readonly used: number;
+        readonly limit: number;
+        readonly minimumPlan: string | null;
+        readonly minimumPlanName: string | null;
+        readonly suggestion: string;
+    };
+    readonly upgradeUrl: string;
+}
+
+/** El rechazo por una función que el plan no incluye (`REQ-SUB-004` SP-3). */
+export interface PlanFeatureRejection {
+    readonly message: string;
+    readonly feature: {
+        readonly feature: PlanFeature;
+        readonly minimumPlan: string | null;
+        readonly minimumPlanName: string | null;
+    };
+    readonly upgradeUrl: string;
+}
+
+/** Un intento de crear con la suscripción suspendida (`REQ-SUB-004` RB-8). */
+export interface PlanBlockedRejection {
+    readonly message: string;
+    readonly upgradeUrl: string;
+}
+
+/** Lo que `HandleInertiaRequests` comparte del plan con cada página del backoffice. */
+export interface PlanSharedProps {
+    readonly planState: (PlanState & PlanStateOffers) | null;
+    readonly planLimit: PlanLimitRejection | null;
+    readonly planFeature: PlanFeatureRejection | null;
+    readonly planBlocked: PlanBlockedRejection | null;
+}
+
+/** La pantalla de suscripción, destino de cada «Ver planes» (`T-067`). */
+export const SUBSCRIPTION_URL = '/backoffice/suscripcion';

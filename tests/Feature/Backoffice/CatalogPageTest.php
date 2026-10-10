@@ -41,6 +41,8 @@ final class CatalogPageTest extends TestCase
 
         $this->neighbourOrganization();
         $this->organization = Organization::factory()->create();
+        // `T-067` · crear, publicar y componer preguntan al plan.
+        $this->subscribeWithoutLimits($this->organization);
 
         $this->withoutOrganization();
     }

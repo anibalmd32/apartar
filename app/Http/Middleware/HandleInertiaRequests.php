@@ -7,11 +7,13 @@ namespace App\Http\Middleware;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Money\CurrencyDisplay;
 use App\Domain\Settings\SettingKey;
+use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\Receipt;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Support\Settings;
 use Illuminate\Foundation\Inspiring;
@@ -76,7 +78,47 @@ class HandleInertiaRequests extends Middleware
             'teamMember' => $this->teamMember($request),
             'currency' => $this->currency($request),
             'status' => $request->session()->get('status'),
+            // `REQ-SUB-003` RB-6, `REQ-SUB-004` (`T-067`) · el plan y su
+            // consumo, para `usePlanLimits` y sus dos componentes. Perezoso:
+            // solo se resuelve al pintar, y solo para el equipo.
+            'planState' => fn (): ?array => $this->planState($request),
+            // El último rechazo por plan, para `UpgradePrompt`: lo deja en la
+            // sesión el render de las excepciones de límite (`bootstrap/app.php`).
+            'planLimit' => $request->session()->get('planLimit'),
+            'planFeature' => $request->session()->get('planFeature'),
+            'planBlocked' => $request->session()->get('planBlocked'),
         ]);
+    }
+
+    /**
+     * El estado del plan de la organización del equipo, o `null` fuera del
+     * backoffice o en una base a medio sembrar —una organización sin
+     * suscripción no puede tumbar todas sus páginas por esto—.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function planState(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User || ! $this->context->hasOrganization()) {
+            return null;
+        }
+
+        // El tenant fijado puede ser **otro negocio**: alguien del equipo que,
+        // con la sesión abierta, mira el catálogo público de la competencia
+        // tiene fijada la organización de ese catálogo, y esto le serviría su
+        // plan, su consumo y su estado de pago. Solo el de la propia, como
+        // `pendingReceipts()` (revisión adversarial de `T-067`).
+        if ((int) $user->organization_id !== $this->context->organizationId()) {
+            return null;
+        }
+
+        if (! Subscription::query()->exists()) {
+            return null;
+        }
+
+        return app(LimitEnforcer::class)->state()->toArray();
     }
 
     /**

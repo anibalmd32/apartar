@@ -106,6 +106,26 @@ enum UsageMetric: string
     }
 
     /**
+     * Cómo se libera sitio sin cambiar de plan, para el mensaje del límite
+     * (`REQ-SUB-004` RB-5, `REQ-BOF-024` SP-3, `T-067`).
+     *
+     * Ofrecer solo «sube de plan» a quien tiene un catálogo de la campaña
+     * pasada todavía publicado es venderle algo que no necesita. Cada métrica
+     * tiene su salida, y ninguna borra nada (`REQ-SUB-008`).
+     */
+    public function freeUpHint(): string
+    {
+        return match ($this) {
+            self::Users => 'También puedes desactivar a alguien del equipo o revocar una invitación pendiente.',
+            self::Catalogs => 'También puedes despublicar otro catálogo para liberar su sitio.',
+            self::Products => 'También puedes archivar un producto que ya no vendas para liberar su sitio.',
+            self::ActiveLayaways => 'El cupo se libera solo cuando un apartado se completa, se cancela o vence.',
+            self::StorageMb => 'También puedes borrar imágenes que ya no uses.',
+            self::PaymentAccounts => 'También puedes desactivar otra cuenta de cobro.',
+        };
+    }
+
+    /**
      * Unidad en la que se cuenta, para que la UI no la invente.
      */
     public function unit(): string

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\Subscription;
 
+use App\Domain\Tenancy\OrganizationStatus;
+use App\Domain\Tenancy\TenantContext;
 use App\Models\Plan;
+use App\Models\PlanLimitRejection;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
 use Illuminate\Support\Facades\DB;
@@ -112,6 +115,59 @@ final class LimitEnforcer
     }
 
     /**
+     * Exige que un catálogo quepa con `$requested` productos
+     * (`max_products_per_catalog`, `REQ-SUB-004` RB-3, `REQ-CAT-023` RB-6).
+     *
+     * Es el único techo que no pasa por `assertCanCreate()`: se cuenta por
+     * catálogo y no hay contador que bloquear. Lo que serializa dos
+     * composiciones del mismo catálogo es **la fila del catálogo**, que la
+     * Action coge antes de contar y de llamar aquí.
+     *
+     * **Solo se rechaza lo que entra** (`REQ-SUB-004` RB-6, `REQ-SUB-008`):
+     * un catálogo que ya pasaba del techo —porque el negocio bajó de plan— se
+     * puede reordenar y vaciar, pero no recibir productos nuevos, ni siquiera
+     * cambiando uno por otro sin crecer. Rechazar que se reordene sería
+     * castigar lo que ya existía, que es lo que RB-6 prohíbe.
+     *
+     * @param  int  $current  productos que tiene hoy
+     * @param  int  $requested  los que tendría con el cambio
+     * @param  bool  $addsNew  si el cambio mete alguno que hoy no está
+     *
+     * @throws CreationSuspendedException si la suscripción no admite crear (RB-8)
+     * @throws CatalogProductLimitReachedException si no cabe, con el plan que lo resuelve
+     */
+    public function assertCatalogHolds(int $current, int $requested, bool $addsNew = true): void
+    {
+        // Reordenar o quitar: no entra nada nuevo.
+        if (! $addsNew && $requested <= $current) {
+            return;
+        }
+
+        $subscription = $this->subscription();
+
+        if (! $subscription->status->allowsCreation()) {
+            throw CreationSuspendedException::whileCreating(UsageMetric::Products);
+        }
+
+        $plan = $subscription->plan;
+        $limit = $plan->maxProductsPerCatalog();
+
+        if ($limit === null || $requested <= $limit) {
+            return;
+        }
+
+        throw CatalogProductLimitReachedException::of(
+            used: $current,
+            limit: $limit,
+            requested: $requested,
+            current: $plan,
+            minimum: Plan::query()->public()->get()->first(
+                fn (Plan $candidate): bool => $candidate->maxProductsPerCatalog() === null || $candidate->maxProductsPerCatalog() >= $requested,
+            ),
+        );
+    }
+
+    /**
      * Exige que el plan incluya esa función.
      *
      * @throws PlanFeatureUnavailableException con feature y minimumPlan
@@ -144,6 +200,68 @@ final class LimitEnforcer
         return $this->usageOf($metric)->remaining();
     }
 
+    /**
+     * Si la organización activa puede recibir hoy un apartado más, para la
+     * cara pública (`REQ-SUB-004` RB-4).
+     *
+     * Lectura **sin bloqueo**, como `remaining()`: decide si el formulario se
+     * ofrece, no autoriza. Lo que autoriza es `assertCanCreate()` dentro de
+     * `CreateLayawayAction`, que vuelve a mirar con el contador cogido. Cubre
+     * las mismas dos causas que esa comprobación —el cupo `active_layaways` y
+     * una suscripción que no admite crear— más la organización suspendida,
+     * que `CreateLayawayAction` también rechaza.
+     */
+    public function acceptsLayaways(): bool
+    {
+        $subscription = $this->subscription();
+
+        if (! $subscription->status->allowsCreation()) {
+            return false;
+        }
+
+        if (! $this->organizationIsActive()) {
+            return false;
+        }
+
+        return $this->usageOf(UsageMetric::ActiveLayaways, $subscription)->admits(1);
+    }
+
+    /**
+     * `acceptsLayaways()` para la página que **ofrece** apartar, anotando la
+     * venta perdida cuando lo que la impide es el cupo (`REQ-SUB-004` SP-2,
+     * `REQ-BOF-044` RB-5).
+     *
+     * Con el formulario apagado nadie llega a enviar el apartado que
+     * `CreateLayawayAction` rechazaría y anotaría, así que sin esto el aviso
+     * del panel no saldría justo cuando más ventas se pierden. Solo el cupo:
+     * una suscripción o una organización suspendidas también cierran, pero eso
+     * no lo arregla subir de plan.
+     */
+    public function offersLayaways(): bool
+    {
+        if ($this->acceptsLayaways()) {
+            return true;
+        }
+
+        $subscription = $this->subscription();
+
+        if ($subscription->status->allowsCreation() && $this->organizationIsActive()) {
+            PlanLimitRejection::record(UsageMetric::ActiveLayaways);
+        }
+
+        return false;
+    }
+
+    /**
+     * La organización ya resuelta por el tenant —la del catálogo en la cara
+     * pública—: leerla otra vez por la relación sería otra consulta en cada
+     * ficha (`TenantResolverQueriesTest`).
+     */
+    private function organizationIsActive(): bool
+    {
+        return app(TenantContext::class)->organization()->status === OrganizationStatus::Active;
+    }
+
     public function hasFeature(PlanFeature $feature): bool
     {
         return $this->plan()->hasFeature($feature);
@@ -174,13 +292,40 @@ final class LimitEnforcer
     public function state(): PlanState
     {
         $subscription = $this->subscription();
+        $plan = $subscription->plan;
+
+        // Los seis contadores en una consulta y el escaparate en otra: es lo
+        // que se comparte con cada página del backoffice (`T-067`).
+        $values = UsageCounter::query()->pluck('value', 'metric');
+        $public = Plan::query()->public()->get();
         $usage = [];
+        $upgrades = [];
 
         foreach (UsageMetric::cases() as $metric) {
-            $usage[$metric->value] = $this->usageOf($metric, $subscription);
+            $state = UsageState::of($metric, (int) ($values[$metric->value] ?? 0), $plan->limitFor($metric));
+            $usage[$metric->value] = $state;
+
+            // `REQ-SUB-003` RB-7 · a partir del 80 %, el plan que da más
+            // sitio: el primero del escaparate con un techo mayor que el de
+            // hoy, comparando techos y nunca códigos (`REQ-SUB-001` RB-1).
+            if ($state->deservesWarning()) {
+                $current = $plan->limitFor($metric);
+                $upgrades[$metric->value] = $public->first(
+                    fn (Plan $candidate): bool => $candidate->limitFor($metric) === null
+                        || ($current !== null && $candidate->limitFor($metric) > $current),
+                );
+            }
         }
 
-        return PlanState::of($subscription, $subscription->plan, $usage);
+        $featureUpgrades = [];
+
+        foreach (PlanFeature::cases() as $feature) {
+            if (! $plan->hasFeature($feature)) {
+                $featureUpgrades[$feature->value] = $public->first(fn (Plan $candidate): bool => $candidate->hasFeature($feature));
+            }
+        }
+
+        return PlanState::of($subscription, $plan, $usage, $upgrades, $featureUpgrades);
     }
 
     /**

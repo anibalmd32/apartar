@@ -87,14 +87,22 @@ final class UnpublishCatalogAction
         }
 
         return DB::transaction(function () use ($catalog, $actor): Catalog {
-            // El contador recontado y bloqueado antes que la fila, como al
+            // El contador, bloqueado antes que la fila y recontado después, como al
             // publicar: así un caducado que se despublica no deja su unidad.
-            $this->usage->recountLocked(UsageMetric::Catalogs);
+            $this->limits->lockCounter(UsageMetric::Catalogs);
 
             // Releído con bloqueo, por lo mismo que al publicar: dos
             // despublicaciones simultáneas restarían dos por un catálogo. La
             // segunda lo encuentra ya en borrador y no escribe nada.
             ModelState::adopt($catalog, Catalog::query()->whereKey($catalog->getKey())->lockForUpdate()->firstOrFail()->getAttributes());
+
+            // Y el recuento, **después** de coger la fila: el recuento lee con
+            // bloqueo compartido todos los catálogos del negocio, y si esta
+            // fila se pidiera en exclusiva después, una composición
+            // (`SyncCatalogProductsAction`) que esperase su turno en ella
+            // cerraría el círculo —el caso «compartido y luego exclusivo» de
+            // InnoDB—. Contador, fila, recuento (revisión de `T-067`).
+            $this->usage->recountLocked(UsageMetric::Catalogs);
 
             if ($catalog->visibility() === CatalogVisibility::Draft) {
                 return $catalog;

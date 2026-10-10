@@ -97,6 +97,7 @@ it('viaja con la métrica, el consumo, el techo y el plan mínimo', function ():
         'limit' => 1,
         'minimumPlan' => 'pro',
         'minimumPlanName' => 'Pro',
+        'suggestion' => UsageMetric::Users->freeUpHint(),
     ]);
 
     expect(PlanLimitReachedException::STATUS)->toBe(422);

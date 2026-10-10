@@ -75,10 +75,10 @@ use Illuminate\Validation\ValidationException;
  *
  * ## Lo que no está y tiene dueño
  *
- * **El cupo del plan de RB-8 se mueve pero no se comprueba aquí.** Archivar
- * libera y restaurar reclama (SP-4): desde `T-066` el contador `products` se
- * mueve en la transacción de cada paso. Comprobar que restaurar cabe es de
- * `T-067`, que inserta las llamadas a `assertCanCreate()`.
+ * **El cupo del plan de RB-8.** Archivar libera y restaurar reclama (SP-4):
+ * el contador `products` se mueve en la transacción de cada paso (`T-066`),
+ * y restaurar con el cupo agotado se rechaza con el plan que lo desbloquea
+ * (`T-067`).
  *
  * **El `404` de SP-1 tampoco.** Lo de esta clase es el mecanismo —el estado— y
  * la consulta que lo respeta; la respuesta HTTP de un `draft` o un `archived`
@@ -353,6 +353,14 @@ final class ChangeProductStatusAction
             $this->assertStepIsAllowed($product, $status);
 
             $from = $product->status;
+
+            // `REQ-SUB-004` RB-3 (`T-067`) · restaurar un archivado vuelve a
+            // ocupar una unidad de `products`, y con el cupo agotado no se
+            // puede: es crear uno más. Con el producto ya bloqueado —primero
+            // `ProductLock`, después el contador—.
+            if ($status->countsTowardPlanLimit() && ! $from->countsTowardPlanLimit()) {
+                $this->limits->assertCanCreate(UsageMetric::Products);
+            }
             $columns = array_keys($extra);
 
             $before = ['status' => $product->status->value] + $this->valuesOf($product, $columns);

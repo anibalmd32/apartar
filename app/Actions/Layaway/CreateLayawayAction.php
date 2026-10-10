@@ -25,12 +25,14 @@ use App\Models\Catalog;
 use App\Models\Customer;
 use App\Models\Layaway;
 use App\Models\Organization;
+use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Support\LayawayCode;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Crea un apartado desde el formulario del catálogo (`REQ-LAY-001`,
@@ -155,6 +157,10 @@ final class CreateLayawayAction
 
         try {
             return DB::transaction(fn (): Layaway => $this->transact($data, $organization));
+        } catch (NotAcceptingLayawaysException $exception) {
+            $this->recordLostSale($exception);
+
+            throw $exception;
         } catch (UniqueConstraintViolationException $exception) {
             if (! str_contains($exception->getMessage(), self::IDEMPOTENCY_INDEX)) {
                 throw $exception;
@@ -326,6 +332,33 @@ final class CreateLayawayAction
             $this->limits->assertCanCreate(UsageMetric::ActiveLayaways);
         } catch (PlanLimitReachedException|CreationSuspendedException $reason) {
             throw NotAcceptingLayawaysException::because($reason);
+        }
+    }
+
+    /**
+     * `REQ-SUB-004` SP-2, `REQ-BOF-044` RB-5 (`T-067`) · el apartado que el
+     * límite rechazó queda anotado como **venta perdida**, que es la evidencia
+     * con la que el panel avisa al negocio (`plan_limit_blocking_sales`).
+     *
+     * **Después** de deshacer la transacción, no dentro: dentro se desharía
+     * con ella. Y solo si el motivo es el límite: una suscripción suspendida
+     * también rechaza, pero eso no lo arregla subir de plan y el negocio ya lo
+     * sabe por su propio aviso.
+     */
+    private function recordLostSale(NotAcceptingLayawaysException $exception): void
+    {
+        $reason = $exception->getPrevious();
+
+        if (! $reason instanceof PlanLimitReachedException) {
+            return;
+        }
+
+        // Que anotar falle no puede cambiarle la respuesta al cliente: la
+        // suya es el mensaje neutro, no un `500`.
+        try {
+            PlanLimitRejection::record($reason->metric);
+        } catch (Throwable $exception) {
+            report($exception);
         }
     }
 

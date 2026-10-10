@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Backoffice;
 use App\Actions\Product\SyncImageOrderAction;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CrossTenantRelationException;
@@ -20,6 +21,7 @@ use App\Support\Media\TenantPathGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -40,11 +42,15 @@ use Throwable;
  * el séptimo se corta, los seis primeros son fotos que el negocio ya subió y
  * tirarlas sería perderle el trabajo por un problema de red que no es suyo.
  *
- * ## La cuota de almacenamiento se cuenta, pero no se comprueba aquí, todavía
+ * ## La cuota de almacenamiento se comprueba archivo a archivo
  *
- * RB-8 y SP-7 la exigen. Desde `T-066` subir y borrar vuelven a sumar
- * `storage_mb` en cuanto el archivo está en el disco; comprobar que cabe
- * —la llamada a `assertCanCreate()`— es de **`T-067`**, que inserta las doce.
+ * RB-8 y SP-7 la exigen (`T-067`): antes de adjuntar cada archivo,
+ * `assertCanCreate(StorageMb, $mb)` con lo que pesa **ese** archivo, en la
+ * transacción que lo adjunta; y después, `storage_mb` se vuelve a sumar
+ * (`T-066`), para que el siguiente compare con lo ya subido. Con la cuota
+ * agotada, lo ya subido se queda y la respuesta es el `422` del plan. Los
+ * comprobantes de cliente **no** pasan por aquí: nunca se rechazan por cuota
+ * (`REQ-PAY-001` RB-10).
  *
  * El `{product}` se resuelve ya filtrado por el tenant, así que el
  * identificador de otra organización da `404` y no `403` (SP-9,
@@ -55,6 +61,7 @@ final class ProductImageController extends Controller
     public function __construct(
         private readonly TenantContext $context,
         private readonly UsageCalculator $usage,
+        private readonly LimitEnforcer $limits,
     ) {}
 
     /**
@@ -69,9 +76,25 @@ final class ProductImageController extends Controller
         // noche. En el `finally` porque cada archivo es su propia unidad
         // (SP-5): si el séptimo falla, los seis primeros se quedan y pesan.
         // Las conversiones no cuentan (ver `UsageAggregates`).
+        //
+        // `REQ-SUB-004` RB-3, `REQ-BOF-022` RB-8 (`T-067`) · y antes de cada
+        // archivo, el cupo: los MB que **ese** archivo añade al total, contra
+        // el contador recontado y bloqueado, en la misma transacción que lo
+        // adjunta. Con la cuota agotada en el séptimo, los seis primeros se
+        // quedan.
         try {
             foreach ($request->images() as $file) {
-                $this->attach($product, $file);
+                DB::transaction(function () use ($product, $file): void {
+                    // El contador cogido y recontado **antes** de comprobar,
+                    // y otra vez después de adjuntar, sin soltarlo: el
+                    // almacenamiento es derivado y no se incrementa, así que
+                    // dos subidas simultáneas que leyeran el contador sin
+                    // recontar pasarían las dos con un solo hueco.
+                    $this->usage->recountLocked(UsageMetric::StorageMb);
+                    $this->limits->assertCanCreate(UsageMetric::StorageMb, $this->usage->megabytesAdded((int) $file->getSize()));
+                    $this->attach($product, $file);
+                    $this->usage->recountLocked(UsageMetric::StorageMb);
+                });
             }
         } finally {
             $this->measureStorage();

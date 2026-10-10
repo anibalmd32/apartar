@@ -43,7 +43,10 @@ final class PlanFeatureUnavailableException extends RuntimeException
      */
     public static function of(PlanFeature $feature, Plan $current, ?Plan $minimum): self
     {
-        $message = sprintf('Tu plan %s no incluye %s.', $current->name, $feature->value);
+        // El nombre de la función, no su clave: «excel_export» no se le dice a
+        // nadie (`PlanFeature::label()`).
+        $label = $feature->label();
+        $message = sprintf('Tu plan %s no incluye: %s.', $current->name, mb_strtolower(mb_substr($label, 0, 1)).mb_substr($label, 1));
 
         $message .= $minimum instanceof Plan
             ? sprintf(' %s sí la incluye.', $minimum->name)

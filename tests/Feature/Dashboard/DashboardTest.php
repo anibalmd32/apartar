@@ -10,6 +10,7 @@ use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
 use App\Domain\Subscription\SubscriptionStatus;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\Catalog;
 use App\Models\ExchangeRate;
@@ -17,8 +18,10 @@ use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
+use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Models\UsageCounter;
 use App\Models\User;
 use App\Queries\CollectionFilters;
 use App\Queries\DashboardMetricsQuery;
@@ -113,8 +116,9 @@ final class DashboardTest extends TestCase
     }
 
     /**
-     * RB-4, SP-6: los seis avisos de hoy, cada uno en su condición y no fuera
-     * de ella. Sin ninguna, no hay avisos.
+     * RB-4, SP-6: seis de los siete avisos, cada uno en su condición y no fuera
+     * de ella —el séptimo, el de ventas perdidas, va en su propio caso—. Sin
+     * ninguna, no hay avisos.
      */
     public function test_each_warning_fires_only_in_its_condition(): void
     {
@@ -154,6 +158,39 @@ final class DashboardTest extends TestCase
         $this->within(fn () => User::factory()->create(['role' => OrganizationRole::Member, 'email_verified_at' => null]));
         DB::table('users')->where('id', $this->owner->getKey())->update(['email_verified_at' => now()]);
         $this->assertSame([], $this->warnings(), 'Un miembro sin verificar no es el dueño.');
+    }
+
+    /**
+     * RB-5, `REQ-SUB-004` SP-2 (`T-067`) · `plan_limit_blocking_sales` sale
+     * **solo con evidencia de una venta perdida**: un apartado rechazado por
+     * el límite en los últimos 7 días, con la métrica que lo rechazó. Estar
+     * en el techo sin que nadie haya chocado **no** avisa, y un rechazo de
+     * hace ocho días ya no es esta semana.
+     */
+    public function test_the_lost_sales_warning_needs_evidence_and_not_proximity(): void
+    {
+        $this->within(function (): void {
+            Subscription::query()->firstOrFail()->plan->forceFill(['max_active_layaways' => 3])->save();
+            UsageCounter::query()->updateOrCreate(['metric' => UsageMetric::ActiveLayaways], ['value' => 3, 'computed_at' => now()]);
+        });
+
+        $this->assertNotContains('plan_limit_blocking_sales', $this->kinds(), 'Estar en el techo no es una venta perdida.');
+
+        $this->within(fn () => PlanLimitRejection::query()->create(['metric' => UsageMetric::ActiveLayaways, 'occurred_at' => CarbonImmutable::now()->subDays(8)]));
+        $this->assertNotContains('plan_limit_blocking_sales', $this->kinds(), 'Un rechazo de hace ocho días no es de esta semana.');
+
+        $this->within(fn () => PlanLimitRejection::query()->create(['metric' => UsageMetric::ActiveLayaways, 'occurred_at' => CarbonImmutable::now()->subDays(6)]));
+        $this->within(fn () => PlanLimitRejection::query()->create(['metric' => UsageMetric::ActiveLayaways, 'occurred_at' => CarbonImmutable::now()->subHour()]));
+
+        $this->assertSame(
+            [['kind' => 'plan_limit_blocking_sales', 'metric' => 'active_layaways']],
+            array_values(array_filter($this->warnings(), fn (array $warning): bool => $warning['kind'] === 'plan_limit_blocking_sales')),
+            'Dos rechazos de la misma métrica son un aviso, no dos.',
+        );
+
+        // Y la vecina, con su propio rechazo, no le llega a este negocio.
+        $this->withinOrganization($this->neighbourOrganization(), fn () => PlanLimitRejection::query()->create(['metric' => UsageMetric::Products, 'occurred_at' => now()]));
+        $this->assertSame(1, count(array_filter($this->kinds(), fn (string $kind): bool => $kind === 'plan_limit_blocking_sales')));
     }
 
     /**

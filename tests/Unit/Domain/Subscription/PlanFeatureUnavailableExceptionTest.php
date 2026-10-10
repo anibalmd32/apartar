@@ -21,7 +21,9 @@ it('nombra el plan que sí la incluye', function (): void {
         minimum: new Plan(['code' => 'pro', 'name' => 'Pro']),
     );
 
-    expect($exception->getMessage())->toContain('Tu plan Free no incluye branding.')->toContain('Pro sí la incluye.');
+    // El nombre de la función, no su clave (`PlanFeature::label()`, `T-067`).
+    expect($exception->getMessage())->toContain('Tu plan Free no incluye: tu logo y tu color, sin el sello de Apartar.')->toContain('Pro sí la incluye.');
+    expect($exception->getMessage())->not->toContain('branding');
     expect($exception->toArray())->toBe([
         'feature' => 'branding',
         'minimumPlan' => 'pro',

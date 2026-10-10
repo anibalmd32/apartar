@@ -52,6 +52,8 @@ final class PublishedCatalogLocksTheBusinessSlugTest extends TestCase
 
         $this->neighbourOrganization();
         $this->organization = Organization::factory()->create(['slug' => 'ferreteria-el-tornillo']);
+        // `T-067` · crear, publicar y componer preguntan al plan.
+        $this->subscribeWithoutLimits($this->organization);
 
         $this->withoutOrganization();
     }

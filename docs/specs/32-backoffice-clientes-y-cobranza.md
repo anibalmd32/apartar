@@ -375,6 +375,8 @@ export type DashboardWarning =
 > - **Lo que todavía no existe vuelve `null`** y no se pinta: mensajes sin leer (**`T-080`**) y suscriptores (**H6**).
 > - **SP-1**: mientras al negocio le falte una cuenta de cobro, un producto o un catálogo publicado, el checklist de arranque va **encima** de las tarjetas, no en su lugar: las cifras en cero también dicen algo, y cuando aparece el primer comprobante tiene que verse.
 
+> **Cómo quedó, en `T-067`.** **RB-4, el séptimo aviso; RB-5, con evidencia**: `CreateLayawayAction` anota en `plan_limit_rejections` cada apartado que el límite rechaza —métrica y fecha, nada del cliente—, **después** de deshacer la transacción del intento, y `DashboardWarningsQuery` saca `plan_limit_blocking_sales` con su `metric` solo si hay alguno de los últimos 7 días (`LOST_SALE_DAYS`), uno por métrica. Estar en el techo no avisa; un rechazo por suscripción suspendida no cuenta como venta perdida. El aviso nombra el techo y lleva a Suscripción. Y el consumo del plan del panel nombra sus métricas con `UsageMetric::label()`, que llega del servidor.
+
 ---
 
 ### REQ-BOF-045 · Tablas server-driven

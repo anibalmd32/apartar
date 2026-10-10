@@ -15,13 +15,16 @@ use App\Domain\Customer\TermsConsent;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\NotAcceptingLayawaysException;
 use App\Domain\Money\Money;
+use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\PlanLimitReachedException;
+use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantAlreadySetException;
 use App\Models\Catalog;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Plan;
+use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
@@ -268,6 +271,32 @@ final class CreateLayawayActionTest extends TestCase
         }
 
         $this->assertNothingPersisted(usage: 5);
+
+        // `REQ-SUB-004` SP-2, `REQ-BOF-044` RB-5 (`T-067`) · y la venta perdida
+        // queda anotada para el aviso del negocio, **fuera** de la transacción
+        // que se deshizo, con su métrica y sin nada del cliente.
+        $rejection = $this->withinOrganization($this->organization, fn (): PlanLimitRejection => PlanLimitRejection::query()->sole());
+        $this->assertSame(UsageMetric::ActiveLayaways, $rejection->metric);
+        $this->assertTrue($rejection->occurred_at->isToday());
+    }
+
+    /**
+     * Una suscripción que no admite crear también rechaza, pero eso **no** es
+     * una venta perdida por el límite: subir de plan no lo arregla, y el aviso
+     * del negocio es otro (la factura vencida).
+     */
+    public function test_a_suspended_subscription_rejects_without_recording_a_lost_sale(): void
+    {
+        $this->withinOrganization($this->organization, fn () => Subscription::query()->update(['status' => SubscriptionStatus::Suspended->value]));
+
+        try {
+            $this->create();
+            $this->fail('Se creó un apartado con la suscripción suspendida.');
+        } catch (NotAcceptingLayawaysException $exception) {
+            $this->assertInstanceOf(CreationSuspendedException::class, $exception->getPrevious());
+        }
+
+        $this->assertSame(0, $this->withinOrganization($this->organization, fn (): int => PlanLimitRejection::query()->count()));
     }
 
     /**

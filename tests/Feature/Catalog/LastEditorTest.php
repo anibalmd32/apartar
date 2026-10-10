@@ -47,6 +47,8 @@ final class LastEditorTest extends TestCase
 
         $this->neighbourOrganization();
         $this->actingAsOrganization(Organization::factory()->create());
+        // `T-067` · crear, publicar y componer preguntan al plan.
+        $this->subscribeWithoutLimits();
 
         $this->author = User::factory()->owner()->create(['name' => 'Autora']);
         $this->other = User::factory()->owner()->create(['name' => 'Otra persona']);

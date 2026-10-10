@@ -43,12 +43,17 @@ it('dice no apartable si el estado no lo admite', function (): void {
 });
 
 /**
- * El motivo por límite de plan está declarado y **no se alcanza**: lo decide
- * `T-067`. Ninguna combinación de hoy lo devuelve.
+ * `REQ-SUB-004` RB-4 (`T-067`) · cuando el negocio no puede recibir
+ * apartados, ese es el motivo **para cualquier producto**, tenga unidades y
+ * plan o no: es lo que de verdad lo impide. Y solo entonces: con el negocio
+ * abierto, ninguna combinación lo devuelve.
  */
-it('no alcanza todavía el motivo del límite de plan', function (int $stock, bool $withPlan): void {
-    expect(UnavailableReason::of(productWithStock($stock), $withPlan ? coherentPlan() : null))
-        ->not->toBe(UnavailableReason::BusinessUnavailable);
+it('dice que el negocio no recibe apartados antes que cualquier otro motivo', function (int $stock, bool $withPlan): void {
+    $product = productWithStock($stock);
+    $plan = $withPlan ? coherentPlan() : null;
+
+    expect(UnavailableReason::of($product, $plan, businessAccepts: false))->toBe(UnavailableReason::BusinessUnavailable);
+    expect(UnavailableReason::of($product, $plan, businessAccepts: true))->not->toBe(UnavailableReason::BusinessUnavailable);
 })->with([[0, true], [1, true], [0, false], [1, false]]);
 
 /**

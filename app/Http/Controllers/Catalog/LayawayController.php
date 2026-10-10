@@ -118,7 +118,7 @@ final class LayawayController extends Controller
 
         $product->load(['category', 'tags', 'media', 'specifications']);
 
-        $detail = (new ProductDetailResource($product, $catalog, $this->paymentAccounts->all()))->resolve($request);
+        $detail = (new ProductDetailResource($product, $catalog, $this->paymentAccounts->all(), $this->limits->offersLayaways()))->resolve($request);
         $maxQuantity = max(1, (int) $detail['maxQuantity']);
         $quantity = $this->quantityFrom($request, $maxQuantity);
 

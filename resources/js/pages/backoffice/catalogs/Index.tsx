@@ -1,5 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
+import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type CatalogListItem } from '@/types/catalog';
 import { Link, usePage } from '@inertiajs/react';
@@ -32,6 +33,9 @@ export default function CatalogsIndex({ catalogs }: CatalogsPageProps) {
             description="Tus campañas. Cada catálogo tiene su propio enlace: lo compartes por WhatsApp y tus clientes entran por ahí."
         >
             {errors.status ? <Alert tone="warning">{errors.status}</Alert> : null}
+
+            {/* `REQ-SUB-003` RB-7 · a partir del 80 %, antes de chocar. */}
+            <LimitBanner metric="catalogs" />
 
             <section className="card bg-base-100 shadow-sm">
                 <div className="card-body gap-4">

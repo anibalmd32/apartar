@@ -1,6 +1,9 @@
 import { Alert } from '@/components/ui/alert';
+import { PlansLink } from '@/features/plan/components/PlansLink';
+import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
 import { type DashboardWarning } from '@/types/dashboard';
+import { type UsageMetric } from '@/types/plan';
 import { Link } from '@inertiajs/react';
 
 /**
@@ -21,6 +24,21 @@ export function DashboardWarnings({ warnings }: { warnings: readonly DashboardWa
                 </Alert>
             ))}
         </section>
+    );
+}
+
+/**
+ * `REQ-SUB-004` SP-2, `REQ-BOF-044` RB-5 (`T-067`) · el aviso que mejor
+ * convierte porque es verdad: un cliente quiso apartar esta semana y el plan
+ * lo impidió. Dice cuál de los techos y lleva a cambiar de plan.
+ */
+function LostSales({ metric }: { metric: UsageMetric }) {
+    const plan = usePlanLimits();
+
+    return (
+        <span>
+            Esta semana tu plan rechazó apartados de tus clientes: llegaste al techo de {plan.metricLabel(metric)}. <PlansLink className="link" />
+        </span>
     );
 }
 
@@ -57,7 +75,7 @@ function WarningText({ warning }: { warning: DashboardWarning }) {
         case 'stale_exchange_rate':
             return <span>La tasa de cambio tiene {warning.ageHours} horas: revisa que tus precios en bolívares sigan siendo los correctos.</span>;
         case 'plan_limit_blocking_sales':
-            return <span>Un límite de tu plan está rechazando apartados.</span>;
+            return <LostSales metric={warning.metric} />;
         case 'invoice_overdue':
             return (
                 <span>

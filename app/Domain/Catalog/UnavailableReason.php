@@ -15,15 +15,15 @@ use App\Models\Product;
  * está a punto de pagar necesita saber si es el producto, las unidades o el
  * negocio.
  *
- * ## El tercer caso nace declarado y sin forma de alcanzarse
+ * ## El tercer caso es el del negocio, no el del producto
  *
  * `BusinessUnavailable` es el límite de plan de `REQ-SUB-004` RB-4: el negocio
- * agotó sus apartados del mes. Lo decide `LimitEnforcer` en uno de los doce
- * puntos de aplicación, y esos los inserta **`T-067`**. Se declara ya porque
- * el contrato del cliente —`unavailableReason`— no puede cambiar de forma el
- * día que llegue el límite; y **`of()` no lo devuelve nunca**, porque aquí no
- * hay nada que lo decida. Un caso que se alcanzara hoy sería inventarse el
- * límite.
+ * agotó sus apartados activos, o su suscripción o su organización no admiten
+ * crear. No lo decide este enum: lo pregunta quien pinta la ficha a
+ * `LimitEnforcer::acceptsLayaways()` y se lo pasa a `of()` (`T-067`), y va
+ * **primero** porque vale para todos los productos del negocio. Lo que lo
+ * hace cumplir sigue siendo `assertCanCreate()` dentro de `CreateLayawayAction`:
+ * esto solo evita ofrecer un formulario que se va a rechazar.
  *
  * Su mensaje es **neutro**: no nombra el plan, ni el límite, ni que el negocio
  * tenga que pagar nada. El plan de un negocio es asunto del negocio, y quien
@@ -49,8 +49,18 @@ enum UnavailableReason: string
      * después las unidades. El producto llega ya visible: `draft`, archivado y
      * programado no tienen ficha (SP-2).
      */
-    public static function of(Product $product, ?FinancingPlan $plan): ?self
+    /**
+     * @param  bool  $businessAccepts  si el negocio puede recibir hoy un apartado más (`LimitEnforcer::acceptsLayaways()`)
+     */
+    public static function of(Product $product, ?FinancingPlan $plan, bool $businessAccepts = true): ?self
     {
+        // `REQ-SUB-004` RB-4 · el primero: vale para **todos** los productos
+        // del negocio, y es lo que de verdad impide apartar. Con su mensaje
+        // neutro, que no dice ni plan ni límite (`T-067`).
+        if (! $businessAccepts) {
+            return self::BusinessUnavailable;
+        }
+
         if ($plan === null || ! $product->status->canBeReserved()) {
             return self::NotReservable;
         }

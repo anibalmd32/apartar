@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import { PaymentAccountForm } from '@/features/tenancy/components/PaymentAccountForm';
 import { PaymentAccountRow } from '@/features/tenancy/components/PaymentAccountRow';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -66,6 +67,9 @@ export default function PaymentAccountsIndex({ accounts, methods, usage }: Payme
                             </a>
                         </Alert>
                     ) : null}
+
+                    {/* RB-7 · entre el 80 % y el techo; en el techo, el aviso de arriba. */}
+                    {!usage.isAtLimit ? <LimitBanner metric="payment_accounts" /> : null}
 
                     {editable ? (
                         <PaymentAccountForm key={editable.id} methods={methods} account={editable} onDone={() => setEditing(null)} />

@@ -10,6 +10,7 @@ use Tests\Concerns\CreatesNeighbourOrganization;
 use Tests\Concerns\FailsOnCounterDrift;
 use Tests\Concerns\FakesPwnedPasswords;
 use Tests\Concerns\RecalculatesUsage;
+use Tests\Concerns\SubscribesWithoutLimits;
 
 /**
  * Caso base de toda la suite.
@@ -25,7 +26,7 @@ use Tests\Concerns\RecalculatesUsage;
  */
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesNeighbourOrganization, FailsOnCounterDrift, FakesPwnedPasswords, RecalculatesUsage;
+    use CreatesNeighbourOrganization, FailsOnCounterDrift, FakesPwnedPasswords, RecalculatesUsage, SubscribesWithoutLimits;
 
     protected function setUp(): void
     {

@@ -159,6 +159,8 @@ export interface CatalogView {
 - Anti-`SHALLOW`: `PublishCatalogAction::handle()` (los seis requisitos de RB-4, transición de visibilidad, consumo del plan, auditoría), `Catalog::visibility()` y `UniqueCatalogSlug::generate()` superan 4 líneas en sus archivos.
 - Tests: un test por cada uno de los seis requisitos de RB-4; slug único global con desambiguación entre organizaciones; slug inmutable tras publicar; `expires_at` pasada rechazada; despublicar libera cupo y da `404`; expirado da `410`; suscripciones sobreviven a la despublicación; sello presente en Free y ausente con `branding`; auditoría escrita.
 
+> **Cómo quedó, en `T-067`.** **RB-4.4, el cupo `catalogs`, ya rige**: `PublishCatalogAction::apply()` lo comprueba con `assertCanCreate()` dentro de su transacción, con el contador recontado y bloqueado, y **solo cuando el catálogo no contaba** —republicar uno vigente para cambiarle la fecha o la vitrina no ocupa nada—. Un borrador no ocupa y despublicar libera (RB-7). El test que esperaba esta línea (`test_the_plan_quota_requirement_is_not_enforced_yet`) se sustituyó por el de SP-3 de `REQ-BOF-024`.
+
 ---
 
 ### REQ-CAT-023 · Composición y orden curado del catálogo
@@ -210,3 +212,5 @@ export interface CatalogView {
 - Tipos esperados: `SyncCatalogProductsAction`, `CatalogProductOrder`, `CrossTenantRelationException`, `PlanLimitReachedException` (esta última llega con `T-067`, que inserta el tope de RB-6; ver la nota de RB-6).
 - Anti-`SHALLOW`: `SyncCatalogProductsAction::handle()` (deduplicación, validación de pertenencia al tenant, tope de plan, reescritura de posiciones preservando `created_at`, transacción) supera 4 líneas.
 - Tests: posiciones contiguas desde 1; `created_at` **no** cambia al reordenar (test explícito de RB-3); deduplicación; producto de otra organización rechazado (fuga); tope de plan; `draft` admitido; vaciar un catálogo publicado rechazado; producto en varios catálogos del mismo negocio.
+
+> **Cómo quedó, en `T-067`.** **RB-6, SP-3 · el tope de `max_products_per_catalog` se comprueba en `SyncCatalogProductsAction`**, con la fila del catálogo bloqueada antes de contar —dos composiciones del mismo catálogo se serializan ahí— y decidido por `LimitEnforcer::assertCatalogHolds()`, que responde con `CatalogProductLimitReachedException` (`422`, clave `products_per_catalog`, el plan que lo admite y la salida: quitar un producto). Cuenta el pivote entero tras el guardado, borradores incluidos. **Solo rechaza lo que crece**: un catálogo que ya pasaba del techo tras bajar de plan se reordena y se vacía (`REQ-SUB-004` RB-6).

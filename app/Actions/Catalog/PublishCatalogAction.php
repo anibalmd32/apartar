@@ -36,15 +36,15 @@ use Illuminate\Support\Facades\Gate;
  *  1. al menos un producto **publicado** dentro — SP-1 · aquí
  *  2. al menos una cuenta de cobro activa — SP-2 · aquí
  *  3. `expires_at` vacía o futura — SP-5 y SP-8 · aquí
- *  4. cupo disponible en el límite `catalogs` — SP-3 · **de `T-067`**
+ *  4. cupo disponible en el límite `catalogs` — SP-3 · en `apply()`, desde `T-067`
  *  5. email del `owner` verificado — SP-4 · aquí
  *  6. organización no suspendida — SP-9 · aquí
  *
- * **El cuarto no está y no se simula.** Desde `T-066` publicar **mueve** el
- * contador `catalogs` —uno más al pasar de borrador o caducado a publicado—,
- * pero no lo **comprueba**: insertar las llamadas es de `T-067`. Lo que sí
- * está es el sitio: una línea `assertCanCreate(UsageMetric::Catalogs)` dentro
- * de la transacción de `apply()`, que es donde el contador se lee bloqueado.
+ * **El cuarto va aparte, dentro de la transacción** (`T-067`): el cupo
+ * `catalogs` se comprueba con `assertCanCreate()` en `apply()`, con el
+ * contador recién recontado y bloqueado, y solo cuando el catálogo no contaba
+ * ya. Con el cupo agotado, `PlanLimitReachedException` lleva el plan que lo
+ * desbloquea y la sugerencia de despublicar otro (SP-3).
  *
  * ## El orden de las comprobaciones es parte de la respuesta
  *
@@ -136,10 +136,19 @@ final class PublishCatalogAction
     {
         $expiresAt = $catalog->expires_at;
 
-        return $this->missingToPublish($catalog, new PublishCatalogData(
+        $missing = $this->missingToPublish($catalog, new PublishCatalogData(
             isListed: $catalog->is_listed,
             expiresAt: $expiresAt === null ? null : CarbonImmutable::instance($expiresAt),
         ));
+
+        // Requisito 4 (`T-067`) · el cupo también se enseña antes de pulsar,
+        // con la misma pregunta al plan que hace `apply()` y sin bloqueo: es
+        // una lectura para la pantalla. Solo si este catálogo no cuenta ya.
+        if (! $catalog->visibility()->countsTowardPlanLimit() && $this->limits->remaining(UsageMetric::Catalogs) === 0) {
+            $missing['plan'] = 'Tu plan no admite otro catálogo publicado. '.UsageMetric::Catalogs->freeUpHint().' O cambia de plan en Suscripción.';
+        }
+
+        return $missing;
     }
 
     /**
@@ -261,11 +270,11 @@ final class PublishCatalogAction
     private function apply(Catalog $catalog, PublishCatalogData $data, User $actor): Catalog
     {
         return DB::transaction(function () use ($catalog, $data, $actor): Catalog {
-            // Lo primero, el contador `catalogs` recontado y bloqueado: los
-            // catálogos caducan solos y el contador puede llevar uno que ya no
-            // cuenta (`UsageCalculator::recountLocked()`). Antes que la fila
-            // del catálogo, para que dos publicaciones se serialicen aquí.
-            $this->usage->recountLocked(UsageMetric::Catalogs);
+            // Lo primero, el contador `catalogs`, bloqueado: antes que la fila
+            // del catálogo, para que dos publicaciones se serialicen aquí. Se
+            // recuenta más abajo, porque los catálogos caducan solos y el
+            // contador puede llevar uno que ya no cuenta.
+            $this->limits->lockCounter(UsageMetric::Catalogs);
 
             // El catálogo, releído con bloqueo: si ya contaba o no es lo que
             // decide cuánto se mueve el cupo `catalogs` (`REQ-SUB-003` RB-3),
@@ -273,14 +282,25 @@ final class PublishCatalogAction
             // leyeran del modelo de su petición sumarían dos por uno.
             ModelState::adopt($catalog, Catalog::query()->whereKey($catalog->getKey())->lockForUpdate()->firstOrFail()->getAttributes());
 
+            // Y el recuento, **después** de coger la fila: el recuento lee con
+            // bloqueo compartido todos los catálogos del negocio, y si esta
+            // fila se pidiera en exclusiva después, una composición
+            // (`SyncCatalogProductsAction`) que esperase su turno en ella
+            // cerraría el círculo —el caso «compartido y luego exclusivo» de
+            // InnoDB—. Contador, fila, recuento (revisión de `T-067`).
+            $this->usage->recountLocked(UsageMetric::Catalogs);
+
             $before = $this->snapshotOf($catalog);
             $counted = $catalog->visibility()->countsTowardPlanLimit();
 
-            // `T-067` inserta aquí su línea: el cupo se comprueba con el
-            // contador bloqueado dentro de esta misma transacción, que es lo
+            // Requisito 4 · SP-3 (`T-067`): el cupo, con el contador ya
+            // bloqueado y exacto, dentro de esta misma transacción, que es lo
             // que impide que dos publicaciones simultáneas gasten un solo
-            // hueco ([05 §5]). Solo cuando `$counted` es falso: cambiar la
-            // fecha de un catálogo que ya está publicado no ocupa nada nuevo.
+            // hueco ([05 §5]). Solo cuando no contaba: cambiar la fecha o la
+            // vitrina de un catálogo que ya está publicado no ocupa nada nuevo.
+            if (! $counted) {
+                $this->limits->assertCanCreate(UsageMetric::Catalogs);
+            }
             $catalog->editedBy($actor)->forceFill([
                 'is_listed' => $data->isListed,
                 'expires_at' => $data->expiresAt,

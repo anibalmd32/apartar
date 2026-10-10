@@ -1,4 +1,5 @@
 import Dashboard from '@/pages/backoffice/Dashboard';
+import { planState, usage } from '@/test/plan-fixtures';
 import { dashboardProps } from '@/test/t065-fixtures';
 import { render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
@@ -64,17 +65,10 @@ it('pinta los avisos con su acción', () => {
 
 /** RB-6 · el consumo al 80 % o más se destaca; RB-1 · la tasa con su antigüedad. */
 it('destaca el consumo del plan al 80 % y dice la edad de la tasa', () => {
-    const usage = (used: number, limit: number) => ({ used, limit, isAtLimit: used >= limit, percentage: Math.round((used / limit) * 100) });
-
     render(
         <Dashboard
             {...dashboardProps({
-                plan: {
-                    planCode: 'free',
-                    planName: 'Free',
-                    status: 'active',
-                    currentPeriodEnd: null,
-                    graceEndsAt: null,
+                plan: planState({
                     usage: {
                         users: usage(1, 2),
                         catalogs: usage(1, 1),
@@ -83,8 +77,7 @@ it('destaca el consumo del plan al 80 % y dice la edad de la tasa', () => {
                         storage_mb: usage(10, 500),
                         payment_accounts: usage(1, 3),
                     },
-                    features: [],
-                },
+                }),
                 rate: {
                     rate: 42.5,
                     source: 'bcv',
@@ -96,8 +89,12 @@ it('destaca el consumo del plan al 80 % y dice la edad de la tasa', () => {
         />,
     );
 
-    expect(screen.getByText(/Productos: 24/)).toHaveClass('text-warning');
-    expect(screen.getByText(/Apartados activos: 11/)).not.toHaveClass('text-warning');
+    // El nombre de la métrica es el del servidor (`T-067`), en minúsculas y
+    // capitalizado por CSS: se busca la fila entera.
+    const item = (text: string) => screen.getAllByRole('listitem').find((li) => li.textContent?.includes(text));
+
+    expect(item('productos: 24')).toHaveClass('text-warning');
+    expect(item('apartados activos: 11')).not.toHaveClass('text-warning');
     expect(screen.getByText(/publicada hace 5 h/)).toBeInTheDocument();
 });
 

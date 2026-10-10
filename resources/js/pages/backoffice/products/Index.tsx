@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
+import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import { INVENTORY_FILTER_LABELS, InventoryFilters } from '@/features/products/components/InventoryFilters';
 import { inventoryColumns } from '@/features/products/components/inventoryColumns';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -61,6 +62,10 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses }
             description="Lo que vendes. Desde aquí lo creas, lo editas y lo archivas cuando deja de estar a la venta."
         >
             {errors.status ? <Alert tone="warning">{errors.status}</Alert> : null}
+
+            {/* `REQ-SUB-003` RB-7 · a partir del 80 %, antes de chocar. */}
+            <LimitBanner metric="products" />
+            <LimitBanner metric="storage_mb" />
 
             <section className="card bg-base-100 shadow-sm">
                 <div className="card-body gap-4">

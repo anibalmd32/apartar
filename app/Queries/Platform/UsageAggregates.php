@@ -164,6 +164,25 @@ final class UsageAggregates
      */
     private function megabytesPer(array $organizationIds, bool $locking): array
     {
+        $megabytes = [];
+
+        foreach ($this->bytesPer($organizationIds, $locking) as $organization => $bytes) {
+            $megabytes[$organization] = self::megabytes($bytes);
+        }
+
+        return $megabytes;
+    }
+
+    /**
+     * Los mismos bytes que `storage_mb` suma, sin redondear todavía: para
+     * saber cuántos MB **más** ocupa un archivo hay que redondear una vez, el
+     * total con él, y no sumar dos redondeos (`T-067`).
+     *
+     * @param  list<int>  $organizationIds
+     * @return array<int, int> bytes por `organization_id`, con todas las pedidas
+     */
+    public function bytesPer(array $organizationIds, bool $locking = false): array
+    {
         $receipts = $this->totals(Receipt::query()->withoutTenantScope()
             ->whereIn('organization_id', $organizationIds)
             ->groupBy('organization_id')
@@ -178,15 +197,21 @@ final class UsageAggregates
             ->groupBy('products.organization_id')
             ->selectRaw('products.organization_id AS organization, SUM(media.size) AS total'), $locking);
 
-        $megabytes = [];
+        $bytes = [];
 
         foreach ($organizationIds as $organization) {
-            $bytes = (int) ($receipts[$organization] ?? 0) + (int) ($media[$organization] ?? 0);
-
-            $megabytes[$organization] = (int) ceil($bytes / self::BYTES_PER_MB);
+            $bytes[$organization] = (int) ($receipts[$organization] ?? 0) + (int) ($media[$organization] ?? 0);
         }
 
-        return $megabytes;
+        return $bytes;
+    }
+
+    /**
+     * Bytes a MB enteros, hacia arriba: la única conversión de `storage_mb`.
+     */
+    public static function megabytes(int $bytes): int
+    {
+        return (int) ceil($bytes / self::BYTES_PER_MB);
     }
 
     /**

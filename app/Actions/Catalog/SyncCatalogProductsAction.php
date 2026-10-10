@@ -7,6 +7,8 @@ namespace App\Actions\Catalog;
 use App\Domain\Catalog\CatalogProductOrder;
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Subscription\CatalogProductLimitReachedException;
+use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Catalog;
@@ -80,6 +82,7 @@ final class SyncCatalogProductsAction
     public function __construct(
         private readonly TenantContext $context,
         private readonly CatalogProductOrder $order,
+        private readonly LimitEnforcer $limits,
     ) {}
 
     /**
@@ -95,21 +98,36 @@ final class SyncCatalogProductsAction
      * @throws AuthorizationException si el actor no mantiene el inventario
      * @throws CrossTenantRelationException si algún identificador no es de esta organización
      * @throws ValidationException si se añade un archivado o se vacía un catálogo publicado
+     * @throws CatalogProductLimitReachedException si el catálogo crece por encima del tope del plan
      */
     public function handle(Catalog $catalog, array $productIds, User $actor): void
     {
         Gate::forUser($actor)->authorize('manageProducts', $this->context->organization());
 
         DB::transaction(function () use ($catalog, $productIds, $actor): void {
+            // La fila del catálogo, cogida antes de contar: es lo que
+            // serializa dos composiciones del mismo catálogo, que de otro modo
+            // contarían las dos lo de antes y pasarían las dos el tope.
+            Catalog::query()->whereKey($catalog->getKey())->lockForUpdate()->firstOrFail();
+
             $requested = $this->order->deduplicate($productIds);
 
             $this->assertEveryProductIsAddable($catalog, $requested);
             $this->assertNotEmptyingAPublishedCatalog($catalog, $requested);
 
-            // Aquí entra el tope de `max_products_per_catalog` cuando `T-067`
-            // inserte las llamadas de límite: `count($requested)` es el total
-            // del pivote tras el guardado, **incluidos los `draft`**, que es
-            // como RB-6 lo cuenta.
+            // `REQ-SUB-004` RB-3 · el tope de `max_products_per_catalog`
+            // (`REQ-CAT-023` RB-6, SP-3, `T-067`): `count($requested)` es el
+            // total del pivote tras el guardado, **incluidos los `draft`**,
+            // que es como RB-6 lo cuenta. Solo se rechaza lo que entra: un
+            // catálogo por encima del techo tras bajar de plan se reordena y
+            // se vacía, pero no recibe productos nuevos.
+            $current = $catalog->products()->pluck('products.id')->map(fn (mixed $id): int => (int) $id)->all();
+
+            $this->limits->assertCatalogHolds(
+                count($current),
+                count($requested),
+                addsNew: array_diff($requested, $current) !== [],
+            );
 
             $this->order->apply($catalog, $requested);
 

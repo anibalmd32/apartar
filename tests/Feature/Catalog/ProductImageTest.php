@@ -51,6 +51,8 @@ final class ProductImageTest extends TestCase
 
         $neighbour = $this->neighbourOrganization();
         $this->organization = Organization::factory()->create();
+        // `T-067` · crear, publicar y componer preguntan al plan.
+        $this->subscribeWithoutLimits($this->organization);
 
         $this->withinOrganization($neighbour, fn () => User::factory()->owner()->create());
         $this->withoutOrganization();
@@ -448,6 +450,8 @@ final class ProductImageTest extends TestCase
      */
     private function uploadTo(Organization $organization, array $attributes = []): Media
     {
+        $this->subscribeWithoutLimits($organization);
+
         $product = $this->withinOrganization(
             $organization,
             fn (): Product => Product::factory()->create($attributes),

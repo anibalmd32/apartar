@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Money\CurrencyDisplay;
+use App\Domain\Subscription\CatalogProductLimitReachedException;
 use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\PlanFeatureUnavailableException;
 use App\Domain\Subscription\PlanLimitReachedException;
@@ -12,6 +13,7 @@ use App\Domain\Tenancy\InvitationNotPendingException;
 use App\Domain\Tenancy\LastOwnerException;
 use App\Exceptions\ExpiredInertiaSession;
 use App\Http\Middleware\AllowedDuringSuspension;
+use App\Http\Middleware\EnforcePlanLimit;
 use App\Http\Middleware\EnsureAdminIsActive;
 use App\Http\Middleware\EnsureIsOwner;
 use App\Http\Middleware\EnsureOrganizationIsActive;
@@ -121,6 +123,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'organization-active' => EnsureOrganizationIsActive::class,
             'password-changed' => EnsurePasswordIsChanged::class,
             'during-suspension' => AllowedDuringSuspension::class,
+            // REQ-SUB-004 SP-3 · `plan-feature:<clave>`: 403 con el motivo si
+            // el plan no incluye la función (T-067).
+            'plan-feature' => EnforcePlanLimit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -170,35 +175,66 @@ return Application::configure(basePath: dirname(__DIR__))
         // podría decir «no puedes», que deja a quien lo lee donde estaba; con
         // él enlaza a Suscripción sabiendo qué ofrecer, y sin lógica propia
         // (RB-1).
-        $exceptions->render(function (PlanLimitReachedException $exception): JsonResponse {
-            return response()->json([
+        //
+        // Dos formas de la misma respuesta (`T-067`): a quien pide JSON, el
+        // 422 con el cuerpo; a un formulario de Inertia, **de vuelta al
+        // formulario** con el mensaje en `errors.plan` y el cuerpo en la
+        // sesión (`planLimit`), que es lo que lee `UpgradePrompt` desde el
+        // layout. Un JSON en respuesta a una visita de Inertia se pinta como
+        // una página de error, y el mensaje que lo explica no llega a verse.
+        // `errors.plan` y no el campo de cada formulario: el límite no es de
+        // un campo, es del negocio, y el aviso es uno para todas las
+        // pantallas.
+        $planLimit = function (PlanLimitReachedException|CatalogProductLimitReachedException $exception, Request $request): SymfonyResponse {
+            $body = [
                 'message' => $exception->getMessage(),
-                'errors' => ['email' => [$exception->getMessage()]],
                 'limit' => $exception->toArray(),
-                // La pantalla de suscripción llega con su hito; la URL ya es
-                // la definitiva de [05 §7.4], igual que en el aviso de
-                // suspensión de `BackofficeLayout`, para que el enlace esté
-                // completo el día que exista.
                 'upgradeUrl' => '/backoffice/suscripcion',
-            ], PlanLimitReachedException::STATUS);
-        });
+            ];
+
+            if ($request->expectsJson()) {
+                return response()->json(['errors' => ['plan' => [$exception->getMessage()]]] + $body, $exception::STATUS);
+            }
+
+            return back()->withErrors(['plan' => $exception->getMessage()])->with('planLimit', $body);
+        };
+
+        $exceptions->render(fn (PlanLimitReachedException $exception, Request $request): SymfonyResponse => $planLimit($exception, $request));
+        $exceptions->render(fn (CatalogProductLimitReachedException $exception, Request $request): SymfonyResponse => $planLimit($exception, $request));
 
         // REQ-SUB-004 SP-3: una función que el plan no incluye es 403 con el
         // motivo, nunca 404. Ocultar que existe impide entender que basta con
-        // subir de plan.
-        $exceptions->render(function (PlanFeatureUnavailableException $exception): JsonResponse {
-            return response()->json([
+        // subir de plan. A un formulario de Inertia, de vuelta con el motivo.
+        $exceptions->render(function (PlanFeatureUnavailableException $exception, Request $request): SymfonyResponse {
+            $body = [
                 'message' => $exception->getMessage(),
                 'feature' => $exception->toArray(),
-            ], PlanFeatureUnavailableException::STATUS);
+                'upgradeUrl' => '/backoffice/suscripcion',
+            ];
+
+            // A una visita de Inertia —también un GET a la página de una
+            // función—, de vuelta con el motivo: el JSON lo pintaría como
+            // error. A cualquier otra cosa que no sea un formulario, el 403.
+            if ($request->expectsJson() || ($request->isMethod('GET') && ! $request->header('X-Inertia'))) {
+                return response()->json($body, PlanFeatureUnavailableException::STATUS);
+            }
+
+            return back()->withErrors(['plan' => $exception->getMessage()])->with('planFeature', $body);
         });
 
         // REQ-SUB-004 RB-8: suspendida no se crea nada. Es 403 y no 422 porque
         // no falta sitio, falta estar al día.
-        $exceptions->render(function (CreationSuspendedException $exception): JsonResponse {
-            return response()->json([
+        $exceptions->render(function (CreationSuspendedException $exception, Request $request): SymfonyResponse {
+            if ($request->expectsJson() || ($request->isMethod('GET') && ! $request->header('X-Inertia'))) {
+                return response()->json(['message' => $exception->getMessage()], CreationSuspendedException::STATUS);
+            }
+
+            // Con su cuerpo en la sesión, como los otros dos: sin él, el
+            // formulario volvía con un error en un campo que no pinta nadie.
+            return back()->withErrors(['plan' => $exception->getMessage()])->with('planBlocked', [
                 'message' => $exception->getMessage(),
-            ], CreationSuspendedException::STATUS);
+                'upgradeUrl' => '/backoffice/suscripcion',
+            ]);
         });
 
         // REQ-BOF-001 SP-6: la petición de Inertia con la sesión caducada se

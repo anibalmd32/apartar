@@ -42,6 +42,10 @@ final class ProductIsolationTest extends TestCase
         $this->neighbour = $this->neighbourOrganization();
         $this->organization = Organization::factory()->create();
 
+        // `T-067` · crear un producto pregunta al plan, en las dos.
+        $this->subscribeWithoutLimits($this->organization);
+        $this->subscribeWithoutLimits($this->neighbour);
+
         $this->withoutOrganization();
     }
 

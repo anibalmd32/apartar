@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Catalog;
 
 use App\Domain\Catalog\UnavailableReason;
+use App\Domain\Subscription\SubscriptionStatus;
+use App\Domain\Subscription\UsageMetric;
+use App\Domain\Tenancy\OrganizationStatus;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Resources\ProductDetailResource;
 use App\Models\Catalog;
@@ -13,9 +16,11 @@ use App\Models\ExchangeRate;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\Plan;
+use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Subscription;
+use App\Models\UsageCounter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -277,16 +282,70 @@ final class ProductShowTest extends TestCase
     }
 
     /**
-     * RB-7 · el motivo por límite de plan lo inserta `T-067`. Cuando exista
-     * su punto de aplicación, este caso se pone rojo para que la ficha lo
-     * consulte.
+     * RB-7, `REQ-SUB-004` RB-4 (`T-067`) · con el cupo de apartados activos
+     * agotado, la ficha **no ofrece apartar** y lo dice con el mensaje neutro:
+     * ni el plan, ni el límite, ni que el negocio tenga que pagar. La vecina,
+     * con su cupo libre, sigue ofreciéndolo.
      */
-    public function test_the_plan_limit_reason_is_still_pending(): void
+    public function test_a_business_at_its_layaway_limit_shows_the_neutral_reason(): void
     {
-        $this->assertFileDoesNotExistAnywhere('EnforcePlanLimit.php',
-            'EnforcePlanLimit ya existe (T-067): haz que UnavailableReason::of() devuelva BusinessUnavailable cuando '
-            .'el negocio no pueda recibir apartados (REQ-SUB-004 RB-4), con su mensaje neutro, y borra este caso.',
+        $this->stock([$this->product('Taladro')]);
+        $this->withinOrganization($this->organization, function (): void {
+            Subscription::query()->firstOrFail()->plan->forceFill(['max_active_layaways' => 2])->save();
+            UsageCounter::query()->updateOrCreate(['metric' => UsageMetric::ActiveLayaways], ['value' => 2, 'computed_at' => now()]);
+        });
+
+        $page = $this->visit('taladro')->assertOk();
+
+        $page->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('product.canBeReserved', false)
+            ->where('product.unavailableReason', UnavailableReason::BusinessUnavailable->message()));
+
+        $props = mb_strtolower((string) json_encode($page->viewData('page')['props']['product'], JSON_UNESCAPED_UNICODE));
+        foreach (['plan', 'límite', 'limite', 'suscrip', 'free'] as $word) {
+            $this->assertStringNotContainsString($word, $props, "La ficha revela «{$word}» al cliente final.");
+        }
+
+        // `REQ-SUB-004` SP-2 · y queda la evidencia de la venta perdida —una
+        // por hora, no una por visita—, que es la que enciende el aviso del
+        // panel ahora que el formulario ya no se ofrece.
+        $this->visit('taladro')->assertOk();
+        $this->assertSame(
+            ['active_layaways'],
+            $this->withinOrganization($this->organization, fn (): array => PlanLimitRejection::query()->get()->map(fn (PlanLimitRejection $row): string => $row->metric->value)->all()),
         );
+        $this->assertSame(0, $this->withinOrganization($this->neighbour, fn (): int => PlanLimitRejection::query()->count()));
+    }
+
+    /**
+     * Con la suscripción suspendida —aunque la organización siga activa—
+     * tampoco se ofrece apartar; y eso **no** es una venta perdida por el
+     * límite: subir de plan no lo arregla.
+     */
+    public function test_a_suspended_subscription_shows_the_neutral_reason_without_a_lost_sale(): void
+    {
+        $this->stock([$this->product('Taladro')]);
+        $this->withinOrganization($this->organization, fn () => Subscription::query()->update(['status' => SubscriptionStatus::Suspended->value]));
+
+        $this->visit('taladro')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('product.canBeReserved', false)
+            ->where('product.unavailableReason', UnavailableReason::BusinessUnavailable->message()));
+
+        $this->assertSame(0, $this->withinOrganization($this->organization, fn (): int => PlanLimitRejection::query()->count()));
+    }
+
+    /**
+     * Y una organización suspendida tampoco ofrece apartar, con el mismo motivo.
+     */
+    public function test_a_suspended_business_shows_the_neutral_reason(): void
+    {
+        $this->stock([$this->product('Taladro')]);
+        $this->organization->forceFill(['status' => OrganizationStatus::Suspended])->save();
+        // La suspensión despublica (`T-071`); aquí se mira solo la ficha.
+
+        $this->visit('taladro')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('product.canBeReserved', false)
+            ->where('product.unavailableReason', UnavailableReason::BusinessUnavailable->message()));
     }
 
     // ------------------------------------------------------------------

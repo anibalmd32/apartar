@@ -109,6 +109,8 @@ final class PlanLimitReachedException extends RuntimeException
             'limit' => $this->limit,
             'minimumPlan' => $this->minimumPlan?->code,
             'minimumPlanName' => $this->minimumPlan?->name,
+            // `T-067` · la salida sin cambiar de plan (`UsageMetric::freeUpHint()`).
+            'suggestion' => $this->metric->freeUpHint(),
         ];
     }
 }

@@ -1,5 +1,6 @@
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { DashboardWarnings } from '@/features/dashboard/components/DashboardWarnings';
+import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatUsage, usagePercentage } from '@/lib/plan';
 import { type BackofficeSharedData } from '@/types/backoffice';
@@ -27,6 +28,10 @@ export default function Dashboard({ metrics, links }: DashboardProps) {
             description={`Este es el panel de ${teamMember?.organization.name ?? 'tu negocio'}.`}
         >
             <DashboardWarnings warnings={metrics.warnings} />
+
+            {/* `REQ-SUB-003` RB-7 · los apartados activos no tienen otra pantalla
+                que avise antes de chocar: es el techo que pierde ventas. */}
+            <LimitBanner metric="active_layaways" />
 
             {starting ? <SetupChecklist setup={setup} /> : null}
 
@@ -70,15 +75,6 @@ function Card({ label, value, href, children }: { label: string; value: ReactNod
     );
 }
 
-const METRIC_LABELS: Readonly<Record<UsageMetric, string>> = {
-    users: 'Usuarios',
-    catalogs: 'Catálogos',
-    products: 'Productos',
-    active_layaways: 'Apartados activos',
-    storage_mb: 'Almacenamiento (MB)',
-    payment_accounts: 'Cuentas de cobro',
-};
-
 /** RB-6 · el consumo del plan, con lo que está al 80 % o más destacado; y la tasa. */
 function PlanAndRate({ metrics }: { metrics: DashboardMetrics }) {
     return (
@@ -94,7 +90,10 @@ function PlanAndRate({ metrics }: { metrics: DashboardMetrics }) {
 
                                 return usage === undefined ? null : (
                                     <li key={metric} className={percent !== null && percent >= 80 ? 'text-warning font-medium' : ''}>
-                                        {METRIC_LABELS[metric]}: {formatUsage(usage.used, usage.limit)}
+                                        {/* El nombre es del servidor (`UsageMetric::label()`, `T-067`): una
+                                            segunda lista aquí es la que se queda corta. */}
+                                        <span className="capitalize">{metrics.plan?.metricLabels[metric] ?? metric}</span>:{' '}
+                                        {formatUsage(usage.used, usage.limit)}
                                     </li>
                                 );
                             })}

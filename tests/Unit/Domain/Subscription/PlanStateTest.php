@@ -42,11 +42,34 @@ it('viaja con la forma exacta del contrato tipado', function (): void {
     $state = planStateFor($plan, $subscription)->toArray();
 
     expect(array_keys($state))
-        ->toBe(['planCode', 'planName', 'status', 'currentPeriodEnd', 'graceEndsAt', 'usage', 'features']);
+        ->toBe(['planCode', 'planName', 'status', 'currentPeriodEnd', 'graceEndsAt', 'usage', 'features', 'upgrades', 'featureUpgrades', 'featureLabels', 'metricLabels']);
 
     expect($state['planCode'])->toBe('pro');
     expect($state['status'])->toBe('active');
     expect($state['features'])->toBe(['branding', 'web_push']);
+});
+
+/**
+ * `T-067` · lo que `LimitBanner` y `UpgradePrompt` dicen sin decidir: el plan
+ * que desbloquea, ya resuelto, y los nombres de funciones y métricas, que son
+ * del servidor (`PlanFeature::label()`, `UsageMetric::label()`).
+ */
+it('lleva resueltos los planes que desbloquean y los nombres', function (): void {
+    $plan = new Plan(['code' => 'free', 'name' => 'Free', 'features' => PlanFeature::noneEnabled()]);
+    $pro = new Plan(['code' => 'pro', 'name' => 'Pro']);
+    $usage = [];
+
+    foreach (UsageMetric::cases() as $metric) {
+        $usage[$metric->value] = UsageState::of($metric, 1, 10);
+    }
+
+    $state = PlanState::of(new Subscription(['status' => SubscriptionStatus::Active]), $plan, $usage, ['products' => $pro], ['excel_export' => $pro, 'custom_domain' => null])->toArray();
+
+    expect($state['upgrades'])->toBe(['products' => ['planCode' => 'pro', 'planName' => 'Pro']]);
+    expect($state['featureUpgrades'])->toBe(['excel_export' => ['planCode' => 'pro', 'planName' => 'Pro'], 'custom_domain' => null]);
+    expect($state['featureLabels'])->toBe(PlanFeature::labels());
+    expect($state['metricLabels']['catalogs'])->toBe('catálogos publicados');
+    expect($state['metricLabels'])->toHaveCount(6);
 });
 
 /**

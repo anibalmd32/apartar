@@ -24,6 +24,7 @@ use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\ReceiptInboxController;
 use App\Http\Controllers\Backoffice\ReceiptReviewController;
 use App\Http\Controllers\Backoffice\SettingsController;
+use App\Http\Controllers\Backoffice\SubscriptionController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
 use App\Http\Controllers\ReceiptFileController;
@@ -71,6 +72,16 @@ Route::prefix('backoffice')->group(function (): void {
             Route::get('/', DashboardController::class)
                 ->middleware('during-suspension')
                 ->name('dashboard');
+
+            /*
+            | `T-067` · el plan, su consumo y sus funciones: el destino de
+            | cada «Ver planes». Sobrevive a la suspensión por lo mismo que el
+            | panel: es donde se regulariza (REQ-ORG-008 RB-3). Cambiar de
+            | plan es de T-068.
+            */
+            Route::get('suscripcion', [SubscriptionController::class, 'show'])
+                ->middleware('during-suspension')
+                ->name('subscription.show');
 
             Route::post('logout', [LoginController::class, 'destroy'])
                 ->middleware('during-suspension')
