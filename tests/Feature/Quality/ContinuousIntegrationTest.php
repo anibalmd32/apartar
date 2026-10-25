@@ -119,6 +119,13 @@ it('no versiona ningún secreto en .env.ci', function (): void {
         ->toMatch('/^PLATFORM_ADMIN_PASSWORD=\s*$/m');
 });
 
+it('usa en .env.ci una APP_KEY de 32 bytes que Laravel acepta', function (): void {
+    $ci = (string) file_get_contents(base_path('.env.ci'));
+
+    expect(preg_match('/^APP_KEY=base64:(\S+)$/m', $ci, $matches))->toBe(1);
+    expect(strlen((string) base64_decode($matches[1], true)))->toBe(32);
+});
+
 it('deja ci.yml como único workflow', function (): void {
     $workflows = glob(base_path('.github/workflows/*.yml')) ?: [];
 
