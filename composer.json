@@ -60,6 +60,10 @@
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -k -c \"#93c5fd,#c4b5fd,#fdba74,#86efac,#fb7185\" -n server,queue,schedule,reverb,vite \"php artisan serve\" \"php artisan queue:work --queue=high,default,exports,telemetry --tries=3\" \"php artisan schedule:work\" \"php artisan reverb:start --port=8082\" \"npm run dev\""
+        ],
         "lint": [
             "@php vendor/bin/pint --test --cache-file=storage/framework/pint.cache"
         ],

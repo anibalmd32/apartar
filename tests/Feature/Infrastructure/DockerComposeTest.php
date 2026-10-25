@@ -123,3 +123,32 @@ it('no versiona secretos en el compose', function (): void {
         ->not->toContain('GOOGLE_CLIENT_SECRET')
         ->not->toContain('VAPID_PRIVATE_KEY');
 });
+
+it('no monta el código del host en el stack por defecto', function (): void {
+    expect(composeDirectives())
+        ->not->toContain('.:/var/www/html')
+        ->not->toContain('./public:');
+});
+
+it('sirve los assets compilados desde la imagen web de nginx', function (): void {
+    expect(ComposeFile::read('docker-compose.yml')->service('nginx'))
+        ->toContain('target: web')
+        ->toContain('VITE_REVERB_HOST');
+
+    expect((string) file_get_contents(base_path('Dockerfile')))
+        ->toContain('FROM nginx:1.27-alpine AS web')
+        ->toContain('COPY --from=runtime /var/www/html/public /var/www/html/public');
+});
+
+it('deja Vite en caliente solo en el modo dev', function (): void {
+    expect(ComposeFile::read('docker-compose.yml')->service('node'))->toContain('- dev');
+    expect((string) file_get_contents(base_path('docker-compose.dev.yml')))->toContain('.:/var/www/html');
+});
+
+it('no depende de las credenciales del .env para los servicios locales', function (): void {
+    $override = ComposeFile::read('docker-compose.override.yml');
+
+    expect($override->service('mysql'))->toContain('MYSQL_USER: apartar');
+    expect($override->service('mysql_test'))->toContain('MYSQL_USER: apartar');
+    expect($override->service('app'))->toContain('DB_HOST: mysql')->toContain('REDIS_HOST: redis');
+});

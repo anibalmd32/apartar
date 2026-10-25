@@ -1,20 +1,93 @@
 services:
   app:
-    mem_limit: 3g
+    build:
+      args:
+        VITE_REVERB_HOST: localhost
+        VITE_REVERB_PORT: 8081
+        VITE_REVERB_SCHEME: http
     environment:
+      APP_URL: http://localhost:8080
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      BROADCAST_CONNECTION: reverb
+      REVERB_SERVER_PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: apartar
+      DB_USERNAME: apartar
+      DB_PASSWORD: secret
       DB_TEST_HOST: mysql_test
+      DB_TEST_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REVERB_HOST: reverb
+      REVERB_PORT: 8080
     depends_on:
       mysql_test:
         condition: service_healthy
-    volumes:
-      - .:/var/www/html
-      - app_storage:/var/www/html/storage/app
+
+  queue:
+    build:
+      args:
+        VITE_REVERB_HOST: localhost
+        VITE_REVERB_PORT: 8081
+        VITE_REVERB_SCHEME: http
+    environment:
+      APP_URL: http://localhost:8080
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      BROADCAST_CONNECTION: reverb
+      REVERB_SERVER_PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: apartar
+      DB_USERNAME: apartar
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REVERB_HOST: reverb
+      REVERB_PORT: 8080
+
+  reverb:
+    build:
+      args:
+        VITE_REVERB_HOST: localhost
+        VITE_REVERB_PORT: 8081
+        VITE_REVERB_SCHEME: http
+    environment:
+      APP_URL: http://localhost:8080
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      BROADCAST_CONNECTION: reverb
+      REVERB_SERVER_PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: apartar
+      DB_USERNAME: apartar
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8081:8080"
 
   nginx:
+    build:
+      args:
+        VITE_REVERB_HOST: localhost
+        VITE_REVERB_PORT: 8081
+        VITE_REVERB_SCHEME: http
     ports:
       - "8080:80"
 
   mysql:
+    environment:
+      MYSQL_DATABASE: apartar
+      MYSQL_USER: apartar
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
 
@@ -32,9 +105,9 @@ services:
       - --performance-schema=OFF
     environment:
       MYSQL_DATABASE: apartar_testing
-      MYSQL_USER: "${DB_USERNAME:-apartar}"
-      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
+      MYSQL_USER: apartar
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
     tmpfs:
       - /var/lib/mysql:size=1g,mode=1777
     volumes:
@@ -42,7 +115,7 @@ services:
     ports:
       - "3308:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_ROOT_PASSWORD:-root}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -53,18 +126,6 @@ services:
   redis:
     ports:
       - "6380:6379"
-
-  queue:
-    volumes:
-      - .:/var/www/html
-      - app_storage:/var/www/html/storage/app
-
-  reverb:
-    ports:
-      - "8081:8080"
-    volumes:
-      - .:/var/www/html
-      - app_storage:/var/www/html/storage/app
 
   node:
     ports:
