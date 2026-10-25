@@ -104,7 +104,10 @@ export function PlanOptionCard({
                         </Button>
                     </form>
                 ) : option.isCurrent ? (
-                    <span className="btn btn-disabled">Plan actual</span>
+                    <span className="border-line bg-surface-2 text-ink-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-semibold">
+                        <Icon icon={cilCheckAlt} className="text-success" />
+                        Es tu plan actual
+                    </span>
                 ) : null}
             </div>
 

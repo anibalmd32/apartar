@@ -17,7 +17,7 @@ interface OrganizationFiltersProps {
     onChange: (changes: Change) => void;
 }
 
-const pill = 'h-[34px] cursor-pointer rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors';
+const pill = 'h-[34px] pointer-coarse:h-11 cursor-pointer rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors';
 
 export function OrganizationFilters({ filters, plans, onChange }: OrganizationFiltersProps) {
     const suspended = filters.estado === 'suspended';
@@ -70,7 +70,7 @@ export function OrganizationFilters({ filters, plans, onChange }: OrganizationFi
                 </button>
             </div>
 
-            <label className="select h-[34px] w-auto rounded-full text-sm">
+            <label className="select pointer-coarse:h-11 h-[34px] w-auto rounded-full text-sm">
                 <span className="sr-only">Plan</span>
                 <select
                     value={typeof filters.plan === 'string' ? filters.plan : ''}

@@ -41,7 +41,7 @@ function Chip({ pressed, onClick, label, children }: ChipProps) {
             aria-pressed={pressed}
             aria-label={label}
             className={cn(
-                'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
+                'pointer-coarse:h-11 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
                 pressed
                     ? 'bg-neutral text-neutral-content border-neutral'
                     : 'bg-base-100 border-line-strong text-ink-2 hover:text-base-content hover:border-ink-3',

@@ -32,7 +32,7 @@ export default function Pricing({ plans }: PricingProps) {
                 </p>
             </header>
 
-            <ul className="mx-auto grid max-w-[1440px] items-start gap-5 px-4 pb-14 md:grid-cols-2 lg:auto-cols-fr lg:grid-flow-col lg:grid-cols-none lg:px-20">
+            <ul className="mx-auto grid max-w-[1440px] grid-cols-1 items-start gap-5 px-4 pb-14 md:grid-cols-2 lg:auto-cols-fr lg:grid-flow-col lg:grid-cols-none lg:px-20">
                 {plans.map((plan, index) => (
                     <PlanCard key={plan.code} plan={plan} featured={index === featuredIndex} />
                 ))}
@@ -43,7 +43,7 @@ export default function Pricing({ plans }: PricingProps) {
                     <h2 className="mb-1 text-[26px] font-extrabold tracking-[-0.03em] lg:text-[32px]">Preguntas frecuentes</h2>
                     {FAQS.map((faq, index) => (
                         <details key={faq.question} className="group bg-base-200 rounded-[14px] px-5 py-[18px]" open={index === 0}>
-                            <summary className="flex cursor-pointer list-none items-center gap-3 text-base font-bold [&::-webkit-details-marker]:hidden">
+                            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 text-base font-bold [&::-webkit-details-marker]:hidden">
                                 <span className="flex-1">{faq.question}</span>
                                 <Icon icon={cilPlus} className="text-ink-3 group-open:hidden" />
                                 <Icon icon={cilMinus} className="hidden group-open:block" />

@@ -11,6 +11,15 @@ interface TablePaginationProps {
 export function TablePagination({ meta, loading, onPage, onPerPage }: TablePaginationProps) {
     const counted = meta.total !== null && meta.lastPage !== null;
     const hasPrevious = meta.page > 1;
+    const singlePage = !hasPrevious && !meta.hasMore && counted && (meta.total ?? 0) <= Math.min(...PER_PAGE_OPTIONS);
+
+    if (singlePage) {
+        return (
+            <p className="text-ink-3 text-[13px]">
+                {meta.total} {meta.total === 1 ? 'resultado' : 'resultados'}
+            </p>
+        );
+    }
 
     return (
         <div className="flex flex-wrap items-center justify-between gap-3 text-[13px]">

@@ -121,7 +121,7 @@ export function SortableRow({ id, label, children }: SortableRowProps) {
 
 export function SortableHandle({ handleProps }: { handleProps: Record<string, unknown> }) {
     return (
-        <button type="button" className="btn btn-ghost btn-sm cursor-grab px-2 active:cursor-grabbing" {...handleProps}>
+        <button type="button" className="btn btn-ghost btn-sm pointer-coarse:min-w-11 cursor-grab px-2 active:cursor-grabbing" {...handleProps}>
             <span aria-hidden="true">⠿</span>
         </button>
     );

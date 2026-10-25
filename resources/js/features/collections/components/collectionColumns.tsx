@@ -31,7 +31,7 @@ function CustomerCell({ customer }: { customer: CollectionCustomer | null }) {
                     </a>
                     <button
                         type="button"
-                        className="hover:text-base-content rounded p-0.5"
+                        className="hit-area hover:text-base-content rounded p-0.5"
                         onClick={copy}
                         aria-label={`Copiar el teléfono de ${customer.name}`}
                         title={copied ? 'Copiado' : 'Copiar'}

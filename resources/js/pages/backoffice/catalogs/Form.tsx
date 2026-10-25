@@ -71,7 +71,7 @@ export default function CatalogForm({ catalog, products, availableProducts, bloc
                 </>
             }
         >
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
                 <div className="flex flex-col gap-4 lg:gap-6">
                     <SectionCard title="Detalles">
                         <form id={FORM_ID} className="flex flex-col" onSubmit={onSubmit} noValidate>

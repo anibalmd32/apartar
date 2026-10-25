@@ -53,7 +53,7 @@ export function SiteHeader() {
                     {({ open }) => (
                         <>
                             <PopoverButton
-                                className="border-line hover:bg-surface-2 flex size-9 cursor-pointer items-center justify-center rounded-[10px] border"
+                                className="border-line hover:bg-surface-2 pointer-coarse:size-11 flex size-9 cursor-pointer items-center justify-center rounded-[10px] border"
                                 aria-label={open ? 'Cerrar el menú' : 'Abrir el menú'}
                             >
                                 <Icon icon={open ? cilX : cilMenu} size={18} />

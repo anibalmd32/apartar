@@ -52,7 +52,7 @@ export function SpecificationBuilder({ rows: sheet, groups, errors }: Specificat
                                     <li
                                         ref={containerProps.ref}
                                         style={containerProps.style}
-                                        className={`border-line grid gap-x-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
+                                        className={`border-line grid grid-cols-1 gap-x-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
                                     >
                                         <div className="flex items-end sm:col-span-1">
                                             <SortableHandle handleProps={handleProps} />

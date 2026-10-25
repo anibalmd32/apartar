@@ -6,7 +6,6 @@ import { GlobalSearch } from '@/components/shell/global-search';
 import { OrganizationSwitcher } from '@/components/shell/organization-switcher';
 import { RatePill } from '@/components/shell/rate-pill';
 import { menuItemClass, UserMenu } from '@/components/shell/user-menu';
-import { Alert } from '@/components/ui/alert';
 import { Icon } from '@/components/ui/icon';
 import { PastDueBanner } from '@/features/plan/components/PastDueBanner';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
@@ -45,7 +44,7 @@ export default function BackofficeLayout(props: BackofficeLayoutProps) {
 }
 
 function BackofficeFrame({ title, description, actions, back, badge, children }: BackofficeLayoutProps) {
-    const { teamMember, status } = usePage<BackofficeSharedData>().props;
+    const { teamMember } = usePage<BackofficeSharedData>().props;
     const pendingReceipts = usePendingReceipts(teamMember?.pendingReceipts ?? null, teamMember?.organization?.id ?? null);
     const plan = usePlanLimits();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -141,8 +140,6 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                         <PastDueBanner />
 
                         <SupportAccessBanner grants={teamMember?.supportAccess ?? []} />
-
-                        {status ? <Alert tone="success">{status}</Alert> : null}
 
                         <UpgradePrompt />
 

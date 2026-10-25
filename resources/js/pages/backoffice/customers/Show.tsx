@@ -64,7 +64,7 @@ export default function CustomerShow(props: CustomerShowProps) {
             <ContactStrip customer={customer} />
             <BalanceRow totals={totals} />
 
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
                 <div className="flex min-w-0 flex-col gap-4">
                     <FilterTabs label="Secciones del cliente" tabs={tabs} value={tab} onChange={setTab} />
 

@@ -31,7 +31,7 @@ export function SuspensionCard({ suspension, invoicesUrl }: { suspension: Dashbo
 
     return (
         <section aria-label="Suscripción suspendida" className="flex flex-col gap-4">
-            <div className="bg-base-100 border-error/30 shadow-card grid gap-5 rounded-2xl border p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="bg-base-100 border-error/30 shadow-card grid grid-cols-1 gap-5 rounded-2xl border p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="flex flex-col gap-4">
                     <div>
                         <h2 className="text-h2">Paga tu factura para reactivar tu negocio</h2>
@@ -88,7 +88,7 @@ export function SuspensionCard({ suspension, invoicesUrl }: { suspension: Dashbo
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <StatusList title="Sigue funcionando" items={KEEPS} ok />
                 <StatusList title="En pausa hasta que pagues" items={PAUSED} ok={false} />
             </div>

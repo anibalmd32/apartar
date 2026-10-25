@@ -40,7 +40,7 @@ export default function AnalyticsIndex({
                     key={days}
                     href={route('analytics.index', query(days, catalog))}
                     className={cn(
-                        'flex h-[34px] items-center rounded-lg px-3.5 text-[13px] transition-colors',
+                        'pointer-coarse:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px] transition-colors',
                         days === period ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                     )}
                     aria-current={days === period ? 'page' : undefined}

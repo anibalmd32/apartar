@@ -39,7 +39,7 @@ it('pinta la cuota con el cliente, su teléfono y el atraso', () => {
 });
 
 it('los filtros rápidos van a la URL', () => {
-    const { rerender } = render(<CollectionIndex {...collectionProps([])} />);
+    const { rerender } = render(<CollectionIndex {...collectionProps([installmentRow()])} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Vencen hoy' }));
     expect(routerGet.mock.calls[0]?.[1]).toMatchObject({ preset: 'due_today' });
@@ -53,7 +53,7 @@ it('los filtros rápidos van a la URL', () => {
 });
 
 it('busca al cliente tras la pausa, no por tecla', async () => {
-    render(<CollectionIndex {...collectionProps([])} />);
+    render(<CollectionIndex {...collectionProps([installmentRow()])} />);
 
     fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: 'V-1234' } });
     fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: 'V-12345678' } });

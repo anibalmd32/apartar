@@ -46,7 +46,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                     </Link>
                 </div>
             ) : (
-                <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
                     <section
                         aria-labelledby="data-heading"
                         className="bg-base-100 border-line shadow-card flex flex-col gap-4 rounded-2xl border p-5"

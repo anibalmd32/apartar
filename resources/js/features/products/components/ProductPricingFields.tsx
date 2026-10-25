@@ -12,7 +12,7 @@ interface ProductPricingFieldsProps extends ProductFieldsProps {
 export function ProductPricingFields({ data, setData, errors, plan }: ProductPricingFieldsProps) {
     return (
         <SectionCard title="Precio y plan de pago" subtitle="Así lo verá tu cliente en el catálogo.">
-            <div className="grid gap-x-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
                 <TextField
                     label="Precio"
                     name="price"
@@ -38,7 +38,7 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                 />
             </div>
 
-            <div className="grid gap-x-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-3">
                 <TextField
                     label="Cuota inicial"
                     name="down_payment"

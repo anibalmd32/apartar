@@ -98,7 +98,7 @@ export default function SubscriptionShow({
                         <h2 id="plan-options" className="text-h2">
                             Cambiar de plan
                         </h2>
-                        <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
                             {plans.map((option) => (
                                 <PlanOptionCard
                                     key={option.code}
@@ -112,7 +112,7 @@ export default function SubscriptionShow({
                     </section>
 
                     <SectionCard title="Funciones">
-                        <ul className="grid gap-2.5 text-[13px] md:grid-cols-2">
+                        <ul className="grid grid-cols-1 gap-2.5 text-[13px] md:grid-cols-2">
                             {(Object.keys(state.featureLabels) as PlanFeature[]).map((feature) =>
                                 plan.hasFeature(feature) ? (
                                     <li key={feature} className="flex items-center gap-2">

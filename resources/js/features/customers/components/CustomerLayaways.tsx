@@ -13,7 +13,7 @@ export function CustomerLayaways({ layaways, empty }: { layaways: readonly Custo
     }
 
     return (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {layaways.map((layaway) => {
                 const total = Number(layaway.total.cents);
                 const percent = total > 0 ? Math.min(100, (Number(layaway.paid.cents) / total) * 100) : 0;

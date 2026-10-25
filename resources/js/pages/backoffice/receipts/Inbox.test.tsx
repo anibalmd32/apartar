@@ -173,7 +173,8 @@ it('una página más allá de la última no dice que nunca llegó nada', () => {
 it('sin comprobantes ni filtros, explica qué aparecerá aquí', () => {
     render(<ReceiptInbox {...props([])} />);
 
-    expect(screen.getByText(/Todavía no has recibido comprobantes/)).toBeInTheDocument();
+    expect(screen.getByText('Aún no hay comprobantes')).toBeInTheDocument();
+    expect(screen.getByText(/lo verás aquí para revisarlo/)).toBeInTheDocument();
 });
 
 it('cada pestaña de estado lleva su cifra', () => {

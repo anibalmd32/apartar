@@ -16,7 +16,7 @@ export function CurrencySwitch({ className }: { className?: string }) {
             disabled={!available}
             aria-pressed={active}
             className={cn(
-                'h-[30px] rounded-lg px-2.5 text-[13px] transition-colors disabled:cursor-not-allowed',
+                'pointer-coarse:h-10 pointer-coarse:min-w-11 h-[30px] rounded-lg px-2.5 text-[13px] transition-colors disabled:cursor-not-allowed',
                 active ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
             )}
         >

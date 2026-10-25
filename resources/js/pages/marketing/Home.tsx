@@ -72,7 +72,7 @@ export default function Home() {
 
             <section
                 aria-label="Lo que resuelve"
-                className="mx-auto grid max-w-[1440px] gap-4 px-4 pb-10 lg:grid-cols-3 lg:gap-5 lg:px-20 lg:pt-6 lg:pb-20"
+                className="mx-auto grid max-w-[1440px] grid-cols-1 gap-4 px-4 pb-10 lg:grid-cols-3 lg:gap-5 lg:px-20 lg:pt-6 lg:pb-20"
             >
                 {VALUES.map((value) => (
                     <article key={value.title} className="border-line bg-base-100 shadow-card flex flex-col gap-3 rounded-2xl border p-6">
@@ -86,7 +86,7 @@ export default function Home() {
             <section id={HOW_IT_WORKS_ANCHOR} className="bg-base-100 scroll-mt-4 px-4 py-14 lg:px-20 lg:py-20">
                 <div className="mx-auto flex max-w-[1128px] flex-col gap-7 lg:items-center">
                     <h2 className="text-[26px] font-extrabold tracking-[-0.03em] lg:text-[38px]">Así de simple</h2>
-                    <ol className="grid w-full gap-7 lg:grid-cols-3 lg:gap-6">
+                    <ol className="grid w-full grid-cols-1 gap-7 lg:grid-cols-3 lg:gap-6">
                         {STEPS.map((step, index) => (
                             <li key={step.title} className="flex flex-col items-start gap-2.5">
                                 <span className="bg-primary text-primary-content flex size-10 items-center justify-center rounded-full text-base font-extrabold">

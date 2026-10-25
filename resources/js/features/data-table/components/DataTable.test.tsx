@@ -85,11 +85,25 @@ it('con total dice la página de cuántas; sin total, no se inventa uno', () => 
 });
 
 it('ofrece solo los tamaños de página que el servidor acepta', () => {
-    render(<Harness rows={ROWS} current={meta()} />);
+    render(<Harness rows={ROWS} current={meta({ total: 60, lastPage: 3, hasMore: true })} />);
 
     const options = within(screen.getByRole('combobox'))
         .getAllByRole('option')
         .map((option) => option.textContent);
 
     expect(options).toEqual(['25', '50', '100']);
+});
+
+it('no muestra paginación cuando todo cabe en una página', () => {
+    render(<Harness rows={ROWS} current={meta()} />);
+
+    expect(screen.queryByRole('navigation', { name: 'Paginación' })).toBeNull();
+    expect(screen.getByText('2 resultados')).toBeInTheDocument();
+});
+
+it('deja solo el estado vacío cuando aún no hay nada y no se ha filtrado', () => {
+    render(<Harness rows={[]} current={meta({ total: 0 })} />);
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).toBeNull();
 });

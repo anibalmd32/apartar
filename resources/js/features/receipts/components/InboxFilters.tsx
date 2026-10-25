@@ -1,3 +1,4 @@
+import { DateRangeField } from '@/components/ui/date-range-field';
 import { type FilterTab, FilterTabs } from '@/components/ui/filter-tabs';
 import { SelectField } from '@/components/ui/select-field';
 import { type ReceiptInboxFilters, type ReceiptInboxProps } from '@/types/receipt';
@@ -78,14 +79,15 @@ export function InboxFilters({ filters, options, onChange, pending = null, count
                     value={filters.account ?? ''}
                     onChange={pick('account')}
                 />
-                <label className="input w-auto">
-                    <span className="text-ink-3 text-[13px]">Llegó desde</span>
-                    <input name="from" type="date" value={filters.from ?? ''} onChange={pick('from')} />
-                </label>
-                <label className="input w-auto">
-                    <span className="text-ink-3 text-[13px]">hasta</span>
-                    <input name="to" type="date" aria-label="Llegó hasta" value={filters.to ?? ''} onChange={pick('to')} />
-                </label>
+                <DateRangeField
+                    label="Fecha de llegada"
+                    fromLabel="Llegó desde"
+                    toLabel="Llegó hasta"
+                    from={filters.from ?? ''}
+                    to={filters.to ?? ''}
+                    onFromChange={pick('from')}
+                    onToChange={pick('to')}
+                />
 
                 <label className="text-ink-2 flex cursor-pointer items-center gap-2.5 text-[13px] font-medium lg:ml-auto">
                     <input

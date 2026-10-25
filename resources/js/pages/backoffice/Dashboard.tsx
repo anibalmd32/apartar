@@ -44,7 +44,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
             {suspension !== null ? <SuspensionCard suspension={suspension} invoicesUrl={links.invoices ?? null} /> : null}
 
             {starting ? (
-                <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
+                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
                     <SetupChecklist setup={setup} />
                     <HowItWorks />
                 </div>
@@ -93,7 +93,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
                 <StatCard label="Chats sin leer" icon={cilChatBubble} tone="primary" href="/backoffice/chat" value={metrics.unreadMessages} />
             </section>
 
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5">
                 {pendingReceipts !== undefined && pendingReceipts !== null && pendingReceipts.length > 0 ? (
                     <PendingReceiptsCard receipts={pendingReceipts} inboxUrl={links.receipts} />
                 ) : null}

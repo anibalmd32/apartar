@@ -1,8 +1,9 @@
 import { Chip } from '@/components/ui/chip';
+import { DateRangeField } from '@/components/ui/date-range-field';
 import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { type CollectionFiltersState, type CollectionOptions } from '@/types/collections';
-import { cilCalendar, cilSearch } from '@coreui/icons';
+import { cilSearch } from '@coreui/icons';
 import { type ChangeEvent } from 'react';
 
 interface CollectionFiltersProps {
@@ -81,13 +82,15 @@ export function CollectionFilters({ filters, options, onChange, counts = {} }: C
                     value={filters.catalog ?? ''}
                     onChange={pick('catalog')}
                 />
-                <label className={filters.from !== null || filters.to !== null ? 'input border-primary bg-primary-soft w-auto' : 'input w-auto'}>
-                    <Icon icon={cilCalendar} className="text-ink-3" />
-                    <span className="text-ink-3 text-[13px]">Vence desde</span>
-                    <input name="from" type="date" value={filters.from ?? ''} onChange={pick('from')} />
-                    <span className="text-ink-3 text-[13px]">hasta</span>
-                    <input name="to" type="date" aria-label="Vence hasta" value={filters.to ?? ''} onChange={pick('to')} />
-                </label>
+                <DateRangeField
+                    label="Fecha de vencimiento"
+                    fromLabel="Vence desde"
+                    toLabel="Vence hasta"
+                    from={filters.from ?? ''}
+                    to={filters.to ?? ''}
+                    onFromChange={pick('from')}
+                    onToChange={pick('to')}
+                />
             </div>
 
             {intersects ? <p className="text-ink-3 text-xs">El filtro rápido y el rango se combinan: puede que no quede ninguna cuota.</p> : null}

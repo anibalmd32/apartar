@@ -33,7 +33,7 @@ export default function ExportsIndex({ exports, canExport, types }: ExportsPageP
         <BackofficeLayout title="Exportaciones" description="Descarga tus datos en Excel. Te avisamos por correo cuando el archivo esté listo.">
             {!canExport ? <UpgradePrompt feature="excel_export" /> : null}
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {types
                     .filter((type) => type.allowed)
                     .map((type) => (

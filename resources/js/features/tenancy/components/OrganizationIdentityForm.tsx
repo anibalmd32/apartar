@@ -52,7 +52,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
 
     return (
         <form className="flex flex-col gap-2" onSubmit={submit} noValidate>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <TextField
                     label="Nombre del negocio"
                     value={data.name}
@@ -103,7 +103,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                 />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <TextField
                     label="Eslogan"
                     value={data.tagline}

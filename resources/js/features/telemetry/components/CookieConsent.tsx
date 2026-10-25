@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 import { reopenConsent, useConsent } from '../hooks/useConsent';
 
@@ -37,7 +38,7 @@ export function CookieConsent() {
 
 export function CookiePreferencesLink({ className = 'link link-hover' }: { className?: string }) {
     return (
-        <button type="button" className={className} onClick={reopenConsent}>
+        <button type="button" className={cn('hit-area', className)} onClick={reopenConsent}>
             Preferencias de cookies
         </button>
     );

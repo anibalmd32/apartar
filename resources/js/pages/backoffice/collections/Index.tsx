@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/ui/empty-state';
 import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
 import { CollectionSummary } from '@/features/collections/components/CollectionSummary';
 import { installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
@@ -7,6 +8,8 @@ import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type CollectionIndexProps, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
+import { cilWallet } from '@coreui/icons';
+import { type ReactNode } from 'react';
 
 export default function CollectionIndex(props: CollectionIndexProps) {
     return (
@@ -24,7 +27,7 @@ export default function CollectionIndex(props: CollectionIndexProps) {
     );
 }
 
-function emptyMessage(props: CollectionIndexProps, narrowed: boolean): string {
+function emptyMessage(props: CollectionIndexProps, narrowed: boolean): ReactNode {
     if (props.meta.page > 1) {
         return 'No hay más filas en esta página. Vuelve a la primera.';
     }
@@ -33,9 +36,13 @@ function emptyMessage(props: CollectionIndexProps, narrowed: boolean): string {
         return `Nada cumple este filtro ahora mismo. ${props.definition}`;
     }
 
-    return narrowed
-        ? 'Ninguna cuota cumple estos filtros.'
-        : 'No tienes cuotas por cobrar. Cuando un apartado se active, sus cuotas aparecerán aquí.';
+    return narrowed ? (
+        'Ninguna cuota cumple estos filtros.'
+    ) : (
+        <EmptyState icon={cilWallet} title="Nada por cobrar todavía">
+            Cuando apruebes la inicial de un apartado, sus cuotas aparecen aquí con la fecha y el teléfono del cliente para que le recuerdes.
+        </EmptyState>
+    );
 }
 
 function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayawayRow>(

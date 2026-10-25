@@ -233,7 +233,7 @@ final class DevSeeder extends Seeder
             ownerPassword: self::PASSWORD,
         ));
 
-        $organization->forceFill(['document' => $business['document']])->save();
+        $organization->forceFill(['document' => $business['document'], 'storefront_enabled' => true])->save();
         $organization->refresh();
 
         $owner = $this->within($organization, function (): User {
@@ -577,7 +577,7 @@ final class DevSeeder extends Seeder
         $rows = [['Plataforma', self::OPERATOR_EMAIL, '/plataforma/login']];
 
         foreach (self::BUSINESSES as $business) {
-            $rows[] = [$business['name'].' (dueño)', $business['owner'][1], '/backoffice/login · catálogo /c/'.$business['slug'].'-temporada'];
+            $rows[] = [$business['name'].' (dueño)', $business['owner'][1], '/backoffice/login · vitrina /'.$business['slug']];
             $rows[] = [$business['name'].' (miembro)', $business['member'][1], '/backoffice/login'];
         }
 

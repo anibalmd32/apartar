@@ -61,7 +61,7 @@ export function TaxonomyForm({ createUrl, editUrl, entry, noun, maxLength, onDon
     };
 
     return (
-        <form className="grid items-start gap-x-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" onSubmit={submit} noValidate>
+        <form className="grid grid-cols-1 items-start gap-x-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" onSubmit={submit} noValidate>
             <TextField
                 label={`Nombre de la ${noun}`}
                 name="name"

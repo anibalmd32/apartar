@@ -70,7 +70,7 @@ export default function CatalogsIndex({ catalogs }: CatalogsPageProps) {
                     {visible.length === 0 ? (
                         <p className="text-ink-3 text-sm">Ningún catálogo en esta pestaña.</p>
                     ) : (
-                        <ul className="grid gap-4 sm:grid-cols-2 lg:gap-5 xl:grid-cols-3">
+                        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-5 xl:grid-cols-3">
                             {visible.map((catalog) => (
                                 <li key={catalog.id}>
                                     <CatalogCard catalog={catalog} />

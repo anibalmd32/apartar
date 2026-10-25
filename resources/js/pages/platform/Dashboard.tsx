@@ -41,7 +41,7 @@ export default function PlatformDashboard({ metrics, periods = [30] }: { metrics
                             href={`/plataforma?periodo=${option}`}
                             aria-current={option === days ? 'page' : undefined}
                             className={cn(
-                                'flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
+                                'pointer-coarse:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
                                 option === days ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                             )}
                         >
@@ -107,7 +107,7 @@ export default function PlatformDashboard({ metrics, periods = [30] }: { metrics
 
             <BillingTrend monthly={metrics.monthly ?? null} />
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <SectionCard title="Organizaciones por plan" aria-label="Por plan">
                     {byPlan === null ? (
                         <p>{DASH}</p>
@@ -147,7 +147,7 @@ export default function PlatformDashboard({ metrics, periods = [30] }: { metrics
             </div>
 
             <SectionCard title="Red y volumen" aria-label="Red y volumen">
-                <div className="grid gap-3 lg:grid-cols-[3fr_2fr]">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[3fr_2fr]">
                     <section aria-label="Red" className="flex flex-col gap-2">
                         <p className="text-ink-3 text-xs">Cuentas multi-negocio: las que siguen catálogos de más de un negocio.</p>
                         {network === null ? (

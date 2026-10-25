@@ -17,7 +17,7 @@ export default function InvoicesIndex({ receipts }: { receipts: readonly Pending
             {selected === null ? (
                 <p className="border-line bg-base-100 text-ink-2 rounded-2xl border p-6 text-sm">No hay comprobantes por revisar.</p>
             ) : (
-                <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)] lg:gap-5">
+                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)] lg:gap-5">
                     <ul
                         aria-label="Comprobantes por revisar"
                         className="border-line bg-base-100 shadow-card flex flex-col overflow-hidden rounded-2xl border"

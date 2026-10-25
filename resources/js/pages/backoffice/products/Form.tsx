@@ -80,7 +80,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                 </Alert>
             ) : null}
 
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
                 <form id={FORM_ID} className="contents" onSubmit={onSubmit} noValidate>
                     <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:gap-6">
                         <ProductIdentityFields {...fields} product={product} />

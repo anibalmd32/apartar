@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
@@ -9,9 +10,9 @@ import { inventoryColumns } from '@/features/products/components/inventoryColumn
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type Paginated } from '@/types/data-table';
 import { type ProductFilters, type ProductListItem, type ProductStatus, type ProductStatusDefinition, type TaxonomyOption } from '@/types/product';
-import { cilPlus } from '@coreui/icons';
+import { cilBasket, cilPlus } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 
 interface ProductsPageProps extends Paginated<ProductListItem> {
     categories: TaxonomyOption[];
@@ -21,9 +22,22 @@ interface ProductsPageProps extends Paginated<ProductListItem> {
     [key: string]: unknown;
 }
 
-function emptyMessage(filters: ProductFilters, narrowed: boolean): string {
+function emptyMessage(filters: ProductFilters, narrowed: boolean): ReactNode {
     if (!narrowed) {
-        return 'Todavía no tienes productos. Crea el primero desde el botón de arriba.';
+        return (
+            <EmptyState
+                icon={cilBasket}
+                title="Aún no tienes productos"
+                action={
+                    <Link className="btn btn-primary" href="/backoffice/productos/crear">
+                        <Icon icon={cilPlus} />
+                        Crear mi primer producto
+                    </Link>
+                }
+            >
+                Pon el precio, la inicial y en cuántas cuotas se paga. Con un producto ya puedes armar tu catálogo.
+            </EmptyState>
+        );
     }
 
     return filters.q !== null ? `Ningún producto coincide con «${filters.q}» y los demás filtros.` : 'Ningún producto cumple estos filtros.';

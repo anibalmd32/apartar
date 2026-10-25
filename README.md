@@ -172,7 +172,7 @@ Contraseña de todas las cuentas del escenario de prueba: `Apartar2026demo`.
 | Tecno Hogar, dueño | `carlos@apartar.test` | `/backoffice/login` |
 | Tecno Hogar, miembro | `luis@apartar.test` | `/backoffice/login` |
 
-- Catálogos públicos: `/c/moda-valentina-temporada` y `/c/tecno-hogar-temporada`.
+- Vitrinas públicas: `/moda-valentina` y `/tecno-hogar`. Catálogos: `/c/moda-valentina-temporada` y `/c/tecno-hogar-temporada`.
 - Los dos negocios están en plan Pro: Moda Valentina con la factura pagada y Tecno Hogar con el comprobante por revisar en la plataforma.
 - Cada negocio tiene 8 apartados en todos los estados: completado, en mora, cancelado, vencido, activos y pendientes de inicial, algunos con comprobantes por revisar.
 - **Portal del cliente** (`/mi-cuenta/acceso`): cédula + código del apartado. Los códigos cambian en cada siembra; el comando los imprime al final con su estado.
@@ -201,5 +201,5 @@ La primera vez la suite migra una base por proceso; las siguientes las reutiliza
 | `Unknown or incorrect time zone: 'America/Caracas'` | MySQL sin tablas de zonas horarias: `DB_TIMEZONE=-04:00` en el `.env` |
 | `Class "Redis" not found` fuera de Docker | El PHP local no tiene `phpredis`: usa `CACHE_STORE=file`, `SESSION_DRIVER=file` y `QUEUE_CONNECTION=database` |
 | La app en Docker no muestra un cambio | La imagen lleva el código: `make up` para reconstruir, o `make dev` |
-| Las fotos no se ven fuera de Docker | Falta `php artisan storage:link` |
+| Las fotos no se ven fuera de Docker | Falta el enlace o apunta a `/var/www/html` (lo creó un contenedor): borra `public/storage` y ejecuta `php artisan storage:link` |
 | `make` no se reconoce en PowerShell | `winget install ezwinports.make` y abre otra terminal, o usa el comando equivalente de la sección «Día a día» |

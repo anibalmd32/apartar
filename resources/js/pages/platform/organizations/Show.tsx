@@ -117,7 +117,7 @@ export default function OrganizationShow({
                 </Alert>
             ) : null}
 
-            <div className="grid items-start gap-4 lg:grid-cols-[1fr_400px] lg:gap-5">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_400px] lg:gap-5">
                 <div className="flex flex-col gap-4 lg:gap-5">
                     <SectionCard title="Uso" aria-label="Consumo">
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

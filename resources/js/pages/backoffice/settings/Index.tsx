@@ -33,7 +33,7 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
             title="Ajustes"
             description="Cómo opera tu negocio y cómo se ve. Los cambios afectan a lo que venga después, no a lo ya creado."
         >
-            <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-6">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-6">
                 <nav aria-label="Secciones de ajustes" className="flex gap-1 overflow-x-auto lg:sticky lg:top-24 lg:flex-col">
                     {SECTIONS.map((section) => (
                         <a

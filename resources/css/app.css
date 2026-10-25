@@ -25,13 +25,13 @@
     --color-accent-content: #ffffff;
     --color-neutral: #151a2d;
     --color-neutral-content: #ffffff;
-    --color-info: #2b7fe0;
+    --color-info: #1b64bf;
     --color-info-content: #ffffff;
-    --color-success: #1f9d55;
+    --color-success: #157a3c;
     --color-success-content: #ffffff;
-    --color-warning: #b7791f;
+    --color-warning: #8f5c12;
     --color-warning-content: #ffffff;
-    --color-error: #d93f4c;
+    --color-error: #c22d3b;
     --color-error-content: #ffffff;
 
     --radius-selector: 0.3125rem;
@@ -47,7 +47,7 @@
     --line: #e3e6ee;
     --line-strong: #cdd2de;
     --ink-2: #4a5268;
-    --ink-3: #7a8196;
+    --ink-3: #646b80;
     --primary-hover: #4338ca;
     --primary-soft: #eeedfd;
     --primary-ink: #4338ca;
@@ -70,7 +70,7 @@
     --color-base-200: #0c0f17;
     --color-base-300: #242a3c;
     --color-base-content: #edeff5;
-    --color-primary: #7c74f2;
+    --color-primary: #6a62ec;
     --color-primary-content: #ffffff;
     --color-secondary: #25234a;
     --color-secondary-content: #a9a3f8;
@@ -81,11 +81,11 @@
     --color-info: #5aa7ff;
     --color-info-content: #0c0f17;
     --color-success: #45c97a;
-    --color-success-content: #ffffff;
+    --color-success-content: #0c0f17;
     --color-warning: #f2c14e;
     --color-warning-content: #0c0f17;
     --color-error: #f2707b;
-    --color-error-content: #ffffff;
+    --color-error-content: #0c0f17;
 
     --radius-selector: 0.3125rem;
     --radius-field: 0.625rem;
@@ -101,7 +101,7 @@
     --line-strong: #353c52;
     --ink-2: #b7bdcc;
     --ink-3: #8a91a5;
-    --primary-hover: #958ef5;
+    --primary-hover: #7770f1;
     --primary-soft: #25234a;
     --primary-ink: #a9a3f8;
     --info-soft: #132840;
@@ -114,6 +114,7 @@
 }
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant pointer-coarse (@media (pointer: coarse));
 
 @theme {
     --font-sans:
@@ -378,6 +379,7 @@
 
     .label {
         white-space: normal;
+        color: var(--ink-2);
     }
 
     .fieldset .label {
@@ -636,5 +638,76 @@
     .alert-error {
         --alert-tone: var(--color-error);
         --alert-soft: var(--error-soft);
+    }
+}
+
+@layer base {
+    :where(a, button, [role='button'], [role='tab'], summary, input[type='checkbox'], input[type='radio']):focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+}
+
+.animate-toast-in {
+    animation: toast-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+@media (pointer: coarse) {
+    .btn:not(.btn-xs, .btn-link),
+    .input,
+    .select,
+    .textarea,
+    .file-input,
+    .tab {
+        min-height: 2.75rem;
+    }
+
+    .btn-square:not(.btn-xs),
+    .btn-circle:not(.btn-xs) {
+        min-width: 2.75rem;
+    }
+}
+
+@layer utilities {
+    .hit-area {
+        position: relative;
+    }
+
+    .hit-area::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: max(100%, 2.75rem);
+        height: max(100%, 2.75rem);
+        transform: translate(-50%, -50%);
+    }
+}
+
+img[data-broken='true'] {
+    visibility: hidden;
+}
+
+@layer utilities {
+    .dark :is(.text-primary, .link-primary, .btn-link) {
+        color: var(--primary-ink);
     }
 }

@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { type TagView } from '@/types/taxonomy';
 import { cilPencil, cilTag, cilTrash } from '@coreui/icons';
-import { router } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface TagRowProps {
     tag: TagView;
@@ -10,7 +11,7 @@ interface TagRowProps {
 }
 
 export function TagRow({ tag, onEdit }: TagRowProps) {
-    const remove = () => router.delete(`/backoffice/etiquetas/${tag.id}`, { preserveScroll: true });
+    const [confirming, setConfirming] = useState(false);
 
     return (
         <tr>
@@ -37,12 +38,24 @@ export function TagRow({ tag, onEdit }: TagRowProps) {
                         size="sm"
                         variant="ghost"
                         className="btn-square text-ink-2 hover:text-error"
-                        onClick={remove}
+                        onClick={() => setConfirming(true)}
                         aria-label={`Eliminar ${tag.name}`}
                     >
                         <Icon icon={cilTrash} />
                     </Button>
                 </div>
+                <ConfirmDialog
+                    open={confirming}
+                    onClose={() => setConfirming(false)}
+                    title={`¿Eliminar la etiqueta «${tag.name}»?`}
+                    description={
+                        tag.productsCount > 0
+                            ? `Se quita de ${tag.productsCount === 1 ? '1 producto' : `${tag.productsCount} productos`}. Los productos no se borran.`
+                            : 'No la usa ningún producto.'
+                    }
+                    confirmLabel="Eliminar etiqueta"
+                    url={`/backoffice/etiquetas/${tag.id}`}
+                />
             </td>
         </tr>
     );

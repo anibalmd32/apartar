@@ -1,11 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { SortableHandle, SortableRow } from '@/components/ui/sortable';
 import { DeleteCategoryDialog } from '@/features/catalog/components/DeleteCategoryDialog';
 import { type CategoryView } from '@/types/taxonomy';
 import { cilPencil, cilTrash } from '@coreui/icons';
-import { router } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface CategoryRowProps {
@@ -20,7 +20,7 @@ export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
     const [asking, setAsking] = useState(false);
 
     const canReassign = category.productsCount > 0 && others.length > 0;
-    const remove = () => (canReassign ? setAsking(true) : router.delete(url, { preserveScroll: true }));
+    const remove = () => setAsking(true);
 
     return (
         <SortableRow id={category.id} label={category.name}>
@@ -67,7 +67,18 @@ export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
                         </div>
                         {canReassign ? (
                             <DeleteCategoryDialog category={category} others={others} open={asking} onClose={() => setAsking(false)} />
-                        ) : null}
+                        ) : (
+                            <ConfirmDialog
+                                open={asking}
+                                onClose={() => setAsking(false)}
+                                title={`¿Eliminar la categoría «${category.name}»?`}
+                                description={
+                                    category.productsCount > 0 ? 'Sus productos se quedan sin categoría. No se borran.' : 'No tiene productos.'
+                                }
+                                confirmLabel="Eliminar categoría"
+                                url={url}
+                            />
+                        )}
                     </td>
                 </tr>
             )}

@@ -1,17 +1,20 @@
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SectionCard } from '@/components/ui/section-card';
+import { TextField } from '@/components/ui/text-field';
 import { type InvoiceRow } from '@/types/platform';
-import { router } from '@inertiajs/react';
+import { useState } from 'react';
 import { InvoiceStatusBadge } from './labels';
 
 const OPEN = ['pending', 'under_review', 'overdue'];
 
 export function InvoiceList({ invoices }: { invoices: readonly InvoiceRow[] }) {
-    const voidInvoice = (id: number) => {
-        const reason = window.prompt('Motivo de la anulación (el negocio lo verá):');
+    const [voiding, setVoiding] = useState<InvoiceRow | null>(null);
+    const [reason, setReason] = useState('');
 
-        if (reason !== null && reason.trim() !== '') {
-            router.post(`/plataforma/facturas/${id}/anular`, { reason });
-        }
+    const close = () => {
+        setVoiding(null);
+        setReason('');
     };
 
     return (
@@ -32,14 +35,36 @@ export function InvoiceList({ invoices }: { invoices: readonly InvoiceRow[] }) {
                             <span className="text-sm font-semibold">{invoice.amount.usd}</span>
                             <InvoiceStatusBadge status={invoice.status} />
                             {OPEN.includes(invoice.status) ? (
-                                <button type="button" className="btn btn-ghost btn-xs" onClick={() => voidInvoice(invoice.id)}>
+                                <Button size="sm" variant="ghost" className="text-error" onClick={() => setVoiding(invoice)}>
                                     Anular
-                                </button>
+                                </Button>
                             ) : null}
                         </li>
                     ))}
                 </ul>
             )}
+
+            <ConfirmDialog
+                open={voiding !== null}
+                onClose={close}
+                title="¿Anular esta factura?"
+                description={
+                    voiding !== null ? `Factura del plan ${voiding.plan} por ${voiding.amount.usd}, que vence el ${voiding.dueDate}.` : undefined
+                }
+                confirmLabel="Anular factura"
+                method="post"
+                url={voiding !== null ? `/plataforma/facturas/${voiding.id}/anular` : ''}
+                data={{ reason: reason.trim() }}
+                confirmDisabled={reason.trim() === ''}
+            >
+                <TextField
+                    label="Motivo"
+                    hint="El negocio lo verá junto a la factura."
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    autoFocus
+                />
+            </ConfirmDialog>
         </SectionCard>
     );
 }

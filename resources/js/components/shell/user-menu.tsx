@@ -29,7 +29,7 @@ export function UserMenu({ name, detail, onLogout, extra, className }: UserMenuP
     return (
         <Menu as="div" className={cn('relative', className)}>
             <MenuButton
-                className="focus-visible:outline-primary rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="hit-area focus-visible:outline-primary rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
                 aria-label={`Menú de ${name}`}
             >
                 <Avatar name={name} size={36} />

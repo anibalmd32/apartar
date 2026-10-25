@@ -1,8 +1,9 @@
 import { Chip } from '@/components/ui/chip';
+import { DateRangeField } from '@/components/ui/date-range-field';
 import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { type CustomerDirectoryFilters, type CustomerIndexProps } from '@/types/customers';
-import { cilCalendar, cilFilter, cilSearch } from '@coreui/icons';
+import { cilFilter, cilSearch } from '@coreui/icons';
 import { type ChangeEvent, useState } from 'react';
 
 interface DirectoryFiltersProps {
@@ -80,13 +81,15 @@ export function DirectoryFilters({ filters, search, onSearch, options, onChange,
 
             {more ? (
                 <div className="flex flex-wrap items-center gap-2">
-                    <label className="input w-auto">
-                        <Icon icon={cilCalendar} className="text-ink-3" />
-                        <span className="text-ink-3 text-[13px]">Próximo vencimiento desde</span>
-                        <input name="from" type="date" value={filters.from ?? ''} onChange={pick('from')} />
-                        <span className="text-ink-3 text-[13px]">hasta</span>
-                        <input name="to" type="date" aria-label="Próximo vencimiento hasta" value={filters.to ?? ''} onChange={pick('to')} />
-                    </label>
+                    <DateRangeField
+                        label="Próximo vencimiento"
+                        fromLabel="Vence desde"
+                        toLabel="Vence hasta"
+                        from={filters.from ?? ''}
+                        to={filters.to ?? ''}
+                        onFromChange={pick('from')}
+                        onToChange={pick('to')}
+                    />
                     <SelectField
                         label="Catálogo de origen"
                         hideLabel

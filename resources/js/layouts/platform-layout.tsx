@@ -1,7 +1,6 @@
 import { Brand } from '@/components/shell/brand';
 import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
-import { Alert } from '@/components/ui/alert';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { cilSearch, cilShieldAlt } from '@coreui/icons';
@@ -19,11 +18,8 @@ interface PlatformLayoutProps {
 
 export default function PlatformLayout({ title, description, actions, back, children }: PlatformLayoutProps) {
     const { props } = usePage<{
-        flash?: { status?: string | null };
-        status?: string | null;
         platformOperator?: { name: string; email: string } | null;
     }>();
-    const status = props.flash?.status ?? props.status ?? null;
     const operator = props.platformOperator ?? null;
 
     const userMenu = (
@@ -90,8 +86,6 @@ export default function PlatformLayout({ title, description, actions, back, chil
 
                 <main className="flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12">
                     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 lg:gap-6">
-                        {status ? <Alert tone="success">{status}</Alert> : null}
-
                         <section className="flex flex-col gap-3.5 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
                             <div className="flex min-w-0 flex-col gap-1.5">
                                 {back}

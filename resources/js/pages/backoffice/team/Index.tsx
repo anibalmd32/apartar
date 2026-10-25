@@ -75,7 +75,7 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
             {!usage.isAtLimit ? <LimitBanner metric="users" /> : null}
 
             <section aria-label="Invitar a alguien" className="bg-base-100 border-line shadow-card flex flex-col gap-2 rounded-2xl border p-4">
-                <form className="grid items-start gap-x-2.5 md:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={submit} noValidate>
+                <form className="grid grid-cols-1 items-start gap-x-2.5 md:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={submit} noValidate>
                     <TextField
                         label="Nombre"
                         name="name"
@@ -141,7 +141,7 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
                 </table>
             </section>
 
-            <section aria-label="Qué puede hacer cada rol" className="bg-surface-2 grid gap-5 rounded-2xl p-5 text-[13px] md:grid-cols-2">
+            <section aria-label="Qué puede hacer cada rol" className="bg-surface-2 grid grid-cols-1 gap-5 rounded-2xl p-5 text-[13px] md:grid-cols-2">
                 <div className="flex flex-col gap-1">
                     <h2 className="text-sm font-bold">Dueño</h2>
                     <p className="text-ink-2">

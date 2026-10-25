@@ -29,7 +29,7 @@ export default function Health({ health }: { health: SystemHealth }) {
                 </Badge>
             }
         >
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <HealthCard title="Reconciliación" icon={cilBalanceScale} ok={checks[0] ?? null} problem="Descuadres">
                     {reconciliation === null ? (
                         <HealthRow label="Estado">{DASH}</HealthRow>

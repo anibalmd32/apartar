@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { inboxColumns } from '@/features/receipts/components/inboxColumns';
@@ -6,9 +7,9 @@ import { useReceiptInbox } from '@/features/receipts/hooks/useReceiptInbox';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type BackofficeSharedData } from '@/types/backoffice';
 import { type ReceiptInboxFilters, type ReceiptInboxProps } from '@/types/receipt';
-import { cilReload } from '@coreui/icons';
+import { cilDescription, cilReload } from '@coreui/icons';
 import { usePage } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 
 export default function ReceiptInbox(props: ReceiptInboxProps) {
     return (
@@ -21,14 +22,18 @@ export default function ReceiptInbox(props: ReceiptInboxProps) {
     );
 }
 
-function emptyMessage(narrowed: boolean, page: number): string {
+function emptyMessage(narrowed: boolean, page: number): ReactNode {
     if (page > 1) {
         return 'No hay más comprobantes en esta página. Vuelve a la primera para ver la bandeja.';
     }
 
-    return narrowed
-        ? 'Ningún comprobante cumple estos filtros.'
-        : 'Todavía no has recibido comprobantes. Aparecerán aquí en cuanto un cliente reporte un pago.';
+    return narrowed ? (
+        'Ningún comprobante cumple estos filtros.'
+    ) : (
+        <EmptyState icon={cilDescription} title="Aún no hay comprobantes">
+            Cuando un cliente reporte un pago desde su cuenta, lo verás aquí para revisarlo y aprobarlo. Te avisamos con la campana.
+        </EmptyState>
+    );
 }
 
 const NEWEST_FIRST = '-submitted';

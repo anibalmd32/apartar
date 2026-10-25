@@ -18,7 +18,7 @@ export function ProductIdentityFields({ data, setData, errors, product }: Produc
 
     return (
         <SectionCard title="Información básica">
-            <div className="grid gap-x-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                     <TextField
                         label="Nombre"

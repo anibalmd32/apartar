@@ -1,4 +1,3 @@
-import { Alert } from '@/components/ui/alert';
 import { RateChangedNotice } from '@/features/catalog/components/LiveRateStamp';
 import { PlatformBadge } from '@/features/catalog/components/PlatformBadge';
 import { ShopHeader } from '@/features/catalog/components/ShopHeader';
@@ -30,7 +29,7 @@ export default function CatalogLayout(props: CatalogLayoutProps) {
 }
 
 function CatalogFrame({ title, business, showsPlatformBadge, width = 'wide', children }: CatalogLayoutProps) {
-    const { currency, status } = usePage<{ currency: CurrencyPageProps; status?: string | null }>().props;
+    const { currency } = usePage<{ currency: CurrencyPageProps }>().props;
     const live = useLiveRate(currency.rate);
 
     return (
@@ -46,7 +45,6 @@ function CatalogFrame({ title, business, showsPlatformBadge, width = 'wide', chi
                     width === 'wide' ? 'max-w-[1440px]' : 'max-w-[1120px]',
                 )}
             >
-                {status ? <Alert tone="info">{status}</Alert> : null}
                 {children}
             </main>
 

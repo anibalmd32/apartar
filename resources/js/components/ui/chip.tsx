@@ -13,7 +13,7 @@ export function Chip({ active, children, count, className, type = 'button', ...p
             type={type}
             aria-pressed={active}
             className={cn(
-                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
+                'pointer-coarse:h-11 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
                 active ? 'bg-neutral text-neutral-content border-neutral' : 'bg-base-100 border-line-strong text-ink-2 hover:text-base-content',
                 className,
             )}

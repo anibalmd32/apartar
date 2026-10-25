@@ -57,7 +57,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-3" aria-label="Aprobar el comprobante">
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <TextField
                     label="Importe recibido"
                     name="amount"

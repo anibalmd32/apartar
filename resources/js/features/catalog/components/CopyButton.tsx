@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { cilCheckAlt, cilCopy } from '@coreui/icons';
 import { useEffect, useState } from 'react';
@@ -31,6 +32,7 @@ export function CopyButton({ value, label, className, size = 14 }: CopyButtonPro
             setCopied(true);
         } catch {
             setCopied(false);
+            toast.error(`No se pudo copiar. Mantén pulsado el texto para copiar ${label} a mano.`);
         }
     };
 
@@ -39,7 +41,7 @@ export function CopyButton({ value, label, className, size = 14 }: CopyButtonPro
             type="button"
             onClick={() => void copy()}
             className={cn(
-                'text-ink-3 hover:text-base-content hover:bg-base-200 shrink-0 cursor-pointer rounded-md p-1.5',
+                'hit-area text-ink-3 hover:text-base-content hover:bg-base-200 shrink-0 cursor-pointer rounded-md p-1.5',
                 copied && 'text-success',
                 className,
             )}

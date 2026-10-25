@@ -38,7 +38,7 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                 </span>
             </nav>
 
-            <article className="grid gap-6 lg:grid-cols-[620fr_612fr] lg:gap-12">
+            <article className="grid grid-cols-1 gap-6 lg:grid-cols-[620fr_612fr] lg:gap-12">
                 <ProductGallery images={product.images} name={product.name} />
 
                 <div className="flex min-w-0 flex-col gap-[18px]">

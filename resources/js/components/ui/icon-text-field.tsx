@@ -43,7 +43,7 @@ export function IconTextField({ label, error, hint, icon, revealable = false, de
                 {revealable ? (
                     <button
                         type="button"
-                        className="text-ink-3 hover:text-base-content -mr-1 cursor-pointer rounded p-1"
+                        className="hit-area text-ink-3 hover:text-base-content -mr-1 cursor-pointer rounded p-1"
                         onClick={() => setVisible((current) => !current)}
                         aria-pressed={visible}
                         aria-label={visible ? 'Ocultar lo escrito' : 'Mostrar lo escrito'}

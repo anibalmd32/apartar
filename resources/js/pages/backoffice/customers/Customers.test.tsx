@@ -64,7 +64,7 @@ it('el directorio pinta los agregados y destaca la mora', () => {
 });
 
 it('el directorio filtra por mora y busca tras la pausa', async () => {
-    render(<CustomerIndex {...directoryProps([])} />);
+    render(<CustomerIndex {...directoryProps([directoryRow()])} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'En mora' }));
     expect(routerGet.mock.calls[0]?.[1]).toMatchObject({ overdue: '1' });

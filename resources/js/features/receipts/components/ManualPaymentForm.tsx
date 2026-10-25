@@ -78,7 +78,7 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-3" aria-label="Registrar un pago">
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <SelectField
                     label="Método"
                     name="method"

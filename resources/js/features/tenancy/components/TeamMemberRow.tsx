@@ -1,9 +1,11 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SelectField } from '@/components/ui/select-field';
 import { type OrganizationRole, type TeamMember } from '@/types/backoffice';
 import { router } from '@inertiajs/react';
+import { useState } from 'react';
 
 const ROLE_LABELS: Record<OrganizationRole, string> = {
     owner: 'Dueño',
@@ -47,6 +49,8 @@ function ago(iso: string): string {
 export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
     const act = (path: string, method: 'post' | 'delete' = 'post', data: Record<string, string> = {}) =>
         router.visit(`/backoffice/equipo/${member.id}${path}`, { method, data, preserveScroll: true });
+
+    const [confirming, setConfirming] = useState<'revoke' | 'disable' | null>(null);
 
     const cannotDisable = member.isSelf || member.isLastOwner;
 
@@ -103,7 +107,7 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                                 Reenviar enlace
                             </Button>
 
-                            <Button size="sm" variant="ghost" onClick={() => act('', 'delete')}>
+                            <Button size="sm" variant="ghost" className="text-error" onClick={() => setConfirming('revoke')}>
                                 Revocar
                             </Button>
                         </>
@@ -115,7 +119,7 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                             variant="ghost"
                             disabled={cannotDisable}
                             title={cannotDisable ? disableReason : undefined}
-                            onClick={() => act('/desactivar')}
+                            onClick={() => setConfirming('disable')}
                         >
                             Desactivar
                         </Button>
@@ -133,6 +137,19 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                         </Button>
                     )}
                 </div>
+                <ConfirmDialog
+                    open={confirming !== null}
+                    onClose={() => setConfirming(null)}
+                    title={confirming === 'revoke' ? `¿Revocar la invitación de ${member.name}?` : `¿Desactivar a ${member.name}?`}
+                    description={
+                        confirming === 'revoke'
+                            ? 'El enlace que recibió deja de funcionar. Puedes invitarle de nuevo cuando quieras.'
+                            : 'Pierde el acceso al negocio en el momento. Su historial se conserva y puedes reactivarle después.'
+                    }
+                    confirmLabel={confirming === 'revoke' ? 'Revocar invitación' : 'Desactivar'}
+                    method={confirming === 'revoke' ? 'delete' : 'post'}
+                    url={`/backoffice/equipo/${member.id}${confirming === 'revoke' ? '' : '/desactivar'}`}
+                />
             </td>
         </tr>
     );

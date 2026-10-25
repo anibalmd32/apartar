@@ -81,10 +81,12 @@ export function AuditEntryRow({ entry, timezone, area }: AuditEntryRowProps) {
                     <span className="text-ink-3 text-xs">Sin detalle</span>
                 ) : (
                     <details className="group mt-1">
-                        <summary className="text-ink-2 hover:text-base-content cursor-pointer text-[13px] font-semibold">Ver cambios</summary>
+                        <summary className="hit-area text-ink-2 hover:text-base-content cursor-pointer text-[13px] font-semibold">
+                            Ver cambios
+                        </summary>
                         <dl className="bg-surface-2 mt-2 flex flex-col gap-2 rounded-xl p-3 text-xs">
                             {changed.map(([field, change]) => (
-                                <div key={field} className="grid gap-2 sm:grid-cols-[minmax(0,10rem)_1fr_1fr]">
+                                <div key={field} className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,10rem)_1fr_1fr]">
                                     <dt className="text-ink-2 font-semibold">{field}</dt>
                                     <dd className="bg-error-soft rounded-lg px-2.5 py-1.5">
                                         <span className="sr-only">Antes: </span>

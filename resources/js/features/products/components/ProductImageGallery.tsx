@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
@@ -53,7 +54,7 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
 
     const save = () => router.patch(`${url}/orden`, { images: order }, { preserveScroll: true });
 
-    const remove = (id: number) => router.delete(`${url}/${id}`, { preserveScroll: true });
+    const [removing, setRemoving] = useState<number | null>(null);
 
     return (
         <SectionCard
@@ -91,7 +92,7 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
                                         <li
                                             ref={containerProps.ref}
                                             style={containerProps.style}
-                                            className={`border-line grid gap-x-3 gap-y-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
+                                            className={`border-line grid grid-cols-1 gap-x-3 gap-y-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
                                         >
                                             <div className="flex items-center gap-1 sm:col-span-2">
                                                 <SortableHandle handleProps={handleProps} />
@@ -126,7 +127,7 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
                                                     type="button"
                                                     size="sm"
                                                     variant="ghost"
-                                                    onClick={() => remove(entry.id)}
+                                                    onClick={() => setRemoving(entry.id)}
                                                     aria-label={`Quitar la imagen ${index + 1}`}
                                                     className="btn-square text-ink-3 hover:text-error"
                                                 >
@@ -146,6 +147,14 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
                 La primera es la que se ve en el catálogo y en el enlace que compartes. Mientras aparezca «Procesando» se sirve la original, así que
                 tu ficha funciona igual.
             </p>
+            <ConfirmDialog
+                open={removing !== null}
+                onClose={() => setRemoving(null)}
+                title="¿Quitar esta imagen?"
+                description="Se borra del producto y de sus catálogos. Si es la única, el producto se queda sin foto."
+                confirmLabel="Quitar imagen"
+                url={removing !== null ? `${url}/${removing}` : ''}
+            />
         </SectionCard>
     );
 }

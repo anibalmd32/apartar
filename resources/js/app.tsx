@@ -4,7 +4,9 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { type route as routeFn } from 'ziggy-js';
+import { Toaster } from './components/ui/toaster';
 import { initializeTheme } from './hooks/use-appearance';
+import { watchBrokenImages } from './lib/broken-images';
 
 declare global {
     const route: typeof routeFn;
@@ -18,11 +20,18 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        root.render(
+            <>
+                <App {...props} />
+                <Toaster initialPage={props.initialPage} />
+            </>,
+        );
     },
     progress: {
-        color: '#4B5563',
+        color: '#5046e5',
+        delay: 150,
     },
 });
 
 initializeTheme();
+watchBrokenImages();

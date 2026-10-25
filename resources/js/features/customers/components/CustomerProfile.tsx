@@ -23,7 +23,7 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
     return (
         <section
             aria-label="Contacto"
-            className="bg-base-100 border-line shadow-card grid gap-4 rounded-2xl border p-4 sm:grid-cols-2 xl:grid-cols-4"
+            className="bg-base-100 border-line shadow-card grid grid-cols-1 gap-4 rounded-2xl border p-4 sm:grid-cols-2 xl:grid-cols-4"
         >
             <Contact icon={cilUser} label="Documento">
                 {customer.document}

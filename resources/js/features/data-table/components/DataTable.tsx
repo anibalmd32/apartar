@@ -16,12 +16,18 @@ interface DataTableProps<TRow extends RowData> {
 
 export function DataTable<TRow extends RowData>({ table, empty, toolbar, filterLabels = {}, label }: DataTableProps<TRow>) {
     const ignored = table.meta.ignoredFilters.map((key) => filterLabels[key] ?? key);
+    const narrowed = Object.values(table.meta.filters).some(
+        (value) => value !== null && value !== '' && !(Array.isArray(value) && value.length === 0),
+    );
+    const pristine = !narrowed && !table.loading && table.meta.page === 1 && table.table.getRowModel().rows.length === 0;
 
     return (
         <section className="flex flex-col gap-4" aria-label={label}>
-            <TableToolbar ignored={ignored} failed={table.failed} onRetry={table.retry}>
-                {toolbar}
-            </TableToolbar>
+            {pristine && !table.failed ? null : (
+                <TableToolbar ignored={ignored} failed={table.failed} onRetry={table.retry}>
+                    {toolbar}
+                </TableToolbar>
+            )}
 
             <TableBody
                 table={table.table}
@@ -31,7 +37,7 @@ export function DataTable<TRow extends RowData>({ table, empty, toolbar, filterL
                 header={<TableHeader table={table.table} columns={table.columns} sort={table.meta.sort} onSort={table.toggleSort} />}
             />
 
-            <TablePagination meta={table.meta} loading={table.loading} onPage={table.setPage} onPerPage={table.setPerPage} />
+            {pristine ? null : <TablePagination meta={table.meta} loading={table.loading} onPage={table.setPage} onPerPage={table.setPerPage} />}
         </section>
     );
 }

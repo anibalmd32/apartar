@@ -25,7 +25,7 @@ export default function ReceiptReview(props: ReceiptReviewProps) {
             badge={<Badge tone={STATUS_TONES[receipt.status]}>{receipt.statusLabel}</Badge>}
             actions={props.queue ? <QueueNav queue={props.queue} /> : null}
         >
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-6">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-6">
                 <div className="flex min-w-0 flex-col gap-4">
                     <ReceiptChain receipt={receipt} />
                     <ReceiptViewer receipt={receipt} />
@@ -107,7 +107,7 @@ function Decision({ receipt, layaway, rate, preview, previewError, approval, rej
             disabled={!enabled}
             onClick={() => setMode(value)}
             className={cn(
-                'h-[34px] flex-1 rounded-lg text-sm transition-colors disabled:opacity-40',
+                'pointer-coarse:h-11 h-[34px] flex-1 rounded-lg text-sm transition-colors disabled:opacity-40',
                 mode === value ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
             )}
         >

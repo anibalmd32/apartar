@@ -2,11 +2,10 @@ import { Brand, BrandMark } from '@/components/shell/brand';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
-import { Alert } from '@/components/ui/alert';
 import { PortalNav, portalNavItems, PortalTabBar } from '@/features/account/components/PortalNav';
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
 import { CookieConsent, CookiePreferencesLink } from '@/features/telemetry/components/CookieConsent';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 
@@ -28,7 +27,6 @@ export default function PortalLayout(props: PortalLayoutProps) {
 }
 
 function PortalFrame({ title, businessName, customerName, children }: PortalLayoutProps) {
-    const { status } = usePage<{ status?: string | null }>().props;
     const { isAccount, session } = useAccountSession();
     const items = portalNavItems(isAccount, session?.unreadChats ?? 0);
 
@@ -67,7 +65,6 @@ function PortalFrame({ title, businessName, customerName, children }: PortalLayo
             </header>
 
             <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-4 px-4 pt-2 pb-8 lg:gap-6 lg:px-8 lg:pt-8 lg:pb-14">
-                {status ? <Alert tone="success">{status}</Alert> : null}
                 {children}
             </main>
 

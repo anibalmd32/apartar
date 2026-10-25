@@ -79,7 +79,7 @@ it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua
     expect(screen.getByRole('region', { name: 'Dónde pagar' })).toBeInTheDocument();
 });
 
-it('pinta el aviso de la acción anterior y el botón de subir comprobante', () => {
+it('ofrece subir el comprobante; el aviso de la acción anterior lo da el Toaster', () => {
     usePage.mockReturnValue({
         props: {
             auth: { portal: { fullName: 'María González' } },
@@ -90,7 +90,7 @@ it('pinta el aviso de la acción anterior y el botón de subir comprobante', () 
 
     render(<LayawayShow {...props({ receiptUrl: '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante' })} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Recibimos tu comprobante. Lo revisaremos pronto.');
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('link', { name: 'Subir comprobante' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante');
 });
 

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DateRangeField } from '@/components/ui/date-range-field';
 import { SelectField } from '@/components/ui/select-field';
 import { AUDIT_PERIODS, type AuditPeriod, periodOf, periodRange } from '@/features/tenancy/lib/audit-period';
 import { type AuditActorOption, type AuditEventGroup, type AuditFilters as Filters } from '@/types/audit';
@@ -107,12 +108,15 @@ export function AuditFilters({ filters, events, actors }: AuditFiltersProps) {
                 onChange={(changed) => pickPeriod(changed.target.value)}
             />
 
-            <label className="input w-auto">
-                <span className="text-ink-3 text-[13px]">Desde</span>
-                <input name="from" type="date" aria-label="Desde" value={from} onChange={(changed) => setFrom(changed.target.value)} />
-                <span className="text-ink-3 text-[13px]">hasta</span>
-                <input name="to" type="date" aria-label="Hasta" value={to} onChange={(changed) => setTo(changed.target.value)} />
-            </label>
+            <DateRangeField
+                label="Fechas"
+                fromLabel="Desde"
+                toLabel="Hasta"
+                from={from}
+                to={to}
+                onFromChange={(changed) => setFrom(changed.target.value)}
+                onToChange={(changed) => setTo(changed.target.value)}
+            />
 
             <Button type="submit" variant="soft">
                 Filtrar

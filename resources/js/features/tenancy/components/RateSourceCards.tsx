@@ -36,7 +36,7 @@ export function RateSourceCards({ value, onChange, sourceOptions, rateSources, m
         <fieldset className="fieldset w-full" aria-describedby={error ? `${id}-error` : `${id}-hint`}>
             <legend className="fieldset-legend">Fuente de la tasa</legend>
 
-            <div className="grid gap-2.5 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 {sourceOptions.map((option) => {
                     const { figure, note } = details(
                         option.value,
