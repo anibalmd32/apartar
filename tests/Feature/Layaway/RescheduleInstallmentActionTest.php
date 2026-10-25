@@ -17,15 +17,15 @@ use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class RescheduleInstallmentActionTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     private const REASON = 'Pactado por chat con la clienta.';
 

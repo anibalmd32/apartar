@@ -13,17 +13,17 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Queries\CollectionFilters;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CollectionPageTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     private Organization $organization;
 

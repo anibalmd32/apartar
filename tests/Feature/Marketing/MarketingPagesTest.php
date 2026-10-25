@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Marketing;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class MarketingPagesTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_home_page_opens_without_a_session(): void
     {

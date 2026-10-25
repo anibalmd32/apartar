@@ -9,13 +9,13 @@ use App\Domain\Subscription\PlanDowngradeNeedsConfirmationException;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlanDowngradeNeedsConfirmationExceptionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_carries_the_preview_and_names_the_target(): void
     {

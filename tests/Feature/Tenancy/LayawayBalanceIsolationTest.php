@@ -11,14 +11,14 @@ use App\Models\Organization;
 use App\Models\Payment;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LayawayBalanceIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     protected function tearDown(): void
     {

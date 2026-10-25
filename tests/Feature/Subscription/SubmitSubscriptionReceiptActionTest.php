@@ -25,17 +25,17 @@ use App\Models\User;
 use App\Queries\Platform\SubscriptionReceiptDuplicates;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\BillsSubscriptions;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class SubmitSubscriptionReceiptActionTest extends TestCase
 {
-    use BillsSubscriptions, CreatesLayaways, RefreshDatabase, UploadsReceiptFiles;
+    use BillsSubscriptions, CreatesLayaways, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     protected function setUp(): void
     {

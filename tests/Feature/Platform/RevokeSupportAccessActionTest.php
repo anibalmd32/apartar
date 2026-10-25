@@ -8,14 +8,14 @@ use App\Actions\Platform\GrantSupportAccessAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Models\AuditEntry;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class RevokeSupportAccessActionTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_another_operator_can_revoke_and_access_ends_on_the_next_request(): void
     {

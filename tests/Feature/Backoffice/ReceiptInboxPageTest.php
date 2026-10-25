@@ -17,16 +17,16 @@ use App\Models\User;
 use App\Support\SignedFileUrl;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ReceiptInboxPageTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private Organization $organization;
 

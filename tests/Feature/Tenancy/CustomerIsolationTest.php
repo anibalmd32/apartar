@@ -10,13 +10,13 @@ use App\Domain\Customer\TermsConsent;
 use App\Models\AuditEntry;
 use App\Models\Customer;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CustomerIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_same_document_in_two_organizations_creates_two_isolated_customers(): void
     {

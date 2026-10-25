@@ -30,14 +30,14 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class AuditedActionsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

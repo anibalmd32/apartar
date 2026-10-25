@@ -8,15 +8,15 @@ use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PortalSessionIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_the_code_of_one_business_opens_only_that_business(): void
     {

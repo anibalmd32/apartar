@@ -8,16 +8,16 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Models\Organization;
 use App\Models\Receipt;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ReceiptReviewIsolationTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     public function test_a_receipt_of_another_business_is_not_found_and_nothing_is_written(): void
     {

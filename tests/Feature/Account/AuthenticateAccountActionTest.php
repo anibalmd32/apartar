@@ -10,12 +10,12 @@ use App\Models\Account;
 use App\Models\AccountIdentity;
 use Exception;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class AuthenticateAccountActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_creates_the_account_and_opens_the_session(): void
     {

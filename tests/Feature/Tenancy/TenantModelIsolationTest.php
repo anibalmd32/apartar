@@ -9,12 +9,12 @@ use App\Domain\Tenancy\MissingTenantContextException;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class TenantModelIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_users_are_only_visible_from_their_own_organization(): void
     {

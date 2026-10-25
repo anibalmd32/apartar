@@ -12,12 +12,12 @@ use App\Models\Account;
 use App\Models\AuditEntry;
 use App\Models\Customer;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LinkAccountActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

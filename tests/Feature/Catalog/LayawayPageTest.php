@@ -20,18 +20,18 @@ use App\Models\UsageCounter;
 use App\Notifications\LayawayConfirmationNotification;
 use App\Providers\AppServiceProvider;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LayawayPageTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

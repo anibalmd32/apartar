@@ -7,16 +7,16 @@ namespace Tests\Feature\Marketing;
 use App\Models\Organization;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\FakesPwnedPasswords;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class RegisterOrganizationTest extends TestCase
 {
-    use FakesPwnedPasswords, RefreshDatabase;
+    use FakesPwnedPasswords, ReusesMigratedDatabase;
 
     /**
      * @var array<string, string>

@@ -36,19 +36,19 @@ use App\Models\User;
 use App\Queries\AccountSubscriptionsQuery;
 use App\Queries\SubscriptionRow;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class ApplyDowngradeActionTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private Organization $organization;
 

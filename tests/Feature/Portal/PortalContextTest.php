@@ -8,13 +8,13 @@ use App\Domain\Account\PortalContext;
 use App\Models\Customer;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PortalContextTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_without_a_session_it_sees_nothing(): void
     {

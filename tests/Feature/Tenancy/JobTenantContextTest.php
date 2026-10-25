@@ -9,8 +9,8 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Support\Jobs\CountsUsersJob;
 use Tests\Support\Jobs\FailsWithinTenantJob;
 use Tests\Support\Jobs\ForgetfulJob;
@@ -19,7 +19,7 @@ use Tests\TestCase;
 
 final class JobTenantContextTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_a_job_receives_its_organization_in_the_payload(): void
     {

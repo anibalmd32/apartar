@@ -7,15 +7,15 @@ namespace Tests\Feature\Platform;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Organization;
 use App\Models\Plan;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class OrganizationDetailTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_detail_carries_the_limits_and_the_business_profile(): void
     {

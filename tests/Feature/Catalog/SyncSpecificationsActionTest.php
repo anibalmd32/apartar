@@ -15,13 +15,13 @@ use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class SyncSpecificationsActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

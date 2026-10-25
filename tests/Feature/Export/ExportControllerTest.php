@@ -15,16 +15,16 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ExportControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

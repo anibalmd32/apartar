@@ -8,12 +8,12 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Queries\SpecificationGroupsQuery;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class SpecificationGroupsQueryTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

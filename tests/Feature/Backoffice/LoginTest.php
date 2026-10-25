@@ -8,16 +8,16 @@ use App\Domain\Tenancy\OrganizationNotActiveException;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LoginTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_login_page_renders_without_asking_for_an_organization(): void
     {

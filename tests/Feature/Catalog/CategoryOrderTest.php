@@ -7,12 +7,12 @@ namespace Tests\Feature\Catalog;
 use App\Domain\Catalog\CategoryOrder;
 use App\Models\Category;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CategoryOrderTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

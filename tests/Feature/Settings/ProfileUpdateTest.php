@@ -6,13 +6,13 @@ namespace Tests\Feature\Settings;
 
 use App\Domain\Subscription\UsageMetric;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_profile_page_is_displayed(): void
     {

@@ -9,13 +9,13 @@ use App\Models\Organization;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ProductLockTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_reads_the_product_with_for_update_through_the_tenant_scope(): void
     {

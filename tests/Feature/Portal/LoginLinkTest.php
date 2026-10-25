@@ -8,17 +8,17 @@ use App\Http\Requests\Portal\RequestLoginLinkRequest;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Notifications\CustomerLoginLinkNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LoginLinkTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     private Organization $organization;
 

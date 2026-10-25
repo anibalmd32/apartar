@@ -10,12 +10,12 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class TenantFactoriesTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_a_user_factory_without_context_creates_its_own_organization(): void
     {

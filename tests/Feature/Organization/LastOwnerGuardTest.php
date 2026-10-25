@@ -10,13 +10,13 @@ use App\Domain\Tenancy\LastOwnerGuard;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LastOwnerGuardTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_an_owner_may_step_down_while_another_remains(): void
     {

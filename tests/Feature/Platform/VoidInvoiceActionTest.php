@@ -10,14 +10,14 @@ use App\Models\Organization;
 use App\Models\PlatformActivity;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionReceipt;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class VoidInvoiceActionTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

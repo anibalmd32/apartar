@@ -12,13 +12,13 @@ use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Tag;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CatalogModelIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_each_model_is_only_visible_from_its_own_organization(): void
     {

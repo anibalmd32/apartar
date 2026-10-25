@@ -10,14 +10,14 @@ use App\Http\Resources\PortalAlertResource;
 use App\Models\Organization;
 use App\Queries\PortalAlert;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PortalAlertActionUrlTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_debt_alerts_lead_to_the_receipt_form_and_the_pending_one_to_the_detail(): void
     {

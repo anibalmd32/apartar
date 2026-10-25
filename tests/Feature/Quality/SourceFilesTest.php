@@ -37,7 +37,7 @@ it('lista lo mismo que glob en el directorio que destapó el problema', function
 });
 
 it('recorre en profundidad, filtra por extensión y ordena', function (): void {
-    $root = storage_path('framework/testing/source-files-'.uniqid());
+    $root = str_replace('\\', '/', storage_path('framework/testing/source-files-'.uniqid()));
     mkdir($root.'/b/c', 0777, true);
 
     foreach (['z.php', 'a.php', 'nota.txt', 'b/m.php', 'b/c/k.php', 'b/c/v.tsx'] as $file) {

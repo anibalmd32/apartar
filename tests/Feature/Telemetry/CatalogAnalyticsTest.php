@@ -12,13 +12,13 @@ use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CatalogAnalyticsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const ANA = '0190f0f0-0000-7000-8000-00000000000a';
 

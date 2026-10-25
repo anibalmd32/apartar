@@ -12,17 +12,17 @@ use App\Models\Organization;
 use App\Models\Receipt;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class SubmitReceiptIsolationTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     protected function setUp(): void
     {

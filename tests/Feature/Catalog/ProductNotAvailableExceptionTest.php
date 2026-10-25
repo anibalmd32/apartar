@@ -7,12 +7,12 @@ namespace Tests\Feature\Catalog;
 use App\Domain\Catalog\ProductNotAvailableException;
 use App\Models\Organization;
 use App\Models\Product;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ProductNotAvailableExceptionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

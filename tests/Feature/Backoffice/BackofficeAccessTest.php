@@ -9,14 +9,14 @@ use App\Domain\Tenancy\OrganizationStatus;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class BackofficeAccessTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_tenant_is_fixed_from_the_session_and_filters_every_query(): void
     {

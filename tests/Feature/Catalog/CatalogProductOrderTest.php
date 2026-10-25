@@ -8,13 +8,13 @@ use App\Domain\Catalog\CatalogProductOrder;
 use App\Models\Catalog;
 use App\Models\Organization;
 use App\Models\Product;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CatalogProductOrderTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

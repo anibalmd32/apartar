@@ -15,17 +15,17 @@ use App\Models\OrganizationSetting;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use LogicException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PublicCatalogIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $ferreteria;
 

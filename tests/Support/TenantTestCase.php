@@ -6,14 +6,14 @@ namespace Tests\Support;
 
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 abstract class TenantTestCase extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function refreshTestDatabase(): void
     {

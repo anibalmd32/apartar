@@ -8,16 +8,16 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ManualPaymentIsolationTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     public function test_the_neighbour_layaway_and_receipt_are_not_found_and_nothing_is_written(): void
     {

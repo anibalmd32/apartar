@@ -6,10 +6,10 @@ use App\Domain\Exchange\RateSource;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Models\ExchangeRate;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\ReusesMigratedDatabase;
 
-uses(RefreshDatabase::class);
+uses(ReusesMigratedDatabase::class);
 
 it('persiste una lectura de la tasa', function (): void {
     $rate = ExchangeRate::factory()->create();

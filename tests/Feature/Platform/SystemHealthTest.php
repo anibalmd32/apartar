@@ -10,16 +10,16 @@ use App\Queries\Platform\SystemHealthQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class SystemHealthTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_a_task_is_overdue_at_twice_its_interval(): void
     {

@@ -12,14 +12,14 @@ use App\Models\ExchangeRate;
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ExchangeRateEndpointTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_returns_the_current_rate_shaped_as_a_rate_view(): void
     {

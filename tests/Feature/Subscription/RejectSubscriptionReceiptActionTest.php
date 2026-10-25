@@ -10,14 +10,14 @@ use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Subscription\InvoiceStatus;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionReceipt;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
 use Tests\Concerns\BillsSubscriptions;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class RejectSubscriptionReceiptActionTest extends TestCase
 {
-    use BillsSubscriptions, RefreshDatabase;
+    use BillsSubscriptions, ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

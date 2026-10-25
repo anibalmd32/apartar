@@ -27,15 +27,15 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class UsageCounterMovesTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

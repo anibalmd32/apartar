@@ -15,12 +15,12 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
 use Database\Seeders\PlanSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class StartFreeSubscriptionActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

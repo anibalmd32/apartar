@@ -7,12 +7,12 @@ namespace Tests\Feature\Settings;
 use App\Domain\Catalog\PublishedCatalogs;
 use App\Models\Catalog;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PublishedCatalogsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_answers_false_when_the_organization_has_no_catalogs(): void
     {

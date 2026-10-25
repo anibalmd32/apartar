@@ -10,12 +10,12 @@ use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Receipt;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PaymentIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_payments_allocations_and_receipts_are_invisible_to_the_neighbour(): void
     {

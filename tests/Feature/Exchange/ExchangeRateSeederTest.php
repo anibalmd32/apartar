@@ -9,12 +9,12 @@ use App\Domain\Exchange\RateSource;
 use App\Models\ExchangeRate;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ExchangeRateSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ExchangeRateSeederTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_seeds_an_initial_bcv_rate(): void
     {

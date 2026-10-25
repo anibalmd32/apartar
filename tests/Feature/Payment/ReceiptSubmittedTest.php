@@ -12,15 +12,15 @@ use App\Models\PaymentAccount;
 use App\Models\Receipt;
 use Carbon\CarbonImmutable;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ReceiptSubmittedTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private Receipt $receipt;
 

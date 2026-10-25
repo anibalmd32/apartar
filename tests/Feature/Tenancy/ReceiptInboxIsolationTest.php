@@ -11,16 +11,16 @@ use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\User;
 use Closure;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ReceiptInboxIsolationTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private Organization $organization;
 

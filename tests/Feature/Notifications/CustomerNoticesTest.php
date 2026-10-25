@@ -11,15 +11,15 @@ use App\Models\Customer;
 use App\Models\Organization;
 use App\Notifications\CustomerMessageNotification;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CustomerNoticesTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_the_rejection_carries_the_full_reason_and_the_business(): void
     {

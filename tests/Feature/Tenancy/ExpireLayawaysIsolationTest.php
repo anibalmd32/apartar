@@ -9,14 +9,14 @@ use App\Actions\Layaway\ExtendDownPaymentWindowAction;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ExpireLayawaysIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_expiring_one_organization_leaves_the_neighbour_untouched(): void
     {

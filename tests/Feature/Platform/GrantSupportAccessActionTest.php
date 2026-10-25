@@ -13,16 +13,16 @@ use App\Models\PlatformActivity;
 use App\Models\User;
 use App\Notifications\SupportAccessGrantedNotification;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class GrantSupportAccessActionTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const REASON = 'Revisión de balance reportado por el cliente, ticket 42';
 

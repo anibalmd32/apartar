@@ -12,17 +12,17 @@ use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class ClosedBusinessPortalTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private Organization $organization;
 

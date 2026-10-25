@@ -9,7 +9,6 @@ use App\Domain\Tenancy\TenantContext;
 use App\Jobs\CompressReceiptImage;
 use App\Models\Organization;
 use App\Models\Receipt;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,12 +18,13 @@ use Spatie\Image\Enums\Fit;
 use Spatie\Image\Image;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class CompressReceiptImageTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private Organization $organization;
 

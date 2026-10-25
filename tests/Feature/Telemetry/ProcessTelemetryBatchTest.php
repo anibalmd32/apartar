@@ -13,13 +13,13 @@ use App\Models\Customer;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ProcessTelemetryBatchTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const VISITOR = '0190f0f0-0000-7000-8000-000000000001';
 

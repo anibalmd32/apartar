@@ -6,14 +6,14 @@ namespace Tests\Feature\Tenancy;
 
 use App\Models\Customer;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PortalLayawayIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_the_layaway_of_the_same_person_in_another_business_is_not_found(): void
     {

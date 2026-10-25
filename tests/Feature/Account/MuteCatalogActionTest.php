@@ -8,12 +8,12 @@ use App\Actions\Account\MuteCatalogAction;
 use App\Models\Account;
 use App\Models\CatalogSubscription;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class MuteCatalogActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_muting_keeps_the_subscription_and_unmuting_clears_it(): void
     {

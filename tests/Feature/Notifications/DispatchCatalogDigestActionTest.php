@@ -19,15 +19,15 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\CustomerMessageNotification;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class DispatchCatalogDigestActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

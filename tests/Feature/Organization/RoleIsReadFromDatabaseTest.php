@@ -7,15 +7,15 @@ namespace Tests\Feature\Organization;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class RoleIsReadFromDatabaseTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_a_promotion_applies_on_the_next_request(): void
     {

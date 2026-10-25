@@ -21,7 +21,6 @@ use App\Models\Receipt;
 use App\Models\User;
 use App\Notifications\CustomerMessageNotification;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -30,12 +29,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class SuspensionSparesCustomersTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private Organization $organization;
 

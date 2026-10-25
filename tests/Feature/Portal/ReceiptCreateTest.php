@@ -18,7 +18,6 @@ use App\Models\Receipt;
 use App\Models\Subscription;
 use App\Providers\AppServiceProvider;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -26,12 +25,13 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class ReceiptCreateTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private Organization $organization;
 

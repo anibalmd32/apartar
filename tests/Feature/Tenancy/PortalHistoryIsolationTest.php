@@ -7,16 +7,16 @@ namespace Tests\Feature\Tenancy;
 use App\Domain\Layaway\LayawayStatus;
 use App\Models\Customer;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PortalHistoryIsolationTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     public function test_the_history_never_shows_what_the_same_person_has_with_another_business(): void
     {

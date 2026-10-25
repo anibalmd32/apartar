@@ -9,13 +9,13 @@ use App\Models\Organization;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Policies\SubscriptionPolicy;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class SubscriptionPolicyTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_is_discovered_by_convention(): void
     {

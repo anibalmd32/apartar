@@ -15,16 +15,16 @@ use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Queries\Platform\PlatformMetricsQuery;
 use App\Queries\Platform\PlatformMoney;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlatformMetricsTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_mrr_includes_past_due_and_excludes_suspended(): void
     {

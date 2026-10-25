@@ -8,13 +8,13 @@ use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Tenancy\TenantScope;
 use App\Models\Catalog;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CatalogVisibilityDerivationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

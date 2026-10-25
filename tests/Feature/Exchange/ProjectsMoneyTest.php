@@ -13,14 +13,14 @@ use App\Models\ExchangeRate;
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ProjectsMoneyTest extends TestCase
 {
     use ProjectsMoney;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

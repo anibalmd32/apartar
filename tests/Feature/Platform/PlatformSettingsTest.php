@@ -12,14 +12,14 @@ use App\Models\ExportJob;
 use App\Models\PlatformSetting;
 use App\Support\PlatformSettings;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use InvalidArgumentException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlatformSettingsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_without_rows_every_key_reads_its_default(): void
     {

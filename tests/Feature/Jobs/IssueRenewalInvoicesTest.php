@@ -17,13 +17,13 @@ use App\Models\SubscriptionInvoice;
 use App\Queries\Platform\RenewableSubscriptions;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BillsSubscriptions;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class IssueRenewalInvoicesTest extends TestCase
 {
-    use BillsSubscriptions, RefreshDatabase;
+    use BillsSubscriptions, ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

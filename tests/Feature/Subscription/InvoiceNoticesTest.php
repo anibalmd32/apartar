@@ -18,16 +18,16 @@ use App\Models\User;
 use App\Notifications\InvoiceOverdueNotification;
 use App\Notifications\SubscriptionReceiptReviewedNotification;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 use Tests\Concerns\BillsSubscriptions;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class InvoiceNoticesTest extends TestCase
 {
-    use BillsSubscriptions, RefreshDatabase;
+    use BillsSubscriptions, ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

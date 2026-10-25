@@ -8,14 +8,14 @@ use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\ReceiptStatus;
 use App\Models\Organization;
 use App\Models\Receipt;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ReceiptIsolationTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     public function test_the_neighbours_receipts_do_not_exist_for_our_questions(): void
     {

@@ -25,18 +25,18 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use Tests\Concerns\AssertsStockLockOrder;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CancelLayawayActionTest extends TestCase
 {
-    use AssertsStockLockOrder, CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use AssertsStockLockOrder, CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private const REASON = 'El cliente dejó de responder hace un mes.';
 

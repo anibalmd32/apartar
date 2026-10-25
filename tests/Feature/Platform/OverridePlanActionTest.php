@@ -9,14 +9,14 @@ use App\Models\AuditEntry;
 use App\Models\Plan;
 use App\Models\PlatformActivity;
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class OverridePlanActionTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_an_upgrade_needs_a_reason_and_is_audited_twice(): void
     {

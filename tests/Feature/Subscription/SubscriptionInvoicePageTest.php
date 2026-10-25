@@ -18,16 +18,16 @@ use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionReceipt;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\BillsSubscriptions;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class SubscriptionInvoicePageTest extends TestCase
 {
-    use BillsSubscriptions, RefreshDatabase, UploadsReceiptFiles;
+    use BillsSubscriptions, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     protected function setUp(): void
     {

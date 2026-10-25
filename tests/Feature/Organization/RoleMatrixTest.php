@@ -10,15 +10,15 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class RoleMatrixTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     /**
      * @return array<string, array{0: OrganizationCapability, 1: OrganizationRole, 2: int}>

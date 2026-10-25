@@ -9,17 +9,17 @@ use App\Domain\Tenancy\MissingTenantContextException;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Rules\UniqueReceiptFingerprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class UniqueReceiptFingerprintTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private Organization $organization;
 

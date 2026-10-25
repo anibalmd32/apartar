@@ -8,13 +8,13 @@ use App\Domain\Subscription\PlanAllowance;
 use App\Domain\Subscription\PlanFeature;
 use App\Models\Plan;
 use Database\Seeders\PlanSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlanSeederTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     /**
      * @return array<string, array{0: string, 1: array<string, mixed>}>

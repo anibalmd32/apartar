@@ -6,13 +6,13 @@ namespace Tests\Feature\Tenancy;
 
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class NeighbourOrganizationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_seeds_a_real_neighbour_organization(): void
     {

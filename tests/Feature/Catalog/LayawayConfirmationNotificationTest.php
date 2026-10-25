@@ -9,13 +9,13 @@ use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Notifications\LayawayConfirmationNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LayawayConfirmationNotificationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_carries_the_code_the_down_payment_its_deadline_and_where_to_pay(): void
     {

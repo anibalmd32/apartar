@@ -10,12 +10,12 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Tag;
 use App\Queries\CatalogFacetsQuery;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CatalogFacetsQueryTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

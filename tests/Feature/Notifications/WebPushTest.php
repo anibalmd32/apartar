@@ -22,7 +22,6 @@ use App\Notifications\UnreadMessageNotification;
 use Carbon\CarbonImmutable;
 use GuzzleHttp\Psr7\Request as PsrRequest;
 use GuzzleHttp\Psr7\Response as PsrResponse;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -32,11 +31,12 @@ use Illuminate\Support\Str;
 use Minishlink\WebPush\MessageSentReport;
 use NotificationChannels\WebPush\PushSubscription;
 use NotificationChannels\WebPush\WebPushMessage;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class WebPushTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const ENDPOINT = 'https://fcm.googleapis.com/fcm/send/abc123';
 

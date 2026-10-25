@@ -15,7 +15,6 @@ use App\Models\Receipt;
 use App\Models\User;
 use App\Policies\ReceiptPolicy;
 use App\Support\SignedFileUrl;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,11 +23,12 @@ use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ReceiptFileTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private const CONTENT = "\x89PNG\r\n\x1a\nla captura del pago móvil";
 

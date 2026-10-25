@@ -13,13 +13,13 @@ use App\Models\SubscriptionReceipt;
 use App\Models\User;
 use App\Queries\DashboardWarningsQuery;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class SubscriptionBillingIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_neighbour_invoices_and_receipts_are_invisible(): void
     {

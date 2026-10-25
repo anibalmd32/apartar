@@ -10,14 +10,14 @@ use App\Domain\Tenancy\MissingTenantContextException;
 use App\Models\Installment;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ActivateLayawayIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_a_layaway_of_another_organization_cannot_be_activated(): void
     {

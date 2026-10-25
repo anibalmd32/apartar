@@ -27,18 +27,18 @@ use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Tests\Concerns\AssertsStockLockOrder;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ExpireLayawaysActionTest extends TestCase
 {
-    use AssertsStockLockOrder, CreatesLayaways, CreatesReceipts, RefreshDatabase;
+    use AssertsStockLockOrder, CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private Organization $organization;
 

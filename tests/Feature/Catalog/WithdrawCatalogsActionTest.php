@@ -7,13 +7,13 @@ namespace Tests\Feature\Catalog;
 use App\Actions\Catalog\WithdrawCatalogsAction;
 use App\Models\Catalog;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class WithdrawCatalogsActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

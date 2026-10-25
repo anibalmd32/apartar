@@ -13,14 +13,14 @@ use App\Models\Customer;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Support\DocumentNumber;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ClaimCustomerActionTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     private const DOCUMENT = 'V12345678';
 

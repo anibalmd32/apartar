@@ -9,14 +9,14 @@ use App\Domain\Payment\DuplicateReceipts;
 use App\Models\Organization;
 use App\Models\Receipt;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class DuplicateReceiptsTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_the_two_criteria_in_order_and_only_within_the_tenant(): void
     {

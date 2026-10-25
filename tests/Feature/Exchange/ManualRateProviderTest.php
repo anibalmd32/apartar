@@ -12,13 +12,13 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ManualRateProviderTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_reads_the_rate_the_business_wrote(): void
     {

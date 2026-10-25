@@ -9,13 +9,13 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Contracts\Broadcasting\Factory as BroadcastFactory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Broadcast;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class BroadcastChannelIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     /**
      * @var list<string>

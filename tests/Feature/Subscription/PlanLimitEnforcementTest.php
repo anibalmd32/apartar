@@ -27,7 +27,6 @@ use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -39,11 +38,12 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 use InvalidArgumentException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlanLimitEnforcementTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

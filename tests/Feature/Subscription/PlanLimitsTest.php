@@ -8,12 +8,12 @@ use App\Domain\Subscription\PlanAllowance;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Subscription\UsageMetric;
 use App\Models\Plan;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlanLimitsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_reads_the_limit_of_each_metric_from_the_row(): void
     {

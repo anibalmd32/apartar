@@ -10,14 +10,14 @@ use App\Models\AuditEntry;
 use App\Models\PlatformActivity;
 use App\Models\Subscription;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class GrantCourtesyPeriodActionTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_extends_the_period_with_a_reason_and_audits_both_sides(): void
     {

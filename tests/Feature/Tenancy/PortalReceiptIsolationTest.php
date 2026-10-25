@@ -8,17 +8,17 @@ use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class PortalReceiptIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase, UploadsReceiptFiles;
+    use CreatesLayaways, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     public function test_the_neighbours_layaway_and_payment_account_are_out_of_reach(): void
     {

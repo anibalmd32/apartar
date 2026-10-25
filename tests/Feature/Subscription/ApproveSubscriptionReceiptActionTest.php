@@ -25,15 +25,15 @@ use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionReceipt;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BillsSubscriptions;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ApproveSubscriptionReceiptActionTest extends TestCase
 {
-    use BillsSubscriptions, RefreshDatabase;
+    use BillsSubscriptions, ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

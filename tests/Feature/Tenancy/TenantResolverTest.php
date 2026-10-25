@@ -9,12 +9,12 @@ use App\Domain\Tenancy\TenantSurface;
 use App\Models\Catalog;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class TenantResolverTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private TenantResolver $resolver;
 

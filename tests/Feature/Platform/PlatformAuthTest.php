@@ -8,16 +8,16 @@ use App\Models\PlatformUser;
 use App\Models\User;
 use Database\Factories\PlatformUserFactory;
 use Database\Seeders\PlatformAdminSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use RuntimeException;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlatformAuthTest extends TestCase
 {
     use ActsAsPlatformOperator;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const ENV = [
         'PLATFORM_ADMIN_NAME' => 'Ana Operadora',

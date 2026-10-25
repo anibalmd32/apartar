@@ -16,17 +16,17 @@ use App\Support\DocumentKind;
 use App\Support\InvalidPhoneNumberException;
 use App\Support\PhoneNumber;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionMethod;
 use ReflectionNamedType;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ResolveCustomerActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

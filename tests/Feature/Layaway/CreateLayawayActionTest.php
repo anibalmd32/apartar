@@ -35,18 +35,18 @@ use App\Models\UsageCounter;
 use App\Support\LayawayCode;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\Concerns\AssertsStockLockOrder;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CreateLayawayActionTest extends TestCase
 {
-    use AssertsStockLockOrder, RefreshDatabase;
+    use AssertsStockLockOrder, ReusesMigratedDatabase;
 
     private Organization $organization;
 

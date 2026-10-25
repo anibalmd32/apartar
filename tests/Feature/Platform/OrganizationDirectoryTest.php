@@ -13,17 +13,17 @@ use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\SubscriptionInvoice;
 use App\Models\UsageCounter;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\ActsAsPlatformOperator;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class OrganizationDirectoryTest extends TestCase
 {
     use ActsAsPlatformOperator;
     use CreatesLayaways;
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_rows_carry_only_aggregates(): void
     {

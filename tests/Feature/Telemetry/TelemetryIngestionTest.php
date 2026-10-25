@@ -9,16 +9,16 @@ use App\Http\Controllers\Api\TelemetryController;
 use App\Jobs\ProcessTelemetryBatch;
 use App\Providers\AppServiceProvider;
 use Illuminate\Contracts\Bus\Dispatcher;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class TelemetryIngestionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const VISITOR = '0190f0f0-0000-7000-8000-000000000001';
 

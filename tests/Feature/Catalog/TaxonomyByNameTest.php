@@ -8,13 +8,13 @@ use App\Domain\Catalog\TaxonomyByName;
 use App\Models\Category;
 use App\Models\Organization;
 use App\Models\Tag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class TaxonomyByNameTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

@@ -12,12 +12,12 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Support\UniqueCatalogSlug;
 use Closure;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class UniqueCatalogSlugTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

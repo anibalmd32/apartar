@@ -7,14 +7,14 @@ namespace Tests\Feature\Backoffice;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Organization;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class SuspendedOrganizationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_a_suspended_team_can_still_approve_a_receipt(): void
     {

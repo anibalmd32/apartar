@@ -14,15 +14,15 @@ use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\AssertsStockLockOrder;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class StockLockOrderTest extends TestCase
 {
-    use AssertsStockLockOrder, CreatesLayaways, RefreshDatabase;
+    use AssertsStockLockOrder, CreatesLayaways, ReusesMigratedDatabase;
 
     private Organization $organization;
 

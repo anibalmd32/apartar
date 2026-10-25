@@ -6,13 +6,13 @@ namespace Tests\Feature\Catalog;
 
 use App\Models\Catalog;
 use App\Models\Organization;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CatalogUnavailablePageTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_an_unknown_catalog_link_shows_the_unavailable_page_with_a_404(): void
     {

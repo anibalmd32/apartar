@@ -6,12 +6,12 @@ namespace Tests\Feature\Subscription;
 
 use App\Domain\Subscription\PlanChangeDirection;
 use App\Models\Plan;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PlanChangeDirectionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_compares_positions_and_not_prices(): void
     {

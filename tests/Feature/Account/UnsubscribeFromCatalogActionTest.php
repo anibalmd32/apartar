@@ -7,12 +7,12 @@ namespace Tests\Feature\Account;
 use App\Actions\Account\UnsubscribeFromCatalogAction;
 use App\Models\Account;
 use App\Models\CatalogSubscription;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class UnsubscribeFromCatalogActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_leaving_deletes_only_this_accounts_row(): void
     {

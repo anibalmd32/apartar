@@ -12,14 +12,14 @@ use App\Models\Subscription;
 use App\Models\UsageCounter;
 use App\Models\User;
 use App\Notifications\TeamInvitationNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class TeamInvitationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $organization;
 

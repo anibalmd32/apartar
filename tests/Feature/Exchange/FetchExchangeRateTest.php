@@ -12,12 +12,12 @@ use App\Jobs\FetchExchangeRate;
 use App\Models\ExchangeRate;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Tests\Concerns\ReusesMigratedDatabase;
 
-uses(RefreshDatabase::class);
+uses(ReusesMigratedDatabase::class);
 
 /**
  * @param  callable|array<string, mixed>  $stub

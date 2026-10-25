@@ -10,16 +10,16 @@ use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use App\Models\User;
 use App\Support\Settings;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Support\ExplodingCacheStore;
 use Tests\TestCase;
 
 final class SettingsCacheLeakTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private Organization $ferreteria;
 

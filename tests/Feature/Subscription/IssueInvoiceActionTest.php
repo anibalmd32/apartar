@@ -14,14 +14,14 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
 use Tests\Concerns\BillsSubscriptions;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class IssueInvoiceActionTest extends TestCase
 {
-    use BillsSubscriptions, RefreshDatabase;
+    use BillsSubscriptions, ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

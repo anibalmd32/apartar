@@ -13,14 +13,14 @@ use App\Http\Middleware\ResolveTenant;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Http\Kernel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use LogicException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ResolveTenantTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

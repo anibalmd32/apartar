@@ -10,11 +10,11 @@ use App\Models\ExchangeRate;
 use App\Models\Organization;
 use App\Models\OrganizationSetting;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\Support\ExplodingCacheStore;
 
-uses(RefreshDatabase::class);
+uses(ReusesMigratedDatabase::class);
 
 function rates(): ExchangeRateService
 {

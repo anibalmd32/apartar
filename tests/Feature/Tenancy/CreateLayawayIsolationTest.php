@@ -16,14 +16,14 @@ use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class CreateLayawayIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_everything_the_layaway_writes_belongs_to_the_catalog_organization(): void
     {

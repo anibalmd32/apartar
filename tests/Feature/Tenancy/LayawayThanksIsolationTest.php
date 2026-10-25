@@ -9,13 +9,13 @@ use App\Models\Catalog;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class LayawayThanksIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_a_code_of_another_organization_is_not_found_under_this_catalog(): void
     {

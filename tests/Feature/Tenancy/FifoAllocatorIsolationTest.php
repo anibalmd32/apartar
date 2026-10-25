@@ -9,13 +9,13 @@ use App\Domain\Money\Money;
 use App\Domain\Payment\FifoAllocator;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class FifoAllocatorIsolationTest extends TestCase
 {
-    use CreatesLayaways, RefreshDatabase;
+    use CreatesLayaways, ReusesMigratedDatabase;
 
     public function test_the_installments_of_another_organization_receive_nothing(): void
     {

@@ -14,13 +14,13 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Tag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ProductModelTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     protected function setUp(): void
     {

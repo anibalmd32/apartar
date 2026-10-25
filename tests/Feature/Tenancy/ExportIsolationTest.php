@@ -10,13 +10,13 @@ use App\Models\ExportJob;
 use App\Models\Organization;
 use App\Queries\Platform\ExpiredExports;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ExportIsolationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_the_purge_finds_every_organization_and_touches_only_each_ones(): void
     {

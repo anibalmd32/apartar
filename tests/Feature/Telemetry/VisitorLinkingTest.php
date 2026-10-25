@@ -13,14 +13,14 @@ use App\Models\Customer;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class VisitorLinkingTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     private const VISITOR = '0190f0f0-0000-7000-8000-000000000001';
 

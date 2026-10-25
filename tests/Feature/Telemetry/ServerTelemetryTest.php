@@ -6,14 +6,14 @@ namespace Tests\Feature\Telemetry;
 
 use App\Domain\Telemetry\ServerTelemetry;
 use App\Domain\Telemetry\TelemetryEventName;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class ServerTelemetryTest extends TestCase
 {
-    use RefreshDatabase;
+    use ReusesMigratedDatabase;
 
     public function test_it_records_after_commit_and_never_on_rollback(): void
     {
