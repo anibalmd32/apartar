@@ -29,7 +29,8 @@
         "prettier-plugin-tailwindcss": "^0.6.11",
         "typescript": "^5.7.3",
         "typescript-eslint": "^8.23.0",
-        "vitest": "^5.0.0"
+        "vitest": "^5.0.0",
+        "ziggy-js": "2.6.4"
     },
     "dependencies": {
         "@coreui/icons": "^3.1.0",
