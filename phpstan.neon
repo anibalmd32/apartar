@@ -1,0 +1,41 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/pestphp/pest/extension.neon
+
+parameters:
+    level: 6
+
+    tmpDir: storage/framework/phpstan
+
+    parallel:
+        maximumNumberOfProcesses: 2
+
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+
+    excludePaths:
+        analyseAndScan:
+            - database/migrations/*_create_media_table.php
+            - database/migrations/*_activity_log_table.php
+            - database/migrations/*_push_subscriptions_table.php
+            - database/migrations/*_increase_push_subscriptions_endpoint_length.php
+
+    bootstrapFiles:
+        - vendor/autoload.php
+
+    checkModelProperties: true
+    checkOctaneCompatibility: false
+    reportUnmatchedIgnoredErrors: true
+
+    universalObjectCratesClasses:
+        - Pest\Mixins\Expectation
+
+    ignoreErrors:
+        -
+            message: '#Class Spatie\\MediaLibraryPro\\Models\\TemporaryUpload not found\.#'
+            path: config/media-library.php
+            count: 1

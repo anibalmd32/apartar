@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('activity_log', function (Blueprint $table): void {
+            $table->unsignedBigInteger('organization_id')->nullable()->after('id');
+
+            $table->index(['organization_id', 'created_at']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('activity_log', function (Blueprint $table): void {
+            $table->dropIndex(['organization_id', 'created_at']);
+            $table->dropColumn('organization_id');
+        });
+    }
+};

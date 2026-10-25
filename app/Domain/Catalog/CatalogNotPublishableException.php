@@ -1,0 +1,78 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Catalog;
+
+use App\Models\Catalog;
+use RuntimeException;
+
+final class CatalogNotPublishableException extends RuntimeException
+{
+    public const STATUS = 422;
+
+    /**
+     * @param  array<string, string>  $missing
+     */
+    private function __construct(
+        public readonly Catalog $catalog,
+        public readonly array $missing,
+        string $message,
+    ) {
+        parent::__construct($message);
+    }
+
+    /**
+     * @param  array<string, string>  $missing
+     */
+    public static function of(Catalog $catalog, array $missing): self
+    {
+        return new self($catalog, $missing, self::messageFor($catalog, $missing));
+    }
+
+    /**
+     * @param  array<string, string>  $missing
+     */
+    private static function messageFor(Catalog $catalog, array $missing): string
+    {
+        return sprintf(
+            '«%s» todavía no se puede publicar. Pendiente: %s.',
+            $catalog->name,
+            self::listOf(self::labelsFor($missing)),
+        );
+    }
+
+    /**
+     * @param  array<string, string>  $missing
+     * @return list<string>
+     */
+    private static function labelsFor(array $missing): array
+    {
+        $labels = [];
+
+        foreach (array_keys($missing) as $field) {
+            $labels[] = match ($field) {
+                'products' => 'al menos un producto publicado dentro',
+                'payment_accounts' => 'una cuenta de cobro activa',
+                'expires_at' => 'una fecha de caducidad que no haya pasado',
+                default => 'verificar el correo del dueño',
+            };
+        }
+
+        return array_values(array_unique($labels));
+    }
+
+    /**
+     * @param  list<string>  $items
+     */
+    private static function listOf(array $items): string
+    {
+        if (count($items) <= 1) {
+            return $items[0] ?? '';
+        }
+
+        $last = array_pop($items);
+
+        return implode(', ', $items).' y '.$last;
+    }
+}

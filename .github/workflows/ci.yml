@@ -1,0 +1,212 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '22'
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: apartar_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, exif, gd, intl, pcntl, pdo_mysql, redis, zip
+          coverage: pcov
+
+      - name: Caché de Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Preparar entorno
+        run: cp .env.ci .env
+
+      - name: Caché del análisis estático
+        uses: actions/cache@v4
+        with:
+          path: |
+            storage/framework/phpstan
+            storage/framework/pint.cache
+          key: static-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('app/**', 'config/**', 'database/**', 'routes/**', 'tests/**', 'phpstan.neon', 'pint.json') }}
+          restore-keys: |
+            static-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      - name: Pint
+        run: composer run lint
+
+      - name: Reglas estructurales
+        run: composer run test:quality
+
+      - name: PHPStan nivel 6
+        run: composer run analyse
+
+      - name: Esperar a MySQL
+        run: |
+          for attempt in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MySQL disponible tras $attempt intento(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL no respondió" >&2
+          exit 1
+
+      - name: Migrar
+        run: php artisan migrate --force
+
+      - name: Pest con umbral de cobertura del dominio
+        run: composer run test:coverage
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: Comprobación de tipos
+        run: npm run types
+
+      - name: Vitest
+        run: npm run test
+
+      - name: Build de producción
+        run: npm run build
+
+  tenancy:
+    name: tenancy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: apartar_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: bcmath, exif, gd, intl, pcntl, pdo_mysql, redis, zip
+          coverage: none
+
+      - name: Caché de Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php${{ env.PHP_VERSION }}-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Preparar entorno
+        run: cp .env.ci .env
+
+      - name: Esperar a MySQL
+        run: |
+          for attempt in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MySQL disponible tras $attempt intento(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL no respondió" >&2
+          exit 1
+
+      - name: Migrar
+        run: php artisan migrate --force
+
+      - name: Auditoría estática de aislamiento
+        run: composer run tenancy:audit
+
+      - name: Suite de aislamiento
+        run: composer run tenancy:suite
