@@ -9,7 +9,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "8.4.27",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel-notification-channels/webpush": "^13.0",
         "laravel/framework": "^12.0",
@@ -118,6 +118,9 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "process-timeout": 0,
+        "platform": {
+            "php": "8.4.27"
+        },
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
