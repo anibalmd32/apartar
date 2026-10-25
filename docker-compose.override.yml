@@ -17,15 +17,10 @@ services:
       DB_DATABASE: apartar
       DB_USERNAME: apartar
       DB_PASSWORD: secret
-      DB_TEST_HOST: mysql_test
-      DB_TEST_PORT: 3306
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REVERB_HOST: reverb
       REVERB_PORT: 8080
-    depends_on:
-      mysql_test:
-        condition: service_healthy
 
   queue:
     build:
@@ -90,38 +85,6 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
-
-  mysql_test:
-    image: mysql:8.0
-    restart: unless-stopped
-    mem_limit: 1536m
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --innodb-flush-log-at-trx-commit=2
-      - --skip-innodb-doublewrite
-      - --innodb-redo-log-capacity=67108864
-      - --innodb-buffer-pool-size=268435456
-      - --performance-schema=OFF
-    environment:
-      MYSQL_DATABASE: apartar_testing
-      MYSQL_USER: apartar
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: root
-    tmpfs:
-      - /var/lib/mysql:size=1g,mode=1777
-    volumes:
-      - ./docker/mysql-test/init:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "3308:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
-    networks:
-      - apartar
 
   redis:
     ports:

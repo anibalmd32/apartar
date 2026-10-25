@@ -9,11 +9,16 @@ it('declara los siete servicios de la tabla de contratos', function (): void {
         ->toEqualCanonicalizing(['app', 'nginx', 'mysql', 'redis', 'queue', 'reverb', 'node']);
 });
 
-it('deja el MySQL de la suite solo en el override de desarrollo', function (): void {
+it('deja el MySQL de la suite solo en el modo dev', function (): void {
     expect(ComposeFile::read('docker-compose.yml')->keys('services'))->not->toContain('mysql_test');
-    expect(ComposeFile::read('docker-compose.override.yml')->keys('services'))->toContain('mysql_test');
+    expect(ComposeFile::read('docker-compose.override.yml')->keys('services'))->not->toContain('mysql_test');
+    expect(ComposeFile::read('docker-compose.dev.yml')->keys('services'))->toContain('mysql_test');
 
-    expect(ComposeFile::read('docker-compose.override.yml')->service('mysql_test'))
+    expect(composeDirectives())
+        ->not->toContain('mysql_test')
+        ->not->toContain('docker/mysql/init');
+
+    expect(ComposeFile::read('docker-compose.dev.yml')->service('mysql_test'))
         ->toContain('tmpfs:')
         ->toContain('/var/lib/mysql:size=1g')
         ->toContain('mem_limit:');
@@ -149,6 +154,6 @@ it('no depende de las credenciales del .env para los servicios locales', functio
     $override = ComposeFile::read('docker-compose.override.yml');
 
     expect($override->service('mysql'))->toContain('MYSQL_USER: apartar');
-    expect($override->service('mysql_test'))->toContain('MYSQL_USER: apartar');
+    expect(ComposeFile::read('docker-compose.dev.yml')->service('mysql_test'))->toContain('MYSQL_USER: apartar');
     expect($override->service('app'))->toContain('DB_HOST: mysql')->toContain('REDIS_HOST: redis');
 });

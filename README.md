@@ -47,7 +47,17 @@ make fresh
 | `make empty` | Borra todo y deja la base vacía, como para producción |
 | `docker compose exec app php artisan …` | Cualquier comando de Artisan dentro de Docker |
 
-Sin `make` (por ejemplo en PowerShell), cada receta es un comando de `docker compose`: mira el `Makefile`.
+Sin `make` (PowerShell no lo trae: `winget install ezwinports.make`), cada receta es un comando:
+
+| `make` | Comando |
+| --- | --- |
+| `make up` | `docker compose up -d --build --remove-orphans` |
+| `make down` | `docker compose down --remove-orphans` (tras `make dev`: `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.dev.yml --profile dev down --remove-orphans`) |
+| `make dev` | `docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.dev.yml --profile dev up -d --build --remove-orphans` |
+| `make logs` | `docker compose logs -f --tail=100` |
+| `make fresh` | `docker compose exec app php artisan db:reset-demo --force` |
+| `make empty` | `docker compose exec app php artisan db:reset-empty` |
+| `make sh` | `docker compose exec app sh` |
 
 ### Servicios y puertos
 
@@ -58,8 +68,9 @@ Sin `make` (por ejemplo en PowerShell), cada receta es un comando de `docker com
 | `queue` | Worker de colas y `schedule:work` | — |
 | `reverb` | WebSocket | `localhost:8081` |
 | `mysql` | Base de datos (`apartar` / `secret`, root `root`) | `localhost:3307` |
-| `mysql_test` | MySQL de la suite en tmpfs (`apartar_testing`) | `localhost:3308` |
 | `redis` | Caché, sesiones y colas | `localhost:6380` |
+
+Son los mismos servicios que en producción: `docker-compose.override.yml` solo publica los puertos y fija credenciales y hosts locales.
 
 Volúmenes: `mysql_data`, `redis_data` y `app_storage` (comprobantes, fotos y exportaciones).
 
@@ -69,7 +80,7 @@ Volúmenes: `mysql_data`, `redis_data` y `app_storage` (comprobantes, fotos y ex
 make dev
 ```
 
-Monta el código del disco en los contenedores y arranca Vite (`localhost:5173`), así los cambios se ven sin reconstruir. En Windows es **mucho más lento** porque cada archivo cruza del disco de Windows a la máquina virtual de Docker: para programar es mejor trabajar fuera de Docker. `make down` lo baja.
+Monta el código del disco en los contenedores y arranca Vite (`localhost:5173`), así los cambios se ven sin reconstruir. Añade también `mysql_test`, un MySQL en tmpfs (`localhost:3308`) para correr Pest dentro del contenedor. En Windows es **mucho más lento** porque cada archivo cruza del disco de Windows a la máquina virtual de Docker: para programar es mejor trabajar fuera de Docker. `make down` lo baja.
 
 ## Fuera de Docker
 
@@ -191,4 +202,4 @@ La primera vez la suite migra una base por proceso; las siguientes las reutiliza
 | `Class "Redis" not found` fuera de Docker | El PHP local no tiene `phpredis`: usa `CACHE_STORE=file`, `SESSION_DRIVER=file` y `QUEUE_CONNECTION=database` |
 | La app en Docker no muestra un cambio | La imagen lleva el código: `make up` para reconstruir, o `make dev` |
 | Las fotos no se ven fuera de Docker | Falta `php artisan storage:link` |
-| `mysql_test` se reinicia en bucle | Volúmenes viejos de otra configuración: `docker compose down` y `make up` |
+| `make` no se reconoce en PowerShell | `winget install ezwinports.make` y abre otra terminal, o usa el comando equivalente de la sección «Día a día» |
