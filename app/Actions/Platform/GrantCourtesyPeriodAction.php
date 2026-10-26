@@ -58,7 +58,11 @@ final class GrantCourtesyPeriodAction
             }
 
             $before = ['current_period_end' => $end?->toIso8601String()];
-            $locked->forceFill(['current_period_end' => $until])->save();
+            $locked->forceFill([
+                'current_period_end' => $until,
+                'courtesy_until' => $until,
+                'courtesy_previous_period_end' => $locked->hasRevocableCourtesy() ? $locked->courtesy_previous_period_end : $end,
+            ])->save();
 
             $this->audit(AuditEvent::PlatformSubscriptionOverridden, $locked, $operator, $before, [
                 'current_period_end' => $until->toIso8601String(),

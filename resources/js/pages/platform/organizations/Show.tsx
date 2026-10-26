@@ -7,7 +7,7 @@ import { InvoiceList } from '@/features/platform/components/InvoiceList';
 import { OrganizationStatusBadge, PlanPill, SubscriptionStatusBadge } from '@/features/platform/components/labels';
 import { OrganizationProfile, type OrganizationProfileData } from '@/features/platform/components/OrganizationProfile';
 import { RiskBadges } from '@/features/platform/components/OrganizationRowParts';
-import { SubscriptionActions } from '@/features/platform/components/SubscriptionActions';
+import { type CourtesyState, SubscriptionActions } from '@/features/platform/components/SubscriptionActions';
 import { SupportAccessPanel } from '@/features/platform/components/SupportAccessPanel';
 import PlatformLayout from '@/layouts/platform-layout';
 import { type InvoiceRow, type OrganizationRow, type SupportGrantRow } from '@/types/platform';
@@ -25,6 +25,8 @@ interface ShowProps {
     profile?: OrganizationProfileData;
     autoSuspendOn?: string | null;
     suspendable?: boolean;
+    courtesy?: CourtesyState | null;
+    invoiceable?: boolean;
 }
 
 function usage(used: number | null | undefined, limit: number | null | undefined): ReactNode {
@@ -60,6 +62,8 @@ export default function OrganizationShow({
     profile,
     autoSuspendOn = null,
     suspendable = false,
+    courtesy = null,
+    invoiceable = false,
 }: ShowProps) {
     const [confirming, setConfirming] = useState(false);
     const counts = organization.counts;
@@ -144,7 +148,13 @@ export default function OrganizationShow({
                 <div className="flex flex-col gap-4 lg:gap-5">
                     {profile ? <OrganizationProfile profile={profile} /> : null}
                     <SupportAccessPanel slug={organization.slug} myGrant={myGrant} grants={grants} />
-                    <SubscriptionActions slug={organization.slug} plans={plans} currentPlan={organization.planCode} />
+                    <SubscriptionActions
+                        slug={organization.slug}
+                        plans={plans}
+                        currentPlan={organization.planCode}
+                        courtesy={courtesy}
+                        invoiceable={invoiceable}
+                    />
                 </div>
             </div>
             <Modal

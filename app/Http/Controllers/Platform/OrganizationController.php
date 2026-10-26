@@ -7,8 +7,11 @@ namespace App\Http\Controllers\Platform;
 use App\Actions\Organization\SuspendOrganizationAction;
 use App\Actions\Platform\GrantCourtesyPeriodAction;
 use App\Actions\Platform\GrantSupportAccessAction;
+use App\Actions\Platform\IssueManualInvoiceAction;
 use App\Actions\Platform\OverridePlanAction;
+use App\Actions\Platform\RevokeCourtesyAction;
 use App\Actions\Platform\RevokeSupportAccessAction;
+use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationRole;
@@ -20,6 +23,7 @@ use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\PlatformUser;
 use App\Models\Subscription;
+use App\Models\SubscriptionInvoice;
 use App\Models\SupportAccessGrant;
 use App\Models\User;
 use App\Queries\Platform\OrganizationDirectoryFilters;
@@ -84,7 +88,7 @@ final class OrganizationController extends Controller
     }
 
     /**
-     * @return array{limits: array<string, int|null>, profile: array<string, string|null>, autoSuspendOn: string|null, suspendable: bool}
+     * @return array{limits: array<string, int|null>, profile: array<string, string|null>, autoSuspendOn: string|null, courtesy: array{until: string|null, restoresTo: string|null}|null, invoiceable: bool, suspendable: bool}
      */
     private function detail(Organization $organization): array
     {
@@ -108,6 +112,14 @@ final class OrganizationController extends Controller
                     'timezone' => $organization->timezone,
                 ],
                 'autoSuspendOn' => $subscription?->grace_ends_at?->setTimezone($organization->timezone)->toDateString(),
+                'courtesy' => $subscription?->hasRevocableCourtesy() ? [
+                    'until' => $subscription->courtesy_until?->setTimezone($organization->timezone)->toDateString(),
+                    'restoresTo' => $subscription->courtesy_previous_period_end?->setTimezone($organization->timezone)->toDateString(),
+                ] : null,
+                'invoiceable' => $subscription !== null
+                    && $subscription->status !== SubscriptionStatus::Cancelled
+                    && $subscription->plan->price_cents > 0
+                    && SubscriptionInvoice::query()->whereIn('status', [InvoiceStatus::Pending->value, InvoiceStatus::UnderReview->value, InvoiceStatus::Overdue->value])->doesntExist(),
                 'suspendable' => $organization->status === OrganizationStatus::Active && $subscription !== null && $subscription->status !== SubscriptionStatus::Cancelled,
             ];
         });
@@ -156,6 +168,24 @@ final class OrganizationController extends Controller
         $this->rethrow('until', fn () => $courtesy->handle($organization, $this->operator($request), $until, $data['reason']));
 
         return back()->with('status', 'Cortesía concedida.');
+    }
+
+    public function revokeCourtesy(Request $request, Organization $organization, RevokeCourtesyAction $revoke): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:'.RevokeCourtesyAction::REASON_MIN, 'max:500']]);
+
+        $this->rethrow('courtesy', fn () => $revoke->handle($organization, $this->operator($request), $data['reason']));
+
+        return back()->with('status', 'Cortesía revocada: el período vuelve a su fin anterior.');
+    }
+
+    public function issueInvoice(Request $request, Organization $organization, IssueManualInvoiceAction $issue): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:'.IssueManualInvoiceAction::REASON_MIN, 'max:500']]);
+
+        $this->rethrow('invoice', fn () => $issue->handle($organization, $this->operator($request), $data['reason']));
+
+        return back()->with('status', 'Factura emitida. El dueño recibe el aviso por correo.');
     }
 
     /**

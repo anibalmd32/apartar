@@ -31,6 +31,8 @@ Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->gr
         Route::delete('organizaciones/{organization}/soporte/{grant}', [OrganizationController::class, 'revokeSupport'])->whereNumber('grant')->name('organizations.support.revoke');
         Route::post('organizaciones/{organization}/plan', [OrganizationController::class, 'overridePlan'])->name('organizations.plan');
         Route::post('organizaciones/{organization}/cortesia', [OrganizationController::class, 'courtesy'])->name('organizations.courtesy');
+        Route::delete('organizaciones/{organization}/cortesia', [OrganizationController::class, 'revokeCourtesy'])->name('organizations.courtesy.revoke');
+        Route::post('organizaciones/{organization}/facturas', [OrganizationController::class, 'issueInvoice'])->name('organizations.invoices.store');
         Route::post('organizaciones/{organization}/pausar', [OrganizationController::class, 'suspend'])->name('organizations.pause');
 
         Route::middleware('support-access')->prefix('organizaciones/{organization}/datos')->name('support.')->group(function (): void {

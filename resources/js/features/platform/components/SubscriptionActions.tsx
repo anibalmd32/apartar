@@ -1,16 +1,73 @@
 import { Button } from '@/components/ui/button';
 import { SectionCard } from '@/components/ui/section-card';
-import { useForm } from '@inertiajs/react';
+import { type Method } from '@inertiajs/core';
+import { useForm, usePage } from '@inertiajs/react';
+import { type ReactNode } from 'react';
+
+export interface CourtesyState {
+    until: string | null;
+    restoresTo: string | null;
+}
 
 interface SubscriptionActionsProps {
     slug: string;
     plans: readonly { code: string; name: string }[];
     currentPlan: string | null;
+    courtesy?: CourtesyState | null;
+    invoiceable?: boolean;
 }
 
-export function SubscriptionActions({ slug, plans, currentPlan }: SubscriptionActionsProps) {
+function dayMonthYear(date: string | null): string {
+    return date === null ? 'sin fecha de fin' : `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+}
+
+function ReasonForm({
+    title,
+    children,
+    url,
+    method,
+    label,
+    errorKey,
+}: {
+    title: string;
+    children: ReactNode;
+    url: string;
+    method: Method;
+    label: string;
+    errorKey: string;
+}) {
+    const form = useForm({ reason: '' });
+    const errors = usePage().props.errors as Record<string, string | undefined>;
+
+    return (
+        <form
+            className="flex flex-col gap-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.submit(method, url, { preserveScroll: true, onSuccess: () => form.reset() });
+            }}
+        >
+            <h3 className="text-[13px] font-semibold">{title}</h3>
+            <p className="text-ink-2">{children}</p>
+            <input
+                className="input w-full"
+                aria-label={`Motivo: ${title.toLowerCase()}`}
+                placeholder="Motivo"
+                value={form.data.reason}
+                onChange={(event) => form.setData('reason', event.target.value)}
+            />
+            {form.errors.reason ? <p className="text-error">{form.errors.reason}</p> : null}
+            {errors[errorKey] ? <p className="text-error">{errors[errorKey]}</p> : null}
+            <Button type="submit" variant="secondary" size="sm" loading={form.processing} className="self-start">
+                {label}
+            </Button>
+        </form>
+    );
+}
+
+export function SubscriptionActions({ slug, plans, currentPlan, courtesy = null, invoiceable = false }: SubscriptionActionsProps) {
     const plan = useForm({ plan: currentPlan ?? '', reason: '' });
-    const courtesy = useForm({ until: '', reason: '' });
+    const grant = useForm({ until: '', reason: '' });
     const base = `/plataforma/organizaciones/${slug}`;
 
     return (
@@ -54,7 +111,7 @@ export function SubscriptionActions({ slug, plans, currentPlan }: SubscriptionAc
                         className="flex flex-col gap-2"
                         onSubmit={(event) => {
                             event.preventDefault();
-                            courtesy.post(`${base}/cortesia`, { onSuccess: () => courtesy.reset() });
+                            grant.post(`${base}/cortesia`, { onSuccess: () => grant.reset() });
                         }}
                     >
                         <h3 className="text-[13px] font-semibold">Conceder cortesía</h3>
@@ -62,22 +119,36 @@ export function SubscriptionActions({ slug, plans, currentPlan }: SubscriptionAc
                             type="date"
                             className="input w-full"
                             aria-label="Hasta"
-                            value={courtesy.data.until}
-                            onChange={(event) => courtesy.setData('until', event.target.value)}
+                            value={grant.data.until}
+                            onChange={(event) => grant.setData('until', event.target.value)}
                         />
                         <input
                             className="input w-full"
                             aria-label="Motivo de la cortesía"
                             placeholder="Motivo"
-                            value={courtesy.data.reason}
-                            onChange={(event) => courtesy.setData('reason', event.target.value)}
+                            value={grant.data.reason}
+                            onChange={(event) => grant.setData('reason', event.target.value)}
                         />
-                        {courtesy.errors.until ? <p className="text-error">{courtesy.errors.until}</p> : null}
-                        {courtesy.errors.reason ? <p className="text-error">{courtesy.errors.reason}</p> : null}
-                        <Button type="submit" variant="secondary" size="sm" loading={courtesy.processing} className="self-start">
+                        {grant.errors.until ? <p className="text-error">{grant.errors.until}</p> : null}
+                        {grant.errors.reason ? <p className="text-error">{grant.errors.reason}</p> : null}
+                        <Button type="submit" variant="secondary" size="sm" loading={grant.processing} className="self-start">
                             Extender período
                         </Button>
                     </form>
+
+                    {courtesy ? (
+                        <ReasonForm title="Revocar cortesía" url={`${base}/cortesia`} method="delete" label="Revocar cortesía" errorKey="courtesy">
+                            Hay una cortesía hasta el {dayMonthYear(courtesy.until)}. Al revocarla, el período vuelve a{' '}
+                            {courtesy.restoresTo ? 'terminar el ' : ''}
+                            {dayMonthYear(courtesy.restoresTo)}.
+                        </ReasonForm>
+                    ) : null}
+
+                    {invoiceable ? (
+                        <ReasonForm title="Emitir factura" url={`${base}/facturas`} method="post" label="Emitir factura" errorKey="invoice">
+                            Factura un mes del plan actual desde el fin del período. El dueño recibe el aviso y la paga con el flujo normal.
+                        </ReasonForm>
+                    ) : null}
                 </div>
             </SectionCard>
         </div>

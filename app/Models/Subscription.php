@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Tenancy\BelongsToOrganization;
+use Carbon\CarbonImmutable;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $scheduled_plan_id
  * @property \Illuminate\Support\Carbon|null $scheduled_plan_at
  * @property \Illuminate\Support\Carbon|null $downgrade_applied_at
+ * @property \Illuminate\Support\Carbon|null $courtesy_until
+ * @property \Illuminate\Support\Carbon|null $courtesy_previous_period_end
  * @property-read Plan $plan
  * @property-read Plan|null $scheduledPlan
  */
@@ -62,6 +65,8 @@ class Subscription extends Model
             'cancelled_at' => 'datetime',
             'scheduled_plan_at' => 'datetime',
             'downgrade_applied_at' => 'datetime',
+            'courtesy_until' => 'datetime',
+            'courtesy_previous_period_end' => 'datetime',
         ];
     }
 
@@ -84,6 +89,14 @@ class Subscription extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function hasRevocableCourtesy(?CarbonImmutable $now = null): bool
+    {
+        return $this->courtesy_until !== null
+            && $this->current_period_end !== null
+            && $this->current_period_end->equalTo($this->courtesy_until)
+            && $this->courtesy_until->greaterThan($now ?? CarbonImmutable::now());
     }
 
     public function isOpenEnded(): bool
