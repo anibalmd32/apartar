@@ -48,6 +48,7 @@ final readonly class ExportRequestData
             ExportType::Collections => CollectionFilterInput::KEYS,
             ExportType::Customers => CustomerDirectoryFilterInput::KEYS,
             ExportType::Inventory => InventoryFilters::KEYS,
+            ExportType::Payments => [],
         };
     }
 }

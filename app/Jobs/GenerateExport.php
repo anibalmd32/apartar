@@ -15,6 +15,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Exports\CollectionsExport;
 use App\Exports\CustomersExport;
 use App\Exports\InventoryExport;
+use App\Exports\PaymentsExport;
 use App\Models\ExportJob;
 use App\Models\Organization;
 use App\Notifications\ExportFinishedNotification;
@@ -163,7 +164,7 @@ class GenerateExport implements ShouldQueue
         DB::transaction(fn () => $limits->assertCanCreate(UsageMetric::StorageMb));
     }
 
-    private function build(ExportJob $export, Organization $organization, Settings $settings): CollectionsExport|CustomersExport|InventoryExport
+    private function build(ExportJob $export, Organization $organization, Settings $settings): CollectionsExport|CustomersExport|InventoryExport|PaymentsExport
     {
         $state = new TableState(page: 1, perPage: 1, sort: null, descending: false);
         $timezone = $organization->timezone;
@@ -183,6 +184,7 @@ class GenerateExport implements ShouldQueue
                 $this->meta($state, $timezone),
                 $timezone,
             ),
+            ExportType::Payments => new PaymentsExport($this->meta($state, $timezone), $timezone),
         };
     }
 

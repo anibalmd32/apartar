@@ -7,7 +7,7 @@ import { formatBytes, formatMoment } from '@/features/exports/lib/export-format'
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { EXPORTS_URL, type ExportRow, type ExportsPageProps, type ExportStatus, type ExportType } from '@/types/exports';
-import { cilBasket, cilCloudDownload, cilPeople, cilReload, cilWallet } from '@coreui/icons';
+import { cilBasket, cilCloudDownload, cilDollar, cilPeople, cilReload, cilWallet } from '@coreui/icons';
 import { router } from '@inertiajs/react';
 
 const TONES: Record<ExportStatus, BadgeTone> = {
@@ -22,6 +22,7 @@ const SOURCES: Record<ExportType, { hint: string; icon: string[] }> = {
     collections: { hint: 'Cuotas por cobrar con el filtro que elijas', icon: cilWallet },
     customers: { hint: 'Directorio con saldos y vencimientos', icon: cilPeople },
     inventory: { hint: 'Productos, precios, planes y stock', icon: cilBasket },
+    payments: { hint: 'Cada pago con lo declarado, la tasa y el monto en USD', icon: cilDollar },
 };
 
 function request(type: ExportType, filters: Readonly<Record<string, string>> = {}) {

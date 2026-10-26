@@ -84,7 +84,7 @@ final class RequestExportAction
         $gate = Gate::forUser($actor);
 
         return match ($type) {
-            ExportType::Collections => $gate->allows('viewAny', Layaway::class),
+            ExportType::Collections, ExportType::Payments => $gate->allows('viewAny', Layaway::class),
             ExportType::Customers => $gate->allows('viewAny', Customer::class),
             ExportType::Inventory => $gate->allows('manageProducts', $this->context->organization()),
         };

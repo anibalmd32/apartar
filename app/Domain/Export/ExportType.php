@@ -9,6 +9,7 @@ enum ExportType: string
     case Collections = 'collections';
     case Customers = 'customers';
     case Inventory = 'inventory';
+    case Payments = 'payments';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum ExportType: string
             self::Collections => 'Cobranza',
             self::Customers => 'Clientes',
             self::Inventory => 'Inventario',
+            self::Payments => 'Pagos',
         };
     }
 
@@ -25,6 +27,7 @@ enum ExportType: string
             self::Collections => 'cobranza',
             self::Customers => 'clientes',
             self::Inventory => 'inventario',
+            self::Payments => 'pagos',
         };
     }
 }

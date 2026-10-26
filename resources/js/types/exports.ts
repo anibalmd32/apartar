@@ -1,4 +1,4 @@
-export type ExportType = 'collections' | 'customers' | 'inventory';
+export type ExportType = 'collections' | 'customers' | 'inventory' | 'payments';
 
 export type ExportStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'expired';
 

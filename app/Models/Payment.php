@@ -98,6 +98,14 @@ class Payment extends Model
     }
 
     /**
+     * @return BelongsTo<PaymentAccount, $this>
+     */
+    public function paymentAccount(): BelongsTo
+    {
+        return $this->belongsTo(PaymentAccount::class);
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function registeredBy(): BelongsTo
