@@ -85,6 +85,13 @@ export interface PendingSubscriptionReceipt {
     readonly fileUrl: string;
 }
 
+export interface PlatformAlert {
+    readonly key: string;
+    readonly count: number;
+    readonly tone: string;
+    readonly href: string;
+}
+
 export interface PlatformSettingRow {
     readonly key: string;
     readonly label: string;

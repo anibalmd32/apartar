@@ -3,6 +3,7 @@ import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
+import { PlatformBell } from '@/features/platform/components/PlatformBell';
 import { cilSearch, cilShieldAlt } from '@coreui/icons';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -72,6 +73,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                     </form>
                     <div className="flex-1" />
                     <RatePill />
+                    <PlatformBell />
                     {userMenu}
                 </header>
 
@@ -81,6 +83,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                         <p className="text-ink-3 text-xs">Apartar</p>
                         <p className="text-h2 truncate">Plataforma</p>
                     </div>
+                    <PlatformBell />
                     {userMenu}
                 </header>
 
