@@ -34,7 +34,6 @@ export interface LayawayPlanView {
 
 export interface LayawayConsentView {
     readonly businessName: string;
-    readonly platformTermsDrafted: boolean;
 }
 
 export interface LayawayCreateProps {

@@ -83,7 +83,7 @@ function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
         product: product(),
         plan: PLAN,
         quantity: 1,
-        consent: { businessName: 'Ferretería Oriente', platformTermsDrafted: false },
+        consent: { businessName: 'Ferretería Oriente' },
         recognisedAreaCodes: ['412', '414', '416', '424', '426', '212'],
         account: null,
         ...overrides,

@@ -28,22 +28,15 @@ export function TermsConsentField({ checked, onChange, consent, error }: TermsCo
                     required
                 />
                 <span className="text-sm">
-                    {consent.platformTermsDrafted ? (
-                        <>
-                            Acepto las condiciones de pago de este apartado, los{' '}
-                            <a className="link" href="/terminos" target="_blank" rel="noopener noreferrer">
-                                Términos de servicio
-                            </a>{' '}
-                            y la{' '}
-                            <a className="link" href="/privacidad" target="_blank" rel="noopener noreferrer">
-                                Política de privacidad
-                            </a>{' '}
-                            de Apartar.
-                        </>
-                    ) : (
-                        <>Acepto apartar este producto con el plan de pago de arriba.</>
-                    )}{' '}
-                    El compromiso de pago es con <strong>{consent.businessName}</strong>, no con Apartar.
+                    Acepto las condiciones de pago de este apartado, los{' '}
+                    <a className="link" href="/terminos" target="_blank" rel="noopener noreferrer">
+                        Términos de servicio
+                    </a>{' '}
+                    y la{' '}
+                    <a className="link" href="/privacidad" target="_blank" rel="noopener noreferrer">
+                        Política de privacidad
+                    </a>{' '}
+                    de Apartar. El compromiso de pago es con <strong>{consent.businessName}</strong>, no con Apartar.
                 </span>
             </label>
 

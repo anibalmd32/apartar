@@ -17,7 +17,6 @@ use App\Domain\Money\MoneyFormatter;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Marketing\LegalController;
 use App\Http\Requests\Catalog\StoreLayawayRequest;
 use App\Http\Resources\CatalogViewResource;
 use App\Http\Resources\LayawayPlanResource;
@@ -75,10 +74,7 @@ final class LayawayController extends Controller
             'product' => $detail,
             'plan' => fn (): ?array => $this->plan($request, $product, $quantity),
             'quantity' => $quantity,
-            'consent' => [
-                'businessName' => $catalog->organization->name,
-                'platformTermsDrafted' => LegalController::platformTermsAreDrafted(),
-            ],
+            'consent' => ['businessName' => $catalog->organization->name],
             'recognisedAreaCodes' => PhoneNumber::recognisedAreaCodes(),
             'account' => $this->accountPrefill(),
         ]);

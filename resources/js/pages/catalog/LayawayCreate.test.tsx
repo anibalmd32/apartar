@@ -84,7 +84,7 @@ function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
         product: product(),
         plan: PLAN,
         quantity: 1,
-        consent: { businessName: 'Ferretería Oriente', platformTermsDrafted: false },
+        consent: { businessName: 'Ferretería Oriente' },
         recognisedAreaCodes: ['412', '414', '416', '424', '426', '212'],
         account: null,
         ...overrides,
@@ -204,19 +204,12 @@ it('no avisa con un prefijo del censo', () => {
     expect(screen.queryByText(/No reconocemos ese prefijo/)).toBeNull();
 });
 
-it('no enlaza documentos sin redactar, y dice que el compromiso es con el negocio', () => {
+it('enlaza los documentos en pestaña nueva y dice que el compromiso es con el negocio', () => {
     renderPage();
 
-    const consent = screen.getByRole('checkbox');
-    expect(consent).toBeRequired();
-    expect(screen.queryByRole('link', { name: /Términos de servicio/ })).toBeNull();
+    expect(screen.getByRole('checkbox')).toBeRequired();
     expect(screen.getByText(/El compromiso de pago es con/)).toHaveTextContent('Ferretería Oriente, no con Apartar');
     expect(screen.getByText(/Guardamos la fecha y la IP/)).toBeInTheDocument();
-});
-
-it('enlaza los documentos en pestaña nueva cuando están redactados', () => {
-    renderPage({ consent: { businessName: 'Ferretería Oriente', platformTermsDrafted: true } });
-
     expect(screen.getByRole('link', { name: 'Términos de servicio' })).toHaveAttribute('target', '_blank');
     expect(screen.getByRole('link', { name: 'Política de privacidad' })).toHaveAttribute('href', '/privacidad');
 });

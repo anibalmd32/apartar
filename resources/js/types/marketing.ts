@@ -22,8 +22,8 @@ export interface PricingProps {
 export interface LegalDocument {
     readonly key: 'terms' | 'privacy';
     readonly title: string;
-    readonly drafted: boolean;
-    readonly mustCover: readonly string[];
+    readonly updatedOn: string;
+    readonly html: string;
 }
 
 export interface LegalProps {

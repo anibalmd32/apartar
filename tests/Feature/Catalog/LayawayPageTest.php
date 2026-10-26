@@ -6,7 +6,6 @@ namespace Tests\Feature\Catalog;
 
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Subscription\UsageMetric;
-use App\Http\Controllers\Marketing\LegalController;
 use App\Models\Account;
 use App\Models\Catalog;
 use App\Models\CatalogSubscription;
@@ -92,7 +91,6 @@ final class LayawayPageTest extends TestCase
             ->where('plan.lastInstallmentAmount.usd', '$16,68')
             ->has('plan.installments', 3)
             ->where('consent.businessName', $this->organization->name)
-            ->where('consent.platformTermsDrafted', LegalController::platformTermsAreDrafted())
             ->where('recognisedAreaCodes', fn (\Illuminate\Support\Collection $codes): bool => $codes->contains('414') && $codes->contains('422'))
             ->has('product.paymentAccounts', 1));
     }

@@ -1,4 +1,3 @@
-import { Alert } from '@/components/ui/alert';
 import MarketingLayout from '@/layouts/marketing-layout';
 import { cn } from '@/lib/utils';
 import { type LegalProps } from '@/types/marketing';
@@ -8,6 +7,15 @@ const DOCUMENTS = [
     { key: 'terms', label: 'Términos', route: 'legal.terms' },
     { key: 'privacy', label: 'Privacidad', route: 'legal.privacy' },
 ] as const;
+
+const PROSE = cn(
+    'text-ink-2 flex flex-col gap-4 text-[15px] leading-[1.7]',
+    '[&_h2]:text-base-content [&_h2]:mt-4 [&_h2]:text-xl [&_h2]:font-bold',
+    '[&_ol]:flex [&_ol]:list-decimal [&_ol]:flex-col [&_ol]:gap-2 [&_ol]:pl-5',
+    '[&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-5',
+    '[&_strong]:text-base-content [&_a]:text-primary [&_a]:underline [&_code]:text-[13px]',
+    '[&_td]:border-base-300 [&_table]:w-full [&_table]:text-left [&_table]:text-sm [&_td]:border-t [&_td]:py-2 [&_td]:pr-3 [&_th]:py-2 [&_th]:pr-3',
+);
 
 export default function Legal({ document }: LegalProps) {
     return (
@@ -33,24 +41,12 @@ export default function Legal({ document }: LegalProps) {
                     })}
                 </nav>
 
-                <h1 className="text-[32px] leading-tight font-extrabold tracking-[-0.04em] lg:text-[44px]">{document.title}</h1>
+                <header className="flex flex-col gap-2">
+                    <h1 className="text-[32px] leading-tight font-extrabold tracking-[-0.04em] lg:text-[44px]">{document.title}</h1>
+                    <p className="text-ink-3 text-sm">Última actualización: {document.updatedOn}</p>
+                </header>
 
-                {!document.drafted ? (
-                    <>
-                        <Alert tone="warning" title="Documento pendiente de redacción">
-                            Esta página todavía no contiene el texto de este documento y no tiene ningún valor legal. No aceptes nada en su nombre.
-                        </Alert>
-
-                        <section className="flex flex-col gap-3">
-                            <h2 className="text-xl font-bold">Qué tendrá que cubrir</h2>
-                            <ol className="text-ink-2 flex list-inside list-decimal flex-col gap-2 text-[15px] leading-[1.7]">
-                                {document.mustCover.map((item) => (
-                                    <li key={item}>{item}</li>
-                                ))}
-                            </ol>
-                        </section>
-                    </>
-                ) : null}
+                <div className={PROSE} dangerouslySetInnerHTML={{ __html: document.html }} />
             </article>
         </MarketingLayout>
     );
