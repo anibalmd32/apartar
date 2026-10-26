@@ -50,6 +50,27 @@ enum PlatformSettingKey: string
         };
     }
 
+    public function label(): string
+    {
+        return match ($this) {
+            self::ReceiptMaxSizeMb => 'Tamaño máximo de un comprobante',
+            self::SubscriptionGraceDays => 'Días de gracia tras vencer una factura',
+            self::DowngradeGraceDays => 'Días antes de despublicar tras bajar de plan',
+            self::ExportLinkTtlHours => 'Validez del enlace de una exportación',
+            self::SupportAccessTtlHours => 'Duración de un acceso de soporte',
+            self::TelemetryRetentionDaysDefault => 'Retención de eventos sin negocio',
+        };
+    }
+
+    public function unit(): string
+    {
+        return match ($this) {
+            self::ReceiptMaxSizeMb => 'MB',
+            self::SubscriptionGraceDays, self::DowngradeGraceDays, self::TelemetryRetentionDaysDefault => 'días',
+            self::ExportLinkTtlHours, self::SupportAccessTtlHours => 'horas',
+        };
+    }
+
     public function accepts(mixed $value): bool
     {
         [$min, $max] = $this->range();

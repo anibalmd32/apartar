@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Platform\AuditController;
 use App\Http\Controllers\Platform\Auth\LoginController;
 use App\Http\Controllers\Platform\DashboardController;
 use App\Http\Controllers\Platform\InvoiceController;
+use App\Http\Controllers\Platform\OperatorController;
 use App\Http\Controllers\Platform\OrganizationController;
+use App\Http\Controllers\Platform\SettingsController;
+use App\Http\Controllers\Platform\SupportAccessController;
 use App\Http\Controllers\Platform\SupportDataController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +37,14 @@ Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->gr
             Route::get('apartados', [SupportDataController::class, 'layaways'])->name('layaways');
             Route::get('clientes', [SupportDataController::class, 'customers'])->name('customers');
         });
+
+        Route::get('soporte', [SupportAccessController::class, 'index'])->name('support.index');
+        Route::get('auditoria', [AuditController::class, 'index'])->name('audit.index');
+        Route::get('ajustes', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('ajustes', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('operadores', [OperatorController::class, 'store'])->name('operators.store');
+        Route::patch('operadores/{operator}/acceso', [OperatorController::class, 'access'])->whereNumber('operator')->name('operators.access');
+        Route::post('operadores/{operator}/contrasena', [OperatorController::class, 'resetPassword'])->whereNumber('operator')->name('operators.password');
 
         Route::get('facturas', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::post('comprobantes/{receipt}/aprobar', [InvoiceController::class, 'approve'])->whereNumber('receipt')->name('receipts.approve');

@@ -85,6 +85,39 @@ export interface PendingSubscriptionReceipt {
     readonly fileUrl: string;
 }
 
+export interface PlatformSettingRow {
+    readonly key: string;
+    readonly label: string;
+    readonly unit: string;
+    readonly value: number;
+    readonly default: number;
+    readonly min: number;
+    readonly max: number;
+}
+
+export interface PlatformOperatorRow {
+    readonly id: number;
+    readonly name: string;
+    readonly email: string;
+    readonly active: boolean;
+    readonly mustChangePassword: boolean;
+    readonly isMe: boolean;
+}
+
+export interface PlatformAuditEntry {
+    readonly id: number;
+    readonly action: string;
+    readonly label: string;
+    readonly description: string;
+    readonly operator: string | null;
+    readonly organization: { readonly name: string; readonly slug: string } | null;
+    readonly createdAt: string;
+}
+
+export interface SupportGrantListRow extends SupportGrantRow {
+    readonly organization: { readonly name: string; readonly slug: string | null };
+}
+
 export interface SupportGrantRow {
     readonly id: number;
     readonly operator: string;

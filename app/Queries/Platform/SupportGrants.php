@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 
 final class SupportGrants
 {
+    public const PER_PAGE = 25;
+
     public function activeFor(int $platformUserId, int $organizationId, ?CarbonImmutable $now = null): ?SupportAccessGrant
     {
         return SupportAccessGrant::query()->withoutTenantScope()
@@ -52,6 +54,25 @@ final class SupportGrants
             ->limit($limit)
             ->get()
             ->all();
+    }
+
+    /**
+     * @return array{rows: list<SupportAccessGrant>, hasMore: bool}
+     */
+    public function listing(bool $onlyActive, int $page): array
+    {
+        $now = CarbonImmutable::now();
+
+        $rows = SupportAccessGrant::query()->withoutTenantScope()
+            ->with(['operator:id,name', 'organization' => fn ($query) => $query->withTrashed()->select(['id', 'name', 'slug'])])
+            ->when($onlyActive, fn ($query) => $query->whereNull('revoked_at')->where('expires_at', '>', $now))
+            ->latest('granted_at')
+            ->latest('id')
+            ->offset(($page - 1) * self::PER_PAGE)
+            ->limit(self::PER_PAGE + 1)
+            ->get();
+
+        return ['rows' => $rows->take(self::PER_PAGE)->values()->all(), 'hasMore' => $rows->count() > self::PER_PAGE];
     }
 
     public function find(int $grantId): ?SupportAccessGrant

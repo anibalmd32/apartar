@@ -286,7 +286,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{name: string, email: string, pendingReceipts: int}|null
+     * @return array{name: string, email: string, pendingReceipts: int, activeSupportGrants: int}|null
      */
     private function platformOperator(Request $request): ?array
     {
@@ -300,6 +300,7 @@ class HandleInertiaRequests extends Middleware
             'name' => $operator->name,
             'email' => $operator->email,
             'pendingReceipts' => DB::table('subscription_receipts')->where('status', ReceiptStatus::PendingReview->value)->count(),
+            'activeSupportGrants' => DB::table('support_access_grants')->whereNull('revoked_at')->where('expires_at', '>', now())->count(),
         ];
     }
 }
