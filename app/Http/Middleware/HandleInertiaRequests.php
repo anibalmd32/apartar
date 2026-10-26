@@ -24,7 +24,6 @@ use App\Models\SupportAccessGrant;
 use App\Models\User;
 use App\Queries\PastDueNotice;
 use App\Support\Settings;
-use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -52,14 +51,9 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-
         return array_merge(parent::share($request), [
-            ...parent::share($request),
-            'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user() instanceof User ? $request->user() : null,
+                'user' => $request->user() instanceof User ? ['name' => $request->user()->name, 'email' => $request->user()->email] : null,
                 'portal' => fn (): ?array => $this->portalSession(),
             ],
             'teamMember' => $this->teamMember($request),

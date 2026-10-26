@@ -62,12 +62,6 @@ export default [
         },
     },
     {
-        files: ['resources/js/components/vendor/**/*.{ts,tsx}'],
-        rules: {
-            'max-lines': 'off',
-        },
-    },
-    {
         files: ['scripts/**/*.mjs'],
         languageOptions: {
             globals: {

@@ -134,7 +134,7 @@ it('mantiene components/ui libre de primitivos de shadcn', function (): void {
     }
 
     expect($offenders)->toBe([], 'Átomos de daisyUI apoyados en shadcn: '.implode(', ', $offenders));
-    expect(is_dir(resource_path('js/components/vendor')))->toBeTrue();
+    expect(is_dir(resource_path('js/components/vendor')))->toBeFalse();
 });
 
 it('escribe las páginas propias sin los primitivos heredados', function (): void {

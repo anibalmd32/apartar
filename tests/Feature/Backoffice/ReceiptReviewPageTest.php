@@ -75,7 +75,7 @@ final class ReceiptReviewPageTest extends TestCase
 
         $this->actingAs($this->member)->get(route('receipts.show', $receipt))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->component('backoffice/receipts/Review')
-            ->where('auth.user.id', $this->member->getKey())
+            ->where('auth.user.email', $this->member->email)
             ->where('receipt.declared', 'Bs. 2.550,00')
             ->where('receipt.declaredAmount', '2550.00')
             ->where('receipt.bank', 'Mercantil')

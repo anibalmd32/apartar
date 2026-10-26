@@ -45,6 +45,20 @@ final class TeamMemberships
         return $this->usable($email)->where('organization_id', '!=', $exceptOrganizationId)->orderBy('id')->first();
     }
 
+    public function syncProfile(User $user, string $previousEmail): void
+    {
+        $changes = ['name' => $user->name, 'email' => $user->email];
+
+        if ($user->email !== $previousEmail) {
+            $changes['email_verified_at'] = null;
+        }
+
+        DB::table('users')
+            ->where('email', $previousEmail)
+            ->where('id', '!=', $user->getKey())
+            ->update($changes);
+    }
+
     public function syncPassword(User $user): void
     {
         DB::table('users')

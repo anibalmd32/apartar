@@ -28,6 +28,7 @@ use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductImageController;
+use App\Http\Controllers\Backoffice\ProfileController;
 use App\Http\Controllers\Backoffice\ReceiptInboxController;
 use App\Http\Controllers\Backoffice\ReceiptReviewController;
 use App\Http\Controllers\Backoffice\SettingsController;
@@ -113,6 +114,18 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('logout', [LoginController::class, 'destroy'])
                 ->middleware('during-suspension')
                 ->name('logout');
+
+            Route::get('perfil', [ProfileController::class, 'edit'])
+                ->middleware('during-suspension')
+                ->name('profile.edit');
+
+            Route::patch('perfil', [ProfileController::class, 'update'])
+                ->middleware(['during-suspension', 'throttle:10,1'])
+                ->name('profile.update');
+
+            Route::put('perfil/contrasena', [ProfileController::class, 'updatePassword'])
+                ->middleware(['during-suspension', 'throttle:6,1'])
+                ->name('profile.password');
 
             Route::get('cambiar-contrasena', [ForcedPasswordChangeController::class, 'edit'])
                 ->middleware('during-suspension')

@@ -176,7 +176,7 @@ Contraseña de todas las cuentas del escenario de prueba: `Apartar2026demo`.
 - Los dos negocios están en plan Pro: Moda Valentina con la factura pagada y Tecno Hogar con el comprobante por revisar en la plataforma.
 - Cada negocio tiene 8 apartados en todos los estados: completado, en mora, cancelado, vencido, activos y pendientes de inicial, algunos con comprobantes por revisar.
 - **Portal del cliente** (`/mi-cuenta/acceso`): cédula + código del apartado. Los códigos cambian en cada siembra; el comando los imprime al final con su estado.
-- Los correos no se envían: se escriben en `storage/logs/laravel.log` (`MAIL_MAILER=log`).
+- Los correos no se envían: se escriben en `storage/logs/apartar.log` (`MAIL_MAILER=log`).
 
 ## Tests y calidad
 

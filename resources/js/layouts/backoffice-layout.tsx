@@ -12,7 +12,7 @@ import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { usePendingReceipts } from '@/features/receipts/hooks/useReceiptInbox';
 import { type BackofficeSharedData } from '@/types/backoffice';
-import { cilArrowLeft, cilLockLocked, cilSettings, cilX } from '@coreui/icons';
+import { cilArrowLeft, cilLockLocked, cilSettings, cilUser, cilX } from '@coreui/icons';
 import { Dialog, DialogPanel, MenuItem } from '@headlessui/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -75,14 +75,22 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
             detail={teamMember.email}
             onLogout={logout}
             extra={
-                capabilities.includes('settings') ? (
+                <>
                     <MenuItem>
-                        <Link href="/backoffice/ajustes" className={menuItemClass}>
-                            <Icon icon={cilSettings} />
-                            Ajustes del negocio
+                        <Link href="/backoffice/perfil" className={menuItemClass}>
+                            <Icon icon={cilUser} />
+                            Mi perfil
                         </Link>
                     </MenuItem>
-                ) : null
+                    {capabilities.includes('settings') ? (
+                        <MenuItem>
+                            <Link href="/backoffice/ajustes" className={menuItemClass}>
+                                <Icon icon={cilSettings} />
+                                Ajustes del negocio
+                            </Link>
+                        </MenuItem>
+                    ) : null}
+                </>
             }
         />
     ) : null;

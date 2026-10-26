@@ -152,7 +152,7 @@ final class CrossTenantAccessTest extends TestCase
         $tenant = array_map(fn (array $pair): string => $this->describe($pair[0]), $this->tenantRoutes());
 
         $this->assertContains('GET /backoffice', $tenant);
-        $this->assertContains('PATCH /settings/profile', $tenant);
+        $this->assertContains('PATCH /backoffice/perfil', $tenant);
         $this->assertContains('GET /c/{catalog}', $tenant);
         $this->assertContains('GET /{organization}', $tenant);
 
