@@ -6,6 +6,7 @@ namespace Tests\Feature\Customers;
 
 use App\Actions\Customer\MergeCustomersAction;
 use App\Domain\Auditing\AuditEvent;
+use App\Domain\Chat\MessageSenderType;
 use App\Domain\Customer\CannotMergeCustomerException;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Tenancy\TenantContext;
@@ -87,6 +88,34 @@ final class MergeCustomersActionTest extends TestCase
         $this->assertSame([$survivor->getKey()], DB::table('messages')->where('sender_type', 'customer')->distinct()->pluck('sender_id')->map(fn ($id): int => (int) $id)->all());
         $this->assertSame(3, (int) DB::table('conversations')->where('id', $kept->getKey())->value('admin_unread_count'));
         $this->assertNull(DB::table('conversations')->where('id', $gone->getKey())->first());
+    }
+
+    public function test_a_conversation_only_the_absorbed_record_had_becomes_the_survivors(): void
+    {
+        [$survivor, $absorbed] = [$this->customer('V11111111'), $this->customer('V22222222')];
+
+        $conversation = $this->within(function () use ($absorbed): Conversation {
+            $conversation = Conversation::factory()->create(['customer_id' => $absorbed->getKey(), 'admin_unread_count' => 1, 'customer_unread_count' => 1]);
+            Message::factory()->create(['conversation_id' => $conversation->getKey(), 'body' => '¿Ya llegó mi pago?']);
+            Message::factory()->create([
+                'conversation_id' => $conversation->getKey(),
+                'sender_type' => MessageSenderType::Team,
+                'sender_id' => $this->member->getKey(),
+                'body' => 'Sí, ya lo aprobamos.',
+            ]);
+
+            return $conversation;
+        });
+
+        $this->assertSame(2, $this->merge($survivor, $absorbed)->messages);
+
+        $this->assertSame([(int) $conversation->getKey()], DB::table('conversations')->where('customer_id', $survivor->getKey())->pluck('id')->map(fn ($id): int => (int) $id)->all());
+        $this->assertSame([1, 1], array_map('intval', array_values((array) DB::table('conversations')->where('id', $conversation->getKey())->first(['admin_unread_count', 'customer_unread_count']))));
+        $this->assertSame(
+            [['customer', $survivor->getKey(), '¿Ya llegó mi pago?'], ['team', $this->member->getKey(), 'Sí, ya lo aprobamos.']],
+            DB::table('messages')->where('conversation_id', $conversation->getKey())->orderBy('id')->get(['sender_type', 'sender_id', 'body'])
+                ->map(fn (object $message): array => [$message->sender_type, (int) $message->sender_id, $message->body])->all(),
+        );
     }
 
     public function test_the_telemetry_of_the_absorbed_record_moves_to_the_survivor(): void
