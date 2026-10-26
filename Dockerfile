@@ -68,7 +68,7 @@ RUN npm ci
 
 COPY resources ./resources
 COPY public ./public
-COPY vite.config.js tsconfig.json components.json ./
+COPY vite.config.js tsconfig.json ./
 
 ARG VITE_APP_NAME=Apartar
 ARG VITE_REVERB_APP_KEY=
