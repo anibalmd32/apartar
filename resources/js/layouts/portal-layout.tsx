@@ -47,7 +47,7 @@ function PortalFrame({ title, businessName, customerName, children }: PortalLayo
                 <PortalNav items={items} />
 
                 <div className="flex-1" />
-                <RatePill className="max-xl:hidden" />
+                {isAccount ? null : <RatePill className="max-xl:hidden" />}
                 <CurrencySwitch />
                 <div className="flex items-center gap-2">
                     {userMenu}

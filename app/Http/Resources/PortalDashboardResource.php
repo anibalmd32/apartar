@@ -7,6 +7,7 @@ namespace App\Http\Resources;
 use App\Domain\Account\FeedFilters;
 use App\Domain\Account\FeedQuery;
 use App\Domain\Account\PortalContext;
+use App\Domain\Exchange\CurrentRate;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationBrand;
@@ -127,6 +128,7 @@ final class PortalDashboardResource extends JsonResource
         return [
             'business' => OrganizationBrand::of($block->organization, app(LimitEnforcer::class)->hasFeature(PlanFeature::Branding))->toArray(),
             'closed' => $block->businessIsClosed(),
+            'rate' => app(CurrentRate::class)->view()->toArray(),
             'totals' => [
                 'activeLayaways' => count($block->active),
                 'committed' => $this->money($block->committed()),

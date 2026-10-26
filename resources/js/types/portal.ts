@@ -1,5 +1,6 @@
 import { type FeedPreview } from '@/types/account';
 import { type OrganizationBrand } from '@/types/backoffice';
+import { type RateView } from '@/types/exchange';
 import { type MoneyView } from '@/types/money';
 import { type PaymentAccountView } from '@/types/payment';
 import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
@@ -52,6 +53,7 @@ export interface PortalTotals {
 export interface BusinessBlock {
     readonly business: OrganizationBrand;
     readonly closed: boolean;
+    readonly rate: RateView;
     readonly totals: PortalTotals;
     readonly layaways: readonly LayawaySummary[];
     readonly history: readonly LayawaySummary[];

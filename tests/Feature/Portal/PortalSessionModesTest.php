@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Portal;
 
+use App\Domain\Exchange\RateSource;
 use App\Domain\Payment\ReceiptStatus;
+use App\Domain\Settings\SettingKey;
 use App\Models\Account;
 use App\Models\Customer;
+use App\Models\ExchangeRate;
 use App\Models\Layaway;
 use App\Models\Organization;
+use App\Models\OrganizationSetting;
 use App\Models\Receipt;
 use App\Support\SignedFileUrl;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -67,6 +72,21 @@ final class PortalSessionModesTest extends TestCase
         $blocks = $this->blocks();
         $this->assertSame([$this->tool->code], $blocks['Ferretería Oriente']);
         $this->assertSame([$this->dress->code], $blocks['Boutique Sur']);
+    }
+
+    public function test_each_business_block_carries_the_rate_its_bolivars_were_computed_with(): void
+    {
+        ExchangeRate::factory()->create(['rate' => '40.00000000']);
+        ExchangeRate::factory()->parallel()->create(['rate' => '50.00000000']);
+        $this->withinOrganization($this->boutique, fn () => OrganizationSetting::factory()->forKey(SettingKey::ExchangeRateSource, RateSource::Parallel->value)->create());
+        $this->withoutOrganization();
+        Cache::flush();
+
+        $props = $this->actingAs($this->account, 'account')->get(route('portal.dashboard'))->viewData('page')['props'];
+        $rates = array_column(array_map(fn (array $block): array => ['name' => $block['business']['name'], 'rate' => $block['rate']], $props['businesses']), 'rate', 'name');
+
+        $this->assertSame([40.0, 'bcv'], [$rates['Ferretería Oriente']['rate'], $rates['Ferretería Oriente']['source']]);
+        $this->assertSame([50.0, 'parallel'], [$rates['Boutique Sur']['rate'], $rates['Boutique Sur']['source']]);
     }
 
     public function test_the_scoped_session_sees_one_business_and_is_offered_google(): void

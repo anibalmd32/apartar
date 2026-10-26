@@ -38,6 +38,7 @@ function block(name: string, slug: string, layaways: LayawaySummary[], history: 
     return {
         business: { name, slug, logoUrl: null, brandColor: null, brandingEnabled: false },
         closed: false,
+        rate: { rate: slug === 'boutique' ? 50 : 40, source: 'bcv', sourceLabel: 'BCV', publishedAt: null, isStale: false },
         totals: {
             activeLayaways: layaways.length,
             committed: money('$200,00'),
@@ -93,6 +94,8 @@ it('pinta un bloque por negocio con sus propios apartados', () => {
     expect(within(ferreteria).getByText('Nevera')).toBeInTheDocument();
     expect(within(ferreteria).queryByText('Vestido')).toBeNull();
     expect(within(boutique).getByText('Vestido')).toBeInTheDocument();
+    expect(within(ferreteria).getByText(/Tasa BCV Bs. 40,00/)).toBeInTheDocument();
+    expect(within(boutique).getByText(/Tasa BCV Bs. 50,00/)).toBeInTheDocument();
 });
 
 it('separa el historial y enlaza cada apartado con su detalle por código', () => {

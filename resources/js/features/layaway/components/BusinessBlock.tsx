@@ -1,4 +1,5 @@
 import { Avatar } from '@/components/shell/avatar';
+import { RateStamp } from '@/components/shell/rate-pill';
 import { PortalLayawayCard } from '@/features/layaway/components/PortalLayawayCard';
 import { type BusinessBlock as BusinessBlockData } from '@/types/portal';
 import { Link } from '@inertiajs/react';
@@ -20,7 +21,10 @@ export function BusinessBlock({ block }: BusinessBlockProps) {
                 )}
                 <div className="min-w-0 flex-1">
                     <h2 className="truncate text-[17px] font-bold">{business.name}</h2>
-                    {totals.nextDueDateLabel !== null ? <p className="text-ink-3 text-xs">Próximo vencimiento: {totals.nextDueDateLabel}</p> : null}
+                    <p className="text-ink-3 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+                        {totals.nextDueDateLabel !== null ? <span>Próximo vencimiento: {totals.nextDueDateLabel}</span> : null}
+                        <RateStamp rate={block.rate} />
+                    </p>
                 </div>
                 {closed ? null : (
                     <nav aria-label={`Enlaces de ${business.name}`} className="text-primary-ink flex shrink-0 gap-3 text-[13px] font-semibold">
