@@ -40,7 +40,7 @@ final class PlatformAdminSeeder extends Seeder
 
         $validator = Validator::make(
             ['email' => $email, 'password' => $values['PLATFORM_ADMIN_PASSWORD']],
-            ['email' => ['email'], 'password' => [Password::min(12)->mixedCase()->numbers()->uncompromised()]],
+            ['email' => ['email'], 'password' => [Password::defaults()]],
         );
 
         if ($validator->fails()) {

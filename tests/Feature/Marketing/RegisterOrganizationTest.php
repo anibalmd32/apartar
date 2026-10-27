@@ -153,13 +153,26 @@ final class RegisterOrganizationTest extends TestCase
 
     public function test_a_weak_password_is_refused(): void
     {
-        $this->post('/registro', [
-            ...self::VALID,
-            'owner_password' => 'corta1A',
-            'owner_password_confirmation' => 'corta1A',
-        ])->assertSessionHasErrors('owner_password');
+        foreach (['casa1', 'solotexto', '12345678'] as $weak) {
+            $this->post('/registro', [
+                ...self::VALID,
+                'owner_password' => $weak,
+                'owner_password_confirmation' => $weak,
+            ])->assertSessionHasErrors('owner_password');
+        }
 
         $this->assertSame(0, Organization::query()->count());
+    }
+
+    public function test_six_characters_with_a_letter_and_a_number_are_enough(): void
+    {
+        $this->post('/registro', [
+            ...self::VALID,
+            'owner_password' => 'casa24',
+            'owner_password_confirmation' => 'casa24',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(1, Organization::query()->count());
     }
 
     public function test_a_compromised_password_is_refused(): void

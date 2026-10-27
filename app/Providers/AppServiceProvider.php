@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use NotificationChannels\WebPush\ReportHandlerInterface;
 use NotificationChannels\WebPush\WebPushChannel;
 
@@ -37,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Password::defaults(fn (): Password => Password::min(6)->letters()->numbers()->uncompromised());
+
         $this->app->when(WebPushChannel::class)
             ->needs(ReportHandlerInterface::class)
             ->give(PushReportHandler::class);

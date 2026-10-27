@@ -9,8 +9,8 @@ interface PasswordRequirementsProps {
 
 export function PasswordRequirements({ id, value }: PasswordRequirementsProps) {
     const rules: { label: string; met: boolean | null }[] = [
-        { label: 'Al menos 12 caracteres', met: value.length >= 12 },
-        { label: 'Mayúsculas y minúsculas', met: /[a-z]/.test(value) && /[A-Z]/.test(value) },
+        { label: 'Al menos 6 caracteres', met: value.length >= 6 },
+        { label: 'Al menos una letra', met: /\p{L}/u.test(value) },
         { label: 'Al menos un número', met: /\d/.test(value) },
         { label: 'No aparece en filtraciones conocidas', met: null },
     ];

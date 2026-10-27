@@ -81,7 +81,7 @@ export default function AcceptInvitation({ token, name, email, organizationName,
                             value={data.password}
                             onChange={(event) => setData('password', event.target.value)}
                             error={errors.password}
-                            placeholder="Mínimo 12 caracteres"
+                            placeholder="Mínimo 6 caracteres"
                             hint="Con mayúsculas, minúsculas y números."
                             autoComplete="new-password"
                             autoFocus

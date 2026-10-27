@@ -23,7 +23,7 @@ final class ForcedPasswordChangeController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
-            'password' => ['required', 'confirmed', PasswordRule::min(12)->mixedCase()->numbers()->uncompromised()],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
         ]);
 
         /** @var User $user */

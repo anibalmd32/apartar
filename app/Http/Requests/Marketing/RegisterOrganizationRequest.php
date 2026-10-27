@@ -40,7 +40,7 @@ class RegisterOrganizationRequest extends FormRequest
 
             'owner_email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
 
-            'owner_password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->uncompromised()],
+            'owner_password' => ['required', 'confirmed', Password::defaults()],
         ];
     }
 

@@ -73,7 +73,7 @@ final class AcceptInvitationController extends Controller
                 throw ValidationException::withMessages(['password' => 'Esa no es tu contraseña de Apartar.']);
             }
         } else {
-            $request->validate(['password' => ['confirmed', PasswordRule::min(12)->mixedCase()->numbers()->uncompromised()]]);
+            $request->validate(['password' => ['confirmed', PasswordRule::defaults()]]);
         }
 
         $password = $existing instanceof User ? (string) $existing->getAuthPassword() : (string) $request->string('password');
