@@ -86,6 +86,9 @@ export default function PlatformLayout({ title, description, actions, back, chil
                     <PlatformBell />
                     {userMenu}
                 </header>
+                <div className="flex px-4 pt-1 lg:hidden">
+                    <RatePill />
+                </div>
 
                 <main className="flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12">
                     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 lg:gap-6">
