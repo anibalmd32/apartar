@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backoffice;
 
+use App\Domain\Collections\CollectionPreset;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\Queries\DashboardMetricsQuery;
 use App\Queries\OldestPendingReceiptsQuery;
 use App\Queries\SuspensionNoticeQuery;
+use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -46,13 +48,14 @@ final class DashboardController extends Controller
             'pendingReceipts' => $user instanceof User && $user->role->can(OrganizationCapability::Receipts)
                 ? $this->oldestReceipts->get(CarbonImmutable::now())
                 : null,
+            'longOverdueDays' => app(Settings::class)->longOverdueDays(),
             'suspension' => $this->suspension->for($this->context->organization()),
             'links' => [
                 'receipts' => route('receipts.index', ['status' => 'pending_review']),
                 'invoices' => $user instanceof User && $user->role->canManageBilling() ? route('subscription.invoices.index') : null,
                 'dueThisWeek' => route('collections.index', ['preset' => 'due_within_7_days']),
                 'customersOverdue' => route('customers.index', ['overdue' => '1']),
-                'longOverdue' => route('collections.index', ['preset' => 'overdue_over_15_days']),
+                'longOverdue' => route('collections.index', ['preset' => CollectionPreset::LongOverdue->value]),
                 'completedNotDelivered' => route('collections.index', ['preset' => 'completed_not_delivered']),
             ],
         ]);

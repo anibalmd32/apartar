@@ -20,7 +20,7 @@ import { useId, useState } from 'react';
 const SEGMENTS = [
     { value: 'due_today', label: 'Vencen hoy' },
     { value: 'due_within_7_days', label: 'Vencen en 7 días' },
-    { value: 'overdue_over_15_days', label: 'Mora de más de 15 días' },
+    { value: 'overdue_over_15_days', label: 'Mora prolongada' },
     { value: 'completed_not_delivered', label: 'Pagados sin entregar' },
 ] as const;
 

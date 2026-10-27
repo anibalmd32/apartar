@@ -39,6 +39,13 @@ final class Settings
         return is_numeric($days) ? (int) $days : (int) SettingKey::GracePeriodDays->defaultValue();
     }
 
+    public function longOverdueDays(): int
+    {
+        $days = $this->get(SettingKey::OverdueAlertDays);
+
+        return is_numeric($days) ? (int) $days : (int) SettingKey::OverdueAlertDays->defaultValue();
+    }
+
     /**
      * @return array<string, mixed>
      */

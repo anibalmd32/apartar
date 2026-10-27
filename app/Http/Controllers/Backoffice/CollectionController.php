@@ -20,6 +20,7 @@ use App\Models\Layaway;
 use App\Queries\CollectionFilterInput;
 use App\Queries\CollectionFilters;
 use App\Support\PhoneNumber;
+use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ final class CollectionController extends Controller
             'kind' => $listsLayaways ? 'layaways' : 'installments',
             'rows' => $rows,
             'meta' => $meta,
-            'definition' => $filters->preset?->definition(),
+            'definition' => $filters->preset?->definition(app(Settings::class)->longOverdueDays()),
             'summary' => $listsLayaways ? null : $this->summary($filters),
             'presetCounts' => fn (): array => $this->presetCounts(),
             'options' => fn (): array => $this->options(),

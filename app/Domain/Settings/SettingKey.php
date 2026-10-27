@@ -41,7 +41,7 @@ enum SettingKey: string
             self::DefaultFrequencyDays => 15,
             self::DefaultInstallmentsCount => 4,
             self::ReminderOffsetsDays => [-3, 0, 1, 7, 15],
-            self::OverdueAlertDays => 30,
+            self::OverdueAlertDays => 15,
         };
     }
 
@@ -107,7 +107,7 @@ enum SettingKey: string
             self::DefaultFrequencyDays => 'Días entre cuotas por defecto',
             self::DefaultInstallmentsCount => 'Número de cuotas por defecto',
             self::ReminderOffsetsDays => 'Días de recordatorio respecto al vencimiento',
-            self::OverdueAlertDays => 'Días de mora para la alerta del panel',
+            self::OverdueAlertDays => 'Días de mora prolongada, contados después de la gracia',
         };
     }
 

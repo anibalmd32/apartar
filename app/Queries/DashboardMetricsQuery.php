@@ -102,7 +102,7 @@ final class DashboardMetricsQuery
                 ];
             }),
             'customersOverdue' => $this->metric(fn (): int => $this->directory->search(new CustomerDirectoryFilters(overdue: true))->reorder()->count()),
-            'longOverdueLayaways' => $this->metric(fn (): int => (new CollectionFilters(CollectionPreset::OverdueOver15Days))->installments()->reorder()->distinct()->count('installments.layaway_id')),
+            'longOverdueLayaways' => $this->metric(fn (): int => (new CollectionFilters(CollectionPreset::LongOverdue))->installments()->reorder()->distinct()->count('installments.layaway_id')),
             'completedNotDelivered' => $this->metric(fn (): int => (new CollectionFilters(CollectionPreset::CompletedNotDelivered))->layaways()->reorder()->count()),
             'unreadMessages' => $this->metric(fn (): int => Conversation::query()->where('admin_unread_count', '>', 0)->count()),
             'subscribers' => $this->metric(function (): array {

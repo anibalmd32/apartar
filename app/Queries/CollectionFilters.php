@@ -58,14 +58,14 @@ final readonly class CollectionFilters
      */
     public function apply(Builder $query): Builder
     {
-        [$today, $grace] = $this->calendar();
+        [$today, $grace, $longOverdue] = $this->calendar();
 
         $query->whereColumn('installments.paid_cents', '<', 'installments.amount_cents');
 
         match ($this->preset) {
             CollectionPreset::DueToday => $query->whereDate('installments.due_date', $today->toDateString()),
             CollectionPreset::DueWithin7Days => $query->whereBetween('installments.due_date', [$today->toDateString(), $today->addDays(CollectionPreset::WEEK_DAYS)->toDateString()]),
-            CollectionPreset::OverdueOver15Days => $query->where('installments.due_date', '<', $today->subDays($grace + CollectionPreset::LONG_OVERDUE_DAYS)->toDateString()),
+            CollectionPreset::LongOverdue => $query->where('installments.due_date', '<', $today->subDays($grace + $longOverdue)->toDateString()),
             CollectionPreset::FortnightFirstHalf => $query->whereBetween('installments.due_date', [$today->startOfMonth()->toDateString(), $today->startOfMonth()->addDays(14)->toDateString()]),
             CollectionPreset::FortnightSecondHalf => $query->whereBetween('installments.due_date', [$today->startOfMonth()->addDays(15)->toDateString(), $today->endOfMonth()->toDateString()]),
             CollectionPreset::CompletedNotDelivered, null => null,
@@ -133,7 +133,7 @@ final readonly class CollectionFilters
     }
 
     /**
-     * @return array{CarbonImmutable, int}
+     * @return array{CarbonImmutable, int, int}
      */
     private function calendar(): array
     {
@@ -142,6 +142,7 @@ final readonly class CollectionFilters
         return [
             CarbonImmutable::now(new DateTimeZone($organization->timezone))->startOfDay(),
             app(Settings::class)->graceDays(),
+            app(Settings::class)->longOverdueDays(),
         ];
     }
 }

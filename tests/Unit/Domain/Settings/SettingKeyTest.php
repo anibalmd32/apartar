@@ -39,7 +39,7 @@ it('siembra el valor por defecto que fija §9.1', function (SettingKey $key, mix
     [SettingKey::DefaultFrequencyDays, 15],
     [SettingKey::DefaultInstallmentsCount, 4],
     [SettingKey::ReminderOffsetsDays, [-3, 0, 1, 7, 15]],
-    [SettingKey::OverdueAlertDays, 30],
+    [SettingKey::OverdueAlertDays, 15],
 ]);
 
 it('entrega las diez claves con su valor para sembrarlas de una vez', function (): void {

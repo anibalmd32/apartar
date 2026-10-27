@@ -69,7 +69,7 @@ final class CollectionFiltersTest extends TestCase
         return [
             'vencen hoy, el día del negocio' => [CollectionPreset::DueToday, ['2026-09-10', '2026-09-11', '2026-09-12'], ['2026-09-11']],
             'vencen en 7 días, de hoy a hoy + 7' => [CollectionPreset::DueWithin7Days, ['2026-09-10', '2026-09-11', '2026-09-18', '2026-09-19'], ['2026-09-11', '2026-09-18']],
-            'mora de más de 15 días pasada la gracia' => [CollectionPreset::OverdueOver15Days, ['2026-08-23', '2026-08-24', '2026-09-01'], ['2026-08-23']],
+            'mora de más de 15 días pasada la gracia' => [CollectionPreset::LongOverdue, ['2026-08-23', '2026-08-24', '2026-09-01'], ['2026-08-23']],
             'corte del 1 al 15' => [CollectionPreset::FortnightFirstHalf, ['2026-08-31', '2026-09-01', '2026-09-15', '2026-09-16'], ['2026-09-01', '2026-09-15']],
             'corte del 16 a fin de mes' => [CollectionPreset::FortnightSecondHalf, ['2026-09-15', '2026-09-16', '2026-09-30', '2026-10-01'], ['2026-09-16', '2026-09-30']],
         ];
@@ -111,7 +111,7 @@ final class CollectionFiltersTest extends TestCase
         $this->installment($this->layawayIn($this->organization, LayawayStatus::PendingDownPayment), 1, '2026-08-02');
 
         $this->assertSame(['2026-08-01'], $this->dueDates(new CollectionFilters));
-        $this->assertSame(['2026-08-01'], $this->dueDates(new CollectionFilters(CollectionPreset::OverdueOver15Days)));
+        $this->assertSame(['2026-08-01'], $this->dueDates(new CollectionFilters(CollectionPreset::LongOverdue)));
     }
 
     public function test_covered_installments_and_terminal_layaways_are_left_out(): void
@@ -126,6 +126,18 @@ final class CollectionFiltersTest extends TestCase
         $this->assertSame(['2026-09-13'], $this->dueDates(new CollectionFilters(statuses: [LayawayStatus::Cancelled])));
     }
 
+    public function test_the_long_overdue_threshold_comes_from_the_business_settings(): void
+    {
+        $this->installment($this->layawayIn($this->organization, LayawayStatus::Active), 1, '2026-08-20');
+
+        $this->assertSame(['2026-08-20'], $this->dueDates(new CollectionFilters(CollectionPreset::LongOverdue)));
+
+        $this->withinOrganization($this->organization, fn () => OrganizationSetting::factory()->forKey(SettingKey::OverdueAlertDays, 30)->create());
+        app(Settings::class)->forget($this->organization);
+
+        $this->assertSame([], $this->dueDates(new CollectionFilters(CollectionPreset::LongOverdue)));
+    }
+
     public function test_each_organization_uses_its_own_grace(): void
     {
         $patient = $this->subscribe(Organization::factory()->create(['timezone' => 'Asia/Tokyo']));
@@ -134,8 +146,8 @@ final class CollectionFiltersTest extends TestCase
         $this->installment($this->layawayIn($this->organization, LayawayStatus::Active), 1, '2026-08-20');
         $this->installment($this->layawayIn($patient, LayawayStatus::Active), 1, '2026-08-20');
 
-        $this->assertSame(['2026-08-20'], $this->dueDates(new CollectionFilters(CollectionPreset::OverdueOver15Days)));
-        $this->assertSame([], $this->withinOrganization($patient, fn (): array => $this->datesOf(new CollectionFilters(CollectionPreset::OverdueOver15Days))));
+        $this->assertSame(['2026-08-20'], $this->dueDates(new CollectionFilters(CollectionPreset::LongOverdue)));
+        $this->assertSame([], $this->withinOrganization($patient, fn (): array => $this->datesOf(new CollectionFilters(CollectionPreset::LongOverdue))));
     }
 
     public function test_range_catalog_category_and_customer_narrow_the_list(): void

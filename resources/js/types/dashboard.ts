@@ -63,6 +63,7 @@ export interface DashboardSuspension {
 export interface DashboardProps {
     readonly metrics: DashboardMetrics;
     readonly suspension?: DashboardSuspension | null;
+    readonly longOverdueDays?: number;
     readonly pendingReceipts?: readonly DashboardPendingReceipt[] | null;
     readonly links: {
         readonly receipts: string;

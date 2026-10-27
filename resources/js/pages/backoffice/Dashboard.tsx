@@ -19,7 +19,7 @@ import { type UsageMetric } from '@/types/plan';
 import { cilAvTimer, cilCalendar, cilCash, cilChatBubble, cilDescription, cilPlus, cilSwapHorizontal, cilTruck, cilWarning } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
-export default function Dashboard({ metrics, links, pendingReceipts, suspension = null }: DashboardProps) {
+export default function Dashboard({ metrics, links, pendingReceipts, suspension = null, longOverdueDays = 15 }: DashboardProps) {
     const { teamMember, currency } = usePage<BackofficeSharedData & { currency?: CurrencyPageProps }>().props;
     const setup = metrics.setup;
     const starting = setup !== null && !(setup.paymentAccount && setup.product && setup.publishedCatalog);
@@ -72,14 +72,10 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
                     ) : null}
                 </StatCard>
                 <StatCard label="Clientes en mora" icon={cilWarning} tone="error" href={links.customersOverdue} value={metrics.customersOverdue} />
-                <StatCard
-                    label="Mora de más de 15 días"
-                    icon={cilAvTimer}
-                    tone="warning"
-                    href={links.longOverdue}
-                    value={metrics.longOverdueLayaways}
-                >
-                    {metrics.longOverdueLayaways ? 'Requieren seguimiento' : null}
+                <StatCard label="Mora prolongada" icon={cilAvTimer} tone="warning" href={links.longOverdue} value={metrics.longOverdueLayaways}>
+                    {metrics.longOverdueLayaways
+                        ? 'Requieren seguimiento'
+                        : `Más de ${longOverdueDays} ${longOverdueDays === 1 ? 'día' : 'días'} tras la gracia`}
                 </StatCard>
                 <StatCard
                     label="Pagados sin entregar"

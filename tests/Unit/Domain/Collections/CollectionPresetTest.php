@@ -11,11 +11,17 @@ it('tiene los seis presets de la spec, cada uno con nombre y definición', funct
 
     foreach (CollectionPreset::cases() as $preset) {
         expect($preset->label())->not->toBe('')
-            ->and($preset->definition())->toEndWith('.');
+            ->and($preset->definition(15))->toEndWith('.');
     }
 });
 
 it('solo el de pagados sin entregar lista apartados', function (): void {
     expect(array_values(array_filter(CollectionPreset::cases(), fn (CollectionPreset $preset): bool => $preset->listsLayaways())))
         ->toBe([CollectionPreset::CompletedNotDelivered]);
+});
+
+it('la mora prolongada usa los días de la configuración del negocio', function (): void {
+    expect(CollectionPreset::LongOverdue->label())->toBe('Mora prolongada')
+        ->and(CollectionPreset::LongOverdue->definition(30))->toContain('más de 30 días')
+        ->and(CollectionPreset::LongOverdue->definition(1))->toContain('más de 1 día de atraso');
 });
