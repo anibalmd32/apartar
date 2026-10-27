@@ -91,6 +91,10 @@ final readonly class PlanState
                 array_map(fn (UsageMetric $metric): string => $metric->value, UsageMetric::cases()),
                 array_map(fn (UsageMetric $metric): string => $metric->label(), UsageMetric::cases()),
             ),
+            'metricLabelsOne' => array_combine(
+                array_map(fn (UsageMetric $metric): string => $metric->value, UsageMetric::cases()),
+                array_map(fn (UsageMetric $metric): string => $metric->label(1), UsageMetric::cases()),
+            ),
         ];
     }
 }

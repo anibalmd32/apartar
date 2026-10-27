@@ -20,7 +20,7 @@ export interface PlanLimits {
     hasFeature(feature: PlanFeature): boolean;
     featureUpgrade(feature: PlanFeature): PlanOffer | null;
     featureLabel(feature: PlanFeature): string;
-    metricLabel(metric: UsageMetric): string;
+    metricLabel(metric: UsageMetric, count?: number | null): string;
     readonly canOpenSubscription: boolean;
 }
 
@@ -46,7 +46,7 @@ export function planLimitsOf(state: (PlanState & PlanStateOffers) | null, canOpe
         hasFeature: (feature) => state === null || state.features.includes(feature),
         featureUpgrade: (feature) => state?.featureUpgrades[feature] ?? null,
         featureLabel: (feature) => state?.featureLabels[feature] ?? feature,
-        metricLabel: (metric) => state?.metricLabels[metric] ?? metric,
+        metricLabel: (metric, count) => (count === 1 ? state?.metricLabelsOne?.[metric] : undefined) ?? state?.metricLabels[metric] ?? metric,
         canOpenSubscription,
     };
 }

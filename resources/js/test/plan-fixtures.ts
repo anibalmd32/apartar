@@ -9,6 +9,15 @@ export const METRIC_LABELS: Readonly<Record<UsageMetric, string>> = {
     payment_accounts: 'cuentas de cobro',
 };
 
+export const METRIC_LABELS_ONE: Readonly<Record<UsageMetric, string>> = {
+    users: 'usuario',
+    catalogs: 'catálogo publicado',
+    products: 'producto',
+    active_layaways: 'apartado activo',
+    storage_mb: 'MB de almacenamiento',
+    payment_accounts: 'cuenta de cobro',
+};
+
 export const FEATURE_LABELS: Readonly<Record<PlanFeature, string>> = {
     branding: 'Tu logo y tu color, sin el sello de Apartar',
     excel_export: 'Exportación a Excel',
@@ -54,6 +63,7 @@ export function planState(overrides: Partial<PlanState & PlanStateOffers> = {}):
         },
         featureLabels: FEATURE_LABELS,
         metricLabels: METRIC_LABELS,
+        metricLabelsOne: METRIC_LABELS_ONE,
         ...overrides,
     };
 }

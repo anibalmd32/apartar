@@ -198,3 +198,20 @@ it('subir a un plan de pago pasa por el modal con la factura y el RIF', () => {
         expect.any(Object),
     );
 });
+
+it('concuerda el nombre del límite con su número', () => {
+    render(
+        <PlanOptionCard
+            option={planOption({
+                code: 'free',
+                name: 'Gratis',
+                limits: { users: 1, catalogs: 1, products: 30, active_layaways: 15, storage_mb: 200, payment_accounts: 1 },
+            })}
+            canChange={false}
+        />,
+    );
+
+    expect(screen.getByText('catálogo publicado')).toBeInTheDocument();
+    expect(screen.getByText('usuario')).toBeInTheDocument();
+    expect(screen.getByText('productos')).toBeInTheDocument();
+});

@@ -59,7 +59,7 @@ export function PlanOptionCard({
                     <li key={metric} className="text-ink-2 flex items-center gap-2">
                         <Icon icon={cilCheckAlt} size={14} className="text-success" />
                         <span>
-                            {formatLimit(option.limits[metric])} <span>{plan.metricLabel(metric)}</span>
+                            {formatLimit(option.limits[metric])} <span>{plan.metricLabel(metric, option.limits[metric])}</span>
                         </span>
                     </li>
                 ))}

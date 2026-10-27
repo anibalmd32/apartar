@@ -43,7 +43,7 @@ export function PlanChangeSummary({ option, timeZone }: { option: PlanOption; ti
                 <ul className="list-inside list-disc">
                     {preview.excesses.map((excess) => (
                         <li key={excess.metric}>
-                            {describeExcess(excess, plan.metricLabel(excess.metric), option.name, preview.unpublishAt, timeZone)}
+                            {describeExcess(excess, plan.metricLabel(excess.metric, excess.used), option.name, preview.unpublishAt, timeZone)}
                         </li>
                     ))}
                 </ul>

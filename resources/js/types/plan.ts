@@ -33,6 +33,7 @@ export interface PlanStateOffers {
     readonly featureUpgrades: Readonly<Partial<Record<PlanFeature, PlanOffer | null>>>;
     readonly featureLabels: Readonly<Record<PlanFeature, string>>;
     readonly metricLabels: Readonly<Record<UsageMetric, string>>;
+    readonly metricLabelsOne?: Readonly<Record<UsageMetric, string>>;
 }
 
 export type LimitKey = UsageMetric | 'products_per_catalog';

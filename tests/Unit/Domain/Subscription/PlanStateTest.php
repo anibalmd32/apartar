@@ -34,7 +34,7 @@ it('viaja con la forma exacta del contrato tipado', function (): void {
     $state = planStateFor($plan, $subscription)->toArray();
 
     expect(array_keys($state))
-        ->toBe(['planCode', 'planName', 'status', 'currentPeriodEnd', 'graceEndsAt', 'usage', 'features', 'upgrades', 'featureUpgrades', 'featureLabels', 'metricLabels']);
+        ->toBe(['planCode', 'planName', 'status', 'currentPeriodEnd', 'graceEndsAt', 'usage', 'features', 'upgrades', 'featureUpgrades', 'featureLabels', 'metricLabels', 'metricLabelsOne']);
 
     expect($state['planCode'])->toBe('pro');
     expect($state['status'])->toBe('active');
@@ -56,6 +56,8 @@ it('lleva resueltos los planes que desbloquean y los nombres', function (): void
     expect($state['featureUpgrades'])->toBe(['excel_export' => ['planCode' => 'pro', 'planName' => 'Pro'], 'custom_domain' => null]);
     expect($state['featureLabels'])->toBe(PlanFeature::labels());
     expect($state['metricLabels']['catalogs'])->toBe('catálogos publicados');
+    expect($state['metricLabelsOne']['catalogs'])->toBe('catálogo publicado');
+    expect($state['metricLabelsOne']['storage_mb'])->toBe('MB de almacenamiento');
     expect($state['metricLabels'])->toHaveCount(6);
 });
 
