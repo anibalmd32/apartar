@@ -170,6 +170,32 @@ final class LoginTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_when_the_last_business_closed_it_enters_another_active_one(): void
+    {
+        $active = $this->teamMember(['email' => 'ana@ejemplo.test', 'last_login_at' => now()->subWeek()]);
+        $this->teamMember(['email' => 'ana@ejemplo.test', 'last_login_at' => now()], ['status' => OrganizationStatus::Closed]);
+
+        $this->post('/backoffice/login', [
+            'email' => 'ana@ejemplo.test',
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($active);
+    }
+
+    public function test_when_disabled_in_the_last_business_it_enters_another_active_one(): void
+    {
+        $active = $this->teamMember(['email' => 'ana@ejemplo.test', 'last_login_at' => now()->subWeek()]);
+        $this->teamMember(['email' => 'ana@ejemplo.test', 'last_login_at' => now(), 'disabled_at' => now()]);
+
+        $this->post('/backoffice/login', [
+            'email' => 'ana@ejemplo.test',
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($active);
+    }
+
     public function test_a_platform_user_cannot_sign_in_here(): void
     {
         DB::table('platform_users')->insert([

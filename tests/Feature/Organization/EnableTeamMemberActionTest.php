@@ -7,6 +7,7 @@ namespace Tests\Feature\Organization;
 use App\Actions\Organization\EnableTeamMemberAction;
 use App\Domain\Subscription\PlanLimitReachedException;
 use App\Domain\Subscription\UsageMetric;
+use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -53,6 +54,36 @@ final class EnableTeamMemberActionTest extends TestCase
 
         $this->assertNull($member->disabled_at);
         $this->assertTrue($member->must_change_password);
+    }
+
+    public function test_it_keeps_the_password_when_the_person_is_still_active_in_another_business(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $member = User::factory()->disabled()->create(['email' => 'ana@ejemplo.test']);
+
+        $this->withinOrganization(Organization::factory()->create(), fn () => User::factory()->create(['email' => 'ana@ejemplo.test']));
+
+        $this->action()->handle($member, $owner);
+
+        $member->refresh();
+
+        $this->assertNull($member->disabled_at);
+        $this->assertFalse($member->must_change_password);
+    }
+
+    public function test_it_forces_the_change_when_the_other_business_is_closed(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $member = User::factory()->disabled()->create(['email' => 'ana@ejemplo.test']);
+
+        $this->withinOrganization(
+            Organization::factory()->create(['status' => OrganizationStatus::Closed]),
+            fn () => User::factory()->create(['email' => 'ana@ejemplo.test']),
+        );
+
+        $this->action()->handle($member, $owner);
+
+        $this->assertTrue($member->refresh()->must_change_password);
     }
 
     public function test_it_consumes_a_slot_and_is_rejected_when_the_plan_is_full(): void

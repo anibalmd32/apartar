@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Auth\TeamMemberships;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanLimitReachedException;
@@ -19,7 +20,10 @@ final class EnableTeamMemberAction
 {
     use LogsSensitiveActivity;
 
-    public function __construct(private readonly LimitEnforcer $limits) {}
+    public function __construct(
+        private readonly LimitEnforcer $limits,
+        private readonly TeamMemberships $memberships,
+    ) {}
 
     /**
      * @throws AuthorizationException
@@ -47,7 +51,7 @@ final class EnableTeamMemberAction
 
             $member->forceFill([
                 'disabled_at' => null,
-                'must_change_password' => true,
+                'must_change_password' => $this->memberships->accepted($member->email, $member->organization_id) === null,
             ])->save();
 
             $this->limits->adjust(UsageMetric::Users, 1);
