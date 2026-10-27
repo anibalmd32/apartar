@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Account;
 
+use App\Domain\Catalog\NewArrival;
 use App\Domain\Catalog\SearchMode;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
@@ -18,8 +19,6 @@ use Illuminate\Support\Facades\DB;
 final class FeedQuery
 {
     public const PAGE_SIZE = 20;
-
-    public const NEW_DAYS = 14;
 
     public function __construct(
         private readonly TenantResolver $resolver,
@@ -78,7 +77,7 @@ final class FeedQuery
             return [];
         }
 
-        $entered = 'GREATEST(`catalog_product`.`created_at`, `products`.`published_at`)';
+        $entered = NewArrival::ENTERED_SQL;
 
         $ranked = Product::query()
             ->published()
@@ -103,7 +102,6 @@ final class FeedQuery
         }
 
         $products = Product::query()->with(['category', 'tags', 'media'])->whereIn('id', $rows->pluck('product_id')->all())->get()->keyBy('id');
-        $newSince = CarbonImmutable::now()->subDays(self::NEW_DAYS);
         $page = [];
 
         foreach ($rows as $row) {
@@ -121,7 +119,7 @@ final class FeedQuery
                 'catalog' => $catalog,
                 'organization' => $organization,
                 'enteredAt' => $enteredAt,
-                'isNew' => $enteredAt->greaterThanOrEqualTo($newSince),
+                'isNew' => NewArrival::isNew($enteredAt),
             ];
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries;
 
+use App\Domain\Catalog\NewArrival;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use App\Models\Account;
@@ -12,13 +13,10 @@ use App\Models\CatalogSubscription;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Support\CatalogShareLink;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 final class AccountSubscriptionsQuery
 {
-    public const NEW_DAYS = 14;
-
     public function __construct(
         private readonly TenantResolver $resolver,
         private readonly TenantContext $context,
@@ -37,7 +35,7 @@ final class AccountSubscriptionsQuery
         }
 
         $owners = $this->resolver->organizationsOfCatalogs($subscriptions->pluck('catalog_id')->map(fn ($id): int => (int) $id)->all());
-        $since = CarbonImmutable::now()->subDays(self::NEW_DAYS);
+        $since = NewArrival::since();
 
         /** @var array<int, array{catalog: Catalog, organization: Organization, total: int, fresh: int}> $byCatalog */
         $byCatalog = [];
@@ -49,7 +47,7 @@ final class AccountSubscriptionsQuery
                     ->join('catalog_product', 'catalog_product.product_id', '=', 'products.id')
                     ->whereIn('catalog_product.catalog_id', $catalogIds)
                     ->groupBy('catalog_product.catalog_id')
-                    ->selectRaw('catalog_product.catalog_id as catalog_id, count(*) as total, sum(catalog_product.created_at >= ?) as fresh', [$since])
+                    ->selectRaw('catalog_product.catalog_id as catalog_id, count(*) as total, sum('.NewArrival::ENTERED_SQL.' >= ?) as fresh', [$since])
                     ->toBase()
                     ->get()
                     ->keyBy('catalog_id');

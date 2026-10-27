@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Concerns;
 
+use App\Domain\Catalog\NewArrival;
 use App\Models\Product;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 trait DescribesProductOffer
 {
-    public const NEW_FOR_DAYS = 14;
-
     public const FEW_LEFT = 10;
 
     private function isNew(Product $product): bool
     {
-        $published = $product->published_at;
-        $now = CarbonImmutable::now();
+        $added = $product->getAttribute('catalog_added_at') ?? DB::table('catalog_product')
+            ->where('catalog_id', $this->catalog->getKey())
+            ->where('product_id', $product->getKey())
+            ->value('created_at');
 
-        return $published !== null && $published->lte($now) && $published->gt($now->subDays(self::NEW_FOR_DAYS));
+        return NewArrival::isNew(NewArrival::enteredAt($product->published_at, is_string($added) ? CarbonImmutable::parse($added) : null));
     }
 
     private function savingsPercent(Product $product): ?int

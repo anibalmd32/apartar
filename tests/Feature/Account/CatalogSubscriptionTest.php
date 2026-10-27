@@ -193,7 +193,7 @@ final class CatalogSubscriptionTest extends TestCase
         $neighbour = Organization::factory()->create(['name' => 'Bodega Central']);
 
         $this->withinOrganization($this->organization, function (): void {
-            $products = Product::factory()->published()->count(3)->create();
+            $products = Product::factory()->published()->count(3)->create(['published_at' => '2026-08-01 10:00:00']);
             $hidden = Product::factory()->create();
 
             foreach ([...$products, $hidden] as $index => $product) {

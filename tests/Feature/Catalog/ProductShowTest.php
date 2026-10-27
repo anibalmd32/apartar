@@ -147,8 +147,9 @@ final class ProductShowTest extends TestCase
     {
         $this->stock([
             $this->product('Taladro', ['price_cents' => 15_000, 'compare_at_price_cents' => 18_000, 'stock' => 6, 'published_at' => now()->subDays(2)]),
-            $this->product('Sierra', ['stock' => 40, 'published_at' => now()->subMonths(2)]),
+            $sierra = $this->product('Sierra', ['stock' => 40, 'published_at' => now()->subMonths(2)]),
         ]);
+        DB::table('catalog_product')->where('product_id', $sierra->getKey())->update(['created_at' => now()->subMonths(2)]);
 
         /** @var list<array<string, mixed>> $data */
         $data = $this->props($this->visitCatalog())['products']['data'];
@@ -163,6 +164,23 @@ final class ProductShowTest extends TestCase
             ->where('product.savingsPercent', 17)
             ->where('product.stockLeft', 6));
         $this->visit('sierra')->assertInertia(fn (AssertableInertia $page) => $page->where('product.stockLeft', null));
+    }
+
+    public function test_an_old_product_just_added_to_the_catalog_is_new_there(): void
+    {
+        $this->stock([$this->product('Sierra', ['published_at' => now()->subMonths(2)])]);
+
+        $this->assertTrue($this->props($this->visitCatalog())['products']['data'][0]['isNew']);
+        $this->visit('sierra')->assertInertia(fn (AssertableInertia $page) => $page->where('product.isNew', true));
+    }
+
+    public function test_a_product_added_while_unpublished_is_new_from_its_publication(): void
+    {
+        $this->stock([$sierra = $this->product('Sierra', ['published_at' => now()->subDays(20)])]);
+        DB::table('catalog_product')->where('product_id', $sierra->getKey())->update(['created_at' => now()->subDays(30)]);
+
+        $this->assertFalse($this->props($this->visitCatalog())['products']['data'][0]['isNew']);
+        $this->visit('sierra')->assertInertia(fn (AssertableInertia $page) => $page->where('product.isNew', false));
     }
 
     public function test_an_even_plan_does_not_name_a_last_installment(): void
