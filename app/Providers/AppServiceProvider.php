@@ -8,6 +8,7 @@ use App\Auth\TenantAwareUserProvider;
 use App\Domain\Account\PortalContext;
 use App\Domain\Notification\PushReportHandler;
 use App\Domain\Tenancy\TenantContext;
+use App\Support\FrameworkMails;
 use App\Support\Settings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Password::defaults(fn (): Password => Password::min(6)->letters()->numbers()->uncompromised());
+        FrameworkMails::register();
 
         $this->app->when(WebPushChannel::class)
             ->needs(ReportHandlerInterface::class)
