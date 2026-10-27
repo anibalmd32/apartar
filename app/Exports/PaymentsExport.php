@@ -36,7 +36,7 @@ final class PaymentsExport implements FromGenerator, WithCustomValueBinder, With
         return Payment::query()->with([
             'layaway:id,organization_id,code,product_name_snapshot,customer_id',
             'layaway.customer:id,organization_id,full_name,document_number',
-            'receipt:id,organization_id,payment_method,payment_account_id,bank,reference,paid_at',
+            'receipt',
             'receipt.paymentAccount:id,organization_id,method,bank,identifier',
             'paymentAccount:id,organization_id,method,bank,identifier',
         ]);
