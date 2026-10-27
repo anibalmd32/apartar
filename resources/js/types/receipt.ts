@@ -3,6 +3,7 @@ import { type Paginated } from '@/types/data-table';
 import { type Currency, type MoneyView } from '@/types/money';
 import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
 import { type LayawaySummary } from '@/types/portal';
+import { type RateChecks } from '@/types/rate-deviation';
 
 export type ReceiptLayawaySummary = Pick<LayawaySummary, 'code' | 'productName' | 'statusLabel' | 'remaining'>;
 
@@ -120,7 +121,7 @@ export interface PaymentRow {
     readonly note: string | null;
 }
 
-export interface ApprovalPreviewView {
+export interface ApprovalPreviewView extends RateChecks {
     readonly amount: string;
     readonly rate: string;
     readonly rateSource: string;
@@ -129,7 +130,6 @@ export interface ApprovalPreviewView {
     readonly allocations: readonly { readonly number: number; readonly amount: string; readonly covers: boolean }[];
     readonly unallocated: string | null;
     readonly unallocatedCents: number;
-    readonly staleRate: { readonly token: string; readonly days: number; readonly sourceLabel: string } | null;
     readonly statusAfter: string;
     readonly statusAfterLabel: string;
     readonly summary: string;

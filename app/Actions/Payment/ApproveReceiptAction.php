@@ -7,7 +7,9 @@ namespace App\Actions\Payment;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\StaleRate;
+use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Money;
 use App\Domain\Notification\CustomerNotices;
@@ -46,6 +48,7 @@ final class ApproveReceiptAction
      * @throws MissingExchangeRateException
      * @throws UnconfirmedExcessException
      * @throws UnconfirmedStaleRateException
+     * @throws UnconfirmedRateDeviationException
      */
     public function handle(Receipt $receipt, ApproveReceiptData $data, User $actor): AppliedPayment
     {
@@ -64,6 +67,7 @@ final class ApproveReceiptAction
 
             $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
             StaleRate::in($rate, $data->settledCurrency)?->assertConfirmedBy($data->confirmedStaleRate);
+            RateDeviation::in($rate, $this->rates->current($this->context->organization()), $data->settledCurrency)?->assertConfirmedBy($data->confirmedRateDeviation);
 
             $applied = $this->applier->apply(
                 $layaway,

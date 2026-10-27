@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Exchange\StaleRate;
 use App\Domain\Layaway\LayawayStatus;
@@ -26,6 +27,7 @@ final readonly class ApprovalPreview
         public LayawayStatus $statusBefore,
         public LayawayStatus $statusAfter,
         public ?StaleRate $staleRate = null,
+        public ?RateDeviation $rateDeviation = null,
     ) {
         $allocated = array_sum(array_column($allocations, 'cents'));
 
@@ -74,6 +76,7 @@ final readonly class ApprovalPreview
             'unallocated' => $this->hasExcess() ? MoneyFormatter::format(new Money($this->unallocatedCents)) : null,
             'unallocatedCents' => $this->unallocatedCents,
             'staleRate' => $this->staleRate?->toArray(),
+            'rateDeviation' => $this->rateDeviation?->toArray(),
             'statusAfter' => $this->statusAfter->value,
             'statusAfterLabel' => $this->statusAfter->label(),
             'summary' => $this->summary(),

@@ -26,6 +26,7 @@ final readonly class ApproveReceiptData
         public ?string $note,
         public ?int $confirmedExcessCents = null,
         public ?string $confirmedStaleRate = null,
+        public ?string $confirmedRateDeviation = null,
     ) {
         PaymentAmounts::assertPositive($settledAmount, $settledCurrency, 'conciliado');
 

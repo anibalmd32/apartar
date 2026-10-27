@@ -36,6 +36,7 @@ final readonly class ManualPaymentData
         public string $idempotencyKey,
         public ?int $confirmedExcessCents = null,
         public ?string $confirmedStaleRate = null,
+        public ?string $confirmedRateDeviation = null,
     ) {
         PaymentAmounts::assertPositive($amount, $currency, 'del pago');
 

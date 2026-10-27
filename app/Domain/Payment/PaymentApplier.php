@@ -9,6 +9,7 @@ use App\Actions\Layaway\DetectOverdueAction;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Exchange\StaleRate;
@@ -154,6 +155,7 @@ final class PaymentApplier
                 statusBefore: $applied->statusBefore,
                 statusAfter: $applied->statusAfter,
                 staleRate: StaleRate::in($rate, $settled->currency),
+                rateDeviation: RateDeviation::in($rate, $this->rates->current($this->context->organization()), $settled->currency),
             );
         } finally {
             DB::rollBack();

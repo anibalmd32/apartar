@@ -137,6 +137,45 @@ final class RateSnapshotTest extends TestCase
             ->assertRedirect(route('receipts.index'));
     }
 
+    public function test_a_manual_rate_far_from_the_day_rate_is_confirmed_before_approving(): void
+    {
+        $receipt = $this->receiptFor($this->activeLayaway(), attributes: ['declared_amount' => '120.00', 'declared_currency' => Currency::VES]);
+        $this->actingAs($this->staff)->from(route('receipts.show', $receipt));
+        $before = DB::table('payments')->count();
+
+        $this->getJson(route('receipts.preview', [$receipt, 'amount' => '120.00', 'currency' => 'VES', 'rate' => '45.00']))->assertOk()->assertJsonPath('preview.rateDeviation', null);
+        $this->getJson(route('receipts.preview', [$receipt, 'amount' => '120.00', 'currency' => 'VES', 'rate' => '4.25']))->assertOk()
+            ->assertJsonPath('preview.rateDeviation.token', '4.25@42.50000000')
+            ->assertJsonPath('preview.rateDeviation.percent', 90);
+
+        $this->post(route('receipts.approve', $receipt), ['amount' => '120.00', 'currency' => 'VES', 'rate' => '4.25'])
+            ->assertSessionHasErrors(['confirm_rate_deviation' => 'La tasa que escribiste (4,25) está 90 % por debajo de la tasa BCV del día (42,50). Confírmala si es correcta.']);
+        $this->withoutOrganization();
+        $this->assertSame($before, DB::table('payments')->count());
+
+        $this->post(route('receipts.approve', $receipt), ['amount' => '120.00', 'currency' => 'VES', 'rate' => '4.25', 'confirm_rate_deviation' => '4.25@42.50000000'])
+            ->assertRedirect(route('receipts.index'));
+        $this->assertSame($before + 1, DB::table('payments')->count());
+    }
+
+    public function test_the_manual_payment_confirms_a_manual_rate_far_from_the_day_rate(): void
+    {
+        $layaway = $this->activeLayaway();
+        $payload = [
+            'method' => 'pago_movil', 'amount' => '120.00', 'currency' => 'VES', 'rate' => '425.00', 'paid_at' => '2026-09-10',
+            'note' => 'Pago móvil confirmado por teléfono con Ana.', 'idempotency_key' => (string) Str::uuid(),
+        ];
+        $this->actingAs($this->staff)->from(route('layaways.show', $layaway));
+        $before = DB::table('payments')->count();
+
+        $this->post(route('layaways.payments.store', $layaway), $payload)->assertSessionHasErrors('confirm_rate_deviation');
+        $this->withoutOrganization();
+        $this->assertSame($before, DB::table('payments')->count());
+
+        $this->post(route('layaways.payments.store', $layaway), [...$payload, 'confirm_rate_deviation' => '425.00@42.50000000'])->assertRedirect(route('layaways.show', $layaway));
+        $this->assertSame($before + 1, DB::table('payments')->count());
+    }
+
     public function test_the_manual_payment_asks_to_confirm_an_old_rate(): void
     {
         $layaway = $this->activeLayaway();

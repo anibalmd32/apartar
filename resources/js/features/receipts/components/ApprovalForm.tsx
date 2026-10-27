@@ -2,7 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { CheckboxField } from '@/components/ui/checkbox-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
-import { StaleRateConfirmation, staleRatePending } from '@/features/receipts/components/StaleRateConfirmation';
+import { RateConfirmations, ratePending } from '@/features/receipts/components/StaleRateConfirmation';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { type ReceiptReviewProps } from '@/types/receipt';
@@ -27,6 +27,7 @@ interface ApprovalFormValues {
     note: string;
     confirm_excess: number | null;
     confirm_stale_rate: string | null;
+    confirm_rate_deviation: string | null;
 }
 
 export function ApprovalForm({ approval, receipt, rate, initialPreview, initialError }: ApprovalFormProps) {
@@ -37,6 +38,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
         note: '',
         confirm_excess: null,
         confirm_stale_rate: null,
+        confirm_rate_deviation: null,
     });
 
     const { preview, error, loading } = useApprovalPreview(
@@ -48,7 +50,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
 
     const excess = preview?.unallocated ?? null;
     const confirmed = preview !== null && excess !== null && form.data.confirm_excess === preview.unallocatedCents;
-    const blocked = form.processing || loading || (excess !== null && !confirmed) || staleRatePending(preview, form.data.confirm_stale_rate);
+    const blocked = form.processing || loading || (excess !== null && !confirmed) || ratePending(preview, form.data);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -141,12 +143,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
                 <Alert tone="warning">{form.errors.confirm_excess}</Alert>
             ) : null}
 
-            <StaleRateConfirmation
-                staleRate={preview?.staleRate ?? null}
-                confirmed={form.data.confirm_stale_rate}
-                onChange={(token) => form.setData('confirm_stale_rate', token)}
-                error={form.errors.confirm_stale_rate}
-            />
+            <RateConfirmations preview={preview} values={form.data} onChange={(field, token) => form.setData(field, token)} errors={form.errors} />
 
             <button type="submit" className="btn btn-success btn-lg w-full" disabled={blocked}>
                 Aprobar y aplicar el pago

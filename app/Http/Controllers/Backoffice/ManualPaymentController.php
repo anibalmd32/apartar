@@ -8,6 +8,7 @@ use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
@@ -55,6 +56,8 @@ final class ManualPaymentController extends Controller
             return back()->withErrors(['confirm_excess' => $exception->getMessage()]);
         } catch (UnconfirmedStaleRateException $exception) {
             return back()->withErrors(['confirm_stale_rate' => $exception->getMessage()]);
+        } catch (UnconfirmedRateDeviationException $exception) {
+            return back()->withErrors(['confirm_rate_deviation' => $exception->getMessage()]);
         } catch (MissingExchangeRateException $exception) {
             return back()->withErrors(['rate' => $exception->getMessage()]);
         } catch (PaymentNotApplicableException|IdempotencyKeyReusedException $exception) {

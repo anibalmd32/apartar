@@ -3,7 +3,7 @@ import { CheckboxField } from '@/components/ui/checkbox-field';
 import { DateField } from '@/components/ui/date-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
-import { StaleRateConfirmation, staleRatePending } from '@/features/receipts/components/StaleRateConfirmation';
+import { RateConfirmations, ratePending } from '@/features/receipts/components/StaleRateConfirmation';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { type ManualPaymentOptions } from '@/types/layaway-backoffice';
@@ -22,6 +22,7 @@ interface ManualPaymentValues {
     idempotency_key: string;
     confirm_excess: number | null;
     confirm_stale_rate: string | null;
+    confirm_rate_deviation: string | null;
 }
 
 export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }) {
@@ -37,6 +38,7 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
         idempotency_key: crypto.randomUUID(),
         confirm_excess: null,
         confirm_stale_rate: null,
+        confirm_rate_deviation: null,
     });
 
     const { preview, error, loading } = useApprovalPreview(
@@ -48,12 +50,7 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
 
     const excess = preview?.unallocated ?? null;
     const confirmed = preview !== null && excess !== null && form.data.confirm_excess === preview.unallocatedCents;
-    const blocked =
-        form.processing ||
-        loading ||
-        form.data.method === '' ||
-        (excess !== null && !confirmed) ||
-        staleRatePending(preview, form.data.confirm_stale_rate);
+    const blocked = form.processing || loading || form.data.method === '' || (excess !== null && !confirmed) || ratePending(preview, form.data);
 
     const chooseMethod = (value: string) => {
         const method = options.methods.find((option) => option.value === value);
@@ -192,12 +189,7 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
                 <Alert tone="warning">{form.errors.confirm_excess}</Alert>
             ) : null}
 
-            <StaleRateConfirmation
-                staleRate={preview?.staleRate ?? null}
-                confirmed={form.data.confirm_stale_rate}
-                onChange={(token) => form.setData('confirm_stale_rate', token)}
-                error={form.errors.confirm_stale_rate}
-            />
+            <RateConfirmations preview={preview} values={form.data} onChange={(field, token) => form.setData(field, token)} errors={form.errors} />
 
             <button type="submit" className="btn btn-primary w-full" disabled={blocked}>
                 Registrar el pago

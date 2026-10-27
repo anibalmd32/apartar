@@ -38,6 +38,7 @@ final class ApproveReceiptRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:'.ApproveReceiptData::NOTE_MAX],
             'confirm_excess' => ['nullable', 'integer', 'min:1'],
             'confirm_stale_rate' => ['nullable', 'string', 'max:100'],
+            'confirm_rate_deviation' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -70,6 +71,7 @@ final class ApproveReceiptRequest extends FormRequest
                 note: $note === '' ? null : $note,
                 confirmedExcessCents: $this->filled('confirm_excess') ? $this->integer('confirm_excess') : null,
                 confirmedStaleRate: $this->filled('confirm_stale_rate') ? $this->string('confirm_stale_rate')->toString() : null,
+                confirmedRateDeviation: $this->filled('confirm_rate_deviation') ? $this->string('confirm_rate_deviation')->toString() : null,
             );
         } catch (InvalidRateException $exception) {
             throw ValidationException::withMessages(['rate' => $exception->getMessage()]);

@@ -7,7 +7,9 @@ namespace App\Actions\Payment;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\StaleRate;
+use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Money;
 use App\Domain\Notification\CustomerNotices;
@@ -47,6 +49,7 @@ final class RegisterManualPaymentAction
      * @throws UnconfirmedExcessException
      * @throws IdempotencyKeyReusedException
      * @throws UnconfirmedStaleRateException
+     * @throws UnconfirmedRateDeviationException
      */
     public function handle(Layaway $layaway, ManualPaymentData $data, User $actor): Payment
     {
@@ -83,6 +86,7 @@ final class RegisterManualPaymentAction
 
         $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
         StaleRate::in($rate, $data->currency)?->assertConfirmedBy($data->confirmedStaleRate);
+        RateDeviation::in($rate, $this->rates->current($this->context->organization()), $data->currency)?->assertConfirmedBy($data->confirmedRateDeviation);
 
         $applied = $this->applier->apply(
             $layaway,

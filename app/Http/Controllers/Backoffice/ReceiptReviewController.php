@@ -10,6 +10,7 @@ use App\Actions\Payment\RejectReceiptAction;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Layaway\DownPaymentExtension;
 use App\Domain\Layaway\LayawayStatus;
@@ -202,6 +203,8 @@ final class ReceiptReviewController extends Controller
             return back()->withErrors(['confirm_excess' => $exception->getMessage()]);
         } catch (UnconfirmedStaleRateException $exception) {
             return back()->withErrors(['confirm_stale_rate' => $exception->getMessage()]);
+        } catch (UnconfirmedRateDeviationException $exception) {
+            return back()->withErrors(['confirm_rate_deviation' => $exception->getMessage()]);
         } catch (MissingExchangeRateException $exception) {
             return back()->withErrors(['rate' => $exception->getMessage()]);
         } catch (ReceiptAlreadyProcessedException|PaymentNotApplicableException $exception) {
