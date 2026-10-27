@@ -7,11 +7,12 @@ import { InvoiceList } from '@/features/platform/components/InvoiceList';
 import { OrganizationStatusBadge, PlanPill, SubscriptionStatusBadge } from '@/features/platform/components/labels';
 import { OrganizationProfile, type OrganizationProfileData } from '@/features/platform/components/OrganizationProfile';
 import { RiskBadges } from '@/features/platform/components/OrganizationRowParts';
+import { ReactivateDialog } from '@/features/platform/components/ReactivateDialog';
 import { type CourtesyState, SubscriptionActions } from '@/features/platform/components/SubscriptionActions';
 import { SupportAccessPanel } from '@/features/platform/components/SupportAccessPanel';
 import PlatformLayout from '@/layouts/platform-layout';
 import { type InvoiceRow, type OrganizationRow, type SupportGrantRow } from '@/types/platform';
-import { cilArrowLeft, cilBan, cilSwapHorizontal } from '@coreui/icons';
+import { cilArrowLeft, cilBan, cilCheckCircle, cilSwapHorizontal } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
@@ -25,6 +26,7 @@ interface ShowProps {
     profile?: OrganizationProfileData;
     autoSuspendOn?: string | null;
     suspendable?: boolean;
+    reactivable?: boolean;
     courtesy?: CourtesyState | null;
     invoiceable?: boolean;
 }
@@ -62,10 +64,12 @@ export default function OrganizationShow({
     profile,
     autoSuspendOn = null,
     suspendable = false,
+    reactivable = false,
     courtesy = null,
     invoiceable = false,
 }: ShowProps) {
     const [confirming, setConfirming] = useState(false);
+    const [reactivating, setReactivating] = useState(false);
     const counts = organization.counts;
     const volume = organization.volume;
     const overdue = invoices.find((invoice) => invoice.status === 'overdue');
@@ -107,6 +111,12 @@ export default function OrganizationShow({
                         <Button variant="danger" onClick={() => setConfirming(true)}>
                             <Icon icon={cilBan} />
                             Suspender
+                        </Button>
+                    ) : null}
+                    {reactivable ? (
+                        <Button onClick={() => setReactivating(true)}>
+                            <Icon icon={cilCheckCircle} />
+                            Reactivar
                         </Button>
                     ) : null}
                 </>
@@ -181,6 +191,13 @@ export default function OrganizationShow({
             >
                 <p className="text-ink-2 text-sm">Queda en la auditoría con tu nombre.</p>
             </Modal>
+            <ReactivateDialog
+                open={reactivating}
+                onClose={() => setReactivating(false)}
+                slug={organization.slug}
+                name={organization.name}
+                hasOverdueInvoice={overdue !== undefined}
+            />
         </PlatformLayout>
     );
 }

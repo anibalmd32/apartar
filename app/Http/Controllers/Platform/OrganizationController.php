@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Platform;
 
+use App\Actions\Organization\ReactivateOrganizationAction;
 use App\Actions\Organization\SuspendOrganizationAction;
 use App\Actions\Platform\GrantCourtesyPeriodAction;
 use App\Actions\Platform\GrantSupportAccessAction;
@@ -87,8 +88,17 @@ final class OrganizationController extends Controller
         return back()->with('status', $done ? 'Organización suspendida: sus catálogos se despublicaron y su equipo lo ve.' : 'Ya estaba suspendida o cerrada.');
     }
 
+    public function reactivate(Request $request, Organization $organization, ReactivateOrganizationAction $reactivate): RedirectResponse
+    {
+        $done = $reactivate->handle($organization, $this->operator($request), 'platform:manual-reactivation');
+
+        return back()->with('status', $done
+            ? 'Organización reactivada: su equipo vuelve a crear y a publicar. Los catálogos los publica el dueño.'
+            : 'No estaba suspendida, o está cerrada o cancelada.');
+    }
+
     /**
-     * @return array{limits: array<string, int|null>, profile: array<string, string|null>, autoSuspendOn: string|null, courtesy: array{until: string|null, restoresTo: string|null}|null, invoiceable: bool, suspendable: bool}
+     * @return array{limits: array<string, int|null>, profile: array<string, string|null>, autoSuspendOn: string|null, courtesy: array{until: string|null, restoresTo: string|null}|null, invoiceable: bool, suspendable: bool, reactivable: bool}
      */
     private function detail(Organization $organization): array
     {
@@ -121,6 +131,10 @@ final class OrganizationController extends Controller
                     && $subscription->plan->price_cents > 0
                     && SubscriptionInvoice::query()->whereIn('status', [InvoiceStatus::Pending->value, InvoiceStatus::UnderReview->value, InvoiceStatus::Overdue->value])->doesntExist(),
                 'suspendable' => $organization->status === OrganizationStatus::Active && $subscription !== null && $subscription->status !== SubscriptionStatus::Cancelled,
+                'reactivable' => $subscription !== null
+                    && $subscription->status !== SubscriptionStatus::Cancelled
+                    && $organization->status !== OrganizationStatus::Closed
+                    && ($organization->status === OrganizationStatus::Suspended || $subscription->status === SubscriptionStatus::Suspended),
             ];
         });
     }

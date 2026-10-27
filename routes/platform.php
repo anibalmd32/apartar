@@ -34,6 +34,7 @@ Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->gr
         Route::delete('organizaciones/{organization}/cortesia', [OrganizationController::class, 'revokeCourtesy'])->name('organizations.courtesy.revoke');
         Route::post('organizaciones/{organization}/facturas', [OrganizationController::class, 'issueInvoice'])->name('organizations.invoices.store');
         Route::post('organizaciones/{organization}/pausar', [OrganizationController::class, 'suspend'])->name('organizations.pause');
+        Route::post('organizaciones/{organization}/reactivar', [OrganizationController::class, 'reactivate'])->name('organizations.reactivate');
 
         Route::middleware('support-access')->prefix('organizaciones/{organization}/datos')->name('support.')->group(function (): void {
             Route::get('apartados', [SupportDataController::class, 'layaways'])->name('layaways');
