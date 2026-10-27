@@ -137,7 +137,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                         <p className="min-w-0 flex-1 text-[13px] font-semibold">
                             Tu suscripción está suspendida por falta de pago. Puedes cobrar y aprobar comprobantes, pero no crear cosas nuevas.
                         </p>
-                        <Link className="btn btn-sm text-base-content border-0 bg-white" href="/backoffice/suscripcion">
+                        <Link className="btn btn-sm bg-base-100 text-base-content hover:bg-base-200 border-0" href="/backoffice/suscripcion">
                             Regularizar el pago
                         </Link>
                     </div>
