@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { BankField } from '@/components/ui/bank-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { PaymentAccountList } from '@/features/catalog/components/PaymentAccountList';
@@ -51,14 +52,13 @@ export function ReceiptPaymentFields({ form, paymentAccounts, methods, businessN
 
             {form.requiresReference ? (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <TextField
+                    <BankField
                         label="Banco"
                         name="bank"
                         hint="Desde el que hiciste el pago."
                         value={data.bank}
-                        onChange={(event) => form.setData('bank', event.target.value)}
+                        onChange={(value) => form.setData('bank', value)}
                         error={errors.bank}
-                        autoComplete="off"
                         required
                     />
 

@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
 import { FileField } from '@/components/ui/file-field';
+import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 import { type OrganizationBrand, type OrganizationIdentity } from '@/types/backoffice';
 import { useForm } from '@inertiajs/react';
@@ -80,12 +81,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                     hint="El RIF del negocio o, si vendes por tu cuenta y no tienes, tu cédula. Hace falta para tu primera factura de suscripción."
                 />
 
-                <TextField
-                    label="Teléfono de contacto"
-                    value={data.phone}
-                    onChange={(event) => setData('phone', event.target.value)}
-                    error={errors.phone}
-                />
+                <PhoneField label="Teléfono de contacto" value={data.phone} onChange={(value) => setData('phone', value)} error={errors.phone} />
 
                 <TextField
                     label="Zona horaria"

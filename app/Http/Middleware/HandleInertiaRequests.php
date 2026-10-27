@@ -14,8 +14,10 @@ use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Account;
+use App\Models\Bank;
 use App\Models\Conversation;
 use App\Models\Customer;
+use App\Models\MobilePrefix;
 use App\Models\Organization;
 use App\Models\PlatformUser;
 use App\Models\Receipt;
@@ -27,6 +29,7 @@ use App\Queries\Platform\PlatformAlerts;
 use App\Support\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
@@ -66,6 +69,20 @@ class HandleInertiaRequests extends Middleware
             'planLimit' => $request->session()->get('planLimit'),
             'planFeature' => $request->session()->get('planFeature'),
             'planBlocked' => $request->session()->get('planBlocked'),
+            'catalogs' => fn (): array => self::catalogs(),
+        ]);
+    }
+
+    public const CATALOGS_CACHE_KEY = 'catalogs:banks-and-mobile-prefixes';
+
+    /**
+     * @return array{banks: list<array<string, mixed>>, mobilePrefixes: list<array<string, mixed>>}
+     */
+    public static function catalogs(): array
+    {
+        return Cache::remember(self::CATALOGS_CACHE_KEY, 3600, fn (): array => [
+            'banks' => Bank::query()->orderBy('position')->get()->map(fn (Bank $bank): array => $bank->toCatalogEntry())->values()->all(),
+            'mobilePrefixes' => MobilePrefix::query()->orderBy('position')->get()->map(fn (MobilePrefix $prefix): array => $prefix->toCatalogEntry())->values()->all(),
         ]);
     }
 

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Organization\UpsertPaymentAccountData;
 use App\Domain\Payment\PaymentMethod;
+use App\Models\Bank;
 use App\Rules\ValidPaymentIdentifier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
@@ -53,7 +54,7 @@ final class UpsertPaymentAccountRequest extends FormRequest
     {
         return new UpsertPaymentAccountData(
             method: PaymentMethod::from((string) $this->string('method')),
-            bank: $this->nullableString('bank'),
+            bank: Bank::canonicalName($this->nullableString('bank')),
             holderName: trim((string) $this->string('holder_name')),
             holderDocument: trim((string) $this->string('holder_document')),
             identifier: trim((string) $this->string('identifier')),

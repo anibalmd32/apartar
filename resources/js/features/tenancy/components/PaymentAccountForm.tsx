@@ -1,5 +1,7 @@
+import { BankField } from '@/components/ui/bank-field';
 import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
+import { PhoneField } from '@/components/ui/phone-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { type PaymentAccountView, type PaymentMethodDefinition } from '@/types/payment';
@@ -74,25 +76,30 @@ export function PaymentAccountForm({ methods, account, atLimit = false, onDone }
             />
 
             {selected?.isCash === false ? (
-                <TextField
-                    label="Banco"
-                    name="bank"
-                    value={data.bank}
-                    onChange={(event) => setData('bank', event.target.value)}
-                    error={errors.bank}
-                    autoComplete="off"
-                />
+                <BankField label="Banco" name="bank" value={data.bank} onChange={(value) => setData('bank', value)} error={errors.bank} />
             ) : null}
 
-            <TextField
-                label={selected?.identifierLabel ?? 'Identificador'}
-                name="identifier"
-                value={data.identifier}
-                onChange={(event) => setData('identifier', event.target.value)}
-                error={errors.identifier}
-                autoComplete="off"
-                required
-            />
+            {data.method === 'pago_movil' ? (
+                <PhoneField
+                    key="pago-movil"
+                    label={selected?.identifierLabel ?? 'Teléfono'}
+                    name="identifier"
+                    value={data.identifier}
+                    onChange={(value) => setData('identifier', value)}
+                    error={errors.identifier}
+                    required
+                />
+            ) : (
+                <TextField
+                    label={selected?.identifierLabel ?? 'Identificador'}
+                    name="identifier"
+                    value={data.identifier}
+                    onChange={(event) => setData('identifier', event.target.value)}
+                    error={errors.identifier}
+                    autoComplete="off"
+                    required
+                />
+            )}
 
             <TextField
                 label="Titular"

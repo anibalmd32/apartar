@@ -133,7 +133,10 @@ it('envía multipart con los nombres del contrato y el archivo', () => {
     renderPage();
 
     const capture = fakeFile('captura.png', 'image/png');
-    fireEvent.change(screen.getByLabelText('Banco'), { target: { value: 'Mercantil' } });
+    const bank = screen.getByLabelText('Banco');
+    fireEvent.change(bank, { target: { value: 'Mercantil' } });
+    fireEvent.keyDown(bank, { key: 'ArrowDown' });
+    fireEvent.keyDown(bank, { key: 'Enter' });
     fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '00123456' } });
     fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Cuota de octubre' } });
     fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [capture] } });

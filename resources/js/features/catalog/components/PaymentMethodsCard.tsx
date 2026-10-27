@@ -1,3 +1,4 @@
+import { BankMark } from '@/components/ui/bank-mark';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CopyButton } from '@/features/catalog/components/CopyButton';
@@ -36,9 +37,15 @@ export function PaymentMethodsCard({ accounts, businessName }: PaymentMethodsCar
                         <li key={account.id} className="bg-base-100 flex items-start gap-2.5 rounded-[10px] px-3 py-2.5">
                             <IconChip icon={PAYMENT_METHOD_ICONS[account.method]} />
                             <div className="flex min-w-0 flex-1 flex-col gap-px">
-                                <p className="text-[13px] font-semibold">
+                                <p className="flex flex-wrap items-center gap-x-1.5 text-[13px] font-semibold">
                                     {account.methodLabel}
-                                    {account.bank !== null ? ` · ${account.bank}` : null}
+                                    {account.bank !== null ? (
+                                        <>
+                                            <span aria-hidden="true">·</span>
+                                            <BankMark bank={account.bank} logoUrl={account.bankLogoUrl} className="h-4" />
+                                            <span>{account.bank}</span>
+                                        </>
+                                    ) : null}
                                 </p>
                                 <p className="text-ink-3 text-xs break-words">
                                     <span className="sr-only">{account.identifierLabel}: </span>

@@ -25,9 +25,9 @@ function phoneFailure(mixed $value): ?string
     return $message;
 }
 
-it('deja pasar un móvil y un fijo bien escritos', function (string $value): void {
+it('deja pasar un celular bien escrito', function (string $value): void {
     expect(phoneFailure($value))->toBeNull();
-})->with(['0414-1234567', '+58 412 123 4567', '0212-5551234']);
+})->with(['0414-1234567', '+58 412 123 4567', '04221234567']);
 
 it('falla con un teléfono de otro país', function (): void {
     expect(phoneFailure('+1 305 555 0199'))->toStartWith('Por ahora solo aceptamos teléfonos de Venezuela');
@@ -37,9 +37,9 @@ it('falla con un código que no tiene forma de teléfono venezolano', function (
     expect(phoneFailure('0500-1234567'))->toStartWith('El código 0500 no es de un teléfono de Venezuela');
 });
 
-it('deja pasar un prefijo fuera del censo con forma de teléfono venezolano', function (string $value): void {
-    expect(phoneFailure($value))->toBeNull();
-})->with(['0250-1234567', '0413-1234567']);
+it('rechaza un fijo o un prefijo que no es de celular, y pide elegir uno de la lista', function (string $value): void {
+    expect(phoneFailure($value))->toBe(ValidVenezuelanPhone::MOBILE_ONLY);
+})->with(['0212-5551234', '0250-1234567', '0413-1234567', '0415-1234567']);
 
 it('falla con un valor que no es texto', function (mixed $value): void {
     expect(phoneFailure($value))->toBe('Escribe tu número de teléfono, como 0414-1234567.');

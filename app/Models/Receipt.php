@@ -9,6 +9,7 @@ use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\ReferencesBank;
 use Database\Factories\ReceiptFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,7 +45,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Receipt extends Model
 {
     /** @use HasFactory<ReceiptFactory> */
-    use BelongsToOrganization, HasFactory;
+    use BelongsToOrganization, HasFactory, ReferencesBank;
 
     public const DISK = 'receipts';
 

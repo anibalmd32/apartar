@@ -8,6 +8,7 @@ use App\Actions\Subscription\SubmitSubscriptionReceiptData;
 use App\Domain\Money\Currency;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptFile;
+use App\Models\Bank;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Rules\RealMimeType;
@@ -70,7 +71,7 @@ final class SubmitSubscriptionReceiptRequest extends FormRequest
         return new SubmitSubscriptionReceiptData(
             invoice: $invoice,
             method: PaymentMethod::from((string) $this->string('method')),
-            bank: $this->filled('bank') ? trim((string) $this->string('bank')) : null,
+            bank: $this->filled('bank') ? Bank::canonicalName((string) $this->string('bank')) : null,
             reference: $this->filled('reference') ? trim((string) $this->string('reference')) : null,
             paidAt: CarbonImmutable::parse((string) $this->string('paidAt')),
             declaredAmount: (string) $this->string('amount'),

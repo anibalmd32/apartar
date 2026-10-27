@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\ReferencesMobilePrefix;
 use App\Support\DocumentKind;
 use Database\Factories\CustomerFactory;
 use Illuminate\Auth\Authenticatable;
@@ -39,6 +40,7 @@ class Customer extends Model implements AuthenticatableContract
     use HasFactory;
 
     use HasPushSubscriptions, Notifiable;
+    use ReferencesMobilePrefix;
 
     protected $hidden = ['remember_token'];
 

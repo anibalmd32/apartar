@@ -11,7 +11,7 @@ final readonly class PhoneNumber
     /**
      * @var non-empty-list<string>
      */
-    public const MOBILE_PREFIXES = ['412', '414', '415', '416', '422', '424', '426'];
+    public const MOBILE_PREFIXES = ['412', '414', '416', '422', '424', '426'];
 
     /**
      * @var non-empty-list<string>

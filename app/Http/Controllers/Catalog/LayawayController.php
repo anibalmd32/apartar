@@ -32,7 +32,6 @@ use App\Queries\ActivePaymentAccountsQuery;
 use App\Queries\CatalogProductsQuery;
 use App\Support\InvalidDocumentNumberException;
 use App\Support\InvalidPhoneNumberException;
-use App\Support\PhoneNumber;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
@@ -75,7 +74,6 @@ final class LayawayController extends Controller
             'plan' => fn (): ?array => $this->plan($request, $product, $quantity),
             'quantity' => $quantity,
             'consent' => ['businessName' => $catalog->organization->name],
-            'recognisedAreaCodes' => PhoneNumber::recognisedAreaCodes(),
             'account' => $this->accountPrefill(),
         ]);
     }

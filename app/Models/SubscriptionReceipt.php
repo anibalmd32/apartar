@@ -9,6 +9,7 @@ use App\Domain\Money\Currency;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\ReferencesBank;
 use Database\Factories\SubscriptionReceiptFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,7 +45,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SubscriptionReceipt extends Model
 {
     /** @use HasFactory<SubscriptionReceiptFactory> */
-    use BelongsToOrganization, HasFactory;
+    use BelongsToOrganization, HasFactory, ReferencesBank;
 
     public const DIRECTORY = 'subscriptions';
 

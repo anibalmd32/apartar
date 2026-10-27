@@ -6,7 +6,9 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Organization\UpdateOrganizationData;
 use App\Rules\ValidDocumentNumber;
+use App\Rules\ValidVenezuelanPhone;
 use App\Support\DocumentNumber;
+use App\Support\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -24,7 +26,7 @@ final class UpdateOrganizationRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'document' => ['present', 'nullable', 'string', 'max:32', new ValidDocumentNumber],
-            'phone' => ['present', 'nullable', 'string', 'max:32'],
+            'phone' => ['present', 'nullable', 'string', 'max:32', new ValidVenezuelanPhone],
             'timezone' => ['required', 'string', 'max:64', 'timezone'],
             'brand_color' => ['present', 'nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'storefront_enabled' => ['required', 'boolean'],
@@ -62,7 +64,7 @@ final class UpdateOrganizationRequest extends FormRequest
             name: trim((string) $this->string('name')),
             slug: (string) $this->string('slug'),
             document: DocumentNumber::tryFromInput($this->filledStringOrNull('document'))?->formatted(),
-            phone: $this->filledStringOrNull('phone'),
+            phone: PhoneNumber::tryFromInput($this->filledStringOrNull('phone'))?->formatted(),
             timezone: (string) $this->string('timezone'),
             brandColor: $this->filledStringOrNull('brand_color'),
             storefrontEnabled: $this->boolean('storefront_enabled'),

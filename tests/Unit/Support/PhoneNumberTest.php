@@ -22,13 +22,17 @@ it('admite también el 58 sin más y el cero detrás del +58', function (string 
     expect(PhoneNumber::fromInput($raw)->value)->toBe('+584141234567');
 })->with(['584141234567', '+58 0414 1234567']);
 
-it('reconoce las siete operadoras móviles', function (string $prefix): void {
+it('reconoce los seis prefijos móviles', function (string $prefix): void {
     $phone = PhoneNumber::fromInput('0'.$prefix.'1234567');
 
     expect($phone->isMobile())->toBeTrue()
         ->and($phone->isRecognised())->toBeTrue()
         ->and($phone->areaCode())->toBe($prefix);
-})->with(['412', '414', '415', '416', '422', '424', '426']);
+})->with(['412', '414', '416', '422', '424', '426']);
+
+it('ya no trata el 0415 como móvil', function (): void {
+    expect(PhoneNumber::fromInput('04151234567')->isMobile())->toBeFalse();
+});
 
 it('acepta un fijo con código de área válido', function (string $raw, string $e164): void {
     $phone = PhoneNumber::fromInput($raw);

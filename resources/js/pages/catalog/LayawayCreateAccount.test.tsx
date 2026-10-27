@@ -84,7 +84,6 @@ function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
         plan: PLAN,
         quantity: 1,
         consent: { businessName: 'Ferretería Oriente' },
-        recognisedAreaCodes: ['412', '414', '416', '424', '426', '212'],
         account: null,
         ...overrides,
     };
@@ -93,7 +92,19 @@ function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
 }
 
 beforeEach(() => {
-    usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: BCV }, errors: {} } });
+    usePage.mockReturnValue({
+        props: {
+            catalogs: {
+                banks: [],
+                mobilePrefixes: [
+                    { id: 1, prefix: '0412', carrier: 'Digitel', logoUrl: null },
+                    { id: 2, prefix: '0414', carrier: 'Movistar', logoUrl: null },
+                ],
+            },
+            currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: BCV },
+            errors: {},
+        },
+    });
     vi.stubGlobal('route', fakeRoute);
 });
 
@@ -112,7 +123,7 @@ it('con cuenta precarga el nombre editable y el correo bloqueado, y deja documen
     expect(email).toHaveValue('maria@gmail.test');
     expect(email).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Cédula o RIF')).toHaveValue('');
-    expect(screen.getByLabelText('Teléfono')).toHaveValue('');
+    expect(screen.getByLabelText('Teléfono celular')).toHaveValue('');
 });
 
 it('sin cuenta deja los cuatro campos libres', () => {

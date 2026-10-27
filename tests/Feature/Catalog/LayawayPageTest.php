@@ -18,6 +18,7 @@ use App\Models\Subscription;
 use App\Models\UsageCounter;
 use App\Notifications\LayawayConfirmationNotification;
 use App\Providers\AppServiceProvider;
+use App\Rules\ValidVenezuelanPhone;
 use Carbon\CarbonImmutable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\DB;
@@ -91,7 +92,8 @@ final class LayawayPageTest extends TestCase
             ->where('plan.lastInstallmentAmount.usd', '$16,68')
             ->has('plan.installments', 3)
             ->where('consent.businessName', $this->organization->name)
-            ->where('recognisedAreaCodes', fn (\Illuminate\Support\Collection $codes): bool => $codes->contains('414') && $codes->contains('422'))
+            ->missing('recognisedAreaCodes')
+            ->has('catalogs.mobilePrefixes', 6)
             ->has('product.paymentAccounts', 1));
     }
 
@@ -168,11 +170,17 @@ final class LayawayPageTest extends TestCase
             ->where('layaway.hasEmail', false));
     }
 
-    public function test_an_unrecognised_prefix_does_not_block_the_layaway(): void
+    public function test_only_a_mobile_phone_from_the_catalog_is_accepted(): void
     {
-        $this->submit(['phone' => '0413-1234567'])->assertSessionHasNoErrors();
+        $this->submit(['phone' => '0413-1234567'])->assertSessionHasErrors(['phone' => ValidVenezuelanPhone::MOBILE_ONLY]);
+        $this->submit(['phone' => '0212-5551234'])->assertSessionHasErrors('phone');
+        $this->assertSame(0, DB::table('customers')->count());
 
-        $this->assertSame('+584131234567', DB::table('customers')->value('phone'));
+        $this->submit(['phone' => '04241234567'])->assertSessionHasNoErrors();
+
+        $customer = DB::table('customers')->first(['phone', 'mobile_prefix_id']);
+        $this->assertSame('+584241234567', $customer->phone);
+        $this->assertSame(DB::table('mobile_prefixes')->where('prefix', '0424')->value('id'), $customer->mobile_prefix_id);
     }
 
     /**

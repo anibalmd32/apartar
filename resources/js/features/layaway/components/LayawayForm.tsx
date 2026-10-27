@@ -1,10 +1,11 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 import { QuantityStepper } from '@/features/layaway/components/QuantityStepper';
 import { TermsConsentField } from '@/features/layaway/components/TermsConsentField';
 import { type LayawayForm as LayawayFormState } from '@/features/layaway/hooks/useLayawayForm';
-import { formatDocumentNumber, formatPhone } from '@/lib/identity-format';
+import { formatDocumentNumber } from '@/lib/identity-format';
 import { type LayawayConsentView } from '@/types/layaway';
 import { type FormEventHandler } from 'react';
 
@@ -59,20 +60,13 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
                 required
             />
 
-            <TextField
-                label="Teléfono"
+            <PhoneField
+                label="Teléfono celular"
                 name="phone"
-                type="tel"
-                inputMode="tel"
                 value={data.phone}
-                onChange={(event) => setData('phone', formatPhone(event.target.value))}
+                onChange={(value) => setData('phone', value)}
                 error={errors.phone}
-                hint={
-                    form.unrecognisedPrefix
-                        ? 'No reconocemos ese prefijo, ¿es correcto? Si lo es, sigue: tu apartado se guarda igual.'
-                        : 'Es el número con el que el negocio te contactará.'
-                }
-                autoComplete="tel"
+                hint="Es el número con el que el negocio te contactará."
                 required
             />
 

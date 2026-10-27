@@ -115,7 +115,8 @@ it('enseña las cuentas de cobro que llegan', () => {
     renderPage();
 
     const payments = screen.getByRole('region', { name: 'Formas de pago' });
-    expect(payments.textContent).toContain('Pago móvil · Banesco');
+    expect(payments.textContent).toContain('Pago móvil');
+    expect(payments.textContent).toContain('Banesco');
     expect(payments.textContent).toContain('0414-1234567');
     expect(payments.textContent).toContain('Ana Pérez · V-12.345.678');
 });

@@ -12,6 +12,7 @@ use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
+use App\Models\Bank;
 use App\Models\Layaway;
 use App\Models\PaymentAccount;
 use App\Rules\RealMimeType;
@@ -52,7 +53,7 @@ final class StoreReceiptRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:'.SubmitReceiptData::TEXT_MAX,
-                new UniqueReceiptFingerprint($requiresReference ? $this->nullableString('bank') : null, null),
+                new UniqueReceiptFingerprint($requiresReference ? Bank::canonicalName($this->nullableString('bank')) : null, null),
             ],
             'paidAt' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$min, 'before_or_equal:'.$max],
             'amount' => ['required', 'string', $this->positiveAmount()],
@@ -130,7 +131,7 @@ final class StoreReceiptRequest extends FormRequest
             layaway: $layaway,
             paymentAccount: $this->paymentAccount(),
             method: $method,
-            bank: $method->requiresReference() ? $this->nullableString('bank') : null,
+            bank: $method->requiresReference() ? Bank::canonicalName($this->nullableString('bank')) : null,
             reference: $method->requiresReference() ? $this->nullableString('reference') : null,
             paidAt: CarbonImmutable::createFromFormat('Y-m-d', (string) $this->string('paidAt'), $this->timezone())?->startOfDay()
                 ?? throw new InvalidArgumentException('La fecha de pago no tiene forma de fecha.'),

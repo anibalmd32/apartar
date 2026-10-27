@@ -85,7 +85,6 @@ function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
         plan: PLAN,
         quantity: 1,
         consent: { businessName: 'Ferretería Oriente' },
-        recognisedAreaCodes: ['412', '414', '416', '424', '426', '212'],
         account: null,
         ...overrides,
     };
@@ -96,7 +95,9 @@ function renderPage(overrides: Partial<LayawayCreateProps> = {}) {
 function fillRequired() {
     fireEvent.change(screen.getByLabelText('Nombre y apellido'), { target: { value: 'María González' } });
     fireEvent.change(screen.getByLabelText('Cédula o RIF'), { target: { value: '12345678' } });
-    fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '04141234567' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Prefijo' }));
+    fireEvent.click(screen.getByRole('option', { name: /0414/ }));
+    fireEvent.change(screen.getByLabelText('Teléfono celular'), { target: { value: '1234567' } });
     fireEvent.click(screen.getByRole('checkbox'));
 }
 
@@ -104,7 +105,19 @@ let visit: ReturnType<typeof vi.spyOn>;
 let reload: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-    usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: BCV }, errors: {} } });
+    usePage.mockReturnValue({
+        props: {
+            catalogs: {
+                banks: [],
+                mobilePrefixes: [
+                    { id: 1, prefix: '0412', carrier: 'Digitel', logoUrl: null },
+                    { id: 2, prefix: '0414', carrier: 'Movistar', logoUrl: null },
+                ],
+            },
+            currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: BCV },
+            errors: {},
+        },
+    });
     vi.stubGlobal('route', fakeRoute);
     visit = vi.spyOn(router, 'visit').mockImplementation(() => undefined);
     reload = vi.spyOn(router, 'reload').mockImplementation(() => undefined);
@@ -156,7 +169,7 @@ it('manda los campos con los nombres del contrato', () => {
         quantity: 1,
         fullName: 'María González',
         documentNumber: '12.345.678',
-        phone: '0414-1234567',
+        phone: '04141234567',
         email: '',
         termsAccepted: true,
     });
@@ -185,23 +198,12 @@ it('acota la cantidad al tope que viene del servidor', () => {
     expect(screen.getByLabelText('Cantidad')).toHaveValue(1);
 });
 
-it('avisa de un prefijo que no reconoce y deja apartar igual', () => {
+it('solo ofrece prefijos de celular, con su operadora', () => {
     renderPage();
-    fillRequired();
 
-    fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '04131234567' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Prefijo' }));
 
-    expect(screen.getByText(/No reconocemos ese prefijo, ¿es correcto\?/)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
-    expect(visit).toHaveBeenCalledTimes(1);
-});
-
-it('no avisa con un prefijo del censo', () => {
-    renderPage();
-    fillRequired();
-
-    expect(screen.queryByText(/No reconocemos ese prefijo/)).toBeNull();
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['0412Digitel', '0414Movistar']);
 });
 
 it('enlaza los documentos en pestaña nueva y dice que el compromiso es con el negocio', () => {

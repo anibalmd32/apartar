@@ -42,7 +42,6 @@ export interface LayawayCreateProps {
     readonly plan: LayawayPlanView | null;
     readonly quantity: number;
     readonly consent: LayawayConsentView;
-    readonly recognisedAreaCodes: readonly string[];
     readonly account: AccountPrefill | null;
 }
 

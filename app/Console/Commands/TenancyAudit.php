@@ -43,6 +43,8 @@ final class TenancyAudit extends Command
         'accounts' => 'Cuenta global del cliente final, anterior a cualquier organización.',
         'account_identities' => 'Identidades de acceso de una Account global: misma capa de plataforma que accounts ([05 §4] bloque 4).',
         'platform_settings' => 'Ajustes de la plataforma, no de un negocio.',
+        'banks' => 'Catálogo de bancos venezolanos, común a toda la plataforma.',
+        'mobile_prefixes' => 'Catálogo de prefijos de celular y su operadora, común a toda la plataforma.',
         'platform_activity_log' => 'Auditoría de los operadores; la organización afectada va en target_organization_id, sin scope.',
 
         'password_reset_tokens' => 'Tabla del framework, indexada por correo.',

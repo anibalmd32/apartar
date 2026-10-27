@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\ReferencesBank;
+use App\Models\Concerns\ReferencesMobilePrefix;
 use Database\Factories\PaymentAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +27,17 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentAccount extends Model
 {
     /** @use HasFactory<PaymentAccountFactory> */
-    use BelongsToOrganization, HasFactory;
+    use BelongsToOrganization, HasFactory, ReferencesBank, ReferencesMobilePrefix;
+
+    public function phoneColumn(): string
+    {
+        return 'identifier';
+    }
+
+    public function carriesMobilePhone(): bool
+    {
+        return $this->method === PaymentMethod::PagoMovil;
+    }
 
     /**
      * @var list<string>

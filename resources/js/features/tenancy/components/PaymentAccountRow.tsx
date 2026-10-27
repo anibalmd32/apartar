@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { BankMark } from '@/components/ui/bank-mark';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
@@ -59,7 +60,12 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-[15px] font-bold">{account.methodLabel}</span>
-                        {account.bank ? <span className="text-ink-3 text-[13px]">{account.bank}</span> : null}
+                        {account.bank ? (
+                            <span className="text-ink-3 flex items-center gap-1.5 text-[13px]">
+                                <BankMark bank={account.bank} logoUrl={account.bankLogoUrl} className="h-4" />
+                                {account.bank}
+                            </span>
+                        ) : null}
                         <Badge tone={account.isActive ? 'success' : 'neutral'}>{account.isActive ? 'Activa' : 'Desactivada'}</Badge>
                     </p>
                     <p className="text-[15px] font-semibold tracking-wide break-all">{account.identifier}</p>

@@ -1,3 +1,4 @@
+import { BankField } from '@/components/ui/bank-field';
 import { Button } from '@/components/ui/button';
 import { DateField } from '@/components/ui/date-field';
 import { SelectField } from '@/components/ui/select-field';
@@ -58,7 +59,7 @@ export function PayInvoiceForm({
             />
             {method?.requiresReference ? (
                 <>
-                    <TextField label="Banco" value={data.bank} onChange={(event) => setData('bank', event.target.value)} error={errors.bank} />
+                    <BankField label="Banco" value={data.bank} onChange={(value) => setData('bank', value)} error={errors.bank} />
                     <TextField
                         label="Referencia"
                         value={data.reference}

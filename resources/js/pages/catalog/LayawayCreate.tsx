@@ -11,11 +11,10 @@ import { cilBan } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { useEffect } from 'react';
 
-export default function LayawayCreate({ catalog, product, plan, quantity, consent, recognisedAreaCodes, account }: LayawayCreateProps) {
+export default function LayawayCreate({ catalog, product, plan, quantity, consent, account }: LayawayCreateProps) {
     const form = useLayawayForm({
         initialQuantity: quantity,
         maxQuantity: product.maxQuantity,
-        recognisedAreaCodes,
         storeUrl: route('catalog.layaway.store', { catalog: catalog.slug, product: product.slug }),
         prefill: account,
     });

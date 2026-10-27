@@ -1,4 +1,3 @@
-import { phoneAreaCode } from '@/lib/identity-format';
 import { type LayawayFormValues } from '@/types/layaway';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -8,12 +7,11 @@ export const PLAN_DEBOUNCE_MS = 300;
 interface UseLayawayFormOptions {
     initialQuantity: number;
     maxQuantity: number;
-    recognisedAreaCodes: readonly string[];
     storeUrl: string;
     prefill?: { readonly fullName: string; readonly email: string } | null;
 }
 
-export function useLayawayForm({ initialQuantity, maxQuantity, recognisedAreaCodes, storeUrl, prefill = null }: UseLayawayFormOptions) {
+export function useLayawayForm({ initialQuantity, maxQuantity, storeUrl, prefill = null }: UseLayawayFormOptions) {
     const [idempotencyKey] = useState(() => crypto.randomUUID());
 
     const form = useForm<LayawayFormValues>({
@@ -47,14 +45,11 @@ export function useLayawayForm({ initialQuantity, maxQuantity, recognisedAreaCod
         form.setData('quantity', Number.isFinite(value) ? Math.min(Math.max(Math.trunc(value), 1), Math.max(maxQuantity, 1)) : 1);
     };
 
-    const areaCode = phoneAreaCode(data.phone);
-    const unrecognisedPrefix = areaCode !== null && ['2', '4'].includes(areaCode.charAt(0)) && !recognisedAreaCodes.includes(areaCode);
-
     const submit = () => {
         form.post(storeUrl, { preserveScroll: true });
     };
 
-    return { ...form, setQuantity, unrecognisedPrefix, submit };
+    return { ...form, setQuantity, submit };
 }
 
 export type LayawayForm = ReturnType<typeof useLayawayForm>;
