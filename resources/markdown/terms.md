@@ -37,11 +37,11 @@ Para usar Apartar tienes que ser mayor de edad y tener capacidad para contratar.
 
 ## 6. Planes, facturación e impago
 
-1. **Todo negocio empieza en el plan Free,** sin pago ni datos de facturación. Los precios y los límites de cada plan están en [/precios](/precios).
+1. **Todo negocio empieza en el plan Gratis,** sin pago ni datos de facturación. Los precios y los límites de cada plan están en [/precios](/precios).
 2. **Subir de plan es inmediato** y abre un período de un mes con su factura, que vence ese mismo día. **Bajar** se aplica al terminar el período pagado. No hay prorrateo ni devoluciones.
 3. **Los planes se pagan por comprobante** a las cuentas de Apartar que aparecen en la pantalla de facturas, y lo revisamos a mano. Las facturas están en dólares; un pago en bolívares se convierte con la tasa del día de la aprobación. Para la primera factura hace falta el RIF del negocio.
 4. **La renovación se factura 7 días antes** del fin del período.
-5. **Si una factura vence,** hay 7 días de gracia en los que todo funciona. Después, el negocio queda **suspendido**: los catálogos dejan de verse y no se puede crear nada nuevo, pero se puede seguir cobrando y aprobando comprobantes. Pagar o bajar a Free levanta la suspensión.
+5. **Si una factura vence,** hay 7 días de gracia en los que todo funciona. Después, el negocio queda **suspendido**: los catálogos dejan de verse y no se puede crear nada nuevo, pero se puede seguir cobrando y aprobando comprobantes. Pagar o bajar al plan Gratis levanta la suspensión.
 6. **El impago de un negocio nunca perjudica a sus clientes.** Sus apartados, su portal, sus comprobantes, el chat y los recordatorios siguen funcionando.
 7. **Bajar de plan no borra nada.** Las funciones de pago se apagan y vuelven al subir. Siete días después de bajar, se despublican los catálogos que excedan el nuevo plan.
 

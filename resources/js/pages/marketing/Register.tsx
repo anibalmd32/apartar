@@ -77,7 +77,7 @@ export default function Register() {
                     <div className="flex w-full max-w-[440px] flex-col gap-4">
                         <header className="flex flex-col gap-4">
                             <h1 className="text-[28px] font-extrabold tracking-[-0.03em] lg:text-[32px]">Crea tu cuenta</h1>
-                            <p className="text-ink-2 text-[15px]">Empiezas en el plan Free, sin tarjeta y sin período de prueba que se acabe.</p>
+                            <p className="text-ink-2 text-[15px]">Empiezas en el plan Gratis, sin tarjeta y sin período de prueba que se acabe.</p>
                         </header>
 
                         {errors.organization_slug ? <Alert tone="warning">{errors.organization_slug}</Alert> : null}

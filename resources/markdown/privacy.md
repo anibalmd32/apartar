@@ -71,7 +71,7 @@ El aviso de cookies te deja elegir entre **Aceptar todo** y **Solo lo esencial**
 ## 8. Cuánto tiempo los guardamos
 
 - **Apartados, pagos, comprobantes, chat y auditoría:** mientras exista el negocio y también después de cerrarlo, porque son la constancia de lo que se pagó. Solo se borran definitivamente a petición, salvo lo que debamos conservar por ley o por un reclamo pendiente.
-- **Eventos de uso:** 30 días en el plan Free, 180 en Pro y 365 en Business. Después solo quedan totales mensuales sin datos de nadie.
+- **Eventos de uso:** 30 días en el plan Gratis, 180 en Pro y 365 en Negocio. Después solo quedan totales mensuales sin datos de nadie.
 - **Exportaciones a Excel:** se borran solas a los 7 días.
 - **Dispositivos para avisos:** se borran cuando el navegador los da de baja o tras 180 días sin poder entregarles nada.
 - **Seguimientos de catálogos:** se borran al dejar de seguirlos.

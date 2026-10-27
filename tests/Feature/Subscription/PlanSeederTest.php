@@ -23,7 +23,7 @@ final class PlanSeederTest extends TestCase
     {
         return [
             'free' => ['free', [
-                'name' => 'Free',
+                'name' => 'Gratis',
                 'position' => 1,
                 'max_users' => 1,
                 'max_catalogs' => 1,
@@ -45,7 +45,7 @@ final class PlanSeederTest extends TestCase
                 'max_payment_accounts' => 5,
             ]],
             'business' => ['business', [
-                'name' => 'Business',
+                'name' => 'Negocio',
                 'position' => 3,
                 'max_users' => 15,
                 'max_catalogs' => 50,

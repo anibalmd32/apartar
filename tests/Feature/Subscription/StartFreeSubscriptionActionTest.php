@@ -55,7 +55,7 @@ final class StartFreeSubscriptionActionTest extends TestCase
             Plan::query()->where('code', StartFreeSubscriptionAction::FREE_PLAN_CODE)->sole()->getKey(),
             $subscription->plan_id,
         );
-        $this->assertSame('Free', $subscription->plan->name);
+        $this->assertSame('Gratis', $subscription->plan->name);
     }
 
     public function test_it_subscribes_the_organization_it_was_given(): void

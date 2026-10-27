@@ -140,8 +140,8 @@ it('precarga lo que falta tras un pago parcial', () => {
     expect(screen.getByLabelText('Importe')).toHaveValue('5.00');
 });
 
-it('dice que en Free no hay facturas', () => {
+it('dice que en el plan Gratis no hay facturas', () => {
     render(<SubscriptionInvoices {...props([])} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('en Free no se factura nada');
+    expect(screen.getByRole('alert')).toHaveTextContent('en el plan Gratis no se factura nada');
 });

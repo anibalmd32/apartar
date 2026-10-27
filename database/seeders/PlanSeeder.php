@@ -28,7 +28,7 @@ class PlanSeeder extends Seeder
         return [
             [
                 'code' => 'free',
-                'name' => 'Free',
+                'name' => 'Gratis',
                 'price_cents' => 0,
                 'interval' => 'monthly',
                 'is_public' => true,
@@ -76,7 +76,7 @@ class PlanSeeder extends Seeder
             ],
             [
                 'code' => 'business',
-                'name' => 'Business',
+                'name' => 'Negocio',
                 'price_cents' => 3_900,
                 'interval' => 'monthly',
                 'is_public' => true,

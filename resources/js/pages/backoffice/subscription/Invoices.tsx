@@ -21,7 +21,7 @@ export default function SubscriptionInvoices({ invoices, methods, currencies, fi
             back={{ href: subscriptionUrl, label: 'Suscripción' }}
         >
             {invoices.length === 0 ? (
-                <Alert tone="info">Todavía no tienes facturas: en Free no se factura nada.</Alert>
+                <Alert tone="info">Todavía no tienes facturas: en el plan Gratis no se factura nada.</Alert>
             ) : (
                 <>
                     {open !== null ? (
