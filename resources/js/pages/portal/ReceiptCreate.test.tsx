@@ -114,10 +114,13 @@ it('acota la fecha del pago y arranca en hoy', () => {
     renderPage();
 
     const date = screen.getByLabelText('Fecha del pago');
-    expect(date).toHaveAttribute('type', 'date');
-    expect(date).toHaveAttribute('min', '2026-09-10');
-    expect(date).toHaveAttribute('max', '2026-10-05');
-    expect(date).toHaveValue('2026-10-05');
+    expect(date).toHaveTextContent('05/10/2026');
+    expect(document.querySelector('input[name="paidAt"]')).toHaveValue('2026-10-05');
+
+    fireEvent.click(date);
+
+    expect(screen.getByRole('gridcell', { name: / 5 de octubre de 2026/ })).toBeEnabled();
+    expect(screen.getByRole('gridcell', { name: / 6 de octubre de 2026/ })).toBeDisabled();
 });
 
 it('enseña el monto sugerido como ayuda', () => {

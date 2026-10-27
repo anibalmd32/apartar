@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { SectionCard } from '@/components/ui/section-card';
+import { shiftIsoDate, todayIso } from '@/lib/iso-date';
 import { type Method } from '@inertiajs/core';
 import { useForm, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -68,6 +70,7 @@ function ReasonForm({
 export function SubscriptionActions({ slug, plans, currentPlan, courtesy = null, invoiceable = false }: SubscriptionActionsProps) {
     const plan = useForm({ plan: currentPlan ?? '', reason: '' });
     const grant = useForm({ until: '', reason: '' });
+    const tomorrow = shiftIsoDate(todayIso(), 1);
     const base = `/plataforma/organizaciones/${slug}`;
 
     return (
@@ -115,13 +118,7 @@ export function SubscriptionActions({ slug, plans, currentPlan, courtesy = null,
                         }}
                     >
                         <h3 className="text-[13px] font-semibold">Conceder cortesía</h3>
-                        <input
-                            type="date"
-                            className="input w-full"
-                            aria-label="Hasta"
-                            value={grant.data.until}
-                            onChange={(event) => grant.setData('until', event.target.value)}
-                        />
+                        <DateInput ariaLabel="Hasta" min={tomorrow} value={grant.data.until} onChange={(value) => grant.setData('until', value)} />
                         <input
                             className="input w-full"
                             aria-label="Motivo de la cortesía"

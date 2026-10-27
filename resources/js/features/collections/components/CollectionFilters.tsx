@@ -4,7 +4,6 @@ import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { type CollectionFiltersState, type CollectionOptions } from '@/types/collections';
 import { cilSearch } from '@coreui/icons';
-import { type ChangeEvent } from 'react';
 
 interface CollectionFiltersProps {
     filters: CollectionFiltersState;
@@ -24,7 +23,7 @@ export const COLLECTION_FILTER_LABELS: Readonly<Record<keyof CollectionFiltersSt
 };
 
 export function CollectionFilters({ filters, options, onChange, counts = {} }: CollectionFiltersProps) {
-    const pick = (key: keyof CollectionFiltersState) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    const pick = (key: keyof CollectionFiltersState) => (event: { target: { value: string } }) =>
         onChange(key, event.target.value === '' ? null : event.target.value);
     const intersects = filters.preset !== null && (filters.from !== null || filters.to !== null);
 

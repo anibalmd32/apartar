@@ -1,5 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { CheckboxField } from '@/components/ui/checkbox-field';
+import { DateField } from '@/components/ui/date-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { StaleRateConfirmation, staleRatePending } from '@/features/receipts/components/StaleRateConfirmation';
@@ -134,14 +135,13 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
                         }
                     />
                 ) : null}
-                <TextField
+                <DateField
                     label="Fecha del pago"
                     name="paid_at"
-                    type="date"
                     min={options.paidAt.min}
                     max={options.paidAt.max}
                     value={form.data.paid_at}
-                    onChange={(event) => form.setData('paid_at', event.target.value)}
+                    onChange={(value) => form.setData('paid_at', value)}
                     error={form.errors.paid_at}
                 />
             </div>

@@ -1,8 +1,8 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
+import { DateField } from '@/components/ui/date-field';
 import { SectionCard } from '@/components/ui/section-card';
-import { TextField } from '@/components/ui/text-field';
 import { CatalogShareRow } from '@/features/catalogs/components/CatalogShareButtons';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
 import { ShareLinkField } from '@/features/catalogs/components/ShareLinkField';
@@ -83,12 +83,11 @@ export function CatalogPublishPanel({ catalog, blockers }: CatalogPublishPanelPr
                         hint="Sin esto sigue accesible: cualquiera con el enlace puede verlo, aunque no aparezca en tu vitrina."
                     />
 
-                    <TextField
+                    <DateField
                         label="Caduca el"
-                        type="date"
                         name="expires_at"
                         value={form.data.expires_at}
-                        onChange={(event) => form.setData('expires_at', event.target.value)}
+                        onChange={(value) => form.setData('expires_at', value)}
                         error={form.errors.expires_at}
                         hint="Opcional. El último día se vende entero; al día siguiente el enlace explica que la campaña terminó, sin que tengas que hacer nada."
                     />

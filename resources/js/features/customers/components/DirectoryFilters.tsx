@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { type CustomerDirectoryFilters, type CustomerIndexProps } from '@/types/customers';
 import { cilFilter, cilSearch } from '@coreui/icons';
-import { type ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 
 interface DirectoryFiltersProps {
     filters: CustomerDirectoryFilters;
@@ -33,7 +33,7 @@ const TOGGLES: readonly { key: 'overdue' | 'due_soon' | 'without_active'; label:
 ];
 
 export function DirectoryFilters({ filters, search, onSearch, options, onChange, onChangeMany, counts }: DirectoryFiltersProps) {
-    const pick = (key: keyof CustomerDirectoryFilters) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    const pick = (key: keyof CustomerDirectoryFilters) => (event: { target: { value: string } }) =>
         onChange(key, event.target.value === '' ? null : event.target.value);
 
     const [more, setMore] = useState(filters.from !== null || filters.to !== null || filters.catalog !== null);

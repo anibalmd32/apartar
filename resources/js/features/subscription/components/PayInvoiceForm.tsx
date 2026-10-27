@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DateField } from '@/components/ui/date-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { ReceiptDropzone } from '@/features/subscription/components/ReceiptDropzone';
@@ -66,13 +67,7 @@ export function PayInvoiceForm({
                     />
                 </>
             ) : null}
-            <TextField
-                label="Día del pago"
-                type="date"
-                value={data.paidAt}
-                onChange={(event) => setData('paidAt', event.target.value)}
-                error={errors.paidAt}
-            />
+            <DateField label="Día del pago" value={data.paidAt} onChange={(value) => setData('paidAt', value)} error={errors.paidAt} />
             <div className="grid grid-cols-2 gap-2">
                 <TextField
                     label="Importe"

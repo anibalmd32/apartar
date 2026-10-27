@@ -43,8 +43,8 @@ it('«Hoy» rellena desde y hasta, y el área no viaja', () => {
     fireEvent.change(screen.getByLabelText('Área'), { target: { value: 'catalog' } });
     fireEvent.change(screen.getByLabelText('Periodo'), { target: { value: 'today' } });
 
-    expect(screen.getByLabelText('Desde')).toHaveValue(today);
-    expect(screen.getByLabelText('Hasta')).toHaveValue(today);
+    expect(document.querySelector('input[name="from"]')).toHaveValue(today);
+    expect(document.querySelector('input[name="to"]')).toHaveValue(today);
 
     fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
 

@@ -1,3 +1,4 @@
+import { DateField } from '@/components/ui/date-field';
 import { TextField } from '@/components/ui/text-field';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { CurrencyChoice } from '@/features/receipts/components/ReceiptChoiceFields';
@@ -26,14 +27,13 @@ export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: Re
 
     return (
         <>
-            <TextField
+            <DateField
                 label="Fecha del pago"
                 name="paidAt"
-                type="date"
                 min={paidAt.min}
                 max={paidAt.max}
                 value={data.paidAt}
-                onChange={(event) => form.setData('paidAt', event.target.value)}
+                onChange={(value) => form.setData('paidAt', value)}
                 error={errors.paidAt}
                 required
             />

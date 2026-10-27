@@ -157,10 +157,12 @@ it('reprograma solo cuotas sin pagar, dentro de su ventana', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reprogramar la cuota 2' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Reprogramar la cuota 2' });
-    const date = within(dialog).getByLabelText('Nueva fecha');
+    fireEvent.click(within(dialog).getByLabelText('Nueva fecha'));
 
-    expect(date).toHaveAttribute('min', '2026-10-04');
-    expect(date).toHaveAttribute('max', '2026-10-25');
+    expect(screen.getByRole('gridcell', { name: / 3 de octubre de 2026/ })).toBeDisabled();
+    expect(screen.getByRole('gridcell', { name: / 4 de octubre de 2026/ })).toBeEnabled();
+    expect(screen.getByRole('gridcell', { name: / 25 de octubre de 2026/ })).toBeEnabled();
+    expect(screen.getByRole('gridcell', { name: / 26 de octubre de 2026/ })).toBeDisabled();
     expect(dialog).toHaveTextContent('entre el 4 de octubre de 2026 y el 25 de octubre de 2026');
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reprogramar' }));

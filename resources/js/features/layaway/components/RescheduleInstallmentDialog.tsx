@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { type BackofficeInstallmentRow, type RescheduleOption } from '@/types/layaway-backoffice';
 import { useForm } from '@inertiajs/react';
 import { useId, useState, type FormEventHandler } from 'react';
@@ -48,15 +49,14 @@ export function RescheduleInstallmentDialog({ installment, option }: RescheduleI
                             <label htmlFor={dateId} className="fieldset-legend">
                                 Nueva fecha
                             </label>
-                            <input
+                            <DateInput
                                 id={dateId}
-                                type="date"
-                                className="input w-full"
+                                required
                                 min={option.earliest}
-                                max={option.latest ?? undefined}
+                                max={option.latest}
                                 value={data.due_date}
-                                onChange={(event) => setData('due_date', event.target.value)}
-                                aria-invalid={errors.due_date ? true : undefined}
+                                onChange={(value) => setData('due_date', value)}
+                                invalid={Boolean(errors.due_date)}
                             />
                             {errors.due_date ? (
                                 <p role="alert" className="text-error text-xs">
