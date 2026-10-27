@@ -38,7 +38,7 @@ final class WithdrawCatalogsAction
             ->get(['id', 'slug']);
 
         if ($published->isNotEmpty()) {
-            Catalog::query()->whereKey($published->modelKeys())->update(['published_at' => null]);
+            Catalog::query()->whereKey($published->modelKeys())->update(['published_at' => null, 'withdrawn_at' => now()]);
         }
 
         $this->usage->recountLocked(UsageMetric::Catalogs);

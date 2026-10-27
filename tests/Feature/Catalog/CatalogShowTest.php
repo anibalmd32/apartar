@@ -98,15 +98,18 @@ final class CatalogShowTest extends TestCase
         $this->get('/c/no-existe-este-catalogo')->assertNotFound();
     }
 
-    public function test_a_suspended_organizations_catalog_is_not_found(): void
+    public function test_a_suspended_organizations_catalog_is_no_longer_available(): void
     {
+        $this->organization->update(['storefront_enabled' => true]);
         $catalog = $this->catalogWith(1);
         $this->visit($catalog)->assertOk();
 
         app(SuspendOrganizationAction::class)->handle($this->organization);
         $this->withoutOrganization();
 
-        $this->visit($catalog)->assertNotFound();
+        $this->visit($catalog)->assertStatus(410)->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('withdrawn', true)
+            ->where('storefrontUrl', null));
     }
 
     public function test_the_gone_page_links_the_storefront_only_when_it_is_on(): void

@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_listed
  * @property \Illuminate\Support\Carbon|null $published_at
  * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $withdrawn_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int|null $updated_by
  */
@@ -54,6 +55,7 @@ class Catalog extends Model
             'is_listed' => 'boolean',
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'withdrawn_at' => 'datetime',
         ];
     }
 

@@ -26,7 +26,15 @@ it('lleva la campaña, el negocio y su vitrina si la tiene, y nada más', functi
         'businessName' => 'Ferretería Oriente',
         'storefrontUrl' => null,
         'endedOn' => null,
+        'withdrawn' => false,
     ]);
+});
+
+it('un catálogo retirado dice que ya no está disponible', function (): void {
+    $exception = CatalogExpiredException::withdrawn(expiredCatalog());
+
+    expect($exception->toArray()['withdrawn'])->toBeTrue()
+        ->and($exception->getMessage())->toBe('El catálogo «Ofertas de septiembre» de Ferretería Oriente ya no está disponible.');
 });
 
 it('explica qué pasó en su mensaje', function (): void {

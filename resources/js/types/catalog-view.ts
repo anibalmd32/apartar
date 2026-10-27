@@ -95,6 +95,7 @@ export interface CatalogExpiredProps {
     readonly businessName: string;
     readonly storefrontUrl: string | null;
     readonly endedOn?: string | null;
+    readonly withdrawn?: boolean;
 }
 
 export interface StorefrontCatalog {

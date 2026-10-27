@@ -38,6 +38,36 @@ final class CatalogUnavailablePageTest extends TestCase
         $this->assertStringNotContainsString($draft->name, (string) $response->getContent());
     }
 
+    public function test_a_withdrawn_catalog_says_it_is_no_longer_available_and_names_its_business(): void
+    {
+        $organization = Organization::factory()->create(['name' => 'Ferretería Oriente', 'storefront_enabled' => true]);
+        $this->subscribeWithoutLimits($organization);
+        $catalog = $this->withinOrganization($organization, fn (): Catalog => Catalog::factory()->create([
+            'name' => 'Ofertas de octubre',
+            'withdrawn_at' => now(),
+        ]));
+        $this->withoutOrganization();
+
+        $this->get('/c/'.$catalog->slug)
+            ->assertStatus(410)
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('catalog/CatalogExpired')
+                ->where('withdrawn', true)
+                ->where('catalogName', 'Ofertas de octubre')
+                ->where('businessName', 'Ferretería Oriente')
+                ->whereNot('storefrontUrl', null));
+    }
+
+    public function test_a_withdrawn_catalog_also_closes_its_product_links(): void
+    {
+        $organization = Organization::factory()->create();
+        $this->subscribeWithoutLimits($organization);
+        $catalog = $this->withinOrganization($organization, fn (): Catalog => Catalog::factory()->create(['withdrawn_at' => now()]));
+        $this->withoutOrganization();
+
+        $this->get('/c/'.$catalog->slug.'/p/cualquiera')->assertStatus(410);
+    }
+
     public function test_other_404s_keep_the_default_response(): void
     {
         $response = $this->get('/esto/no/existe')->assertNotFound();

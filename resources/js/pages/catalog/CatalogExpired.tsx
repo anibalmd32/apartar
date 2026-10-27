@@ -4,10 +4,10 @@ import { type CatalogExpiredProps } from '@/types/catalog-view';
 import { cilArrowRight, cilCalendar, cilUser } from '@coreui/icons';
 import { Head } from '@inertiajs/react';
 
-export default function CatalogExpired({ catalogName, businessName, storefrontUrl, endedOn }: CatalogExpiredProps) {
+export default function CatalogExpired({ catalogName, businessName, storefrontUrl, endedOn, withdrawn = false }: CatalogExpiredProps) {
     return (
         <div className="bg-base-200 flex min-h-screen flex-col">
-            <Head title={`${catalogName} terminó`} />
+            <Head title={withdrawn ? `${catalogName} no está disponible` : `${catalogName} terminó`} />
 
             <header className="bg-base-100 border-line border-b">
                 <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:min-h-[72px] lg:px-20">
@@ -28,11 +28,22 @@ export default function CatalogExpired({ catalogName, businessName, storefrontUr
                     >
                         <Icon icon={cilCalendar} size={48} />
                     </span>
-                    <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-[34px]">Esta campaña ya terminó</h1>
+                    <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-[34px]">
+                        {withdrawn ? 'Este catálogo ya no está disponible' : 'Esta campaña ya terminó'}
+                    </h1>
                     <p className="text-ink-2 text-[15px] leading-relaxed">
-                        El enlace es correcto: «{catalogName}» de {businessName} estuvo disponible
-                        {endedOn ? ` hasta el ${endedOn.slice(8, 10)}/${endedOn.slice(5, 7)}` : ''}, pero su plazo terminó. Si te interesaba algo,
-                        pregúntale al negocio: puede que tenga una campaña nueva.
+                        {withdrawn ? (
+                            <>
+                                El enlace es correcto, pero {businessName} retiró «{catalogName}» por ahora. Si te interesaba algo, pregúntale al
+                                negocio: puede que lo vuelva a publicar.
+                            </>
+                        ) : (
+                            <>
+                                El enlace es correcto: «{catalogName}» de {businessName} estuvo disponible
+                                {endedOn ? ` hasta el ${endedOn.slice(8, 10)}/${endedOn.slice(5, 7)}` : ''}, pero su plazo terminó. Si te interesaba
+                                algo, pregúntale al negocio: puede que tenga una campaña nueva.
+                            </>
+                        )}
                     </p>
 
                     {storefrontUrl !== null ? (

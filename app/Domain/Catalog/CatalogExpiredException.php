@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalog;
 
+use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Catalog;
 use App\Support\CatalogShareLink;
 use RuntimeException;
@@ -17,9 +18,10 @@ final class CatalogExpiredException extends RuntimeException
         public readonly string $businessName,
         public readonly ?string $storefrontUrl = null,
         public readonly ?string $endedOn = null,
+        public readonly bool $withdrawn = false,
     ) {
         parent::__construct(sprintf(
-            'La campaña «%s» de %s ya terminó.',
+            $withdrawn ? 'El catálogo «%s» de %s ya no está disponible.' : 'La campaña «%s» de %s ya terminó.',
             $catalogName,
             $businessName,
         ));
@@ -37,8 +39,20 @@ final class CatalogExpiredException extends RuntimeException
         );
     }
 
+    public static function withdrawn(Catalog $catalog): self
+    {
+        $organization = $catalog->organization;
+
+        return new self(
+            $catalog->name,
+            $organization->name,
+            $organization->storefront_enabled && $organization->status === OrganizationStatus::Active ? CatalogShareLink::storefrontOf($organization->slug) : null,
+            withdrawn: true,
+        );
+    }
+
     /**
-     * @return array{catalogName: string, businessName: string, storefrontUrl: string|null, endedOn: string|null}
+     * @return array{catalogName: string, businessName: string, storefrontUrl: string|null, endedOn: string|null, withdrawn: bool}
      */
     public function toArray(): array
     {
@@ -47,6 +61,7 @@ final class CatalogExpiredException extends RuntimeException
             'businessName' => $this->businessName,
             'storefrontUrl' => $this->storefrontUrl,
             'endedOn' => $this->endedOn,
+            'withdrawn' => $this->withdrawn,
         ];
     }
 }

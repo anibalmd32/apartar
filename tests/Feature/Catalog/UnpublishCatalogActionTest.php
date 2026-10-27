@@ -52,6 +52,17 @@ final class UnpublishCatalogActionTest extends TestCase
         $this->assertNull($catalog->published_at);
         $this->assertSame($slug, $catalog->slug);
         $this->assertSame(1, $catalog->products()->count());
+        $this->assertNotNull($catalog->withdrawn_at, 'Sin la marca, su enlace diría «no encontrado» en vez de «ya no disponible».');
+    }
+
+    public function test_publishing_again_clears_the_withdrawal(): void
+    {
+        $catalog = $this->published();
+        $this->unpublish()->handle($catalog, $this->actor);
+
+        app(PublishCatalogAction::class)->handle($catalog->refresh(), new PublishCatalogData(isListed: true, expiresAt: null), $this->actor);
+
+        $this->assertNull($catalog->refresh()->withdrawn_at);
     }
 
     public function test_it_leaves_the_storefront_flag_and_the_expiration_alone(): void

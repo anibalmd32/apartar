@@ -57,7 +57,7 @@ final class UnpublishCatalogAction
                 'published_at' => $catalog->published_at?->toIso8601String(),
             ];
 
-            $catalog->editedBy($actor)->forceFill(['published_at' => null])->save();
+            $catalog->editedBy($actor)->forceFill(['published_at' => null, 'withdrawn_at' => now()])->save();
 
             if ($counted) {
                 $this->limits->adjust(UsageMetric::Catalogs, -1);

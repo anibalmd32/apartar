@@ -16,7 +16,9 @@ final class PublicCatalogAccess
     public static function ensureOpen(Catalog $catalog): void
     {
         match ($catalog->visibility()) {
-            CatalogVisibility::Draft => throw (new ModelNotFoundException)->setModel(Catalog::class, [$catalog->slug]),
+            CatalogVisibility::Draft => throw $catalog->withdrawn_at !== null
+                ? CatalogExpiredException::withdrawn($catalog)
+                : (new ModelNotFoundException)->setModel(Catalog::class, [$catalog->slug]),
             CatalogVisibility::Expired => throw CatalogExpiredException::of($catalog),
             CatalogVisibility::Listed, CatalogVisibility::Unlisted => null,
         };

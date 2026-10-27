@@ -143,6 +143,7 @@ final class PublishCatalogAction
                 'is_listed' => $data->isListed,
                 'expires_at' => $data->expiresAt,
                 'published_at' => $catalog->published_at ?? now(),
+                'withdrawn_at' => null,
             ])->save();
 
             $after = $this->snapshotOf($catalog);
