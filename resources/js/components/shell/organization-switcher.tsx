@@ -3,13 +3,20 @@ import { menuItemClass } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { type TeamOrganization } from '@/types/backoffice';
-import { cilCheckAlt, cilChevronBottom } from '@coreui/icons';
+import { cilCheckAlt, cilChevronBottom, cilPlus } from '@coreui/icons';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 const ROLES = { owner: 'Dueño', member: 'Equipo' } as const;
 
-export function OrganizationSwitcher({ name, detail, organizations }: { name: string; detail: string; organizations: readonly TeamOrganization[] }) {
+interface OrganizationSwitcherProps {
+    name: string;
+    detail: string;
+    organizations: readonly TeamOrganization[];
+    foundUrl?: string | null;
+}
+
+export function OrganizationSwitcher({ name, detail, organizations, foundUrl = null }: OrganizationSwitcherProps) {
     const card = (
         <>
             <Avatar name={name} size={32} tone="accent" />
@@ -20,7 +27,7 @@ export function OrganizationSwitcher({ name, detail, organizations }: { name: st
         </>
     );
 
-    if (organizations.length < 2) {
+    if (organizations.length < 2 && foundUrl === null) {
         return <div className="border-line bg-base-100 flex items-center gap-2.5 rounded-xl border p-2.5">{card}</div>;
     }
 
@@ -37,7 +44,7 @@ export function OrganizationSwitcher({ name, detail, organizations }: { name: st
                 anchor="bottom start"
                 className="bg-base-100 border-line shadow-pop z-50 mt-2 w-[228px] rounded-xl border p-1.5 focus:outline-none"
             >
-                <p className="text-eyebrow text-ink-3 px-2.5 pt-2 pb-1">Tus negocios</p>
+                {organizations.length > 0 ? <p className="text-eyebrow text-ink-3 px-2.5 pt-2 pb-1">Tus negocios</p> : null}
                 {organizations.map((organization) => (
                     <MenuItem key={organization.slug}>
                         <button
@@ -54,6 +61,14 @@ export function OrganizationSwitcher({ name, detail, organizations }: { name: st
                         </button>
                     </MenuItem>
                 ))}
+                {foundUrl !== null ? (
+                    <MenuItem>
+                        <Link href={foundUrl} className={cn(menuItemClass, organizations.length > 0 && 'border-line mt-1 border-t pt-2')}>
+                            <Icon icon={cilPlus} size={16} className="text-primary" />
+                            <span className="flex-1">Crear mi negocio</span>
+                        </Link>
+                    </MenuItem>
+                ) : null}
             </MenuItems>
         </Menu>
     );

@@ -78,6 +78,7 @@ export interface AuthenticatedTeamMember {
     readonly supportAccess?: readonly { readonly operator: string; readonly reason: string; readonly expiresAt: string }[];
     readonly organization: OrganizationSummary;
     readonly organizations?: readonly TeamOrganization[];
+    readonly foundOrganizationUrl?: string | null;
 }
 
 export interface TeamMember {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth;
 
+use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,6 +44,25 @@ final class TeamMemberships
     public function accepted(string $email, int $exceptOrganizationId): ?User
     {
         return $this->usable($email)->where('organization_id', '!=', $exceptOrganizationId)->orderBy('id')->first();
+    }
+
+    public function ownedCount(string $email): int
+    {
+        return User::withoutTenantScope()
+            ->where('email', mb_strtolower(trim($email)))
+            ->where('role', OrganizationRole::Owner->value)
+            ->whereHas('organization', fn (Builder $organizations) => $organizations->where('status', '!=', OrganizationStatus::Closed->value))
+            ->count();
+    }
+
+    public function lockPerson(string $email): void
+    {
+        User::withoutTenantScope()->where('email', mb_strtolower(trim($email)))->lockForUpdate()->get(['id']);
+    }
+
+    public function mayFound(string $email): bool
+    {
+        return $this->ownedCount($email) < (int) config('platform.max_owned_organizations');
     }
 
     public function syncProfile(User $user, string $previousEmail): void

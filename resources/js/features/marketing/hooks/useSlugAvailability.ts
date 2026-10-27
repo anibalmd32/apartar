@@ -7,7 +7,7 @@ export type SlugAvailability =
     | { readonly state: 'free'; readonly slug: string }
     | { readonly state: 'taken'; readonly slug: string; readonly suggestion: string | null };
 
-export function useSlugAvailability(slug: string): SlugAvailability {
+export function useSlugAvailability(slug: string, endpoint: string = route('register.slug')): SlugAvailability {
     const [result, setResult] = useState<SlugAvailability>({ state: 'idle' });
     const term = slug.trim();
 
@@ -18,7 +18,7 @@ export function useSlugAvailability(slug: string): SlugAvailability {
 
         const timer = window.setTimeout(() => {
             void getJson<{ slug: string; available: boolean; suggestion: string | null }>(
-                `${route('register.slug')}?${new URLSearchParams({ slug: term }).toString()}`,
+                `${endpoint}?${new URLSearchParams({ slug: term }).toString()}`,
             )
                 .then((body) =>
                     setResult(
@@ -33,7 +33,7 @@ export function useSlugAvailability(slug: string): SlugAvailability {
         }, FILTER_DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);
-    }, [term]);
+    }, [term, endpoint]);
 
     return term === '' ? { state: 'idle' } : result;
 }

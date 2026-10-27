@@ -183,6 +183,7 @@ class HandleInertiaRequests extends Middleware
             'unreadChats' => fn (): ?int => $this->unreadChats($user),
             'supportAccess' => fn (): array => $this->supportAccess($user),
             'organizations' => fn (): array => $this->organizationsOf($user),
+            'foundOrganizationUrl' => fn (): ?string => app(TeamMemberships::class)->mayFound($user->email) ? route('organizations.create') : null,
             'organization' => [
                 'id' => (int) $organization->getKey(),
                 'name' => $organization->name,

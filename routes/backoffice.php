@@ -23,6 +23,7 @@ use App\Http\Controllers\Backoffice\LayawayController;
 use App\Http\Controllers\Backoffice\ManualPaymentController;
 use App\Http\Controllers\Backoffice\ManualPushController;
 use App\Http\Controllers\Backoffice\OrganizationClosureController;
+use App\Http\Controllers\Backoffice\OrganizationFoundingController;
 use App\Http\Controllers\Backoffice\OrganizationSwitchController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
@@ -62,6 +63,18 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('negocios/{organization}/entrar', OrganizationSwitchController::class)
                 ->middleware(['during-suspension', 'throttle:30,1'])
                 ->name('organizations.switch');
+
+            Route::get('negocios/nuevo', [OrganizationFoundingController::class, 'create'])
+                ->middleware('during-suspension')
+                ->name('organizations.create');
+
+            Route::get('negocios/enlace', [OrganizationFoundingController::class, 'slug'])
+                ->middleware(['during-suspension', 'throttle:registro-enlace'])
+                ->name('organizations.slug');
+
+            Route::post('negocios', [OrganizationFoundingController::class, 'store'])
+                ->middleware(['during-suspension', 'throttle:registro'])
+                ->name('organizations.store');
 
             Route::get('buscar', GlobalSearchController::class)
                 ->middleware(['during-suspension', 'throttle:60,1'])

@@ -66,7 +66,12 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
     const logout = () => router.post('/backoffice/logout');
 
     const organizationCard = (
-        <OrganizationSwitcher name={organization?.name ?? 'Apartar'} detail={orgDetail} organizations={teamMember?.organizations ?? []} />
+        <OrganizationSwitcher
+            name={organization?.name ?? 'Apartar'}
+            detail={orgDetail}
+            organizations={teamMember?.organizations ?? []}
+            foundUrl={teamMember?.foundOrganizationUrl ?? null}
+        />
     );
 
     const userMenu = teamMember ? (

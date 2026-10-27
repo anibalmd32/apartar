@@ -9,6 +9,8 @@ return [
         'password' => env('PLATFORM_ADMIN_PASSWORD'),
     ],
 
+    'max_owned_organizations' => (int) env('PLATFORM_MAX_OWNED_ORGANIZATIONS', 1),
+
     'billing_accounts' => [
         ['method' => 'Pago móvil · '.env('PLATFORM_PAGO_MOVIL_BANK', ''), 'detail' => env('PLATFORM_PAGO_MOVIL_DETAIL')],
         ['method' => 'Zelle', 'detail' => env('PLATFORM_ZELLE_EMAIL')],

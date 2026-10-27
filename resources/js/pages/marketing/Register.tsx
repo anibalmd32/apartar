@@ -3,12 +3,11 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { TextField } from '@/components/ui/text-field';
+import { OrganizationIdentityFields } from '@/features/marketing/components/OrganizationIdentityFields';
 import { RegisterBrandPanel } from '@/features/marketing/components/RegisterBrandPanel';
-import { useSlugAvailability } from '@/features/marketing/hooks/useSlugAvailability';
 import { PasswordStrength } from '@/layouts/auth/password-strength';
-import { suggestSlug } from '@/lib/slug';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { type FormEventHandler, useState } from 'react';
+import { type FormEventHandler } from 'react';
 
 interface RegisterForm {
     [key: string]: string;
@@ -31,22 +30,6 @@ const EMPTY_FORM: RegisterForm = {
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({ ...EMPTY_FORM });
-
-    const [slugEdited, setSlugEdited] = useState(false);
-    const availability = useSlugAvailability(data.organization_slug);
-
-    const changeName = (name: string) => {
-        setData((previous) => ({
-            ...previous,
-            organization_name: name,
-            organization_slug: suggestSlug(name, previous.organization_slug, slugEdited),
-        }));
-    };
-
-    const changeSlug = (slug: string) => {
-        setSlugEdited(true);
-        setData('organization_slug', slug);
-    };
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -83,49 +66,10 @@ export default function Register() {
                         {errors.organization_slug ? <Alert tone="warning">{errors.organization_slug}</Alert> : null}
 
                         <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-                            <TextField
-                                label="Nombre de tu negocio"
-                                name="organization_name"
-                                value={data.organization_name}
-                                onChange={(event) => changeName(event.target.value)}
-                                error={errors.organization_name}
-                                autoComplete="organization"
-                                autoFocus
-                                required
-                            />
-
-                            <TextField
-                                label="Enlace de tu catálogo"
-                                name="organization_slug"
-                                prefix="apartar.store/"
-                                value={data.organization_slug}
-                                onChange={(event) => changeSlug(event.target.value)}
-                                error={errors.organization_slug}
-                                hint={
-                                    availability.state === 'free' ? (
-                                        <span className="text-success font-semibold">¡Disponible!</span>
-                                    ) : availability.state === 'taken' ? (
-                                        <span className="text-warning">
-                                            Ya está en uso.
-                                            {availability.suggestion !== null ? (
-                                                <>
-                                                    {' '}
-                                                    <button
-                                                        type="button"
-                                                        className="text-primary-ink cursor-pointer font-semibold underline"
-                                                        onClick={() => changeSlug(availability.suggestion ?? '')}
-                                                    >
-                                                        Usar {availability.suggestion}
-                                                    </button>
-                                                </>
-                                            ) : null}
-                                        </span>
-                                    ) : (
-                                        'Lo compartes por WhatsApp. Puedes cambiarlo mientras no publiques un catálogo.'
-                                    )
-                                }
-                                inputMode="url"
-                                required
+                            <OrganizationIdentityFields
+                                value={{ organization_name: data.organization_name, organization_slug: data.organization_slug }}
+                                onChange={(identity) => setData((previous) => ({ ...previous, ...identity }))}
+                                errors={errors}
                             />
 
                             <TextField
