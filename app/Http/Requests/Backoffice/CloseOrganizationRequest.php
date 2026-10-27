@@ -21,6 +21,7 @@ final class CloseOrganizationRequest extends FormRequest
     {
         return [
             'confirmed' => ['accepted'],
+            'password' => ['required', 'string', 'current_password'],
         ];
     }
 
@@ -31,6 +32,8 @@ final class CloseOrganizationRequest extends FormRequest
     {
         return [
             'confirmed.accepted' => 'Confirma que quieres cerrar el negocio.',
+            'password.required' => 'Escribe tu contraseña para cerrar el negocio.',
+            'password.current_password' => 'La contraseña no es correcta.',
         ];
     }
 }

@@ -1,3 +1,4 @@
+import { IconTextField } from '@/components/ui/icon-text-field';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 
@@ -6,14 +7,14 @@ interface CloseOrganizationCardProps {
 }
 
 export function CloseOrganizationCard({ closeUrl }: CloseOrganizationCardProps) {
-    const form = useForm<{ confirmed: boolean }>({ confirmed: false });
+    const form = useForm<{ confirmed: boolean; password: string }>({ confirmed: false, password: '' });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-        form.post(closeUrl, { preserveScroll: true });
+        form.post(closeUrl, { preserveScroll: true, onFinish: () => form.reset('password') });
     };
 
-    const errors = form.errors as Partial<Record<'close' | 'confirmed', string>>;
+    const errors = form.errors as Partial<Record<'close' | 'confirmed' | 'password', string>>;
 
     return (
         <section className="bg-error-soft border-error/25 rounded-2xl border" aria-labelledby="close-organization">
@@ -45,8 +46,26 @@ export function CloseOrganizationCard({ closeUrl }: CloseOrganizationCardProps) 
 
                 {errors.confirmed !== undefined ? <p className="text-error text-sm">{errors.confirmed}</p> : null}
 
+                <div className="max-w-xs">
+                    <IconTextField
+                        label="Tu contraseña"
+                        name="password"
+                        type="password"
+                        revealable
+                        value={form.data.password}
+                        onChange={(event) => form.setData('password', event.target.value)}
+                        error={errors.password}
+                        autoComplete="current-password"
+                        required
+                    />
+                </div>
+
                 <div>
-                    <button type="submit" className="btn btn-error btn-sm" disabled={!form.data.confirmed || form.processing}>
+                    <button
+                        type="submit"
+                        className="btn btn-error btn-sm"
+                        disabled={!form.data.confirmed || form.data.password === '' || form.processing}
+                    >
                         Cerrar el negocio
                     </button>
                 </div>

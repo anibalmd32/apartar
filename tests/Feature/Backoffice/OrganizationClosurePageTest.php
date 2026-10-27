@@ -39,7 +39,7 @@ final class OrganizationClosurePageTest extends TestCase
     public function test_the_owner_closes_and_is_taken_out(): void
     {
         $this->actingAs($this->owner)
-            ->post(route('organization.close'), ['confirmed' => true])
+            ->post(route('organization.close'), ['confirmed' => true, 'password' => 'password'])
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('dashboard'));
 
@@ -58,7 +58,7 @@ final class OrganizationClosurePageTest extends TestCase
         $this->withoutOrganization();
 
         $this->actingAs($this->owner)
-            ->postJson(route('organization.close'), ['confirmed' => true])
+            ->postJson(route('organization.close'), ['confirmed' => true, 'password' => 'password'])
             ->assertUnprocessable()
             ->assertJsonPath('errors.close.0', fn (string $message): bool => str_contains($message, $layaway->code));
 
@@ -68,8 +68,21 @@ final class OrganizationClosurePageTest extends TestCase
     public function test_it_needs_the_confirmation(): void
     {
         $this->actingAs($this->owner)
-            ->post(route('organization.close'), ['confirmed' => false])
+            ->post(route('organization.close'), ['confirmed' => false, 'password' => 'password'])
             ->assertSessionHasErrors(['confirmed' => 'Confirma que quieres cerrar el negocio.']);
+
+        $this->assertSame(OrganizationStatus::Active, $this->organization->fresh()?->status);
+    }
+
+    public function test_it_needs_the_owners_password(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('organization.close'), ['confirmed' => true])
+            ->assertSessionHasErrors(['password' => 'Escribe tu contraseña para cerrar el negocio.']);
+
+        $this->actingAs($this->owner)
+            ->post(route('organization.close'), ['confirmed' => true, 'password' => 'otra-contraseña'])
+            ->assertSessionHasErrors(['password' => 'La contraseña no es correcta.']);
 
         $this->assertSame(OrganizationStatus::Active, $this->organization->fresh()?->status);
     }
@@ -79,7 +92,7 @@ final class OrganizationClosurePageTest extends TestCase
         $member = $this->withinOrganization($this->organization, fn (): User => User::factory()->create());
         $this->withoutOrganization();
 
-        $this->actingAs($member)->post(route('organization.close'), ['confirmed' => true])->assertForbidden();
+        $this->actingAs($member)->post(route('organization.close'), ['confirmed' => true, 'password' => 'password'])->assertForbidden();
 
         $this->assertSame(OrganizationStatus::Active, $this->organization->fresh()?->status);
     }
@@ -89,7 +102,7 @@ final class OrganizationClosurePageTest extends TestCase
         $this->organization->forceFill(['status' => OrganizationStatus::Suspended, 'suspended_at' => now()])->save();
 
         $this->actingAs($this->owner)
-            ->post(route('organization.close'), ['confirmed' => true])
+            ->post(route('organization.close'), ['confirmed' => true, 'password' => 'password'])
             ->assertRedirect(route('dashboard'));
 
         $this->assertSame(OrganizationStatus::Closed, $this->organization->fresh()?->status);
