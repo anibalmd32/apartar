@@ -74,7 +74,7 @@ final class IssueManualInvoiceAction
                     $operator,
                 );
             } catch (OrganizationDocumentRequiredException) {
-                throw new InvalidArgumentException('El negocio no tiene RIF y es su primera factura: pídele que lo complete.');
+                throw new InvalidArgumentException('El negocio no tiene RIF ni cédula del dueño y es su primera factura: pídele que lo complete.');
             }
         }));
 

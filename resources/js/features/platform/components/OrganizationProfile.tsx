@@ -14,7 +14,7 @@ export function OrganizationProfile({ profile }: { profile: OrganizationProfileD
         ['Dueño/a', profile.ownerName],
         ['Correo', profile.ownerEmail],
         ['Teléfono', profile.phone],
-        ['RIF', profile.document],
+        ['RIF o cédula', profile.document],
         ['Vitrina', profile.storefrontUrl],
         ['Zona horaria', profile.timezone],
     ];

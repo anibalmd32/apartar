@@ -172,6 +172,23 @@ final class ChangePlanPageTest extends TestCase
         $response->assertRedirect(route('subscription.invoices.index', ['pagar' => $invoice->getKey()]));
     }
 
+    public function test_a_seller_without_rif_upgrades_with_the_owners_id_card(): void
+    {
+        Plan::query()->where('code', 'pro')->update(['price_cents' => 1_500]);
+        $this->organization->forceFill(['document' => null])->save();
+
+        $this->actingAs($this->owner)
+            ->post('/backoffice/suscripcion/cambiar', ['plan' => 'pro', 'document' => 'Q-123'])
+            ->assertSessionHasErrors('document');
+        $this->assertNull($this->organization->refresh()->document);
+
+        $this->actingAs($this->owner)
+            ->post('/backoffice/suscripcion/cambiar', ['plan' => 'pro', 'document' => '12.345.678'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('V-12.345.678', $this->organization->refresh()->document);
+    }
+
     public function test_changing_the_plan_survives_the_suspension(): void
     {
         $this->organization->forceFill(['status' => OrganizationStatus::Suspended])->save();

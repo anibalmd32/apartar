@@ -72,11 +72,12 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                 />
 
                 <TextField
-                    label="RIF"
+                    label="RIF o cédula"
                     value={data.document}
                     onChange={(event) => setData('document', event.target.value)}
                     error={errors.document}
-                    hint="Hace falta para emitir tu primera factura de suscripción."
+                    placeholder="J-41234567-8 o V-12345678"
+                    hint="El RIF del negocio o, si vendes por tu cuenta y no tienes, tu cédula. Hace falta para tu primera factura de suscripción."
                 />
 
                 <TextField

@@ -189,7 +189,7 @@ it('subir a un plan de pago pasa por el modal con la factura y el RIF', () => {
     const confirm = screen.getByRole('button', { name: 'Confirmar y ver factura' });
     expect(confirm).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('RIF del negocio'), { target: { value: 'J-41234567-8' } });
+    fireEvent.change(screen.getByLabelText('RIF o cédula'), { target: { value: 'J-41234567-8' } });
     fireEvent.click(confirm);
 
     expect(post).toHaveBeenCalledWith(

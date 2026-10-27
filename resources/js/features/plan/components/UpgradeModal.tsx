@@ -89,12 +89,12 @@ export function UpgradeModal({
 
             {needsDocument ? (
                 <TextField
-                    label="RIF del negocio"
+                    label="RIF o cédula"
                     value={data.document}
                     onChange={(event) => setData('document', event.target.value)}
                     error={errors.document ?? errors.plan}
-                    placeholder="J-41234567-8"
-                    hint="Para facturar. Lo pedimos una sola vez, antes de tu primera factura."
+                    placeholder="J-41234567-8 o V-12345678"
+                    hint="El RIF del negocio o, si no tienes, tu cédula. Lo pedimos una sola vez, antes de tu primera factura."
                 />
             ) : errors.plan ? (
                 <p className="text-error text-sm">{errors.plan}</p>

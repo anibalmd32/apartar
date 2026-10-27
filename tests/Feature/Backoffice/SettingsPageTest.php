@@ -183,6 +183,21 @@ final class SettingsPageTest extends TestCase
         $this->assertSame('mi-negocio-nuevo', $this->organization->refresh()->slug);
     }
 
+    public function test_the_document_takes_a_rif_or_the_owners_id_card_and_is_stored_formatted(): void
+    {
+        $owner = $this->owner();
+
+        foreach (['j412345678' => 'J-41234567-8', 'e 81.234.567' => 'E-81.234.567', '' => null] as $typed => $stored) {
+            $this->actingAs($owner)->put('/backoffice/ajustes/identidad', $this->identityPayload(['document' => $typed]))->assertSessionHasNoErrors();
+            $this->assertSame($stored, $this->organization->refresh()->document, (string) $typed);
+        }
+
+        $this->actingAs($owner)
+            ->putJson('/backoffice/ajustes/identidad', $this->identityPayload(['document' => 'X-1234']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('document');
+    }
+
     public function test_settings_do_not_survive_a_suspension(): void
     {
         $owner = $this->owner();

@@ -10,7 +10,7 @@ final class OrganizationDocumentRequiredException extends RuntimeException
 {
     public const STATUS = 422;
 
-    public const MESSAGE = 'Para emitir tu primera factura necesitamos el RIF del negocio. Añádelo en Ajustes y vuelve a intentarlo.';
+    public const MESSAGE = 'Para emitir tu primera factura necesitamos el RIF del negocio o, si no tiene, la cédula del dueño. Añádelo en Ajustes y vuelve a intentarlo.';
 
     public function __construct()
     {

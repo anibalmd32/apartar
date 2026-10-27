@@ -6,6 +6,8 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Domain\Subscription\LimitEnforcer;
 use App\Models\Plan;
+use App\Rules\ValidDocumentNumber;
+use App\Support\DocumentNumber;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -24,7 +26,7 @@ final class ChangePlanRequest extends FormRequest
                 fn (Builder $query) => $query->where('is_public', true)->orWhere('code', $current),
             )],
             'confirmed' => ['sometimes', 'boolean'],
-            'document' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'document' => ['sometimes', 'nullable', 'string', 'max:32', new ValidDocumentNumber],
         ];
     }
 
@@ -51,8 +53,6 @@ final class ChangePlanRequest extends FormRequest
 
     public function document(): ?string
     {
-        $document = trim((string) $this->string('document'));
-
-        return $document === '' ? null : $document;
+        return DocumentNumber::tryFromInput(trim((string) $this->string('document')))?->formatted();
     }
 }
