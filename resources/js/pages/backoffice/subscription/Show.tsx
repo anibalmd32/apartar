@@ -98,7 +98,7 @@ export default function SubscriptionShow({
                         <h2 id="plan-options" className="text-h2">
                             Cambiar de plan
                         </h2>
-                        <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] items-stretch gap-4">
                             {plans.map((option) => (
                                 <PlanOptionCard
                                     key={option.code}
