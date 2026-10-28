@@ -5,7 +5,12 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const { useForm, post, setData } = vi.hoisted(() => ({ useForm: vi.fn(), post: vi.fn(), setData: vi.fn() }));
 
-vi.mock('@inertiajs/react', async () => ({ useForm, Head: () => null, Link: (await import('@/test/fakes')).FakeLink }));
+vi.mock('@inertiajs/react', async () => ({
+    useForm,
+    usePage: () => ({ props: {} }),
+    Head: () => null,
+    Link: (await import('@/test/fakes')).FakeLink,
+}));
 
 const GOOGLE = '/cuenta/google/redirect?luego=%2Fmi-cuenta';
 
@@ -27,7 +32,7 @@ it('pide la cédula y el código, y envía al acceso por código', () => {
     fireEvent.change(screen.getByLabelText('Código de apartado'), { target: { value: 'ap-7k3m9qrt' } });
     fireEvent.click(screen.getByRole('button', { name: 'Ver mi apartado' }));
 
-    expect(setData).toHaveBeenCalledWith('document', 'V-12.345.678');
+    expect(setData).toHaveBeenCalledWith('document', 'V12345678');
     expect(setData).toHaveBeenCalledWith('code', 'ap-7k3m9qrt');
     expect(post).toHaveBeenCalledWith('/mi-cuenta/acceso/codigo');
 });

@@ -27,7 +27,7 @@ export function PaymentAccountList({ accounts, businessName }: PaymentAccountLis
                             {account.bank !== null ? (
                                 <>
                                     <span aria-hidden="true">·</span>
-                                    <BankMark bank={account.bank} logoUrl={account.bankLogoUrl} className="h-4" />
+                                    <BankMark bank={account.bank} logoUrl={account.bankLogoUrl} />
                                     <span>{account.bank}</span>
                                 </>
                             ) : null}

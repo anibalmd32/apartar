@@ -7,6 +7,7 @@ namespace App\Http\Requests\Backoffice;
 use App\Actions\Organization\UpsertPaymentAccountData;
 use App\Domain\Payment\PaymentMethod;
 use App\Models\Bank;
+use App\Rules\ValidDocumentNumber;
 use App\Rules\ValidPaymentIdentifier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
@@ -23,7 +24,7 @@ final class UpsertPaymentAccountRequest extends FormRequest
             'bank' => ['nullable', 'string', 'max:100'],
 
             'holder_name' => ['required', 'string', 'max:255'],
-            'holder_document' => ['required', 'string', 'max:32'],
+            'holder_document' => ['required', 'string', 'max:32', new ValidDocumentNumber],
 
             'identifier' => $this->identifierRules(),
 

@@ -8,6 +8,7 @@ use App\Domain\Payment\PaymentMethod;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Bank;
 use App\Models\Customer;
+use App\Models\DocumentPrefix;
 use App\Models\MobilePrefix;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
@@ -25,7 +26,8 @@ final class VenezuelanCatalogsTest extends TestCase
         $this->assertSame(33, Bank::query()->count());
         $this->assertSame(['0412', '0414', '0416', '0422', '0424', '0426'], MobilePrefix::query()->orderBy('prefix')->pluck('prefix')->all());
         $this->assertSame('Banesco', Bank::query()->where('code', '0134')->value('name'));
-        $this->assertSame(7, Bank::query()->whereNull('logo_path')->count());
+        $this->assertSame(0, Bank::query()->whereNull('logo_path')->count());
+        $this->assertSame(['V', 'E', 'J'], DocumentPrefix::query()->orderBy('position')->pluck('code')->all());
 
         $paths = [...Bank::query()->whereNotNull('logo_path')->pluck('logo_path'), ...MobilePrefix::query()->pluck('logo_path')];
 
@@ -97,6 +99,7 @@ final class VenezuelanCatalogsTest extends TestCase
         $this->assertCount(33, $catalogs['banks']);
         $this->assertSame(['id', 'code', 'name', 'logoUrl'], array_keys($catalogs['banks'][0]));
         $this->assertSame(['id', 'prefix', 'carrier', 'logoUrl'], array_keys($catalogs['mobilePrefixes'][0]));
-        $this->assertStringEndsWith('/images/carriers/digitel.svg', (string) $catalogs['mobilePrefixes'][0]['logoUrl']);
+        $this->assertStringEndsWith('/images/carriers/icons/digitel.svg', (string) $catalogs['mobilePrefixes'][0]['logoUrl']);
+        $this->assertSame([['id' => 1, 'code' => 'V', 'name' => 'Venezolano'], ['id' => 2, 'code' => 'E', 'name' => 'Extranjero'], ['id' => 3, 'code' => 'J', 'name' => 'Jurídico']], $catalogs['documentPrefixes']);
     }
 }

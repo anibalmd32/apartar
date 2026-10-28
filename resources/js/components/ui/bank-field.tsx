@@ -25,6 +25,7 @@ export function BankField({ label, value, onChange, name, error, hint, required 
         typed === '' ? banks : banks.filter((bank) => normalizeName(bank.name).includes(normalizeName(typed)) || bank.code.startsWith(typed));
     const offersOther = typed !== '' && matches.length === 0;
     const current = findBank(banks, value);
+    const showsMark = value !== '' && query === '';
     const describedBy = [error ? `${id}-error` : null, hint ? `${id}-hint` : null].filter(Boolean).join(' ');
 
     return (
@@ -33,12 +34,18 @@ export function BankField({ label, value, onChange, name, error, hint, required 
                 {label}
             </label>
             <Combobox value={value} onChange={(picked: string | null) => onChange(picked ?? '')} onClose={() => setQuery('')} immediate>
-                <div className={cn('input w-full gap-2', error && 'input-error')}>
-                    {value !== '' && query === '' ? <BankMark bank={value} logoUrl={current?.logoUrl} className="shrink-0" /> : null}
+                <div className="relative w-full">
+                    {showsMark ? (
+                        <BankMark
+                            bank={value}
+                            logoUrl={current?.logoUrl}
+                            className="pointer-events-none absolute top-1/2 left-2.5 z-10 -translate-y-1/2"
+                        />
+                    ) : null}
                     <ComboboxInput
                         id={id}
                         name={name}
-                        className="min-w-0 grow"
+                        className={cn('input w-full pr-9', showsMark && 'pl-11', error && 'input-error')}
                         autoComplete="off"
                         placeholder="Busca tu banco"
                         required={required}
@@ -47,13 +54,13 @@ export function BankField({ label, value, onChange, name, error, hint, required 
                         displayValue={(current: string) => current}
                         onChange={(event) => setQuery(event.target.value)}
                     />
-                    <ComboboxButton aria-label="Ver bancos" className="text-ink-3 shrink-0 cursor-pointer">
+                    <ComboboxButton aria-label="Ver bancos" className="text-ink-3 absolute inset-y-0 right-0 flex cursor-pointer items-center px-3">
                         <Icon icon={cilChevronBottom} size={14} />
                     </ComboboxButton>
                 </div>
                 <ComboboxOptions
                     anchor={{ to: 'bottom start', gap: 6 }}
-                    className="bg-base-100 border-line shadow-pop z-50 max-h-72 w-(--input-width) min-w-64 overflow-y-auto rounded-xl border p-1 empty:invisible"
+                    className="bg-base-100 border-line shadow-pop z-50 max-h-72 w-(--input-width) overflow-y-auto rounded-xl border p-1 empty:invisible"
                 >
                     {matches.map((bank) => (
                         <ComboboxOption
@@ -61,9 +68,7 @@ export function BankField({ label, value, onChange, name, error, hint, required 
                             value={bank.name}
                             className="data-focus:bg-surface-2 flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm data-selected:font-bold"
                         >
-                            <span className="flex w-24 shrink-0 items-center">
-                                <BankMark bank={bank.name} logoUrl={bank.logoUrl} />
-                            </span>
+                            <BankMark bank={bank.name} logoUrl={bank.logoUrl} />
                             <span className="min-w-0 grow truncate">{bank.name}</span>
                             <span className="text-ink-3 shrink-0 text-xs tabular-nums">{bank.code}</span>
                         </ComboboxOption>

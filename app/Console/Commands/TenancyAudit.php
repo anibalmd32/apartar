@@ -45,6 +45,7 @@ final class TenancyAudit extends Command
         'platform_settings' => 'Ajustes de la plataforma, no de un negocio.',
         'banks' => 'Catálogo de bancos venezolanos, común a toda la plataforma.',
         'mobile_prefixes' => 'Catálogo de prefijos de celular y su operadora, común a toda la plataforma.',
+        'document_prefixes' => 'Catálogo de prefijos de documento (V, E, J), común a toda la plataforma.',
         'platform_activity_log' => 'Auditoría de los operadores; la organización afectada va en target_organization_id, sin scope.',
 
         'password_reset_tokens' => 'Tabla del framework, indexada por correo.',

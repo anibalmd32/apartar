@@ -95,6 +95,16 @@ final class PaymentAccountPageTest extends TestCase
             ->assertJsonValidationErrors(['holder_name', 'holder_document']);
     }
 
+    public function test_the_holder_document_must_be_a_valid_cedula_or_rif(): void
+    {
+        $payload = ['holder_document' => 'cualquier cosa'] + $this->payload(PaymentMethod::Zelle, 'pagos@eltornillo.com');
+
+        $this->actingAs($this->owner())
+            ->postJson('/backoffice/cuentas-de-cobro', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['holder_document']);
+    }
+
     public function test_instructions_are_capped_at_three_hundred_characters(): void
     {
         $payload = $this->payload(PaymentMethod::PagoMovil, '0414-1234567');

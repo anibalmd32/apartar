@@ -4,7 +4,10 @@ interface BankMarkProps {
     bank: string | null | undefined;
     logoUrl?: string | null;
     className?: string;
+    size?: 'sm' | 'md';
 }
+
+const SIZES = { sm: 'size-6 rounded-md p-[3px] text-[9px]', md: 'size-8 rounded-lg p-1 text-[11px]' } as const;
 
 function initials(name: string): string {
     return name
@@ -15,22 +18,17 @@ function initials(name: string): string {
         .join('');
 }
 
-export function BankMark({ bank, logoUrl, className }: BankMarkProps) {
+export function BankMark({ bank, logoUrl, className, size = 'sm' }: BankMarkProps) {
     if (!bank) {
         return null;
     }
 
-    return logoUrl ? (
-        <img src={logoUrl} alt={bank} className={cn('h-5 w-auto max-w-[96px] object-contain object-left', className)} loading="lazy" />
-    ) : (
+    return (
         <span
-            aria-hidden="true"
-            className={cn(
-                'bg-surface-2 text-ink-2 inline-flex h-5 min-w-5 items-center justify-center rounded px-1 text-[10px] font-bold',
-                className,
-            )}
+            aria-hidden={logoUrl ? undefined : true}
+            className={cn('bg-surface-2 text-ink-2 inline-flex shrink-0 items-center justify-center font-bold', SIZES[size], className)}
         >
-            {initials(bank)}
+            {logoUrl ? <img src={logoUrl} alt={bank} className="size-full object-contain" loading="lazy" /> : initials(bank)}
         </span>
     );
 }

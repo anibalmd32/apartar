@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DocumentField } from '@/components/ui/document-field';
 import { TextField } from '@/components/ui/text-field';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -29,14 +30,12 @@ export function CodeAccess() {
 
     return (
         <form className="flex flex-col gap-1" onSubmit={submit} noValidate aria-label="Entrar con el código">
-            <TextField
+            <DocumentField
                 label="Cédula o RIF"
                 name="document"
                 value={data.document}
-                onChange={(event) => setData('document', event.target.value)}
+                onChange={(value) => setData('document', value)}
                 error={errors.document}
-                autoComplete="off"
-                placeholder="V-12.345.678"
                 autoFocus
                 required
             />
@@ -74,13 +73,12 @@ export function LinkAccess() {
 
     return (
         <form className="flex flex-col gap-1" onSubmit={submit} noValidate aria-label="Recibir un enlace por correo">
-            <TextField
+            <DocumentField
                 label="Cédula o RIF del apartado"
                 name="link-document"
                 value={data.document}
-                onChange={(event) => setData('document', event.target.value)}
+                onChange={(value) => setData('document', value)}
                 error={errors.document}
-                autoComplete="off"
                 required
             />
 

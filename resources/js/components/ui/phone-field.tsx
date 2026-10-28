@@ -3,6 +3,7 @@ import { splitMobile, useCatalogs } from '@/lib/venezuela-catalogs';
 import { cilChevronBottom } from '@coreui/icons';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { type ReactNode, useId, useState } from 'react';
+import { BankMark } from './bank-mark';
 import { Icon } from './icon';
 
 interface PhoneFieldProps {
@@ -44,7 +45,7 @@ export function PhoneField({ label, value, onChange, name, error, hint, required
                         aria-label={selected ? `Prefijo ${selected.prefix} (${selected.carrier})` : 'Prefijo'}
                         className={cn('input w-[128px] shrink-0 cursor-pointer gap-2', error && 'input-error')}
                     >
-                        {selected?.logoUrl ? <img src={selected.logoUrl} alt="" className="h-4 w-8 object-contain" /> : null}
+                        {selected ? <BankMark bank={selected.carrier} logoUrl={selected.logoUrl} /> : null}
                         <span className={cn('grow text-left tabular-nums', selected ? 'text-base-content' : 'text-ink-3')}>
                             {selected?.prefix ?? '04··'}
                         </span>
@@ -60,7 +61,7 @@ export function PhoneField({ label, value, onChange, name, error, hint, required
                                 value={option.prefix}
                                 className="data-focus:bg-surface-2 flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm data-selected:font-bold"
                             >
-                                {option.logoUrl ? <img src={option.logoUrl} alt="" className="h-5 w-12 object-contain" /> : <span className="w-12" />}
+                                <BankMark bank={option.carrier} logoUrl={option.logoUrl} />
                                 <span className="tabular-nums">{option.prefix}</span>
                                 <span className="text-ink-3 ml-auto text-xs">{option.carrier}</span>
                             </ListboxOption>

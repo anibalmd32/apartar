@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
+import { DocumentField } from '@/components/ui/document-field';
 import { FileField } from '@/components/ui/file-field';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
@@ -72,12 +73,12 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                     required
                 />
 
-                <TextField
+                <DocumentField
                     label="RIF o cédula"
                     value={data.document}
-                    onChange={(event) => setData('document', event.target.value)}
+                    onChange={(value) => setData('document', value)}
                     error={errors.document}
-                    placeholder="J-41234567-8 o V-12345678"
+                    placeholder="412345678"
                     hint="El RIF del negocio o, si vendes por tu cuenta y no tienes, tu cédula. Hace falta para tu primera factura de suscripción."
                 />
 

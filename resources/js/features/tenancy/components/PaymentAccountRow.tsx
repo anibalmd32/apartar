@@ -62,7 +62,7 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
                         <span className="text-[15px] font-bold">{account.methodLabel}</span>
                         {account.bank ? (
                             <span className="text-ink-3 flex items-center gap-1.5 text-[13px]">
-                                <BankMark bank={account.bank} logoUrl={account.bankLogoUrl} className="h-4" />
+                                <BankMark bank={account.bank} logoUrl={account.bankLogoUrl} />
                                 {account.bank}
                             </span>
                         ) : null}

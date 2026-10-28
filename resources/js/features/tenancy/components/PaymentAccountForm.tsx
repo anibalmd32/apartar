@@ -1,6 +1,7 @@
 import { BankField } from '@/components/ui/bank-field';
 import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
+import { DocumentField } from '@/components/ui/document-field';
 import { PhoneField } from '@/components/ui/phone-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
@@ -111,13 +112,12 @@ export function PaymentAccountForm({ methods, account, atLimit = false, onDone }
                 required
             />
 
-            <TextField
+            <DocumentField
                 label="Cédula o RIF del titular"
                 name="holder_document"
                 value={data.holder_document}
-                onChange={(event) => setData('holder_document', event.target.value)}
+                onChange={(value) => setData('holder_document', value)}
                 error={errors.holder_document}
-                autoComplete="off"
                 required
             />
 

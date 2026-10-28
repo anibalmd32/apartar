@@ -110,9 +110,10 @@ beforeEach(() => {
             catalogs: {
                 banks: [],
                 mobilePrefixes: [
-                    { id: 1, prefix: '0412', carrier: 'Digitel', logoUrl: null },
-                    { id: 2, prefix: '0414', carrier: 'Movistar', logoUrl: null },
+                    { id: 1, prefix: '0412', carrier: 'Digitel', logoUrl: '/images/carriers/icons/digitel.svg' },
+                    { id: 2, prefix: '0414', carrier: 'Movistar', logoUrl: '/images/carriers/icons/movistar.svg' },
                 ],
+                documentPrefixes: [{ id: 1, code: 'V', name: 'Venezolano' }],
             },
             currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: BCV },
             errors: {},
@@ -168,7 +169,7 @@ it('manda los campos con los nombres del contrato', () => {
     expect((visit.mock.calls[0]?.[1] as { method: string; data: Record<string, unknown> }).data).toMatchObject({
         quantity: 1,
         fullName: 'María González',
-        documentNumber: '12.345.678',
+        documentNumber: 'V12345678',
         phone: '04141234567',
         email: '',
         termsAccepted: true,

@@ -1,11 +1,11 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { DocumentField } from '@/components/ui/document-field';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 import { QuantityStepper } from '@/features/layaway/components/QuantityStepper';
 import { TermsConsentField } from '@/features/layaway/components/TermsConsentField';
 import { type LayawayForm as LayawayFormState } from '@/features/layaway/hooks/useLayawayForm';
-import { formatDocumentNumber } from '@/lib/identity-format';
 import { type LayawayConsentView } from '@/types/layaway';
 import { type FormEventHandler } from 'react';
 
@@ -49,14 +49,13 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
                 required
             />
 
-            <TextField
+            <DocumentField
                 label="Cédula o RIF"
                 name="documentNumber"
                 value={data.documentNumber}
-                onChange={(event) => setData('documentNumber', formatDocumentNumber(event.target.value))}
+                onChange={(value) => setData('documentNumber', value)}
                 error={errors.documentNumber}
                 hint="Con ella, y con tu código de apartado, podrás consultar tu apartado."
-                autoComplete="off"
                 required
             />
 

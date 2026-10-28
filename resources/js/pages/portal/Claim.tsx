@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DocumentField } from '@/components/ui/document-field';
 import { Icon } from '@/components/ui/icon';
 import { TextField } from '@/components/ui/text-field';
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
@@ -49,14 +50,12 @@ export default function Claim({ storeUrl }: PortalClaimProps) {
                     noValidate
                     aria-label="Recuperar mi historial"
                 >
-                    <TextField
+                    <DocumentField
                         label="Cédula o RIF"
                         name="document"
                         value={data.document}
-                        onChange={(event) => setData('document', event.target.value)}
+                        onChange={(value) => setData('document', value)}
                         error={errors.document}
-                        autoComplete="off"
-                        placeholder="V-12.345.678"
                         autoFocus
                         required
                     />

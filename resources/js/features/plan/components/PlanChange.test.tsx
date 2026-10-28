@@ -15,7 +15,19 @@ vi.mock('@inertiajs/react', async () => {
     return {
         usePage: () => ({
             url: '/backoffice/suscripcion',
-            props: { errors: {}, planState: planState(), teamMember: { capabilities: ['subscription'] } },
+            props: {
+                errors: {},
+                planState: planState(),
+                teamMember: { capabilities: ['subscription'] },
+                catalogs: {
+                    banks: [],
+                    mobilePrefixes: [],
+                    documentPrefixes: [
+                        { id: 1, code: 'V', name: 'Venezolano' },
+                        { id: 3, code: 'J', name: 'Jurídico' },
+                    ],
+                },
+            },
         }),
         useForm: (initial: Record<string, unknown>) => {
             const [data, setState] = React.useState(initial);
@@ -189,11 +201,13 @@ it('subir a un plan de pago pasa por el modal con la factura y el RIF', () => {
     const confirm = screen.getByRole('button', { name: 'Confirmar y ver factura' });
     expect(confirm).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('RIF o cédula'), { target: { value: 'J-41234567-8' } });
+    fireEvent.click(screen.getByRole('button', { name: /Tipo de documento V/ }));
+    fireEvent.click(screen.getByRole('option', { name: /Jurídico/ }));
+    fireEvent.change(screen.getByLabelText('RIF o cédula'), { target: { value: '41234567-8' } });
     fireEvent.click(confirm);
 
     expect(post).toHaveBeenCalledWith(
-        expect.objectContaining({ plan: 'pro', document: 'J-41234567-8' }),
+        expect.objectContaining({ plan: 'pro', document: 'J412345678' }),
         '/backoffice/suscripcion/cambiar',
         expect.any(Object),
     );

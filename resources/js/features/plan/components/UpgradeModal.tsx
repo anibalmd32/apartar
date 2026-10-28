@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
+import { DocumentField } from '@/components/ui/document-field';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
-import { TextField } from '@/components/ui/text-field';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { formatPlanDate } from '@/lib/plan-change';
 import { type PlanOption } from '@/types/plan';
@@ -88,12 +88,12 @@ export function UpgradeModal({
             ) : null}
 
             {needsDocument ? (
-                <TextField
+                <DocumentField
                     label="RIF o cédula"
                     value={data.document}
-                    onChange={(event) => setData('document', event.target.value)}
+                    onChange={(value) => setData('document', value)}
                     error={errors.document ?? errors.plan}
-                    placeholder="J-41234567-8 o V-12345678"
+                    placeholder="412345678"
                     hint="El RIF del negocio o, si no tienes, tu cédula. Lo pedimos una sola vez, antes de tu primera factura."
                 />
             ) : errors.plan ? (
