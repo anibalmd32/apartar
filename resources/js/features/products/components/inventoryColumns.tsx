@@ -3,10 +3,11 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { useStoredProductPreview } from '@/features/products/components/StoredProductPreview';
 import { cn } from '@/lib/utils';
 import { type DataTableColumn } from '@/types/data-table';
 import { type ProductListItem, type ProductStatus } from '@/types/product';
-import { cilArrowCircleTop, cilBan, cilOptions, cilPencil, cilReload, cilTrash } from '@coreui/icons';
+import { cilArrowCircleTop, cilBan, cilOptions, cilPencil, cilReload, cilScreenDesktop, cilTrash } from '@coreui/icons';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Link, router } from '@inertiajs/react';
 
@@ -29,6 +30,7 @@ function StatusBadges({ product, label }: { product: ProductListItem; label: str
 }
 
 function Actions({ product }: { product: ProductListItem }) {
+    const preview = useStoredProductPreview(product.id);
     const step = (path: string) => router.post(`/backoffice/productos/${product.id}/${path}`, {}, { preserveScroll: true });
     const item = (icon: string[], label: string, path: string) => (
         <MenuItem>
@@ -40,22 +42,34 @@ function Actions({ product }: { product: ProductListItem }) {
     );
 
     return (
-        <Menu as="div" className="relative inline-block">
-            <MenuButton className="btn btn-ghost btn-sm btn-square" aria-label={`Acciones de ${product.name}`}>
-                <Icon icon={cilOptions} />
-            </MenuButton>
-            <MenuItems anchor="bottom end" className="bg-base-100 border-line shadow-pop z-50 mt-1 w-48 rounded-xl border p-1.5 focus:outline-none">
-                <MenuItem>
-                    <Link className={menuItemClass} href={`/backoffice/productos/${product.id}/editar`}>
-                        <Icon icon={cilPencil} />
-                        Editar
-                    </Link>
-                </MenuItem>
-                {product.status === 'draft' ? item(cilArrowCircleTop, 'Publicar', 'publicar') : null}
-                {product.status === 'published' ? item(cilBan, 'Despublicar', 'despublicar') : null}
-                {product.status === 'archived' ? item(cilReload, 'Restaurar', 'restaurar') : item(cilTrash, 'Archivar', 'archivar')}
-            </MenuItems>
-        </Menu>
+        <>
+            <Menu as="div" className="relative inline-block">
+                <MenuButton className="btn btn-ghost btn-sm btn-square" aria-label={`Acciones de ${product.name}`}>
+                    <Icon icon={cilOptions} />
+                </MenuButton>
+                <MenuItems
+                    anchor="bottom end"
+                    className="bg-base-100 border-line shadow-pop z-50 mt-1 w-48 rounded-xl border p-1.5 focus:outline-none"
+                >
+                    <MenuItem>
+                        <Link className={menuItemClass} href={`/backoffice/productos/${product.id}/editar`}>
+                            <Icon icon={cilPencil} />
+                            Editar
+                        </Link>
+                    </MenuItem>
+                    <MenuItem>
+                        <button type="button" className={menuItemClass} onClick={preview.open}>
+                            <Icon icon={cilScreenDesktop} />
+                            Vista previa
+                        </button>
+                    </MenuItem>
+                    {product.status === 'draft' ? item(cilArrowCircleTop, 'Publicar', 'publicar') : null}
+                    {product.status === 'published' ? item(cilBan, 'Despublicar', 'despublicar') : null}
+                    {product.status === 'archived' ? item(cilReload, 'Restaurar', 'restaurar') : item(cilTrash, 'Archivar', 'archivar')}
+                </MenuItems>
+            </Menu>
+            {preview.dialog}
+        </>
     );
 }
 

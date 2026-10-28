@@ -158,6 +158,7 @@ Route::prefix('backoffice')->group(function (): void {
                 ->name('products.ai.suggest');
 
             Route::get('productos/{product}/editar', [ProductController::class, 'edit'])->name('products.edit');
+            Route::get('productos/{product}/vista-previa', [ProductController::class, 'preview'])->name('products.preview');
             Route::put('productos/{product}', [ProductController::class, 'update'])->name('products.update');
 
             Route::post('productos/{product}/publicar', [ProductController::class, 'publish'])

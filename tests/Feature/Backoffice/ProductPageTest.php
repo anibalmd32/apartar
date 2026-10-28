@@ -76,6 +76,27 @@ final class ProductPageTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->has('rows', 1)->where('rows.0.name', 'Sierra'));
     }
 
+    public function test_the_preview_of_a_saved_product_carries_what_the_catalog_shows(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->create([
+            'name' => 'Taladro',
+            'sku' => 'BOSCH-01',
+            'description' => 'Potente y liviano.',
+            'stock' => 3,
+        ]));
+
+        $this->actingAs($this->owner())
+            ->getJson("/backoffice/productos/{$product->getKey()}/vista-previa")
+            ->assertOk()
+            ->assertJsonPath('name', 'Taladro')
+            ->assertJsonPath('sku', 'BOSCH-01')
+            ->assertJsonPath('description', '<p>Potente y liviano.</p>')
+            ->assertJsonPath('stock', 3)
+            ->assertJsonPath('specifications', [])
+            ->assertJsonPath('images', [])
+            ->assertJsonStructure(['plan', 'fewLeft', 'categoryName']);
+    }
+
     public function test_the_form_carries_the_organization_defaults(): void
     {
         $this->inTenant(function (): void {

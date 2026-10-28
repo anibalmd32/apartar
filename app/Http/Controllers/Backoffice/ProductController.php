@@ -35,6 +35,7 @@ use App\Models\User;
 use App\Queries\InventoryFilters;
 use App\Support\CatalogShareLink;
 use App\Support\Settings;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -99,6 +100,25 @@ final class ProductController extends Controller
         $this->authorizeInventory($request);
 
         return Inertia::render('backoffice/products/Form', $this->formProps($request, $product));
+    }
+
+    public function preview(Request $request, Product $product): JsonResponse
+    {
+        $this->authorizeInventory($request);
+
+        $product->loadMissing('category');
+
+        return response()->json([
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'description' => ProductDescription::toHtml((string) $product->description),
+            'stock' => $product->stock,
+            'categoryName' => (string) $product->category?->name,
+            'specifications' => $this->specificationRows($product)['specifications'],
+            'images' => $product->getMedia(Product::IMAGES)->map(fn (Media $media): array => ImageSet::of($media)->toArray())->values()->all(),
+            'plan' => $this->plan($request, $product),
+            'fewLeft' => ProductDetailResource::FEW_LEFT,
+        ]);
     }
 
     public function update(UpdateProductRequest $request, Product $product, UpsertProductAction $upsert): RedirectResponse
