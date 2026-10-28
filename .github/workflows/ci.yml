@@ -210,3 +210,22 @@ jobs:
 
       - name: Suite de aislamiento
         run: composer run tenancy:suite
+
+  deploy:
+    name: deploy
+    needs: [backend, frontend, tenancy]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Desplegar en Dokploy
+        env:
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            -X POST https://panel.apartar.app/api/compose.deploy \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "{\"composeId\": \"$DOKPLOY_COMPOSE_ID\"}"

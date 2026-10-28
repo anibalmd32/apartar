@@ -53,7 +53,7 @@ it('muestra la barra con sus botones en español y el contenido inicial', async 
     }
 
     expect(screen.getByText('Lo que lee quien decide.')).toBeInTheDocument();
-    expect(screen.getByText('16 / 10')).toBeInTheDocument();
+    expect(await screen.findByText('16 / 10')).toBeInTheDocument();
 });
 
 it('cuenta solo el texto y marca cuando pasa del límite', async () => {
@@ -61,7 +61,7 @@ it('cuenta solo el texto y marca cuando pasa del límite', async () => {
 
     await editor();
 
-    expect(screen.getByText('11 / 10')).toHaveClass('text-error');
+    expect(await screen.findByText('11 / 10')).toHaveClass('text-error');
 });
 
 it('aplica el formato desde la barra y avisa con el HTML', async () => {
