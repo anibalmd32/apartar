@@ -12,15 +12,15 @@ use App\Support\Mail\OutgoingMailRecorder;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Notification;
 use RuntimeException;
-use Symfony\Component\Mailer\SentMessage;
-use Symfony\Component\Mime\Email;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\ReadsSentMail;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class OutgoingMailCaptureTest extends TestCase
 {
     use ActsAsPlatformOperator;
+    use ReadsSentMail;
     use ReusesMigratedDatabase;
 
     public function test_every_sent_notification_is_stored_with_its_bodies_and_mailtrap_headers(): void
@@ -41,7 +41,7 @@ final class OutgoingMailCaptureTest extends TestCase
         $this->assertSame($mail->uuid.'@apartar.app', $mail->message_id);
         $this->assertNull($mail->target_organization_id);
 
-        $sent = $this->lastSymfonyMessage();
+        $sent = $this->lastEmail();
         $headers = $sent->getHeaders();
 
         $this->assertSame(['apartar_mail_id' => $mail->uuid], json_decode((string) $headers->get('X-MT-Custom-Variables')?->getBodyAsString(), true));
@@ -69,7 +69,7 @@ final class OutgoingMailCaptureTest extends TestCase
 
         Notification::route('mail', 'cliente@example.com')->notify(new LayawayCodeNotification('AP-7K3M9QRT', 'Moda', 'Vestido', 'https://apartar.app'));
 
-        $this->assertCount(1, app('mailer')->getSymfonyTransport()->messages());
+        $this->assertCount(1, $this->sentEmails());
         $this->assertSame(0, SentMail::query()->count());
     }
 
@@ -90,16 +90,5 @@ final class OutgoingMailCaptureTest extends TestCase
 
         $this->assertSame([$stuck->getKey()], $failed->pluck('id')->all());
         $this->assertSame([$fresh->getKey()], $sending->pluck('id')->all());
-    }
-
-    private function lastSymfonyMessage(): Email
-    {
-        $messages = app('mailer')->getSymfonyTransport()->messages();
-        $last = $messages->last();
-        $this->assertInstanceOf(SentMessage::class, $last);
-        $original = $last->getOriginalMessage();
-        $this->assertInstanceOf(Email::class, $original);
-
-        return $original;
     }
 }

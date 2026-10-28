@@ -48,6 +48,8 @@ final class PlatformAudit
 
     public const OPERATOR_PASSWORD_RESET = 'operator.password_reset';
 
+    public const MAIL_SENT = 'mail.sent';
+
     /**
      * @var array<string, string>
      */
@@ -70,6 +72,7 @@ final class PlatformAudit
         self::OPERATOR_DISABLED => 'Desactivó un operador',
         self::OPERATOR_ENABLED => 'Reactivó un operador',
         self::OPERATOR_PASSWORD_RESET => 'Restableció una contraseña',
+        self::MAIL_SENT => 'Envió un correo',
         self::LOGIN => 'Inició sesión',
     ];
 

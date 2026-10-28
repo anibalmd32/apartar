@@ -78,7 +78,11 @@ class AppServiceProvider extends ServiceProvider
             ->by('telemetria:'.($request->ip() ?? 'sin-ip')));
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(self::WEBHOOK_CALLS_PER_MINUTE)
             ->by('webhooks:'.($request->ip() ?? 'sin-ip')));
+        RateLimiter::for('correo-manual', fn (Request $request) => Limit::perHour(self::OWNER_MAILS_PER_HOUR)
+            ->by('correo-manual:'.($request->user('platform')?->getAuthIdentifier() ?? $request->ip() ?? 'sin-ip')));
     }
+
+    public const OWNER_MAILS_PER_HOUR = 60;
 
     public const WEBHOOK_CALLS_PER_MINUTE = 300;
 
