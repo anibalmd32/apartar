@@ -34,9 +34,9 @@ it('declara los tres jobs', function (string $job): void {
     expect(workflowDirectives())->toContain("\n  {$job}:\n");
 })->with(['backend', 'frontend', 'tenancy']);
 
-it('corre los tres jobs en paralelo', function (): void {
-    expect(workflowDirectives())->not->toContain('needs:');
-});
+it('corre los tres jobs en paralelo', function (string $job): void {
+    expect(workflowJob($job))->not->toContain('needs:');
+})->with(['backend', 'frontend', 'tenancy']);
 
 it('mantiene tenancy independiente de backend', function (): void {
     expect(workflowJob('tenancy'))
@@ -94,10 +94,21 @@ it('liga la clave de caché al hash del lockfile', function (): void {
         ->toContain('cache-dependency-path: package-lock.json');
 });
 
-it('no despliega nada', function (): void {
+it('despliega solo tras pasar los tres jobs y solo en push a main', function (): void {
+    expect(workflowJob('deploy'))
+        ->toContain('needs: [backend, frontend, tenancy]')
+        ->toContain("if: github.event_name == 'push' && github.ref == 'refs/heads/main'")
+        ->toContain('https://panel.apartar.app/api/compose.deploy');
+});
+
+it('despliega con la API de Dokploy y las credenciales en secretos', function (): void {
+    expect(workflowJob('deploy'))
+        ->toContain('${{ secrets.DOKPLOY_API_KEY }}')
+        ->toContain('${{ secrets.DOKPLOY_COMPOSE_ID }}')
+        ->toContain('--fail-with-body');
+
     expect(workflowDirectives())
         ->not->toContain('docker push')
-        ->not->toContain('deploy')
         ->not->toContain('ssh');
 });
 
