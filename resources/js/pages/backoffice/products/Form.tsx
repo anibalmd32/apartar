@@ -16,6 +16,7 @@ import { usePendingImages } from '@/features/products/hooks/usePendingImages';
 import { useProductForm } from '@/features/products/hooks/useProductForm';
 import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
 import { type PreviewSource } from '@/features/products/lib/preview';
+import { withSuggestedTags } from '@/features/products/lib/tags';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import {
     type AiAvailability,
@@ -63,8 +64,10 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
             ai={ai}
             input={{ name: data.name, categoryName, description: data.description, photos: photos.files, productId: product?.id ?? null }}
             hasStoredPhotos={(product?.images.length ?? 0) > 0}
-            onApply={(description, characteristics) => {
-                setData('description', description);
+            onApply={(description, characteristics, suggestedTags) => {
+                const selection = withSuggestedTags(suggestedTags, tags, { tagIds: data.tag_ids, tagNames: data.tag_names });
+
+                setData((previous) => ({ ...previous, description, tag_ids: selection.tagIds, tag_names: selection.tagNames }));
                 sheet.append(characteristics);
             }}
         />
@@ -136,11 +139,16 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                     <div
                         className={`flex flex-col gap-4 max-lg:order-3 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-2' : 'lg:row-start-3'}`}
                     >
-                        <ProductPricingFields {...fields} plan={plan} />
                         <SpecificationBuilder rows={sheet} errors={errors} />
                     </div>
 
-                    <div className="flex flex-col gap-4 max-lg:order-4 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:gap-6">
+                    <div
+                        className={`flex flex-col gap-4 max-lg:order-5 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-3' : 'lg:row-start-4'}`}
+                    >
+                        <ProductPricingFields {...fields} plan={plan} />
+                    </div>
+
+                    <div className="flex flex-col gap-4 max-lg:order-4 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:gap-6">
                         <ProductTaxonomyFields {...fields} categories={categories} tags={tags} />
                         <ProductInventoryFields {...fields} saved={product} />
 

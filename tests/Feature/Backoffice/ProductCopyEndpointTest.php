@@ -48,6 +48,7 @@ final class ProductCopyEndpointTest extends TestCase
         ProductCopywriter::fake([[
             'description_html' => '<p>Una silla <strong>cómoda</strong>.</p><script>x</script>',
             'characteristics' => ['Color gris', 'Color gris', 'Patas de madera'],
+            'tags' => ['#sillas', 'hogar'],
         ]]);
 
         $this->actingAs($this->owner())
@@ -56,6 +57,7 @@ final class ProductCopyEndpointTest extends TestCase
             ->assertExactJson([
                 'description' => '<p>Una silla <strong>cómoda</strong>.</p>',
                 'characteristics' => ['Color gris', 'Patas de madera'],
+                'tags' => ['sillas', 'hogar'],
                 'remaining' => 29,
             ]);
 

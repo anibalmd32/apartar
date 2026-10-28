@@ -8,12 +8,27 @@ import { useState } from 'react';
 
 interface CopySuggestionDialogProps {
     suggestion: CopySuggestion;
-    onUse: (description: string, characteristics: string[]) => void;
+    onUse: (description: string, characteristics: string[], tags: string[]) => void;
     onDiscard: () => void;
 }
 
 export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySuggestionDialogProps) {
+    const tags = suggestion.tags ?? [];
     const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(suggestion.characteristics.map((_, index) => index)));
+    const [checkedTags, setCheckedTags] = useState<ReadonlySet<string>>(() => new Set(tags));
+
+    const toggleTag = (tag: string) =>
+        setCheckedTags((current) => {
+            const next = new Set(current);
+
+            if (next.has(tag)) {
+                next.delete(tag);
+            } else {
+                next.add(tag);
+            }
+
+            return next;
+        });
 
     const toggle = (index: number) => {
         setChecked((current) => {
@@ -33,6 +48,7 @@ export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySugge
         onUse(
             suggestion.description,
             suggestion.characteristics.filter((_, index) => checked.has(index)),
+            tags.filter((tag) => checkedTags.has(tag)),
         );
 
     return (
@@ -71,6 +87,25 @@ export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySugge
                             {characteristic}
                         </label>
                     ))}
+                </fieldset>
+            ) : null}
+
+            {tags.length > 0 ? (
+                <fieldset className="flex flex-col gap-2">
+                    <legend className="text-ink-2 mb-1 text-[13px] font-semibold">Etiquetas que se agregarán</legend>
+                    <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => (
+                            <label key={tag} className="border-line flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="checkbox checkbox-xs checkbox-primary"
+                                    checked={checkedTags.has(tag)}
+                                    onChange={() => toggleTag(tag)}
+                                />
+                                {tag}
+                            </label>
+                        ))}
+                    </div>
                 </fieldset>
             ) : null}
         </Modal>

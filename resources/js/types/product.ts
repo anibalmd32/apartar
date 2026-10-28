@@ -92,6 +92,7 @@ export type CopywritingMode = 'suggest' | 'improve';
 export interface CopySuggestion {
     readonly description: string;
     readonly characteristics: readonly string[];
+    readonly tags?: readonly string[];
     readonly remaining: number;
 }
 

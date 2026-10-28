@@ -12,6 +12,7 @@ use App\Domain\Catalog\CopywritingMode;
 use App\Jobs\TranscodeProductImage;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
@@ -121,6 +122,22 @@ final class SuggestProductCopyActionTest extends TestCase
             ['Color azul marino', 'Talla M', 'Algodón', str_repeat('x', 200), 'Uno', 'Dos', 'Tres', 'Cuatro'],
             $copy['characteristics'],
         );
+    }
+
+    public function test_the_tags_reuse_the_ones_the_business_already_has_and_are_capped(): void
+    {
+        Tag::factory()->create(['name' => 'Mochilas']);
+
+        ProductCopywriter::fake([[
+            'description_html' => '<p>Texto</p>',
+            'characteristics' => [],
+            'tags' => ['mochilas', '#viaje', 'viaje', 'impermeable', 'urbano', 'escolar', 'deporte', 'extra'],
+        ]]);
+
+        $copy = $this->copywriter()->handle($this->actor, CopywritingMode::Suggest, 'Mochila');
+
+        $this->assertSame(['Mochilas', 'viaje', 'impermeable', 'urbano', 'escolar', 'deporte'], $copy['tags']);
+        ProductCopywriter::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->contains('Etiquetas que ya usa el negocio: Mochilas'));
     }
 
     public function test_it_sends_at_most_four_photos_mixing_uploads_and_stored_ones(): void

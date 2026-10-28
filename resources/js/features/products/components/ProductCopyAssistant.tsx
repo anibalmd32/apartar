@@ -12,7 +12,7 @@ interface ProductCopyAssistantProps {
     ai: AiAvailability;
     input: CopywriterInput;
     hasStoredPhotos: boolean;
-    onApply: (description: string, characteristics: string[]) => void;
+    onApply: (description: string, characteristics: string[], tags: string[]) => void;
 }
 
 function hasText(html: string): boolean {
@@ -52,7 +52,7 @@ export function ProductCopyAssistant({ ai, input, hasStoredPhotos, onApply }: Pr
     );
 
     return (
-        <div className="flex flex-col gap-2 sm:col-span-2">
+        <div className="mt-3 flex flex-col gap-2 sm:col-span-2">
             <div className="flex flex-wrap items-center gap-3">
                 {withReason(
                     button('suggest', 'Sugerir con IA', cilLightbulb, canSuggest),
@@ -77,8 +77,8 @@ export function ProductCopyAssistant({ ai, input, hasStoredPhotos, onApply }: Pr
                 <CopySuggestionDialog
                     suggestion={copywriter.suggestion}
                     onDiscard={copywriter.dismiss}
-                    onUse={(description, characteristics) => {
-                        onApply(description, characteristics);
+                    onUse={(description, characteristics, tags) => {
+                        onApply(description, characteristics, tags);
                         copywriter.dismiss();
                     }}
                 />

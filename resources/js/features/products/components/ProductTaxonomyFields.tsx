@@ -4,15 +4,29 @@ import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
 import { type TaxonomyOption } from '@/types/product';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 
 interface ProductTaxonomyFieldsProps extends ProductFieldsProps {
     categories: readonly TaxonomyOption[];
     tags: readonly TaxonomyOption[];
 }
 
+export function parseTagNames(raw: string): string[] {
+    return raw
+        .split(',')
+        .map((name) => name.trim())
+        .filter((name) => name !== '');
+}
+
 export function ProductTaxonomyFields({ data, setData, errors, categories, tags }: ProductTaxonomyFieldsProps) {
     const tagsId = useId();
+    const [rawTags, setRawTags] = useState(data.tag_names.join(', '));
+    const typed = parseTagNames(rawTags).join('\n');
+    const current = data.tag_names.join('\n');
+
+    if (typed !== current) {
+        setRawTags(data.tag_names.join(', '));
+    }
 
     const toggleTag = (id: number) => {
         setData('tag_ids', data.tag_ids.includes(id) ? data.tag_ids.filter((tagId) => tagId !== id) : [...data.tag_ids, id]);
@@ -74,16 +88,11 @@ export function ProductTaxonomyFields({ data, setData, errors, categories, tags 
                     <TextField
                         label="Etiquetas nuevas"
                         name="tag_names"
-                        value={data.tag_names.join(', ')}
-                        onChange={(event) =>
-                            setData(
-                                'tag_names',
-                                event.target.value
-                                    .split(',')
-                                    .map((name) => name.trim())
-                                    .filter((name) => name !== ''),
-                            )
-                        }
+                        value={rawTags}
+                        onChange={(event) => {
+                            setRawTags(event.target.value);
+                            setData('tag_names', parseTagNames(event.target.value));
+                        }}
                         hint="Separadas por comas. Las que ya tengas se reutilizan."
                         autoComplete="off"
                     />

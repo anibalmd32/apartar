@@ -10,6 +10,7 @@ use App\Domain\Catalog\CopywritingMode;
 use App\Domain\Catalog\ProductDescription;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Product;
+use App\Models\Tag;
 use App\Models\User;
 use App\Support\Ai\CopywriterImages;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -24,6 +25,12 @@ final class SuggestProductCopyAction
     public const MAX_CHARACTERISTICS = 8;
 
     public const MAX_CHARACTERISTIC_LENGTH = 200;
+
+    public const MAX_TAGS = 6;
+
+    public const MAX_TAG_LENGTH = 40;
+
+    private const KNOWN_TAGS_IN_PROMPT = 60;
 
     private const QUOTA_SECONDS = 86_400;
 
@@ -50,7 +57,7 @@ final class SuggestProductCopyAction
 
     /**
      * @param  list<UploadedFile>  $uploads
-     * @return array{description: string, characteristics: list<string>, remaining: int}
+     * @return array{description: string, characteristics: list<string>, tags: list<string>, remaining: int}
      *
      * @throws AuthorizationException
      * @throws CopywriterUnavailableException
@@ -107,7 +114,7 @@ final class SuggestProductCopyAction
 
     /**
      * @param  array<mixed>  $answer
-     * @return array{description: string, characteristics: list<string>}
+     * @return array{description: string, characteristics: list<string>, tags: list<string>}
      *
      * @throws CopywriterUnavailableException
      */
@@ -123,10 +130,12 @@ final class SuggestProductCopyAction
         }
 
         $items = $answer['characteristics'] ?? [];
+        $tags = $answer['tags'] ?? [];
 
         return [
             'description' => $description,
-            'characteristics' => $this->characteristics(is_array($items) ? $items : []),
+            'characteristics' => $this->listOf(is_array($items) ? $items : [], self::MAX_CHARACTERISTICS, self::MAX_CHARACTERISTIC_LENGTH),
+            'tags' => $this->tags(is_array($tags) ? $tags : []),
         ];
     }
 
@@ -134,7 +143,41 @@ final class SuggestProductCopyAction
      * @param  array<mixed>  $items
      * @return list<string>
      */
-    private function characteristics(array $items): array
+    private function tags(array $items): array
+    {
+        $known = [];
+
+        foreach ($this->knownTags() as $name) {
+            $known[mb_strtolower($name)] = $name;
+        }
+
+        $clean = array_map(
+            fn (string $tag): string => $known[mb_strtolower($tag)] ?? $tag,
+            $this->listOf(array_map(fn (mixed $tag): mixed => is_string($tag) ? ltrim($tag, '#') : $tag, $items), self::MAX_TAGS, self::MAX_TAG_LENGTH),
+        );
+
+        return array_values(array_unique($clean));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function knownTags(): array
+    {
+        return Tag::query()
+            ->orderBy('name')
+            ->limit(self::KNOWN_TAGS_IN_PROMPT)
+            ->pluck('name')
+            ->map(fn (mixed $name): string => (string) $name)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<mixed>  $items
+     * @return list<string>
+     */
+    private function listOf(array $items, int $max, int $maxLength): array
     {
         $clean = [];
 
@@ -146,7 +189,7 @@ final class SuggestProductCopyAction
             $text = html_entity_decode(strip_tags($item), ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $text = trim((string) preg_replace('/\s+/u', ' ', $text));
             $text = rtrim(ltrim($text, "-•*· \t"), '. ');
-            $text = mb_substr($text, 0, self::MAX_CHARACTERISTIC_LENGTH);
+            $text = mb_substr($text, 0, $maxLength);
 
             $signature = mb_strtolower($text);
 
@@ -156,7 +199,7 @@ final class SuggestProductCopyAction
 
             $clean[$signature] = $text;
 
-            if (count($clean) === self::MAX_CHARACTERISTICS) {
+            if (count($clean) === $max) {
                 break;
             }
         }
@@ -172,6 +215,7 @@ final class SuggestProductCopyAction
             'Nombre del producto: '.(trim($name) === '' ? '(sin nombre todavía)' : trim($name)),
             'Categoría: '.(blank($categoryName) ? '(sin categoría)' : trim((string) $categoryName)),
             'Descripción actual (HTML): '.($current === '' ? '(vacía)' : $current),
+            'Etiquetas que ya usa el negocio: '.($this->knownTags() === [] ? '(ninguna)' : implode(', ', $this->knownTags())),
         ]);
     }
 

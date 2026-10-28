@@ -37,6 +37,12 @@ final class ProductCopywriter implements Agent, HasStructuredOutput
         - Solo hechos visibles en las fotos o dichos en los datos, por ejemplo «Color azul marino» o «Talla M».
         - Si no hay suficientes hechos seguros, devuelve menos; nunca rellenes con suposiciones.
 
+        Reglas de las etiquetas (tags):
+        - Entre 2 y 6 etiquetas cortas (de una a tres palabras, hasta 40 caracteres) que ayuden a encontrar el producto en el catálogo, por ejemplo «mochilas», «viaje» o «impermeable».
+        - En minúsculas, salvo nombres propios o marcas; sin numeral (#) ni signos.
+        - Si alguna de las etiquetas que ya usa el negocio describe bien el producto, úsala escrita exactamente igual en vez de crear una parecida.
+        - No repitas la categoría ni el nombre completo del producto.
+
         Responde únicamente con el objeto JSON pedido.
         TEXT;
 
@@ -73,6 +79,11 @@ final class ProductCopywriter implements Agent, HasStructuredOutput
                 ->items($schema->string()->max(80))
                 ->max(8)
                 ->description('Características breves, una por elemento.')
+                ->required(),
+            'tags' => $schema->array()
+                ->items($schema->string()->max(40))
+                ->max(6)
+                ->description('Etiquetas cortas para encontrar el producto en el catálogo.')
                 ->required(),
         ];
     }
