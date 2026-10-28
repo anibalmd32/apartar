@@ -1,6 +1,6 @@
 ## 1. Quién presta el servicio
 
-Apartar ([apartar.store](https://apartar.store)) lo opera **Anibal Mendoza**, persona natural, cédula de identidad **V-26.777.308**, con domicilio en la República Bolivariana de Venezuela. En estos términos, «Apartar», «nosotros» y «la plataforma» se refieren a él y al servicio que presta. Puedes escribirnos a [anibalmd32@gmail.com](mailto:anibalmd32@gmail.com).
+Apartar ([apartar.app](https://apartar.app)) lo opera **Anibal Mendoza**, persona natural, cédula de identidad **V-26.777.308**, con domicilio en la República Bolivariana de Venezuela. En estos términos, «Apartar», «nosotros» y «la plataforma» se refieren a él y al servicio que presta. Puedes escribirnos a [anibalmd32@gmail.com](mailto:anibalmd32@gmail.com).
 
 ## 2. Qué es Apartar
 

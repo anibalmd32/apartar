@@ -21,7 +21,7 @@ function catalog(overrides: Partial<CatalogListItem> = {}): CatalogListItem {
         isListed: true,
         publishedAt: '2026-09-01T00:00:00Z',
         expiresAt: null,
-        shareUrl: 'https://apartar.store/c/otono-2026',
+        shareUrl: 'https://apartar.app/c/otono-2026',
         slugIsLocked: true,
         productsCount: 24,
         updatedAt: null,

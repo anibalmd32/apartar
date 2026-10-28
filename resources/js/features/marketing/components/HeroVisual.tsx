@@ -44,7 +44,7 @@ export function HeroVisual({ className }: { className?: string }) {
 
             <div className={cn(floating, 'top-5 left-0 flex flex-col gap-1 px-3.5 py-2.5')}>
                 <p className="text-ink-3 text-[11px]">Mariela compartió un enlace</p>
-                <p className="text-primary-ink text-[13px] font-bold">apartar.store/c/otono-2026</p>
+                <p className="text-primary-ink text-[13px] font-bold">apartar.app/c/otono-2026</p>
             </div>
 
             <div className={cn(floating, 'right-0 bottom-8 flex items-center gap-2 px-3.5 py-2.5 sm:right-[2px]')}>

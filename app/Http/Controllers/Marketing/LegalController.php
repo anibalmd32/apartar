@@ -13,7 +13,7 @@ use Inertia\Response;
 
 final class LegalController extends Controller
 {
-    public const UPDATED_ON = '2026-10-27';
+    public const UPDATED_ON = '2026-10-28';
 
     /**
      * @var array<string, array{title: string, file: string}>

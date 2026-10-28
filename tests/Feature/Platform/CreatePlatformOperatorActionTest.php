@@ -22,15 +22,15 @@ final class CreatePlatformOperatorActionTest extends TestCase
     {
         $this->asOperator();
 
-        $this->post('/plataforma/operadores', ['name' => 'Luis Soporte', 'email' => 'Luis@Apartar.Store'])->assertRedirect();
+        $this->post('/plataforma/operadores', ['name' => 'Luis Soporte', 'email' => 'Luis@Apartar.App'])->assertRedirect();
 
-        $created = PlatformUser::query()->where('email', 'luis@apartar.store')->firstOrFail();
+        $created = PlatformUser::query()->where('email', 'luis@apartar.app')->firstOrFail();
         $this->assertTrue($created->must_change_password);
         $this->assertTrue($created->isActive());
 
         $page = $this->get('/plataforma/ajustes');
         $page->assertInertia(fn (AssertableInertia $inertia) => $inertia
-            ->where('temporaryPassword.email', 'luis@apartar.store')
+            ->where('temporaryPassword.email', 'luis@apartar.app')
             ->where('temporaryPassword.password', fn (string $password): bool => Hash::check($password, $created->password) && strlen($password) === 16));
 
         $this->get('/plataforma/ajustes')->assertInertia(fn (AssertableInertia $inertia) => $inertia->where('temporaryPassword', null));
@@ -39,10 +39,10 @@ final class CreatePlatformOperatorActionTest extends TestCase
 
     public function test_the_email_of_an_operator_is_unique(): void
     {
-        $this->operator(['email' => 'rosa@apartar.store']);
+        $this->operator(['email' => 'rosa@apartar.app']);
         $this->asOperator();
 
-        $this->post('/plataforma/operadores', ['name' => 'Otra Rosa', 'email' => 'ROSA@apartar.store'])->assertSessionHasErrors('email');
-        $this->assertSame(1, PlatformUser::query()->where('email', 'rosa@apartar.store')->count());
+        $this->post('/plataforma/operadores', ['name' => 'Otra Rosa', 'email' => 'ROSA@apartar.app'])->assertSessionHasErrors('email');
+        $this->assertSame(1, PlatformUser::query()->where('email', 'rosa@apartar.app')->count());
     }
 }

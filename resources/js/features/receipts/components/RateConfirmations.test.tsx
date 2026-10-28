@@ -9,7 +9,9 @@ const preview = { staleRate: null, rateDeviation: deviation } as unknown as Appr
 it('explica cuánto se aleja la tasa escrita y pide confirmarla', () => {
     const onChange = vi.fn();
 
-    render(<RateConfirmations preview={preview} values={{ confirm_stale_rate: null, confirm_rate_deviation: null }} onChange={onChange} errors={{}} />);
+    render(
+        <RateConfirmations preview={preview} values={{ confirm_stale_rate: null, confirm_rate_deviation: null }} onChange={onChange} errors={{}} />,
+    );
 
     expect(screen.getByText(/está 90 % por debajo de la tasa BCV del día \(42,50\)/)).toBeInTheDocument();
 

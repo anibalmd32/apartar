@@ -64,7 +64,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
 
                 <TextField
                     label="Enlace de tu vitrina"
-                    prefix="apartar.store/"
+                    prefix="apartar.app/"
                     value={data.slug}
                     onChange={(event) => setData('slug', event.target.value)}
                     error={errors.slug}

@@ -2,7 +2,7 @@ import { ShareLinkField } from '@/features/catalogs/components/ShareLinkField';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-const URL = 'https://apartar.store/c/ofertas-de-septiembre-2';
+const URL = 'https://apartar.app/c/ofertas-de-septiembre-2';
 
 describe('ShareLinkField', () => {
     it('enseña la URL completa, que es lo que se pega en WhatsApp', () => {

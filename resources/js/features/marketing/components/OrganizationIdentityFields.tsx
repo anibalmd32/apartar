@@ -43,7 +43,7 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
             <TextField
                 label="Enlace de tu catálogo"
                 name="organization_slug"
-                prefix="apartar.store/"
+                prefix="apartar.app/"
                 value={value.organization_slug}
                 onChange={(event) => changeSlug(event.target.value)}
                 error={errors.organization_slug}

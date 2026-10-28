@@ -17,7 +17,7 @@ apartar
 
 <x-slot:footer>
 <x-mail::footer>
-Apartar · [apartar.store]({{ config('app.url') }})<br>
+Apartar · [apartar.app]({{ config('app.url') }})<br>
 [Términos]({{ url('/terminos') }}) · [Privacidad]({{ url('/privacidad') }})<br>
 Recibes este correo por un apartado, una cuenta o un negocio en Apartar.
 </x-mail::footer>

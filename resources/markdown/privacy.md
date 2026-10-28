@@ -1,8 +1,8 @@
 ## 1. Responsable
 
-Apartar ([apartar.store](https://apartar.store)) lo opera **Anibal Mendoza**, persona natural, cédula de identidad **V-26.777.308**, con domicilio en la República Bolivariana de Venezuela. Para cualquier asunto de privacidad, escribe a [anibalmd32@gmail.com](mailto:anibalmd32@gmail.com).
+Apartar ([apartar.app](https://apartar.app)) lo opera **Anibal Mendoza**, persona natural, cédula de identidad **V-26.777.308**, con domicilio en la República Bolivariana de Venezuela. Para cualquier asunto de privacidad, escribe a [anibalmd32@gmail.com](mailto:anibalmd32@gmail.com).
 
-Esta política explica qué datos tratamos, para qué y qué derechos tienes. Se basa en el derecho a la protección del honor, la vida privada y la confidencialidad (artículo 60 de la Constitución) y en el derecho de acceso y rectificación de los datos personales, o *habeas data* (artículo 28 de la Constitución), además de las demás leyes venezolanas aplicables.
+Esta política explica qué datos tratamos, para qué y qué derechos tienes. Se basa en el derecho a la protección del honor, la vida privada y la confidencialidad (artículo 60 de la Constitución) y en el derecho de acceso y rectificación de los datos personales, o _habeas data_ (artículo 28 de la Constitución), además de las demás leyes venezolanas aplicables.
 
 ## 2. Dos papeles distintos
 
@@ -56,13 +56,13 @@ La consulta de la tasa de cambio a fuentes públicas no incluye ningún dato per
 
 ## 7. Cookies y almacenamiento del navegador
 
-| Nombre | Para qué | Duración |
-| --- | --- | --- |
-| `apartar_session` | Mantener tu sesión iniciada | La sesión |
-| `XSRF-TOKEN` | Proteger los formularios | La sesión |
-| `apartar_vid` | Identificador de visitante | 1 año |
-| `cookie_consent` | Recordar tu elección sobre la medición | 1 año |
-| `currency_display` | Recordar si ves los precios en dólares o bolívares | 1 año |
+| Nombre             | Para qué                                           | Duración  |
+| ------------------ | -------------------------------------------------- | --------- |
+| `apartar_session`  | Mantener tu sesión iniciada                        | La sesión |
+| `XSRF-TOKEN`       | Proteger los formularios                           | La sesión |
+| `apartar_vid`      | Identificador de visitante                         | 1 año     |
+| `cookie_consent`   | Recordar tu elección sobre la medición             | 1 año     |
+| `currency_display` | Recordar si ves los precios en dólares o bolívares | 1 año     |
 
 En el almacenamiento local del navegador guardamos también tu tema (claro u oscuro), tu moneda y si rechazaste los avisos.
 

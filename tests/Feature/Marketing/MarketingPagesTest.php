@@ -44,7 +44,7 @@ final class MarketingPagesTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('marketing/Legal')
                 ->where('document.key', $key)
-                ->where('document.updatedOn', '27 de octubre de 2026')
+                ->where('document.updatedOn', '28 de octubre de 2026')
                 ->where('document.html', fn (string $html): bool => str_contains($html, '<h2>1. ')
                     && str_contains($html, 'V-26.777.308')
                     && str_contains($html, 'mailto:anibalmd32@gmail.com')

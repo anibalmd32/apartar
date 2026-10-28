@@ -32,7 +32,7 @@ final class MailTemplateTest extends TestCase
     #[DataProvider('formats')]
     public function test_every_mail_wears_the_apartar_frame_in_spanish(string $format): void
     {
-        $mail = (new LayawayCodeNotification('AP-7K3M9QRT', 'Moda Valentina', 'Vestido lino', 'https://apartar.store/mi-cuenta'))->toMail(new \stdClass);
+        $mail = (new LayawayCodeNotification('AP-7K3M9QRT', 'Moda Valentina', 'Vestido lino', 'https://apartar.app/mi-cuenta'))->toMail(new \stdClass);
         $rendered = $this->render($mail, $format);
 
         $this->assertStringContainsString('Aquí tienes tu código', $rendered);
@@ -47,7 +47,7 @@ final class MailTemplateTest extends TestCase
 
     public function test_the_html_has_the_brand_mark_the_button_and_the_spanish_fallback_link(): void
     {
-        $html = $this->render((new MailMessage)->line('Una línea.')->action('Consultar mi apartado', 'https://apartar.store/mi-cuenta'), 'html');
+        $html = $this->render((new MailMessage)->line('Una línea.')->action('Consultar mi apartado', 'https://apartar.app/mi-cuenta'), 'html');
 
         $this->assertStringContainsString('class="brand-mark"', $html);
         $this->assertStringContainsString('#5046e5', $html);
@@ -66,7 +66,7 @@ final class MailTemplateTest extends TestCase
 
     public function test_the_email_verification_mail_is_in_spanish(): void
     {
-        $mail = FrameworkMails::verifyEmail('https://apartar.store/verify-email/1/abc');
+        $mail = FrameworkMails::verifyEmail('https://apartar.app/verify-email/1/abc');
         $notification = new VerifyEmail;
 
         $this->assertSame('Confirma tu correo en Apartar', $mail->subject);

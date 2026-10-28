@@ -69,7 +69,7 @@ function props(invoices: InvoiceRow[]): InvoicesPageProps {
         ],
         file: { maxMb: 5, accept: '.jpg,.png,.pdf' },
         subscriptionUrl: '/backoffice/suscripcion',
-        platformAccounts: [{ method: 'Zelle', detail: 'pagos@apartar.store' }],
+        platformAccounts: [{ method: 'Zelle', detail: 'pagos@apartar.app' }],
     };
 }
 
@@ -79,7 +79,7 @@ it('enseña el importe en las dos monedas y pide referencia solo cuando hace fal
     expect(screen.getAllByText('F-2026-0001').length).toBeGreaterThan(0);
     expect(screen.getByText('≈ Bs. 637,50')).toBeInTheDocument();
     expect(screen.getByText('$15,00 · Bs. 637,50 a tasa BCV')).toBeInTheDocument();
-    expect(screen.getByText('pagos@apartar.store')).toBeInTheDocument();
+    expect(screen.getByText('pagos@apartar.app')).toBeInTheDocument();
     expect(screen.getByText('Vencida')).toBeInTheDocument();
     expect(screen.getByLabelText('Referencia')).toBeInTheDocument();
 
