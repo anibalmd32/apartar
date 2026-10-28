@@ -35,7 +35,11 @@ it('se ve deshabilitado con el motivo sin la función', () => {
     render(<ExportButton type="collections" filters={{ preset: 'due_today' }} />);
 
     expect(screen.getByRole('button', { name: 'Exportar a Excel' })).toBeDisabled();
-    expect(screen.getByText(/Exportación a Excel: no está en tu plan, la incluye Pro/)).toBeInTheDocument();
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Por qué no está disponible' }));
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Exportación a Excel no está incluida en tu plan; la incluye Pro.');
 });
 
 it('manda los filtros que la pantalla aplicó', () => {

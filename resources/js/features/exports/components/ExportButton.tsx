@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { DisabledReason } from '@/components/ui/disabled-reason';
 import { Icon } from '@/components/ui/icon';
-import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { EXPORTS_URL, type ExportType } from '@/types/exports';
 import { cilCloudDownload } from '@coreui/icons';
@@ -16,20 +16,31 @@ export function ExportButton({ type, filters }: { type: ExportType; filters: Rea
         Object.entries(filters).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== ''),
     );
 
+    const button = (
+        <Button
+            variant="secondary"
+            disabled={!available}
+            loading={sending}
+            onClick={() =>
+                router.post(EXPORTS_URL, { type, filters: applied }, { onStart: () => setSending(true), onFinish: () => setSending(false) })
+            }
+        >
+            <Icon icon={cilCloudDownload} />
+            Exportar a Excel
+        </Button>
+    );
+
+    if (available) {
+        return button;
+    }
+
+    const upgrade = plan.featureUpgrade('excel_export');
+
     return (
-        <div className="flex flex-col items-start gap-1.5 text-xs lg:items-end">
-            <Button
-                variant="secondary"
-                disabled={!available}
-                loading={sending}
-                onClick={() =>
-                    router.post(EXPORTS_URL, { type, filters: applied }, { onStart: () => setSending(true), onFinish: () => setSending(false) })
-                }
-            >
-                <Icon icon={cilCloudDownload} />
-                Exportar a Excel
-            </Button>
-            <UpgradePrompt feature="excel_export" />
-        </div>
+        <DisabledReason
+            reason={`${plan.featureLabel('excel_export')} no está incluida en tu plan${upgrade !== null ? `; la incluye ${upgrade.planName}` : ''}.`}
+        >
+            {button}
+        </DisabledReason>
     );
 }
