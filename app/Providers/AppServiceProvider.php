@@ -76,7 +76,11 @@ class AppServiceProvider extends ServiceProvider
             ->by('apartado:'.self::routeKeyOf($request->route('layaway'))));
         RateLimiter::for('telemetria', fn (Request $request) => Limit::perMinute(self::TELEMETRY_BATCHES_PER_MINUTE)
             ->by('telemetria:'.($request->ip() ?? 'sin-ip')));
+        RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(self::WEBHOOK_CALLS_PER_MINUTE)
+            ->by('webhooks:'.($request->ip() ?? 'sin-ip')));
     }
+
+    public const WEBHOOK_CALLS_PER_MINUTE = 300;
 
     public const CODE_RESENDS_PER_HOUR = 3;
 
