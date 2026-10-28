@@ -2,6 +2,8 @@ import { Alert } from '@/components/ui/alert';
 import { Meter } from '@/components/ui/meter';
 import { SectionCard } from '@/components/ui/section-card';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
+import { PlansLink } from '@/features/plan/components/PlansLink';
+import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { PaymentAccountForm } from '@/features/tenancy/components/PaymentAccountForm';
 import { PaymentAccountRow } from '@/features/tenancy/components/PaymentAccountRow';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -18,25 +20,13 @@ interface PaymentAccountsPageProps {
 
 export default function PaymentAccountsIndex({ accounts, methods, usage }: PaymentAccountsPageProps) {
     const [editing, setEditing] = useState<number | null>(null);
+    const plan = usePlanLimits();
 
     const active = accounts.filter((account) => account.isActive);
     const editable = accounts.find((account) => account.id === editing);
 
     return (
-        <BackofficeLayout
-            title="Cuentas de cobro"
-            description="Dónde te pagan tus clientes. Es lo que ven al apartar y al reportar un pago."
-            actions={
-                <div className="bg-base-100 border-line shadow-card w-64 rounded-xl border px-4 py-3">
-                    <Meter
-                        label="Cuentas activas"
-                        value={formatUsage(usage.used, usage.limit)}
-                        percentage={usage.percentage}
-                        warn={usage.isAtLimit || (usage.percentage ?? 0) >= 80}
-                    />
-                </div>
-            }
-        >
+        <BackofficeLayout title="Cuentas de cobro" description="Dónde te pagan tus clientes. Es lo que ven al apartar y al reportar un pago.">
             {active.length === 0 ? (
                 <Alert tone="warning" title="No tienes ninguna cuenta de cobro activa">
                     Tus catálogos publicados siguen publicados, pero tus clientes no verán a dónde pagarte.
@@ -71,12 +61,22 @@ export default function PaymentAccountsIndex({ accounts, methods, usage }: Payme
                 </section>
 
                 <SectionCard title={editable ? 'Editar cuenta' : 'Nueva cuenta de cobro'} className="lg:sticky lg:top-24">
+                    <div className="bg-surface-2 w-full rounded-xl px-4 py-3">
+                        <Meter
+                            label="Cuentas activas"
+                            value={formatUsage(usage.used, usage.limit)}
+                            percentage={usage.percentage}
+                            warn={usage.isAtLimit || (usage.percentage ?? 0) >= 80}
+                        />
+                    </div>
+
                     {usage.isAtLimit && editable === undefined ? (
                         <Alert tone="warning" className="flex-col items-start gap-2">
-                            <span>Tu plan no admite más cuentas de cobro activas. Puedes desactivar alguna o cambiar de plan.</span>
-                            <a className="btn btn-sm" href="/backoffice/suscripcion">
-                                Ver planes
-                            </a>
+                            <span>
+                                Tu plan no admite más cuentas de cobro activas. Puedes desactivar alguna
+                                {plan.plansOffered ? ' o cambiar de plan' : ''}.
+                            </span>
+                            <PlansLink />
                         </Alert>
                     ) : null}
 

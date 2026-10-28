@@ -5,6 +5,8 @@ import { Meter } from '@/components/ui/meter';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
+import { PlansLink } from '@/features/plan/components/PlansLink';
+import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { TeamMemberRow } from '@/features/tenancy/components/TeamMemberRow';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatUsage } from '@/lib/plan';
@@ -35,6 +37,7 @@ const ROLE_OPTIONS = [
 
 export default function TeamIndex({ members, usage }: TeamPageProps) {
     const { data, setData, post, processing, errors, reset } = useForm<InviteForm>({ ...EMPTY_INVITE });
+    const plan = usePlanLimits();
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -63,12 +66,11 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
             {usage.isAtLimit ? (
                 <Alert tone="warning" className="flex-col items-start gap-2 sm:flex-row sm:items-center">
                     <span>
-                        Tu plan no admite más usuarios. Las invitaciones pendientes también ocupan sitio: puedes revocar alguna o cambiar de plan.
+                        Tu plan no admite más usuarios. Las invitaciones pendientes también ocupan sitio: puedes revocar alguna
+                        {plan.plansOffered ? ' o cambiar de plan' : ''}.
                     </span>
 
-                    <a className="btn btn-sm" href="/backoffice/suscripcion">
-                        Ver planes
-                    </a>
+                    <PlansLink />
                 </Alert>
             ) : null}
 
