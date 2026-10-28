@@ -21,13 +21,13 @@ export const WEEKLY_AFTER_DAYS = 45;
 
 export function chartData(daily: MailMetrics['daily'], series: Series): BarDatum[] {
     const weekly = daily.length > WEEKLY_AFTER_DAYS;
-    const buckets: { label: string; value: number }[] = [];
+    const buckets: { label: string; full: string; value: number }[] = [];
 
     daily.forEach((day, index) => {
-        const label = DAY.format(new Date(`${day.date}T00:00:00Z`));
+        const full = DAY.format(new Date(`${day.date}T00:00:00Z`));
 
         if (!weekly || index % 7 === 0) {
-            buckets.push({ label: weekly ? `Sem. ${label}` : label, value: 0 });
+            buckets.push({ label: weekly ? full : String(Number(day.date.slice(8, 10))), full: weekly ? `Semana del ${full}` : full, value: 0 });
         }
 
         const bucket = buckets[buckets.length - 1];
@@ -37,7 +37,7 @@ export function chartData(daily: MailMetrics['daily'], series: Series): BarDatum
         }
     });
 
-    return buckets.map((bucket) => ({ label: bucket.label, value: bucket.value, title: `${bucket.label}: ${count(bucket.value)}` }));
+    return buckets.map((bucket) => ({ label: bucket.label, value: bucket.value, title: `${bucket.full}: ${count(bucket.value)}` }));
 }
 
 export function DailyChart({ daily }: { daily: MailMetrics['daily'] }) {

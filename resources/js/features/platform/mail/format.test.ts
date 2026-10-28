@@ -25,7 +25,8 @@ it('agrupa por día los rangos cortos y por semana los largos', () => {
     const short = chartData([day('2026-10-01', 2), day('2026-10-02', 3)], 'sent');
 
     expect(short.map((bar) => bar.value)).toEqual([2, 3]);
-    expect(short[0]?.label).toMatch(/1 oct/);
+    expect(short[0]?.label).toBe('1');
+    expect(short[0]?.title).toMatch(/^1 oct.*: 2$/);
 
     const long = chartData(
         Array.from({ length: 60 }, (_, index) => day(new Date(Date.UTC(2026, 7, 1 + index)).toISOString().slice(0, 10), 1)),
@@ -35,5 +36,5 @@ it('agrupa por día los rangos cortos y por semana los largos', () => {
     expect(long).toHaveLength(9);
     expect(long[0]?.value).toBe(7);
     expect(long[8]?.value).toBe(4);
-    expect(long[0]?.label).toMatch(/^Sem\./);
+    expect(long[0]?.title).toMatch(/^Semana del 1 ago/);
 });

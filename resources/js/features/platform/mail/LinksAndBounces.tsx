@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge';
-import { Meter } from '@/components/ui/meter';
 import { SectionCard } from '@/components/ui/section-card';
 import { type MailMetrics } from '@/types/mail';
 import { count } from './format';
@@ -18,17 +17,19 @@ export function TopLinks({ links }: { links: MailMetrics['topLinks'] }) {
             ) : (
                 <ul className="flex flex-col gap-3">
                     {links.map((link) => (
-                        <Meter
-                            key={link.url}
-                            as="li"
-                            label={
-                                <span className="block max-w-[46ch] truncate normal-case" title={link.url}>
+                        <li key={link.url} className="flex flex-col gap-1.5">
+                            <span className="flex items-baseline justify-between gap-3 text-[13px]">
+                                <span className="text-ink-2 min-w-0 truncate" title={link.url}>
                                     {link.url}
                                 </span>
-                            }
-                            value={`${count(link.clicks)} · ${count(link.mails)} correos`}
-                            percentage={(link.clicks / max) * 100}
-                        />
+                                <span className="font-semibold whitespace-nowrap">
+                                    {count(link.clicks)} · {count(link.mails)} correos
+                                </span>
+                            </span>
+                            <span className="bg-base-300 block h-1.5 overflow-hidden rounded-full" aria-hidden="true">
+                                <span className="bg-primary block h-full rounded-full" style={{ width: `${(link.clicks / max) * 100}%` }} />
+                            </span>
+                        </li>
                     ))}
                 </ul>
             )}
