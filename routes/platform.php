@@ -6,8 +6,12 @@ use App\Http\Controllers\Platform\AuditController;
 use App\Http\Controllers\Platform\Auth\LoginController;
 use App\Http\Controllers\Platform\DashboardController;
 use App\Http\Controllers\Platform\InvoiceController;
+use App\Http\Controllers\Platform\MailComposeController;
+use App\Http\Controllers\Platform\MailInboxController;
+use App\Http\Controllers\Platform\MailMetricsController;
 use App\Http\Controllers\Platform\OperatorController;
 use App\Http\Controllers\Platform\OrganizationController;
+use App\Http\Controllers\Platform\SentMailController;
 use App\Http\Controllers\Platform\SettingsController;
 use App\Http\Controllers\Platform\SupportAccessController;
 use App\Http\Controllers\Platform\SupportDataController;
@@ -48,6 +52,16 @@ Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->gr
         Route::post('operadores', [OperatorController::class, 'store'])->name('operators.store');
         Route::patch('operadores/{operator}/acceso', [OperatorController::class, 'access'])->whereNumber('operator')->name('operators.access');
         Route::post('operadores/{operator}/contrasena', [OperatorController::class, 'resetPassword'])->whereNumber('operator')->name('operators.password');
+
+        Route::get('correos', [MailMetricsController::class, 'index'])->name('mail.metrics');
+        Route::get('correos/enviados', [SentMailController::class, 'index'])->name('mail.sent.index');
+        Route::get('correos/enviados/{sentMail:uuid}', [SentMailController::class, 'show'])->whereUuid('sentMail')->name('mail.sent.show');
+        Route::get('correos/bandeja', [MailInboxController::class, 'index'])->name('mail.inbox.index');
+        Route::get('correos/bandeja/{thread}', [MailInboxController::class, 'show'])->whereNumber('thread')->name('mail.inbox.show');
+        Route::post('correos/bandeja/{thread}/no-leido', [MailInboxController::class, 'unread'])->whereNumber('thread')->name('mail.inbox.unread');
+        Route::get('correos/adjuntos/{attachment}', [MailInboxController::class, 'attachment'])->whereNumber('attachment')->name('mail.attachments.show');
+        Route::get('correos/redactar', [MailComposeController::class, 'create'])->name('mail.compose');
+        Route::post('correos/enviar', [MailComposeController::class, 'store'])->middleware('throttle:correo-manual')->name('mail.send');
 
         Route::get('facturas', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::post('comprobantes/{receipt}/aprobar', [InvoiceController::class, 'approve'])->whereNumber('receipt')->name('receipts.approve');

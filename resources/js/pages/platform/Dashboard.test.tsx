@@ -57,3 +57,14 @@ it('dice cuánto cambió frente al mes pasado y los detalles de cada tarjeta', (
     expect(screen.getByText('Oct: $1.084')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Volumen en 90 días' })).toBeInTheDocument();
 });
+
+it('resume el correo de los últimos 30 días y enlaza a sus métricas', () => {
+    render(<PlatformDashboard metrics={metrics} mail={{ sent: 1200, deliveryRate: 0.98, openRate: 0.4, bounceRate: null, unreadThreads: 3 }} />);
+
+    const card = screen.getByRole('region', { name: 'Correo' });
+
+    expect(within(card).getByText('1.200')).toBeInTheDocument();
+    expect(within(card).getByText(/98\s?%/)).toBeInTheDocument();
+    expect(within(card).getByText('—')).toBeInTheDocument();
+    expect(within(card).getByRole('link', { name: 'Ver métricas' }).getAttribute('href')).toBe('/plataforma/correos');
+});

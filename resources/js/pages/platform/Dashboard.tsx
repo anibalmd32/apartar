@@ -2,8 +2,10 @@ import { Meter } from '@/components/ui/meter';
 import { SectionCard } from '@/components/ui/section-card';
 import { StatCard } from '@/components/ui/stat-card';
 import { BillingTrend, versusLastMonth } from '@/features/platform/components/BillingTrend';
+import { MailSummaryCard } from '@/features/platform/mail/MailSummaryCard';
 import PlatformLayout from '@/layouts/platform-layout';
 import { cn } from '@/lib/utils';
+import { type MailSummary } from '@/types/mail';
 import { type PlatformMetrics } from '@/types/platform';
 import { cilBan, cilBuilding, cilDescription, cilDollar } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -23,7 +25,13 @@ function Tile({ label, children }: { label: string; children: ReactNode }) {
 
 const PERIOD_LABELS: Record<number, string> = { 30: '30 días', 90: '90 días', 365: '12 meses' };
 
-export default function PlatformDashboard({ metrics, periods = [30] }: { metrics: PlatformMetrics; periods?: readonly number[] }) {
+interface DashboardProps {
+    metrics: PlatformMetrics;
+    periods?: readonly number[];
+    mail?: MailSummary | null;
+}
+
+export default function PlatformDashboard({ metrics, periods = [30], mail }: DashboardProps) {
     const { organizations, byPlan, mrr, invoices, network, gmv, health } = metrics;
     const days = metrics.periodDays ?? 30;
     const periodLabel = PERIOD_LABELS[days] ?? `${days} días`;
@@ -106,6 +114,8 @@ export default function PlatformDashboard({ metrics, periods = [30] }: { metrics
             </div>
 
             <BillingTrend monthly={metrics.monthly ?? null} />
+
+            {mail === undefined ? null : <MailSummaryCard summary={mail} />}
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <SectionCard title="Organizaciones por plan" aria-label="Por plan">

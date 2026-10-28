@@ -1,6 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { cilBuilding, cilDescription, cilHeart, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
+import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHeart, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
 export interface PlatformSection {
@@ -14,6 +14,7 @@ export const PLATFORM_SECTIONS: readonly PlatformSection[] = [
     { label: 'Resumen', short: 'Resumen', href: '/plataforma', icon: cilSpeedometer },
     { label: 'Organizaciones', short: 'Orgs', href: '/plataforma/organizaciones', icon: cilBuilding },
     { label: 'Comprobantes', short: 'Comprobantes', href: '/plataforma/facturas', icon: cilDescription },
+    { label: 'Correos', short: 'Correos', href: '/plataforma/correos', icon: cilEnvelopeClosed },
     { label: 'Salud del sistema', short: 'Salud', href: '/plataforma/salud', icon: cilHeart },
 ];
 
@@ -26,6 +27,7 @@ export const PLATFORM_SUPPORT_SECTIONS: readonly PlatformSection[] = [
 interface OperatorCounts {
     pendingReceipts: number;
     activeSupportGrants: number;
+    unreadMail?: number;
 }
 
 export function isCurrentPlatformSection(href: string, url: string): boolean {
@@ -72,6 +74,7 @@ export function PlatformNav() {
     const counts: Record<string, number> = {
         '/plataforma/facturas': props.platformOperator?.pendingReceipts ?? 0,
         '/plataforma/soporte': props.platformOperator?.activeSupportGrants ?? 0,
+        '/plataforma/correos': props.platformOperator?.unreadMail ?? 0,
     };
 
     return (
