@@ -94,7 +94,7 @@ final class OutgoingMailRecorder
 
     public static function domain(): string
     {
-        $domain = RecipientProvider::domainOf((string) config('mail.from.address'));
+        $domain = RecipientProvider::domainOf((string) config('mail.owner.address'));
 
         return $domain === '' ? 'apartar.app' : $domain;
     }
