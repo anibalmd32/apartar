@@ -1,4 +1,5 @@
 import { type SpecificationPayloadRow } from '@/features/products/hooks/useSpecificationRows';
+import { suggestSku } from '@/features/products/lib/sku';
 import { type ProductDefaults, type ProductFormValues } from '@/types/product';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
@@ -26,7 +27,7 @@ const PREVIEW_DEBOUNCE_MS = 300;
 function initialData(defaults: ProductDefaults, product?: ProductFormValues | null): ProductFormData {
     return {
         name: product?.name ?? '',
-        sku: product?.sku ?? '',
+        sku: product?.sku ?? suggestSku('', defaults.skuSequence ?? 1),
         slug: product?.slug ?? '',
         description: product?.description ?? '',
         price: product?.price ?? '',

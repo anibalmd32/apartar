@@ -1,18 +1,31 @@
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
+import { suggestSku } from '@/features/products/lib/sku';
 import { cn } from '@/lib/utils';
 import { type ProductFormValues } from '@/types/product';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 
 interface ProductIdentityFieldsProps extends ProductFieldsProps {
     product: ProductFormValues | null;
+    skuSequence?: number;
 }
 
 const DESCRIPTION_MAX = 5000;
 
-export function ProductIdentityFields({ data, setData, errors, product }: ProductIdentityFieldsProps) {
+export function ProductIdentityFields({ data, setData, errors, product, skuSequence = 1 }: ProductIdentityFieldsProps) {
     const descriptionId = useId();
+    const [skuEdited, setSkuEdited] = useState(product !== null);
+
+    const changeName = (name: string) => {
+        if (skuEdited) {
+            setData('name', name);
+
+            return;
+        }
+
+        setData((previous) => ({ ...previous, name, sku: suggestSku(name, skuSequence) }));
+    };
     const hintId = `${descriptionId}-hint`;
     const errorId = `${descriptionId}-error`;
 
@@ -24,7 +37,7 @@ export function ProductIdentityFields({ data, setData, errors, product }: Produc
                         label="Nombre"
                         name="name"
                         value={data.name}
-                        onChange={(event) => setData('name', event.target.value)}
+                        onChange={(event) => changeName(event.target.value)}
                         error={errors.name}
                         maxLength={200}
                         autoComplete="off"
@@ -36,9 +49,16 @@ export function ProductIdentityFields({ data, setData, errors, product }: Produc
                     label="SKU"
                     name="sku"
                     value={data.sku}
-                    onChange={(event) => setData('sku', event.target.value)}
+                    onChange={(event) => {
+                        setSkuEdited(true);
+                        setData('sku', event.target.value);
+                    }}
                     error={errors.sku}
-                    hint="Tu código interno. Otro negocio puede usar el mismo sin que interfiera."
+                    hint={
+                        product === null && !skuEdited
+                            ? 'Lo sugerimos a partir del nombre. Puedes cambiarlo: es tu código interno.'
+                            : 'Tu código interno. Otro negocio puede usar el mismo sin que interfiera.'
+                    }
                     maxLength={64}
                     autoComplete="off"
                     required

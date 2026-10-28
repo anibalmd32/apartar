@@ -92,7 +92,8 @@ final class ProductPageTest extends TestCase
                 ->component('backoffice/products/Form')
                 ->where('product', null)
                 ->where('defaults.installmentsCount', 6)
-                ->where('defaults.frequencyDays', 30));
+                ->where('defaults.frequencyDays', 30)
+                ->where('defaults.skuSequence', 1));
     }
 
     public function test_the_form_carries_the_plan_computed_by_the_domain(): void

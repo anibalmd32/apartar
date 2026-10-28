@@ -83,6 +83,7 @@ export interface StockBreakdownView {
 export interface ProductDefaults {
     readonly installmentsCount: number;
     readonly frequencyDays: number;
+    readonly skuSequence?: number;
 }
 
 export interface ProductListItem {

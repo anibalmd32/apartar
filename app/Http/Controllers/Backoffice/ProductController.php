@@ -252,6 +252,7 @@ final class ProductController extends Controller
         return [
             'installmentsCount' => $this->settingInteger(SettingKey::DefaultInstallmentsCount),
             'frequencyDays' => $this->settingInteger(SettingKey::DefaultFrequencyDays),
+            'skuSequence' => Product::withTrashed()->count() + 1,
         ];
     }
 
