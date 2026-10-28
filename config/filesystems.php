@@ -55,6 +55,14 @@ return [
             'visibility' => 'private',
         ],
 
+        'mail' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/mail'),
+            'serve' => false,
+            'throw' => true,
+            'visibility' => 'private',
+        ],
+
         // firmada de descarga.
         //
         'exports' => [

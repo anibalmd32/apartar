@@ -9,6 +9,7 @@ use App\Domain\Account\PortalContext;
 use App\Domain\Notification\PushReportHandler;
 use App\Domain\Tenancy\TenantContext;
 use App\Support\FrameworkMails;
+use App\Support\Mail\OutgoingMailContext;
 use App\Support\Settings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         ));
 
         $this->app->scoped(PortalContext::class, fn (): PortalContext => PortalContext::fromSession());
+        $this->app->scoped(OutgoingMailContext::class);
     }
 
     public function boot(): void

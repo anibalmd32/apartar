@@ -44,6 +44,15 @@ return [
         'field_priority' => ['promedio', 'venta', 'compra'],
     ],
 
+    'mailtrap' => [
+        'api_url' => env('MAILTRAP_API_URL', 'https://mailtrap.io'),
+        'api_token' => env('MAILTRAP_API_TOKEN'),
+        'inbox_id' => env('MAILTRAP_INBOX_ID'),
+        'sending_webhook_secret' => env('MAILTRAP_SENDING_WEBHOOK_SECRET'),
+        'inbound_webhook_secret' => env('MAILTRAP_INBOUND_WEBHOOK_SECRET'),
+        'timeout' => (int) env('MAILTRAP_TIMEOUT', 15),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

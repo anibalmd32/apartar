@@ -126,7 +126,10 @@ it('no versiona ningún secreto', function (): void {
         ->toMatch('/^VAPID_PUBLIC_KEY=\s*$/m')
         ->toMatch('/^VAPID_PRIVATE_KEY=\s*$/m')
         ->toMatch('/^PLATFORM_ADMIN_EMAIL=\s*$/m')
-        ->toMatch('/^PLATFORM_ADMIN_PASSWORD=\s*$/m');
+        ->toMatch('/^PLATFORM_ADMIN_PASSWORD=\s*$/m')
+        ->toMatch('/^MAILTRAP_API_TOKEN=\s*$/m')
+        ->toMatch('/^MAILTRAP_SENDING_WEBHOOK_SECRET=\s*$/m')
+        ->toMatch('/^MAILTRAP_INBOUND_WEBHOOK_SECRET=\s*$/m');
 });
 
 it('mantiene .env fuera del control de versiones', function (): void {

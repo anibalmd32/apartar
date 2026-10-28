@@ -47,6 +47,11 @@ final class TenancyAudit extends Command
         'mobile_prefixes' => 'Catálogo de prefijos de celular y su operadora, común a toda la plataforma.',
         'document_prefixes' => 'Catálogo de prefijos de documento (V, E, J), común a toda la plataforma.',
         'platform_activity_log' => 'Auditoría de los operadores; la organización afectada va en target_organization_id, sin scope.',
+        'sent_mails' => 'Registro de todo correo que sale de la plataforma; la organización, si se conoce, va en target_organization_id, sin scope.',
+        'sent_mail_events' => 'Eventos de Mailtrap de los correos enviados: misma capa de plataforma que sent_mails.',
+        'mail_threads' => 'Conversaciones del buzón de la plataforma (info@), sin negocio.',
+        'inbound_mails' => 'Correos recibidos en el dominio de la plataforma, sin negocio.',
+        'inbound_mail_attachments' => 'Adjuntos de los correos recibidos: misma capa de plataforma que inbound_mails.',
 
         'password_reset_tokens' => 'Tabla del framework, indexada por correo.',
         'sessions' => 'Tabla del framework.',
