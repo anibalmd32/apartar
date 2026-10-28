@@ -51,6 +51,15 @@ services:
       - dokploy-network
 
   queue:
+    build:
+      context: .
+      target: runtime
+      args:
+        VITE_APP_NAME: ${APP_NAME:-Apartar}
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
     image: apartar/app
     restart: unless-stopped
     mem_limit: 512m
@@ -76,6 +85,15 @@ services:
       - dokploy-network
 
   reverb:
+    build:
+      context: .
+      target: runtime
+      args:
+        VITE_APP_NAME: ${APP_NAME:-Apartar}
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
     image: apartar/app
     restart: unless-stopped
     mem_limit: 384m

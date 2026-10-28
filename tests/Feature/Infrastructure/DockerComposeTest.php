@@ -89,6 +89,10 @@ it('en produccion comparte app_storage y construye los assets con el host public
     }
 
     expect($production->service('nginx'))->toContain('target: web')->toContain('VITE_REVERB_HOST: ${VITE_REVERB_HOST}');
+
+    foreach (['app', 'queue', 'reverb'] as $service) {
+        expect($production->service($service))->toContain('target: runtime')->toContain('image: apartar/app');
+    }
     expect($production->service('reverb'))->toContain('--host=0.0.0.0')->toContain('--port=8080');
 });
 
