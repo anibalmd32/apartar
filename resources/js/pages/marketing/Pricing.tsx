@@ -15,12 +15,14 @@ const FAQS = [
     },
     {
         question: '¿Tengo que pagar para empezar?',
-        answer: 'No. Empiezas gratis y subes de plan cuando lo necesites. Todos los planes traen el sistema de apartado.',
+        answer: 'No. Empiezas gratis, sin tarjeta y sin período de prueba que se acabe. El plan Gratis trae el sistema de apartado completo.',
     },
 ];
 
 export default function Pricing({ plans }: PricingProps) {
     const featuredIndex = plans.findIndex((plan) => !plan.isFree);
+    const paid = featuredIndex !== -1;
+    const faqs = paid ? FAQS : FAQS.filter((faq) => faq.question !== '¿Cómo pago mi plan?');
 
     return (
         <MarketingLayout title="Planes y precios">
@@ -28,7 +30,9 @@ export default function Pricing({ plans }: PricingProps) {
                 <span className="bg-primary-soft text-primary-ink rounded-full px-2.5 py-[3px] text-xs font-semibold">Sin tarjeta internacional</span>
                 <h1 className="text-[34px] leading-tight font-extrabold tracking-[-0.04em] lg:text-5xl">Precios simples para crecer</h1>
                 <p className="text-ink-2 max-w-[640px] text-base leading-normal lg:text-lg">
-                    Empieza gratis. Cuando tu negocio crezca, mejora tu plan y paga en bolívares o dólares.
+                    {paid
+                        ? 'Empieza gratis. Cuando tu negocio crezca, mejora tu plan y paga en bolívares o dólares.'
+                        : 'Empieza gratis, sin tarjeta y sin período de prueba que se acabe.'}
                 </p>
             </header>
 
@@ -41,7 +45,7 @@ export default function Pricing({ plans }: PricingProps) {
             <section className="bg-base-100 px-4 pt-14 pb-20">
                 <div className="mx-auto flex max-w-[880px] flex-col gap-3">
                     <h2 className="mb-1 text-[26px] font-extrabold tracking-[-0.03em] lg:text-[32px]">Preguntas frecuentes</h2>
-                    {FAQS.map((faq, index) => (
+                    {faqs.map((faq, index) => (
                         <details key={faq.question} className="group bg-base-200 rounded-[14px] px-5 py-[18px]" open={index === 0}>
                             <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 text-base font-bold [&::-webkit-details-marker]:hidden">
                                 <span className="flex-1">{faq.question}</span>

@@ -185,7 +185,9 @@ final class LimitEnforcer
             }
         }
 
-        return PlanState::of($subscription, $plan, $usage, $upgrades, $featureUpgrades);
+        $plansOffered = $public->contains(fn (Plan $candidate): bool => ! $candidate->is($plan));
+
+        return PlanState::of($subscription, $plan, $usage, $upgrades, $featureUpgrades, $plansOffered);
     }
 
     public function usageOf(UsageMetric $metric, ?Subscription $subscription = null): UsageState

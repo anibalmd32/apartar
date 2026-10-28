@@ -5,6 +5,10 @@ import { Link } from '@inertiajs/react';
 export function PlansLink({ className = 'btn btn-sm', href = SUBSCRIPTION_URL }: { className?: string; href?: string }) {
     const plan = usePlanLimits();
 
+    if (!plan.plansOffered) {
+        return null;
+    }
+
     if (!plan.canOpenSubscription) {
         return <span className="text-sm opacity-80">Pídele al dueño del negocio que revise el plan.</span>;
     }

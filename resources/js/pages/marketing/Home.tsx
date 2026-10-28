@@ -103,7 +103,7 @@ export default function Home() {
             <section className="px-4 py-10 lg:px-20 lg:py-20">
                 <div className="bg-primary text-primary-content mx-auto flex max-w-[1280px] flex-col items-center gap-4 rounded-[28px] px-6 py-12 text-center lg:px-16 lg:py-14">
                     <h2 className="text-[28px] leading-tight font-extrabold tracking-[-0.03em] lg:text-[40px]">Empieza a vender en cuotas hoy</h2>
-                    <p className="text-base opacity-85">Empieza gratis. Mejora cuando tu negocio crezca.</p>
+                    <p className="text-base opacity-85">Empieza gratis, sin tarjeta y sin período de prueba.</p>
                     <Link
                         href={route('register')}
                         className="inline-flex h-[50px] items-center justify-center rounded-full bg-white px-6 text-[15px] font-bold text-[#4338ca] hover:bg-white/90"

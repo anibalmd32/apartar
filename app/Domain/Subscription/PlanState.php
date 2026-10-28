@@ -25,6 +25,7 @@ final readonly class PlanState
         public array $features,
         public array $upgrades = [],
         public array $featureUpgrades = [],
+        public bool $plansOffered = true,
     ) {}
 
     /**
@@ -38,6 +39,7 @@ final readonly class PlanState
         array $usage,
         array $upgrades = [],
         array $featureUpgrades = [],
+        bool $plansOffered = true,
     ): self {
         return new self(
             planCode: $plan->code,
@@ -49,6 +51,7 @@ final readonly class PlanState
             features: $plan->enabledFeatures(),
             upgrades: $upgrades,
             featureUpgrades: $featureUpgrades,
+            plansOffered: $plansOffered,
         );
     }
 
@@ -86,6 +89,7 @@ final readonly class PlanState
             ),
             'upgrades' => array_map(fn (?Plan $plan): ?array => self::offer($plan), $this->upgrades),
             'featureUpgrades' => array_map(fn (?Plan $plan): ?array => self::offer($plan), $this->featureUpgrades),
+            'plansOffered' => $this->plansOffered,
             'featureLabels' => PlanFeature::labels(),
             'metricLabels' => array_combine(
                 array_map(fn (UsageMetric $metric): string => $metric->value, UsageMetric::cases()),

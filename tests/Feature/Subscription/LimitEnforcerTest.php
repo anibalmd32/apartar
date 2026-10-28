@@ -109,6 +109,20 @@ final class LimitEnforcerTest extends TestCase
         });
     }
 
+    public function test_with_only_the_current_plan_public_no_plans_are_offered(): void
+    {
+        $free = Plan::factory()->create(['code' => 'free-solo', 'name' => 'Free', 'position' => 1]);
+        Plan::factory()->hidden()->create(['code' => 'oculto', 'name' => 'Oculto', 'position' => 2]);
+
+        $this->subscribeTo(plan: $free);
+
+        $this->assertFalse($this->withinOrganization($this->organization, fn (): bool => $this->enforcer()->state()->plansOffered));
+
+        Plan::factory()->create(['code' => 'visible', 'name' => 'Visible', 'position' => 3]);
+
+        $this->assertTrue($this->withinOrganization($this->organization, fn (): bool => $this->enforcer()->state()->plansOffered));
+    }
+
     public function test_a_hidden_plan_is_never_offered_as_the_way_out(): void
     {
         $free = Plan::factory()->create(['code' => 'free-h', 'name' => 'Free', 'position' => 1, 'max_users' => 1]);

@@ -34,7 +34,7 @@ it('viaja con la forma exacta del contrato tipado', function (): void {
     $state = planStateFor($plan, $subscription)->toArray();
 
     expect(array_keys($state))
-        ->toBe(['planCode', 'planName', 'status', 'currentPeriodEnd', 'graceEndsAt', 'usage', 'features', 'upgrades', 'featureUpgrades', 'featureLabels', 'metricLabels', 'metricLabelsOne']);
+        ->toBe(['planCode', 'planName', 'status', 'currentPeriodEnd', 'graceEndsAt', 'usage', 'features', 'upgrades', 'featureUpgrades', 'plansOffered', 'featureLabels', 'metricLabels', 'metricLabelsOne']);
 
     expect($state['planCode'])->toBe('pro');
     expect($state['status'])->toBe('active');

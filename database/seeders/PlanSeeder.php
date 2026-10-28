@@ -52,7 +52,7 @@ class PlanSeeder extends Seeder
                 'name' => 'Pro',
                 'price_cents' => 1_500,
                 'interval' => 'monthly',
-                'is_public' => true,
+                'is_public' => false,
                 'position' => 2,
 
                 'max_users' => 5,
@@ -79,7 +79,7 @@ class PlanSeeder extends Seeder
                 'name' => 'Negocio',
                 'price_cents' => 3_900,
                 'interval' => 'monthly',
-                'is_public' => true,
+                'is_public' => false,
                 'position' => 3,
 
                 'max_users' => 15,

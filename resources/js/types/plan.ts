@@ -31,6 +31,7 @@ export interface PlanOffer {
 export interface PlanStateOffers {
     readonly upgrades: Readonly<Partial<Record<UsageMetric, PlanOffer | null>>>;
     readonly featureUpgrades: Readonly<Partial<Record<PlanFeature, PlanOffer | null>>>;
+    readonly plansOffered?: boolean;
     readonly featureLabels: Readonly<Record<PlanFeature, string>>;
     readonly metricLabels: Readonly<Record<UsageMetric, string>>;
     readonly metricLabelsOne?: Readonly<Record<UsageMetric, string>>;

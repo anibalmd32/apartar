@@ -22,6 +22,7 @@ export interface PlanLimits {
     featureLabel(feature: PlanFeature): string;
     metricLabel(metric: UsageMetric, count?: number | null): string;
     readonly canOpenSubscription: boolean;
+    readonly plansOffered: boolean;
 }
 
 export function usePlanLimits(): PlanLimits {
@@ -48,5 +49,6 @@ export function planLimitsOf(state: (PlanState & PlanStateOffers) | null, canOpe
         featureLabel: (feature) => state?.featureLabels[feature] ?? feature,
         metricLabel: (metric, count) => (count === 1 ? state?.metricLabelsOne?.[metric] : undefined) ?? state?.metricLabels[metric] ?? metric,
         canOpenSubscription,
+        plansOffered: state?.plansOffered ?? true,
     };
 }

@@ -43,7 +43,7 @@ export function PlanSummary({
     timeZone,
 }: {
     state: PlanState;
-    pricingUrl: string;
+    pricingUrl: string | null;
     period: SubscriptionPeriod | null;
     nextInvoice: NextInvoice | null;
     timeZone: string;
@@ -65,9 +65,11 @@ export function PlanSummary({
                         al mes
                     </p>
                 ) : null}
-                <a className="text-primary-ink self-start text-[13px] font-semibold hover:underline" href={pricingUrl}>
-                    Compara los planes
-                </a>
+                {pricingUrl !== null ? (
+                    <a className="text-primary-ink self-start text-[13px] font-semibold hover:underline" href={pricingUrl}>
+                        Compara los planes
+                    </a>
+                ) : null}
             </div>
             {nextInvoice !== null ? (
                 <div className="bg-surface-2 flex flex-wrap items-center gap-4 rounded-xl px-4 py-3">

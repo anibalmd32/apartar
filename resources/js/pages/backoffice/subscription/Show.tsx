@@ -63,7 +63,13 @@ export default function SubscriptionShow({
                 <Alert tone="warning">No encontramos la suscripción de tu negocio. Escríbenos y lo revisamos.</Alert>
             ) : (
                 <>
-                    <PlanSummary state={state} pricingUrl={pricingUrl} period={period} nextInvoice={nextInvoice} timeZone={timezone} />
+                    <PlanSummary
+                        state={state}
+                        pricingUrl={plan.plansOffered ? pricingUrl : null}
+                        period={period}
+                        nextInvoice={nextInvoice}
+                        timeZone={timezone}
+                    />
 
                     <section aria-label="Consumo" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
                         {(Object.keys(state.usage) as UsageMetric[]).map((metric) => (

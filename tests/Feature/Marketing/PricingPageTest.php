@@ -26,8 +26,18 @@ final class PricingPageTest extends TestCase
         $this->seed(PlanSeeder::class);
     }
 
+    public function test_while_the_paid_plans_are_hidden_only_the_free_one_is_offered(): void
+    {
+        $this->get('/precios')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->has('plans', 1)
+                ->where('plans.0.code', 'free'));
+    }
+
     public function test_it_renders_the_three_public_plans_from_the_database(): void
     {
+        Plan::query()->update(['is_public' => true]);
         $this->get('/precios')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
@@ -44,6 +54,7 @@ final class PricingPageTest extends TestCase
 
     public function test_a_change_in_the_table_is_what_the_page_shows(): void
     {
+        Plan::query()->update(['is_public' => true]);
         Plan::query()->where('code', 'pro')->update(['max_users' => 7, 'name' => 'Pro renombrado']);
 
         $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
@@ -53,6 +64,7 @@ final class PricingPageTest extends TestCase
 
     public function test_a_null_limit_travels_as_unlimited_and_never_as_zero(): void
     {
+        Plan::query()->update(['is_public' => true]);
         Plan::query()->where('code', 'business')->update(['max_catalogs' => null, 'max_products_per_catalog' => null]);
 
         $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
@@ -62,6 +74,7 @@ final class PricingPageTest extends TestCase
 
     public function test_a_hidden_plan_is_not_offered_and_its_organizations_stay_on_it(): void
     {
+        Plan::query()->update(['is_public' => true]);
         $negotiated = Plan::factory()->hidden()->create(['name' => 'Negociado', 'position' => 0]);
         $organization = Organization::factory()->create();
         $subscription = $this->withinOrganization($organization, fn (): Subscription => Subscription::factory()->forPlan($negotiated)->create());
@@ -78,6 +91,7 @@ final class PricingPageTest extends TestCase
 
     public function test_a_plan_without_features_is_a_plan_without_paid_functions(): void
     {
+        Plan::query()->update(['is_public' => true]);
         Plan::query()->where('code', 'free')->update(['features' => null]);
 
         $this->get('/precios')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
@@ -88,6 +102,7 @@ final class PricingPageTest extends TestCase
 
     public function test_every_feature_has_a_name(): void
     {
+        Plan::query()->update(['is_public' => true]);
         Plan::factory()->withEveryFeature()->create(['position' => 99]);
 
         $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
@@ -96,6 +111,7 @@ final class PricingPageTest extends TestCase
 
     public function test_it_reads_the_plans_in_one_query(): void
     {
+        Plan::query()->update(['is_public' => true]);
         DB::enableQueryLog();
 
         $this->get('/precios')->assertOk();
@@ -106,6 +122,7 @@ final class PricingPageTest extends TestCase
 
     public function test_the_paid_plans_show_their_monthly_price(): void
     {
+        Plan::query()->update(['is_public' => true]);
         $this->assertSame(
             ['free' => 0, 'pro' => 1_500, 'business' => 3_900],
             Plan::query()->public()->orderBy('position')->pluck('price_cents', 'code')->map(fn (mixed $cents): int => (int) $cents)->all(),
@@ -120,6 +137,7 @@ final class PricingPageTest extends TestCase
 
     public function test_a_price_is_written_with_its_period(): void
     {
+        Plan::query()->update(['is_public' => true]);
         Plan::factory()->create(['price_cents' => 2_900, 'interval' => 'monthly', 'position' => 99]);
         Plan::factory()->create(['price_cents' => 1_500, 'interval' => 'weekly', 'position' => 100]);
 
@@ -131,6 +149,7 @@ final class PricingPageTest extends TestCase
 
     public function test_it_opens_for_a_visitor_without_a_session(): void
     {
+        Plan::query()->update(['is_public' => true]);
         $this->get('/precios')->assertOk();
         $this->assertGuest();
     }

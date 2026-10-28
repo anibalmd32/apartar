@@ -67,17 +67,24 @@ it('no pinta nada sin impago', () => {
     expect(container).toBeEmptyDOMElement();
 });
 
-it('no deja cerrar sin marcar la casilla, y al marcarla envía la confirmación', () => {
+it('no deja cerrar sin marcar la casilla y escribir la contraseña, y envía las dos', () => {
     render(<CloseOrganizationCard closeUrl="/backoffice/suscripcion/cerrar-negocio" />);
 
     const button = screen.getByRole('button', { name: 'Cerrar el negocio' });
     expect(button).toBeDisabled();
 
     fireEvent.click(screen.getByRole('checkbox'));
+    expect(button).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Tu contraseña/), { target: { value: 'mi-contraseña' } });
     expect(button).toBeEnabled();
 
     fireEvent.click(button);
-    expect(post).toHaveBeenCalledWith({ confirmed: true }, '/backoffice/suscripcion/cerrar-negocio', { preserveScroll: true });
+    expect(post).toHaveBeenCalledWith(
+        { confirmed: true, password: 'mi-contraseña' },
+        '/backoffice/suscripcion/cerrar-negocio',
+        expect.objectContaining({ preserveScroll: true }),
+    );
 });
 
 it('pinta la lista de apartados en curso que devuelve el servidor', () => {

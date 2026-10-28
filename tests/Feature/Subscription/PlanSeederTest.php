@@ -156,9 +156,10 @@ final class PlanSeederTest extends TestCase
         }
     }
 
-    public function test_the_three_plans_are_public(): void
+    public function test_only_the_free_plan_is_public_while_the_paid_ones_stay_hidden(): void
     {
-        $this->assertSame(3, Plan::query()->public()->count());
+        $this->assertSame(['free'], Plan::query()->public()->pluck('code')->all());
+        $this->assertSame(3, Plan::query()->count());
     }
 
     public function test_seeding_twice_is_idempotent(): void
