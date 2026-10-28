@@ -1,7 +1,9 @@
+import { SelectionBar } from '@/features/data-table/components/SelectionControls';
 import { TableBody } from '@/features/data-table/components/TableBody';
 import { TableHeader } from '@/features/data-table/components/TableHeader';
 import { TablePagination } from '@/features/data-table/components/TablePagination';
 import { TableToolbar } from '@/features/data-table/components/TableToolbar';
+import { type RowSelection } from '@/features/data-table/hooks/useRowSelection';
 import { type ServerTable } from '@/features/data-table/hooks/useServerTable';
 import { type RowData } from '@tanstack/react-table';
 import { type ReactNode } from 'react';
@@ -12,9 +14,19 @@ interface DataTableProps<TRow extends RowData> {
     toolbar?: ReactNode;
     filterLabels?: Readonly<Record<string, string>>;
     label: string;
+    selection?: RowSelection<TRow>;
+    selectionActions?: ReactNode;
 }
 
-export function DataTable<TRow extends RowData>({ table, empty, toolbar, filterLabels = {}, label }: DataTableProps<TRow>) {
+export function DataTable<TRow extends RowData>({
+    table,
+    empty,
+    toolbar,
+    filterLabels = {},
+    label,
+    selection,
+    selectionActions,
+}: DataTableProps<TRow>) {
     const ignored = table.meta.ignoredFilters.map((key) => filterLabels[key] ?? key);
     const narrowed = Object.values(table.meta.filters).some(
         (value) => value !== null && value !== '' && !(Array.isArray(value) && value.length === 0),
@@ -34,8 +46,13 @@ export function DataTable<TRow extends RowData>({ table, empty, toolbar, filterL
                 columns={table.columns}
                 loading={table.loading}
                 empty={empty}
-                header={<TableHeader table={table.table} columns={table.columns} sort={table.meta.sort} onSort={table.toggleSort} />}
+                selection={selection}
+                header={
+                    <TableHeader table={table.table} columns={table.columns} sort={table.meta.sort} onSort={table.toggleSort} selection={selection} />
+                }
             />
+
+            {selection ? <SelectionBar selection={selection} actions={selectionActions} /> : null}
 
             {pristine ? null : <TablePagination meta={table.meta} loading={table.loading} onPage={table.setPage} onPerPage={table.setPerPage} />}
         </section>

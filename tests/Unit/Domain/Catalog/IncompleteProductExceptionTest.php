@@ -54,3 +54,18 @@ it('conserva el producto y el mapa de campos', function (): void {
     expect($exception->missing)->toBe(['category_id' => 'Elige una categoría.']);
     expect(IncompleteProductException::STATUS)->toBe(422);
 });
+
+it('resume lo que falta sin la frase completa', function (): void {
+    $exception = IncompleteProductException::of(incompleteProduct(), [
+        'images' => 'Sube al menos una foto.',
+        'description' => 'Escribe la descripción.',
+    ]);
+
+    expect($exception->missingSummary())->toBe('al menos una foto y la descripción');
+});
+
+it('enumera con comas y une el último con «y»', function (): void {
+    expect(IncompleteProductException::listOf(['a', 'b', 'c']))->toBe('a, b y c');
+    expect(IncompleteProductException::listOf(['a']))->toBe('a');
+    expect(IncompleteProductException::listOf([]))->toBe('');
+});

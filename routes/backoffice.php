@@ -153,6 +153,9 @@ Route::prefix('backoffice')->group(function (): void {
             Route::get('productos/crear', [ProductController::class, 'create'])->name('products.create');
             Route::post('productos', [ProductController::class, 'store'])->name('products.store');
 
+            Route::post('productos/publicar-varios', [ProductController::class, 'publishMany'])
+                ->name('products.publish-many');
+
             Route::post('productos/ia/sugerencia', ProductCopyController::class)
                 ->middleware('throttle:20,1')
                 ->name('products.ai.suggest');

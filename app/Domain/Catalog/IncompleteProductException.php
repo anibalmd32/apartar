@@ -30,6 +30,11 @@ final class IncompleteProductException extends RuntimeException
         return new self($product, $missing, self::messageFor($product, $missing));
     }
 
+    public function missingSummary(): string
+    {
+        return self::listOf(self::labelsFor($this->missing));
+    }
+
     /**
      * @param  array<string, string>  $missing
      */
@@ -65,7 +70,7 @@ final class IncompleteProductException extends RuntimeException
     /**
      * @param  list<string>  $items
      */
-    private static function listOf(array $items): string
+    public static function listOf(array $items): string
     {
         if (count($items) <= 1) {
             return $items[0] ?? '';

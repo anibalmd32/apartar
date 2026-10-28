@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Product\ChangeProductStatusAction;
+use App\Actions\Product\PublishProductsAction;
 use App\Actions\Product\SuggestProductCopyAction;
 use App\Actions\Product\UpsertProductAction;
 use App\Domain\Catalog\FinancingPlan;
@@ -21,6 +22,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Concerns\ResolvesTableState;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\PublishProductRequest;
+use App\Http\Requests\Backoffice\PublishProductsRequest;
 use App\Http\Requests\Backoffice\StoreProductImagesRequest;
 use App\Http\Requests\Backoffice\StoreProductRequest;
 use App\Http\Requests\Backoffice\UpdateProductRequest;
@@ -157,6 +159,14 @@ final class ProductController extends Controller
         return to_route('products.index')->with('status', $product->isScheduled()
             ? sprintf('Producto programado: se verá a partir del %s.', $this->scheduledFor($product))
             : 'Producto publicado. Ya se ve en los catálogos publicados donde lo hayas puesto.');
+    }
+
+    public function publishMany(PublishProductsRequest $request, PublishProductsAction $publish): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return back()->with('status', $publish->handle($request->ids(), $actor)->summary());
     }
 
     public function unpublish(Request $request, Product $product, ChangeProductStatusAction $status): RedirectResponse

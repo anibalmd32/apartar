@@ -1,5 +1,5 @@
 import { failureMessage, Toaster, validationSummary } from '@/components/ui/toaster';
-import { resetToasts, toast } from '@/lib/toast';
+import { durationFor, resetToasts, toast } from '@/lib/toast';
 import { type Page } from '@inertiajs/core';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -63,5 +63,17 @@ describe('los textos de error', () => {
     it('explican qué hacer según la respuesta del servidor', () => {
         expect(failureMessage(419)).toContain('Recarga la página');
         expect(failureMessage(500)).toContain('Inténtalo de nuevo');
+    });
+});
+
+describe('la duración de los avisos', () => {
+    it('respeta el mínimo de cada tono en los mensajes cortos', () => {
+        expect(durationFor('success', 'Guardado.')).toBe(4000);
+        expect(durationFor('error', 'Falló.')).toBe(8000);
+    });
+
+    it('deja más tiempo para leer los mensajes largos, con un tope', () => {
+        expect(durationFor('success', 'x'.repeat(150))).toBe(9000);
+        expect(durationFor('success', 'x'.repeat(1000))).toBe(15000);
     });
 });

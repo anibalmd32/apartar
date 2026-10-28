@@ -1,3 +1,5 @@
+import { PageCheckbox } from '@/features/data-table/components/SelectionControls';
+import { type RowSelection } from '@/features/data-table/hooks/useRowSelection';
 import { type DataTableColumn } from '@/types/data-table';
 import { flexRender, type RowData } from '@tanstack/react-table';
 import { type LegacyReactTable } from '@tanstack/react-table/legacy';
@@ -7,6 +9,7 @@ interface TableHeaderProps<TRow extends RowData> {
     columns: readonly DataTableColumn<TRow>[];
     sort: string | null;
     onSort: (sortKey: string) => void;
+    selection?: RowSelection<TRow>;
 }
 
 function directionOf(sort: string | null, sortKey: string): 'ascending' | 'descending' | 'none' {
@@ -19,11 +22,16 @@ function directionOf(sort: string | null, sortKey: string): 'ascending' | 'desce
 
 const ARROWS = { ascending: '↑', descending: '↓', none: '' } as const;
 
-export function TableHeader<TRow extends RowData>({ table, columns, sort, onSort }: TableHeaderProps<TRow>) {
+export function TableHeader<TRow extends RowData>({ table, columns, sort, onSort, selection }: TableHeaderProps<TRow>) {
     return (
         <thead>
             {table.getHeaderGroups().map((group) => (
                 <tr key={group.id}>
+                    {selection ? (
+                        <th scope="col" className="w-10">
+                            <PageCheckbox selection={selection} />
+                        </th>
+                    ) : null}
                     {group.headers.map((header) => {
                         const column = columns.find((candidate) => candidate.id === header.column.id);
                         const sortKey = column?.sortKey;

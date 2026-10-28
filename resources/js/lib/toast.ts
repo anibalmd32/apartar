@@ -14,6 +14,13 @@ const DURATION: Record<ToastTone, number> = {
     error: 8000,
 };
 
+const MS_PER_CHARACTER = 60;
+const MAX_DURATION = 15000;
+
+export function durationFor(tone: ToastTone, text: string): number {
+    return Math.min(MAX_DURATION, Math.max(DURATION[tone], text.length * MS_PER_CHARACTER));
+}
+
 let toasts: ToastMessage[] = [];
 let nextId = 1;
 const listeners = new Set<Listener>();
@@ -39,7 +46,7 @@ function push(tone: ToastTone, text: string): number {
     const id = nextId++;
     toasts = [...toasts.slice(-2), { id, tone, text }];
     emit();
-    setTimeout(() => dismissToast(id), DURATION[tone]);
+    setTimeout(() => dismissToast(id), durationFor(tone, text));
 
     return id;
 }

@@ -5,8 +5,10 @@ import { DataTable } from '@/features/data-table/components/DataTable';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
 import { ExportButton } from '@/features/exports/components/ExportButton';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
+import { BulkPublishButton } from '@/features/products/components/BulkPublishButton';
 import { INVENTORY_FILTER_LABELS, InventoryFilters } from '@/features/products/components/InventoryFilters';
 import { inventoryColumns } from '@/features/products/components/inventoryColumns';
+import { useDraftSelection } from '@/features/products/hooks/useDraftSelection';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type Paginated } from '@/types/data-table';
 import { type ProductFilters, type ProductListItem, type ProductStatus, type ProductStatusDefinition, type TaxonomyOption } from '@/types/product';
@@ -53,6 +55,7 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses, 
     const columns = useMemo(() => inventoryColumns(statusLabels), [statusLabels]);
 
     const table = useServerTable({ rows, meta, columns });
+    const selection = useDraftSelection(rows);
     const filters = meta.filters as unknown as ProductFilters;
     const narrowed = Object.values(meta.filters).some((value) => value !== null);
 
@@ -80,6 +83,8 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses, 
                 table={table}
                 filterLabels={INVENTORY_FILTER_LABELS}
                 empty={emptyMessage(filters, narrowed)}
+                selection={selection}
+                selectionActions={<BulkPublishButton ids={selection.ids} onDone={selection.clear} />}
                 toolbar={
                     <InventoryFilters
                         filters={filters}
