@@ -40,6 +40,8 @@ final class CatalogController extends Controller
 
     public const THUMBS = 3;
 
+    public const SUGGESTIONS = 8;
+
     public function __construct(private readonly TenantContext $context) {}
 
     public function index(Request $request): Response
@@ -191,6 +193,7 @@ final class CatalogController extends Controller
             'catalog' => $catalog instanceof Catalog ? $this->catalogForm($catalog) : null,
             'products' => $catalog instanceof Catalog ? $this->productsOf($catalog) : [],
             'availableProducts' => $this->inventory(),
+            'suggestedProductIds' => $catalog instanceof Catalog ? $this->suggestionsFor($catalog) : [],
             'blockers' => $blockers,
         ];
     }
@@ -263,7 +266,7 @@ final class CatalogController extends Controller
     private function productsOf(Catalog $catalog): array
     {
         return $catalog->products()
-            ->with('category')
+            ->with(['category', 'media'])
             ->orderBy('position')
             ->get()
             ->map(fn (Product $product): array => $this->productOption($product))
@@ -277,11 +280,28 @@ final class CatalogController extends Controller
     private function inventory(): array
     {
         return Product::query()
-            ->with('category')
+            ->with(['category', 'media'])
             ->where('status', '!=', ProductStatus::Archived)
             ->orderBy('name')
             ->get()
             ->map(fn (Product $product): array => $this->productOption($product))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function suggestionsFor(Catalog $catalog): array
+    {
+        return Product::query()
+            ->where('status', '!=', ProductStatus::Archived)
+            ->whereDoesntHave('catalogs', fn ($inCatalog) => $inCatalog->whereKey($catalog->getKey()))
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->limit(self::SUGGESTIONS)
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
             ->values()
             ->all();
     }
@@ -298,6 +318,7 @@ final class CatalogController extends Controller
             'status' => $product->status->value,
             'price' => $this->money($product->price_cents),
             'categoryName' => $product->category?->name,
+            'thumbUrl' => ($media = $product->getFirstMedia(Product::IMAGES)) instanceof Media ? ImageSet::of($media)->thumb : null,
         ];
     }
 

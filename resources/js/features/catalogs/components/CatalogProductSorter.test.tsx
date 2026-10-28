@@ -105,4 +105,57 @@ describe('la composición de un catálogo', () => {
 
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
+
+    it('al enfocar el buscador vacío sugiere los editados hace poco que aún no están dentro', () => {
+        renderSorter({ suggested: [1, 3, 2] });
+
+        expect(screen.queryByText('Lija')).not.toBeInTheDocument();
+
+        fireEvent.focus(screen.getByLabelText(/Añadir productos/));
+
+        expect(screen.getByText(/Escribe para buscar entre todos tus productos/)).toBeInTheDocument();
+        const names = screen.getAllByRole('button', { name: /Añadir$/ }).map((button) => button.textContent);
+        expect(names).toHaveLength(2);
+        expect(names[0]).toContain('Lija');
+        expect(names[1]).toContain('Sierra circular');
+        expect(screen.getByRole('button', { name: /Lija/ })).toHaveTextContent('$250,00');
+    });
+
+    it('al añadir una sugerencia desaparece de la lista', () => {
+        renderSorter({ suggested: [3, 2] });
+
+        fireEvent.focus(screen.getByLabelText(/Añadir productos/));
+        fireEvent.click(screen.getByRole('button', { name: /Lija/ }));
+
+        expect(screen.queryByRole('button', { name: /Lija.*Añadir/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Sierra circular/ })).toBeInTheDocument();
+    });
+
+    it('al escribir, las sugerencias dejan paso a la búsqueda, y Escape las cierra', () => {
+        renderSorter({ suggested: [3, 2] });
+
+        const input = screen.getByLabelText(/Añadir productos/);
+        fireEvent.focus(input);
+        fireEvent.change(input, { target: { value: 'sierra' } });
+
+        expect(screen.queryByText(/Escribe para buscar/)).not.toBeInTheDocument();
+        expect(screen.queryByText('Lija')).not.toBeInTheDocument();
+
+        fireEvent.change(input, { target: { value: '' } });
+        expect(screen.getByText(/Escribe para buscar/)).toBeInTheDocument();
+
+        fireEvent.keyDown(input, { key: 'Escape' });
+        expect(screen.queryByText(/Escribe para buscar/)).not.toBeInTheDocument();
+    });
+
+    it('vuelve a sugerir primero lo que acabas de quitar', () => {
+        renderSorter({ suggested: [3] });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar Taladro' }));
+        fireEvent.focus(screen.getByLabelText(/Añadir productos/));
+
+        const names = screen.getAllByRole('button', { name: /Añadir$/ }).map((button) => button.textContent);
+        expect(names[0]).toContain('Taladro');
+        expect(names[1]).toContain('Lija');
+    });
 });

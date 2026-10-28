@@ -8,6 +8,7 @@ export interface CatalogProductOption {
     readonly status: ProductStatus;
     readonly price: MoneyView;
     readonly categoryName: string | null;
+    readonly thumbUrl?: string | null;
 }
 
 export type CatalogVisibility = 'draft' | 'listed' | 'unlisted' | 'expired';

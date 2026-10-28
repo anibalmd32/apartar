@@ -17,13 +17,14 @@ interface CatalogFormPageProps {
     catalog: CatalogFormValues | null;
     products: CatalogProductOption[];
     availableProducts: CatalogProductOption[];
+    suggestedProductIds?: number[];
     blockers: CatalogPublishBlockers;
     [key: string]: unknown;
 }
 
 const FORM_ID = 'catalog-form';
 
-export default function CatalogForm({ catalog, products, availableProducts, blockers }: CatalogFormPageProps) {
+export default function CatalogForm({ catalog, products, availableProducts, suggestedProductIds = [], blockers }: CatalogFormPageProps) {
     const form = useForm({
         name: catalog?.name ?? '',
         slug: catalog?.slug ?? '',
@@ -133,6 +134,7 @@ export default function CatalogForm({ catalog, products, availableProducts, bloc
                                 catalogId={catalog.id}
                                 products={products}
                                 available={availableProducts}
+                                suggested={suggestedProductIds}
                                 isPublished={catalog.visibility !== 'draft'}
                             />
                         </SectionCard>

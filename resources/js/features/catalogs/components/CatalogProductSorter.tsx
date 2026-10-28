@@ -2,79 +2,35 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { IconTextField } from '@/components/ui/icon-text-field';
 import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
-import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
+import { CatalogProductPicker, ProductThumb } from '@/features/catalogs/components/CatalogProductPicker';
 import { useSortableProducts } from '@/features/catalogs/hooks/useSortableProducts';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { type CatalogProductOption } from '@/types/catalog';
-import { cilPlus, cilSearch, cilX } from '@coreui/icons';
-import { useState } from 'react';
+import { cilX } from '@coreui/icons';
 
 interface CatalogProductSorterProps {
     catalogId: number;
     products: readonly CatalogProductOption[];
     available: readonly CatalogProductOption[];
+    suggested?: readonly number[];
     isPublished: boolean;
 }
 
-const MAX_RESULTS = 8;
-
-export function CatalogProductSorter({ catalogId, products, available, isPublished }: CatalogProductSorterProps) {
+export function CatalogProductSorter({ catalogId, products, available, suggested = [], isPublished }: CatalogProductSorterProps) {
     const { chosen, ids, isDirty, saving, add, remove, reorder, save } = useSortableProducts({
         catalogId,
         initial: products,
     });
 
-    const [search, setSearch] = useState('');
-
-    const term = search.trim().toLowerCase();
-
-    const results =
-        term === ''
-            ? []
-            : available
-                  .filter((product) => !ids.includes(product.id))
-                  .filter((product) => product.name.toLowerCase().includes(term) || product.sku.toLowerCase().includes(term))
-                  .slice(0, MAX_RESULTS);
-
     return (
         <section className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-                <IconTextField
-                    icon={cilSearch}
-                    label="Añadir productos"
-                    name="catalog-product-search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    hint="Busca por nombre o por SKU."
-                    autoComplete="off"
-                />
-
-                {term !== '' && results.length === 0 ? (
-                    <p className="text-ink-3 text-sm">No queda ningún producto sin añadir que coincida con «{search.trim()}».</p>
-                ) : null}
-
-                {results.length > 0 ? (
-                    <ul className="menu bg-base-100 border-line shadow-pop w-full rounded-xl border p-1.5">
-                        {results.map((product) => (
-                            <li key={product.id}>
-                                <button type="button" onClick={() => add(product)} className="justify-between">
-                                    <span className="flex flex-col items-start">
-                                        <span className="font-medium">{product.name}</span>
-                                        <span className="text-ink-3 text-xs">{product.sku}</span>
-                                    </span>
-
-                                    <span className="text-primary-ink inline-flex items-center gap-1 text-xs font-semibold">
-                                        <Icon icon={cilPlus} size={12} />
-                                        Añadir
-                                    </span>
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : null}
-            </div>
+            <CatalogProductPicker
+                available={available}
+                chosenIds={ids}
+                suggestedIds={[...products.map((product) => product.id).filter((id) => !ids.includes(id)), ...suggested]}
+                onAdd={add}
+            />
 
             {chosen.length === 0 ? (
                 <p className="text-ink-3 text-sm">
@@ -95,7 +51,7 @@ export function CatalogProductSorter({ catalogId, products, available, isPublish
 
                                         <span className="text-ink-3 w-5 shrink-0 text-center text-xs font-semibold">{index + 1}</span>
 
-                                        <ProductPlaceholder name={product.name} className="size-10 shrink-0 rounded-[10px] text-sm" />
+                                        <ProductThumb product={product} />
 
                                         <span className="flex min-w-0 flex-1 flex-col">
                                             <span className="truncate text-sm font-semibold">{product.name}</span>
