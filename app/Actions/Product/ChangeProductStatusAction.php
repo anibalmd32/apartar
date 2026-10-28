@@ -6,6 +6,7 @@ namespace App\Actions\Product;
 
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\IncompleteProductException;
+use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\ProductLock;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Subscription\LimitEnforcer;
@@ -145,7 +146,7 @@ final class ChangeProductStatusAction
             $missing['category_id'] = 'Elige una categoría: es por donde tus clientes filtran dentro del catálogo.';
         }
 
-        if (trim($product->description ?? '') === '') {
+        if (ProductDescription::plainText((string) $product->description) === '') {
             $missing['description'] = 'Escribe la descripción: es lo que lee quien está decidiendo si lo aparta.';
         }
 

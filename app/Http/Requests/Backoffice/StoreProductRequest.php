@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Product\ProductData;
+use App\Domain\Catalog\ProductDescription;
 use App\Domain\Money\Money;
 use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -25,7 +27,7 @@ class StoreProductRequest extends FormRequest
 
             'sku' => ['required', 'string', 'max:64'],
 
-            'description' => ['nullable', 'string', 'max:5000'],
+            'description' => ['nullable', 'string', $this->descriptionFits()],
 
             'price' => ['required', 'numeric', 'decimal:0,2', new CoherentFinancingTerms],
             'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2'],
@@ -74,6 +76,25 @@ class StoreProductRequest extends FormRequest
     public function toData(): ProductData
     {
         return $this->productData($this->requestedSlug());
+    }
+
+    protected function descriptionFits(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if (! is_string($value)) {
+                return;
+            }
+
+            if (mb_strlen($value) > ProductDescription::MAX_HTML_LENGTH) {
+                $fail('La descripción trae demasiado formato. Quita parte de las negritas o listas, o acórtala.');
+
+                return;
+            }
+
+            if (ProductDescription::length($value) > ProductDescription::MAX_PLAIN_LENGTH) {
+                $fail('validation.max.string')->translate(['max' => (string) ProductDescription::MAX_PLAIN_LENGTH]);
+            }
+        };
     }
 
     protected function requestedSlug(): ?string

@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
+use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\UnavailableReason;
 use App\Domain\Payment\PaymentAccountView;
 use App\Http\Resources\Concerns\DescribesProductOffer;
@@ -70,7 +71,7 @@ final class ProductDetailResource extends JsonResource
             'isNew' => $this->isNew($product),
             'savingsPercent' => $this->savingsPercent($product),
             'stockLeft' => $this->stockLeft($product),
-            'description' => (string) $product->description,
+            'description' => ProductDescription::toHtml((string) $product->description),
             'sku' => $product->sku,
             'images' => $product->getMedia(Product::IMAGES)
                 ->map(fn (Media $media): array => ImageSet::of($media)->toArray())

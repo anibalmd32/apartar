@@ -140,6 +140,61 @@ final class ProductPageTest extends TestCase
         $this->assertSame('taladro-bosch', $product->slug);
     }
 
+    public function test_the_description_is_saved_as_clean_html(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload([
+                'description' => '<p class="x" onclick="robar()">Taladro <strong>percutor</strong></p><script>robar()</script><ul><li><p>Maletín</p></li></ul>',
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $product = $this->inTenant(fn (): Product => Product::query()->sole());
+
+        $this->assertSame('<p>Taladro <strong>percutor</strong></p><ul><li><p>Maletín</p></li></ul>', $product->description);
+    }
+
+    public function test_an_empty_editor_saves_no_description(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload(['description' => '<p></p>']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($this->inTenant(fn (): ?string => Product::query()->sole()->description));
+    }
+
+    public function test_the_description_limit_counts_the_text_and_not_the_formatting(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload([
+                'description' => '<p><strong>'.str_repeat('a', 2500).'</strong></p><p><em>'.str_repeat('b', 2500).'</em></p>',
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload(['sku' => 'OTRO', 'description' => '<p>'.str_repeat('a', 5001).'</p>']))
+            ->assertSessionHasErrors(['description' => 'Descripción no puede tener más de 5000 caracteres.']);
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload(['sku' => 'OTRO', 'description' => str_repeat('<p><b>a</b></p>', 1500)]))
+            ->assertSessionHasErrors('description');
+
+        $this->assertSame(1, $this->inTenant(fn (): int => Product::query()->count()));
+    }
+
+    public function test_the_edit_form_opens_an_old_plain_description_as_paragraphs(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->create([
+            'description' => "Taladro <potente>\nde 800 W\n\nCon maletín",
+        ]));
+
+        $this->actingAs($this->owner())
+            ->get("/backoffice/productos/{$product->getKey()}/editar")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('product.description', '<p>Taladro &lt;potente&gt;<br />de 800 W</p><p>Con maletín</p>'));
+    }
+
     public function test_the_cross_field_rules_land_on_their_own_field(): void
     {
         $owner = $this->owner();

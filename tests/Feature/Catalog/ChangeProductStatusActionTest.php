@@ -159,6 +159,14 @@ final class ChangeProductStatusActionTest extends TestCase
         $this->assertMissingToPublish($product, 'description', 'la descripción');
     }
 
+    public function test_a_description_with_only_empty_formatting_counts_as_missing(): void
+    {
+        $product = $this->publishable();
+        $product->forceFill(['description' => '<p></p><ul><li><p><strong> </strong></p></li></ul><p><br></p>'])->save();
+
+        $this->assertMissingToPublish($product, 'description', 'la descripción');
+    }
+
     public function test_publishing_with_incoherent_financing_terms_is_refused(): void
     {
         $product = $this->publishable();

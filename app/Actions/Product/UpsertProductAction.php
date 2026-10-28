@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Product;
 
 use App\Domain\Auditing\AuditEvent;
+use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\ProductLock;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Catalog\TaxonomyByName;
@@ -69,7 +70,7 @@ final class UpsertProductAction
                 'category_id' => $category?->getKey(),
                 'sku' => $data->sku,
                 'name' => $data->name,
-                'description' => $data->description,
+                'description' => $this->descriptionFrom($data->description),
                 'price_cents' => $data->price,
                 'compare_at_price_cents' => $data->compareAtPrice,
                 'down_payment_cents' => $data->downPayment,
@@ -118,6 +119,13 @@ final class UpsertProductAction
             'stock' => max(0, $onHand - $reserved),
             'stock_shortfall' => max(0, $reserved - $onHand),
         ];
+    }
+
+    private function descriptionFrom(?string $description): ?string
+    {
+        $clean = ProductDescription::sanitize((string) $description);
+
+        return $clean === '' ? null : $clean;
     }
 
     /**

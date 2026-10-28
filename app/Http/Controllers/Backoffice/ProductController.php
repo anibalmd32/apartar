@@ -10,6 +10,7 @@ use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\IncompleteProductException;
 use App\Domain\Catalog\InventorySort;
+use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Money\Money;
 use App\Domain\Settings\SettingKey;
@@ -291,7 +292,7 @@ final class ProductController extends Controller
             'name' => $product->name,
             'sku' => $product->sku,
             'slug' => $product->slug,
-            'description' => $product->description,
+            'description' => ProductDescription::toHtml((string) $product->description),
             'price' => $this->decimals($product->price_cents),
             'compareAtPrice' => $product->compare_at_price_cents === null
                 ? null

@@ -153,6 +153,25 @@ it('sin plan de pago enseña el precio y no una cuota', () => {
     expect(container.textContent).not.toContain('cuotas de');
 });
 
+it('pinta la descripción con su formato', () => {
+    renderPage(detail({ description: '<p>Percutor de <strong>800 W</strong></p><ul><li><p>Maletín</p></li><li><p>Brocas</p></li></ul>' }));
+
+    const section = screen.getByRole('heading', { name: 'Descripción' }).closest('section') as HTMLElement;
+
+    expect(within(section).getByText('800 W').tagName).toBe('STRONG');
+    expect(
+        within(section)
+            .getAllByRole('listitem')
+            .map((item) => item.textContent),
+    ).toEqual(['Maletín', 'Brocas']);
+});
+
+it('sin descripción omite su sección', () => {
+    renderPage(detail({ description: '', specifications: ['Potencia de 800 W'] }));
+
+    expect(screen.queryByRole('heading', { name: 'Descripción' })).toBeNull();
+});
+
 it('omite entera la lista de características si no hay', () => {
     renderPage();
     expect(screen.queryByRole('heading', { name: 'Características' })).toBeNull();

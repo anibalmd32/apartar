@@ -1,10 +1,10 @@
+import { RichTextField } from '@/components/ui/rich-text-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
 import { suggestSku } from '@/features/products/lib/sku';
-import { cn } from '@/lib/utils';
 import { type ProductFormValues } from '@/types/product';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 
 interface ProductIdentityFieldsProps extends ProductFieldsProps {
     product: ProductFormValues | null;
@@ -14,7 +14,6 @@ interface ProductIdentityFieldsProps extends ProductFieldsProps {
 const DESCRIPTION_MAX = 5000;
 
 export function ProductIdentityFields({ data, setData, errors, product, skuSequence = 1 }: ProductIdentityFieldsProps) {
-    const descriptionId = useId();
     const [skuEdited, setSkuEdited] = useState(product !== null);
 
     const changeName = (name: string) => {
@@ -26,8 +25,6 @@ export function ProductIdentityFields({ data, setData, errors, product, skuSeque
 
         setData((previous) => ({ ...previous, name, sku: suggestSku(name, skuSequence) }));
     };
-    const hintId = `${descriptionId}-hint`;
-    const errorId = `${descriptionId}-error`;
 
     return (
         <SectionCard title="Información básica">
@@ -82,33 +79,15 @@ export function ProductIdentityFields({ data, setData, errors, product, skuSeque
                     />
                 )}
 
-                <fieldset className="fieldset w-full sm:col-span-2">
-                    <label className="fieldset-legend" htmlFor={descriptionId}>
-                        Descripción
-                    </label>
-                    <textarea
-                        id={descriptionId}
-                        name="description"
-                        rows={4}
-                        className={cn('textarea w-full', errors.description && 'textarea-error')}
-                        value={data.description}
-                        onChange={(event) => setData('description', event.target.value)}
-                        maxLength={DESCRIPTION_MAX}
-                        aria-invalid={errors.description ? true : undefined}
-                        aria-describedby={[hintId, errors.description ? errorId : null].filter(Boolean).join(' ')}
-                    />
-                    <p id={hintId} className="label flex justify-between gap-3 text-xs whitespace-normal">
-                        <span>Puede quedar vacía mientras el producto sea un borrador; publicarlo la exige.</span>
-                        <span className="shrink-0 tabular-nums">
-                            {data.description.length} / {DESCRIPTION_MAX}
-                        </span>
-                    </p>
-                    {errors.description ? (
-                        <p id={errorId} role="alert" className="label text-error text-xs whitespace-normal">
-                            {errors.description}
-                        </p>
-                    ) : null}
-                </fieldset>
+                <RichTextField
+                    label="Descripción"
+                    className="sm:col-span-2"
+                    value={data.description}
+                    onChange={(html) => setData('description', html)}
+                    error={errors.description}
+                    hint="Puede quedar vacía mientras el producto sea un borrador; publicarlo la exige."
+                    maxLength={DESCRIPTION_MAX}
+                />
             </div>
         </SectionCard>
     );

@@ -7,6 +7,7 @@ import { ProductGridCard } from '@/features/catalog/components/ProductGridCard';
 import { useDwellTime } from '@/features/telemetry/hooks/useDwellTime';
 import { track } from '@/features/telemetry/hooks/useTelemetry';
 import CatalogLayout from '@/layouts/catalog-layout';
+import { richTextContentClass } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
 import { type ProductShowProps } from '@/types/catalog-view';
 import { cilCart, cilChevronRight } from '@coreui/icons';
@@ -100,7 +101,10 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                             <h2 id="description-heading" className="text-[17px] font-bold">
                                 Descripción
                             </h2>
-                            <p className="text-ink-2 text-[15px] leading-relaxed whitespace-pre-line">{product.description}</p>
+                            <div
+                                className={cn('text-ink-2 text-[15px] leading-relaxed', richTextContentClass)}
+                                dangerouslySetInnerHTML={{ __html: product.description }}
+                            />
                         </section>
                     ) : null}
 

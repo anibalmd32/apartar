@@ -332,6 +332,22 @@ final class ProductShowTest extends TestCase
             ->where('product.specifications', []));
     }
 
+    public function test_the_description_travels_as_clean_html(): void
+    {
+        $this->stock([$this->product('Taladro', ['description' => '<p>Percutor <strong>800 W</strong></p><script>robar()</script>'])]);
+
+        $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('product.description', '<p>Percutor <strong>800 W</strong></p>'));
+    }
+
+    public function test_an_old_plain_description_travels_as_escaped_paragraphs(): void
+    {
+        $this->stock([$this->product('Taladro', ['description' => "Percutor <b\nde 800 W\n\nCon maletín"])]);
+
+        $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('product.description', '<p>Percutor &lt;b<br />de 800 W</p><p>Con maletín</p>'));
+    }
+
     public function test_the_specifications_travel_as_an_ordered_list(): void
     {
         $product = $this->product('Taladro');
