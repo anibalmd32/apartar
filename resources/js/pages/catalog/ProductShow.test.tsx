@@ -118,7 +118,9 @@ it('enseña las cuentas de cobro que llegan', () => {
     expect(payments.textContent).toContain('Pago móvil');
     expect(payments.textContent).toContain('Banesco');
     expect(payments.textContent).toContain('0414-1234567');
-    expect(payments.textContent).toContain('Ana Pérez · V-12.345.678');
+    expect(payments.textContent).toContain('Ana Pérez');
+    expect(payments.textContent).toContain('V-12.345.678');
+    expect(within(payments).getByRole('button', { name: 'Copiar todos los datos' })).toBeInTheDocument();
 });
 
 it('sin cuentas de cobro manda a consultar al negocio', () => {

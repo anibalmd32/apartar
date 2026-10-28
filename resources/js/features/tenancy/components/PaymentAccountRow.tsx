@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
+import { isPagoMovil, PagoMovilData } from '@/features/catalog/components/PagoMovilData';
 import { cn } from '@/lib/utils';
 import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
 import { cilBank, cilDollar, cilMobile, cilMoney, cilPencil, cilTrash, cilWallet } from '@coreui/icons';
@@ -68,10 +69,19 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
                         ) : null}
                         <Badge tone={account.isActive ? 'success' : 'neutral'}>{account.isActive ? 'Activa' : 'Desactivada'}</Badge>
                     </p>
-                    <p className="text-[15px] font-semibold tracking-wide break-all">{account.identifier}</p>
-                    <p className="text-ink-3 text-xs break-words">
-                        {account.identifierLabel} · {account.holderName} · {account.holderDocument}
-                    </p>
+                    {isPagoMovil(account) ? (
+                        <>
+                            <p className="text-ink-3 text-xs">{account.holderName}</p>
+                            <PagoMovilData account={account} className="mt-1" />
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-[15px] font-semibold tracking-wide break-all">{account.identifier}</p>
+                            <p className="text-ink-3 text-xs break-words">
+                                {account.identifierLabel} · {account.holderName} · {account.holderDocument}
+                            </p>
+                        </>
+                    )}
                     {account.instructions ? (
                         <p className="bg-surface-2 text-ink-2 mt-1.5 self-start rounded-lg px-2.5 py-1 text-xs">{account.instructions}</p>
                     ) : null}

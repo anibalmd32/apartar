@@ -14,6 +14,7 @@ export interface PaymentAccountView {
     readonly identifierLabel: string;
     readonly bank: string | null;
     readonly bankLogoUrl?: string | null;
+    readonly bankCode?: string | null;
     readonly holderName: string;
     readonly holderDocument: string;
     readonly identifier: string;

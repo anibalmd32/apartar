@@ -2,6 +2,7 @@ import { BankMark } from '@/components/ui/bank-mark';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CopyButton } from '@/features/catalog/components/CopyButton';
+import { isPagoMovil, PagoMovilData } from '@/features/catalog/components/PagoMovilData';
 import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
 import { cilBank, cilDollar, cilMobile, cilMoney, cilWallet } from '@coreui/icons';
 
@@ -47,15 +48,24 @@ export function PaymentMethodsCard({ accounts, businessName }: PaymentMethodsCar
                                         </>
                                     ) : null}
                                 </p>
-                                <p className="text-ink-3 text-xs break-words">
-                                    <span className="sr-only">{account.identifierLabel}: </span>
-                                    <span className="text-ink-2 font-medium select-all">{account.identifier}</span>
-                                    {' · '}
-                                    {account.holderName} · {account.holderDocument}
-                                </p>
+                                {isPagoMovil(account) ? (
+                                    <>
+                                        <p className="text-ink-3 text-xs">{account.holderName}</p>
+                                        <PagoMovilData account={account} className="mt-1" />
+                                    </>
+                                ) : (
+                                    <p className="text-ink-3 text-xs break-words">
+                                        <span className="sr-only">{account.identifierLabel}: </span>
+                                        <span className="text-ink-2 font-medium select-all">{account.identifier}</span>
+                                        {' · '}
+                                        {account.holderName} · {account.holderDocument}
+                                    </p>
+                                )}
                                 {account.instructions !== null ? <p className="text-ink-3 text-xs">{account.instructions}</p> : null}
                             </div>
-                            <CopyButton value={account.identifier} label={`${account.identifierLabel.toLowerCase()} de ${account.methodLabel}`} />
+                            {isPagoMovil(account) ? null : (
+                                <CopyButton value={account.identifier} label={`${account.identifierLabel.toLowerCase()} de ${account.methodLabel}`} />
+                            )}
                         </li>
                     ))}
                 </ul>
