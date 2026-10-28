@@ -4,7 +4,6 @@ import { PaymentMethodsCard } from '@/features/catalog/components/PaymentMethods
 import { PlanBreakdown, PriceTag } from '@/features/catalog/components/PlanBreakdown';
 import { ProductGallery } from '@/features/catalog/components/ProductGallery';
 import { ProductGridCard } from '@/features/catalog/components/ProductGridCard';
-import { SpecificationTable } from '@/features/catalog/components/SpecificationTable';
 import { useDwellTime } from '@/features/telemetry/hooks/useDwellTime';
 import { track } from '@/features/telemetry/hooks/useTelemetry';
 import CatalogLayout from '@/layouts/catalog-layout';
@@ -24,7 +23,7 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
         subjectSlug: product.slug,
     });
 
-    const hasDetails = product.description !== '' || product.specificationGroups.length > 0;
+    const hasDetails = product.description !== '' || product.specifications.length > 0;
 
     return (
         <CatalogLayout title={`${product.name} · ${catalog.name}`} business={catalog.business} showsPlatformBadge={catalog.showsPlatformBadge}>
@@ -105,12 +104,16 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                         </section>
                     ) : null}
 
-                    {product.specificationGroups.length > 0 ? (
+                    {product.specifications.length > 0 ? (
                         <section aria-labelledby="specs-heading" className="flex flex-col gap-4">
                             <h2 id="specs-heading" className="text-[17px] font-bold">
-                                Especificaciones
+                                Características
                             </h2>
-                            <SpecificationTable groups={product.specificationGroups} />
+                            <ul className="text-ink-2 flex list-disc flex-col gap-1.5 pl-5 text-[15px] leading-relaxed">
+                                {product.specifications.map((specification, index) => (
+                                    <li key={`${index}-${specification}`}>{specification}</li>
+                                ))}
+                            </ul>
                         </section>
                     ) : null}
                 </div>

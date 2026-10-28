@@ -25,10 +25,7 @@ export interface FinancingPlanView {
 
 export interface SpecificationFormRow {
     readonly key: string;
-    readonly id: number | null;
-    readonly group: string;
-    readonly label: string;
-    readonly value: string;
+    readonly text: string;
 }
 
 export interface ImageSet {
@@ -43,11 +40,6 @@ export interface ProductImageView {
     readonly set: ImageSet;
     readonly isProcessing: boolean;
     readonly needsReview: boolean;
-}
-
-export interface SpecificationGroupView {
-    readonly group: string | null;
-    readonly items: readonly { readonly label: string; readonly value: string }[];
 }
 
 export interface ProductFormValues {
@@ -66,7 +58,7 @@ export interface ProductFormValues {
     readonly status: ProductStatus;
     readonly categoryId: number | null;
     readonly tagIds: readonly number[];
-    readonly specifications: readonly { readonly id: number; readonly group: string | null; readonly label: string; readonly value: string }[];
+    readonly specifications: readonly string[];
     readonly images: readonly ProductImageView[];
     readonly maxImages: number;
     readonly slugIsLocked: boolean;

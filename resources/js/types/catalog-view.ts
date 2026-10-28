@@ -3,7 +3,7 @@ import { type OrganizationBrand } from '@/types/backoffice';
 import { type CatalogChatState } from '@/types/chat';
 import { type MoneyView } from '@/types/money';
 import { type PaymentAccountView } from '@/types/payment';
-import { type ImageSet, type SpecificationGroupView } from '@/types/product';
+import { type ImageSet } from '@/types/product';
 
 export interface CatalogView {
     readonly slug: string;
@@ -40,7 +40,7 @@ export interface ProductDetail extends Omit<ProductCard, 'image' | 'installmentA
     readonly description: string;
     readonly sku: string;
     readonly images: readonly ImageSet[];
-    readonly specificationGroups: readonly SpecificationGroupView[];
+    readonly specifications: readonly string[];
     readonly maxQuantity: number;
     readonly paymentAccounts: readonly PaymentAccountView[];
     readonly canBeReserved: boolean;

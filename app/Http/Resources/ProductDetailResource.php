@@ -6,13 +6,13 @@ namespace App\Http\Resources;
 
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
-use App\Domain\Catalog\SpecificationGroups;
 use App\Domain\Catalog\UnavailableReason;
 use App\Domain\Payment\PaymentAccountView;
 use App\Http\Resources\Concerns\DescribesProductOffer;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Catalog;
 use App\Models\Product;
+use App\Models\ProductSpecification;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -76,7 +76,11 @@ final class ProductDetailResource extends JsonResource
                 ->map(fn (Media $media): array => ImageSet::of($media)->toArray())
                 ->values()
                 ->all(),
-            'specificationGroups' => SpecificationGroups::of($product->specifications),
+            'specifications' => $product->specifications
+                ->sortBy([['position', 'asc'], ['id', 'asc']])
+                ->map(fn (ProductSpecification $specification): string => $specification->text)
+                ->values()
+                ->all(),
             'maxQuantity' => max(0, min($product->stock, self::MAX_QUANTITY)),
             'paymentAccounts' => array_map(fn (PaymentAccountView $account): array => $account->toArray(), $this->paymentAccounts),
             'canBeReserved' => $reason === null,

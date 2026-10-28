@@ -26,16 +26,9 @@ class ProductSpecificationFactory extends Factory
     public function definition(): array
     {
         return [
-            'group' => null,
-            'label' => 'Característica '.Str::lower(Str::random(6)),
-            'value' => Str::lower(Str::random(12)),
+            'text' => 'Característica '.Str::lower(Str::random(12)),
             'position' => 0,
         ];
-    }
-
-    public function inGroup(string $group): static
-    {
-        return $this->state(fn (): array => ['group' => $group]);
     }
 
     public function forProduct(Product $product): static

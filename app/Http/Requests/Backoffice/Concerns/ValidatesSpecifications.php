@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Backoffice\Concerns;
 
-use App\Actions\Product\SpecificationInput;
 use App\Actions\Product\SyncSpecificationsAction;
+use Illuminate\Validation\Validator;
 
 trait ValidatesSpecifications
 {
@@ -15,12 +15,8 @@ trait ValidatesSpecifications
     protected function specificationRules(): array
     {
         return [
-            'specifications' => ['sometimes', 'array', 'max:'.SyncSpecificationsAction::MAX_ROWS],
-
-            'specifications.*.group' => ['nullable', 'string', 'max:80'],
-
-            'specifications.*.label' => ['required', 'string', 'max:60'],
-            'specifications.*.value' => ['required', 'string', 'max:500'],
+            'specifications' => ['sometimes', 'array'],
+            'specifications.*' => ['nullable', 'string', 'max:'.SyncSpecificationsAction::MAX_LENGTH],
         ];
     }
 
@@ -30,15 +26,58 @@ trait ValidatesSpecifications
     protected function specificationAttributes(): array
     {
         return [
-            'specifications' => 'ficha técnica',
-            'specifications.*.group' => 'sección',
-            'specifications.*.label' => 'característica',
-            'specifications.*.value' => 'valor',
+            'specifications' => 'características',
+            'specifications.*' => 'característica',
         ];
     }
 
     /**
-     * @return list<SpecificationInput>|null
+     * @return callable(Validator): void
+     */
+    protected function specificationChecks(): callable
+    {
+        return function (Validator $validator): void {
+            $rows = $this->input('specifications');
+
+            if (! is_array($rows)) {
+                return;
+            }
+
+            $count = count(SyncSpecificationsAction::normalized($rows));
+
+            if ($count > SyncSpecificationsAction::MAX_ROWS) {
+                $validator->errors()->add('specifications', sprintf(
+                    'Un producto admite hasta %d características y escribiste %d. Quita las que sobren.',
+                    SyncSpecificationsAction::MAX_ROWS,
+                    $count,
+                ));
+            }
+
+            $seen = [];
+
+            foreach ($rows as $index => $row) {
+                $key = mb_strtolower(implode('', SyncSpecificationsAction::normalized([$row])));
+
+                if ($key === '') {
+                    continue;
+                }
+
+                if (isset($seen[$key])) {
+                    $validator->errors()->add(
+                        'specifications.'.$index,
+                        'Esta característica ya está en la lista. Quítala o escribe otra distinta.',
+                    );
+
+                    continue;
+                }
+
+                $seen[$key] = true;
+            }
+        };
+    }
+
+    /**
+     * @return list<string>|null
      */
     protected function specifications(): ?array
     {
@@ -48,24 +87,6 @@ trait ValidatesSpecifications
 
         $rows = $this->input('specifications', []);
 
-        if (! is_array($rows)) {
-            return [];
-        }
-
-        $inputs = [];
-
-        foreach ($rows as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-
-            $inputs[] = SpecificationInput::of(
-                group: isset($row['group']) && is_scalar($row['group']) ? (string) $row['group'] : null,
-                label: isset($row['label']) && is_scalar($row['label']) ? (string) $row['label'] : '',
-                value: isset($row['value']) && is_scalar($row['value']) ? (string) $row['value'] : '',
-            );
-        }
-
-        return $inputs;
+        return is_array($rows) ? SyncSpecificationsAction::normalized($rows) : [];
     }
 }

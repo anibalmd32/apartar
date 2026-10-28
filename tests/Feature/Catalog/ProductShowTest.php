@@ -329,23 +329,21 @@ final class ProductShowTest extends TestCase
 
         $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page
             ->where('product.images', [])
-            ->where('product.specificationGroups', []));
+            ->where('product.specifications', []));
     }
 
-    public function test_the_specifications_travel_grouped(): void
+    public function test_the_specifications_travel_as_an_ordered_list(): void
     {
         $product = $this->product('Taladro');
         $this->stock([$product]);
         $this->withinOrganization($this->organization, function () use ($product): void {
-            ProductSpecification::factory()->forProduct($product)->create(['label' => 'Potencia', 'value' => '800 W', 'position' => 1]);
-            ProductSpecification::factory()->forProduct($product)->inGroup('Motor')->create(['label' => 'Velocidad', 'value' => '3000 rpm', 'position' => 2]);
+            ProductSpecification::factory()->forProduct($product)->create(['text' => 'Velocidad de 3000 rpm', 'position' => 2]);
+            ProductSpecification::factory()->forProduct($product)->create(['text' => 'Potencia de 800 W', 'position' => 1]);
         });
 
         $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('product.specificationGroups', [
-                ['group' => null, 'items' => [['label' => 'Potencia', 'value' => '800 W']]],
-                ['group' => 'Motor', 'items' => [['label' => 'Velocidad', 'value' => '3000 rpm']]],
-            ]));
+            ->where('product.specifications', ['Potencia de 800 W', 'Velocidad de 3000 rpm'])
+            ->missing('product.specificationGroups'));
     }
 
     public function test_related_products_are_from_this_catalog_same_category_first(): void

@@ -143,33 +143,12 @@ final class ProductIsolationTest extends TestCase
         $this->assertSame(0, $this->countIn($this->organization));
     }
 
-    public function test_the_group_autocomplete_never_offers_the_neighbours_sections(): void
-    {
-        $this->withinOrganization($this->neighbour, function (): void {
-            $product = Product::factory()->create();
-
-            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Del vecino']);
-        });
-
-        $this->withinOrganization($this->organization, function (): void {
-            $product = Product::factory()->create();
-
-            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Mía']);
-        });
-
-        $this->actingAs($this->owner())
-            ->get('/backoffice/productos/crear')
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('specificationGroups', ['Mía']));
-
-        $this->assertTrue($this->hasNeighbourOrganization());
-    }
-
     public function test_the_neighbours_specification_rows_are_unreachable(): void
     {
         $foreign = $this->withinOrganization($this->neighbour, function (): ProductSpecification {
             $product = Product::factory()->create();
 
-            return ProductSpecification::factory()->forProduct($product)->create(['label' => 'Del vecino']);
+            return ProductSpecification::factory()->forProduct($product)->create(['text' => 'Del vecino']);
         });
 
         $this->actingAsOrganization($this->organization);

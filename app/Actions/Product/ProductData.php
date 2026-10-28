@@ -12,7 +12,7 @@ final readonly class ProductData
     /**
      * @param  list<int>  $tagIds
      * @param  list<string>  $tagNames
-     * @param  list<SpecificationInput>|null  $specifications
+     * @param  list<string>|null  $specifications
      */
     public function __construct(
         public string $name,

@@ -23,7 +23,6 @@ interface ProductFormPageProps {
     categories: TaxonomyOption[];
     tags: TaxonomyOption[];
     plan: FinancingPlanView | null;
-    specificationGroups: string[];
     [key: string]: unknown;
 }
 
@@ -35,7 +34,7 @@ const STATUS_BADGES: Readonly<Record<ProductStatus, { label: string; tone: 'neut
 
 const FORM_ID = 'product-form';
 
-export default function ProductForm({ product, defaults, categories, tags, plan, specificationGroups }: ProductFormPageProps) {
+export default function ProductForm({ product, defaults, categories, tags, plan }: ProductFormPageProps) {
     const { data, setData, errors, processing, submit } = useProductForm(defaults, product);
 
     const sheet = useSpecificationRows(product);
@@ -90,7 +89,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                         className={`flex flex-col gap-4 max-lg:order-3 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-2' : 'lg:row-start-3'}`}
                     >
                         <ProductPricingFields {...fields} plan={plan} />
-                        <SpecificationBuilder rows={sheet} groups={specificationGroups} errors={errors} />
+                        <SpecificationBuilder rows={sheet} errors={errors} />
                     </div>
 
                     <div className="flex flex-col gap-4 max-lg:order-4 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:gap-6">

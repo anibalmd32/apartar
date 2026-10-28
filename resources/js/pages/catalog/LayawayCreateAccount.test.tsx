@@ -68,7 +68,7 @@ function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
         description: '',
         sku: 'NEV-1',
         images: [],
-        specificationGroups: [],
+        specifications: [],
         maxQuantity: 3,
         paymentAccounts: [],
         canBeReserved: true,

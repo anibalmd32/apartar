@@ -29,7 +29,6 @@ use App\Models\ProductSpecification;
 use App\Models\Tag;
 use App\Models\User;
 use App\Queries\InventoryFilters;
-use App\Queries\SpecificationGroupsQuery;
 use App\Support\CatalogShareLink;
 use App\Support\Settings;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +47,6 @@ final class ProductController extends Controller
     public function __construct(
         private readonly TenantContext $context,
         private readonly Settings $settings,
-        private readonly SpecificationGroupsQuery $groups,
     ) {}
 
     public function index(Request $request): Response
@@ -180,7 +178,6 @@ final class ProductController extends Controller
             'categories' => $this->categories(),
             'tags' => $this->tags(),
             'plan' => $this->plan($request, $product),
-            'specificationGroups' => $this->groups->all(),
         ];
     }
 
@@ -338,7 +335,7 @@ final class ProductController extends Controller
     }
 
     /**
-     * @return array{specifications: list<array<string, mixed>>}
+     * @return array{specifications: list<string>}
      */
     private function specificationRows(Product $product): array
     {
@@ -347,12 +344,7 @@ final class ProductController extends Controller
             ->orderBy('position')
             ->orderBy('id')
             ->get()
-            ->map(fn (ProductSpecification $specification): array => [
-                'id' => (int) $specification->getKey(),
-                'group' => $specification->group,
-                'label' => $specification->label,
-                'value' => $specification->value,
-            ])
+            ->map(fn (ProductSpecification $specification): string => $specification->text)
             ->values()
             ->all();
 

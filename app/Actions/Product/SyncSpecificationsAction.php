@@ -10,21 +10,25 @@ use Illuminate\Validation\ValidationException;
 
 final class SyncSpecificationsAction
 {
-    public const MAX_ROWS = 50;
+    public const MAX_ROWS = 30;
+
+    public const MAX_LENGTH = 200;
 
     /**
-     * @param  list<SpecificationInput>  $rows
+     * @param  list<string>  $items
      *
      * @throws ValidationException
      */
-    public function handle(Product $product, array $rows): void
+    public function handle(Product $product, array $items): void
     {
-        if (count($rows) > self::MAX_ROWS) {
+        $items = self::normalized($items);
+
+        if (count($items) > self::MAX_ROWS) {
             throw ValidationException::withMessages([
                 'specifications' => sprintf(
-                    'Una ficha técnica admite hasta %d características y llegaron %d.',
+                    'Un producto admite hasta %d características y llegaron %d.',
                     self::MAX_ROWS,
-                    count($rows),
+                    count($items),
                 ),
             ]);
         }
@@ -33,16 +37,39 @@ final class SyncSpecificationsAction
 
         ProductSpecification::query()->where('product_id', $productId)->delete();
 
-        if ($rows === []) {
-            return;
-        }
-
         $position = 1;
 
-        foreach ($rows as $row) {
-            ProductSpecification::query()->create($row->toAttributes($productId, $position));
+        foreach ($items as $text) {
+            ProductSpecification::query()->create([
+                'product_id' => $productId,
+                'text' => $text,
+                'position' => $position,
+            ]);
 
             $position++;
         }
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $items
+     * @return list<string>
+     */
+    public static function normalized(array $items): array
+    {
+        $texts = [];
+
+        foreach ($items as $item) {
+            if (! is_scalar($item)) {
+                continue;
+            }
+
+            $text = trim((string) preg_replace('/\s+/u', ' ', (string) $item));
+
+            if ($text !== '') {
+                $texts[] = $text;
+            }
+        }
+
+        return $texts;
     }
 }

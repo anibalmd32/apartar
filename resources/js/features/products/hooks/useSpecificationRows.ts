@@ -1,20 +1,39 @@
 import { type ProductFormValues, type SpecificationFormRow } from '@/types/product';
 import { useRef, useState } from 'react';
 
-export interface SpecificationPayloadRow {
-    group: string;
-    label: string;
-    value: string;
+export const MAX_SPECIFICATIONS = 30;
+
+export const MAX_SPECIFICATION_LENGTH = 200;
+
+export function normalizeSpecification(text: string): string {
+    return text.replace(/\s+/gu, ' ').trim();
 }
 
-function initialRows(nextKey: () => string, product?: ProductFormValues | null): SpecificationFormRow[] {
-    return (product?.specifications ?? []).map((specification) => ({
-        key: nextKey(),
-        id: specification.id,
-        group: specification.group ?? '',
-        label: specification.label,
-        value: specification.value,
-    }));
+function signature(text: string): string {
+    return normalizeSpecification(text).toLowerCase();
+}
+
+function merged(current: readonly SpecificationFormRow[], items: readonly string[], nextKey: () => string): SpecificationFormRow[] {
+    const seen = new Set(current.map((row) => signature(row.text)).filter((key) => key !== ''));
+    const next = [...current];
+
+    for (const item of items) {
+        const text = normalizeSpecification(item).slice(0, MAX_SPECIFICATION_LENGTH);
+        const key = signature(text);
+
+        if (key === '' || seen.has(key)) {
+            continue;
+        }
+
+        if (next.filter((row) => row.text.trim() !== '').length >= MAX_SPECIFICATIONS) {
+            break;
+        }
+
+        seen.add(key);
+        next.push({ key: nextKey(), text });
+    }
+
+    return next;
 }
 
 export function useSpecificationRows(product?: ProductFormValues | null) {
@@ -25,18 +44,30 @@ export function useSpecificationRows(product?: ProductFormValues | null) {
         return `row-${counter.current}`;
     };
 
-    const [rows, setRows] = useState<SpecificationFormRow[]>(() => initialRows(nextKey, product));
+    const [rows, setRows] = useState<SpecificationFormRow[]>(() => (product?.specifications ?? []).map((text) => ({ key: nextKey(), text })));
 
-    const add = () => {
-        setRows((current) => [...current, { key: nextKey(), id: null, group: '', label: '', value: '' }]);
+    const add = (afterKey?: string): string => {
+        const row = { key: nextKey(), text: '' };
+
+        setRows((current) => {
+            const index = afterKey === undefined ? -1 : current.findIndex((candidate) => candidate.key === afterKey);
+
+            if (index === -1) {
+                return [...current, row];
+            }
+
+            return [...current.slice(0, index + 1), row, ...current.slice(index + 1)];
+        });
+
+        return row.key;
     };
 
     const remove = (key: string) => {
         setRows((current) => current.filter((row) => row.key !== key));
     };
 
-    const update = (key: string, field: 'group' | 'label' | 'value', value: string) => {
-        setRows((current) => current.map((row) => (row.key === key ? { ...row, [field]: value } : row)));
+    const update = (key: string, text: string) => {
+        setRows((current) => current.map((row) => (row.key === key ? { ...row, text } : row)));
     };
 
     const move = (from: number, to: number) => {
@@ -54,35 +85,48 @@ export function useSpecificationRows(product?: ProductFormValues | null) {
         });
     };
 
-    const payload = (): SpecificationPayloadRow[] =>
-        rows.map((row) => ({ group: row.group.trim(), label: row.label.trim(), value: row.value.trim() }));
+    const replaceAll = (items: readonly string[]) => {
+        setRows(merged([], items, nextKey));
+    };
+
+    const append = (items: readonly string[]) => {
+        setRows((current) =>
+            merged(
+                current.filter((row) => row.text.trim() !== ''),
+                items,
+                nextKey,
+            ),
+        );
+    };
+
+    const payload = (): string[] => rows.map((row) => normalizeSpecification(row.text));
 
     const duplicateKeys = (): ReadonlySet<string> => {
-        const seen = new Map<string, string>();
+        const seen = new Set<string>();
         const duplicates = new Set<string>();
 
         for (const row of rows) {
-            const label = row.label.trim().toLowerCase();
+            const key = signature(row.text);
 
-            if (label === '') {
+            if (key === '') {
                 continue;
             }
 
-            const signature = `${row.group.trim().toLowerCase()}::${label}`;
-            const first = seen.get(signature);
-
-            if (first === undefined) {
-                seen.set(signature, row.key);
+            if (seen.has(key)) {
+                duplicates.add(row.key);
 
                 continue;
             }
 
-            duplicates.add(first);
-            duplicates.add(row.key);
+            seen.add(key);
         }
 
         return duplicates;
     };
 
-    return { rows, add, remove, update, move, payload, duplicateKeys };
+    const filledCount = rows.filter((row) => row.text.trim() !== '').length;
+
+    return { rows, filledCount, add, remove, update, move, replaceAll, append, payload, duplicateKeys };
 }
+
+export type SpecificationRows = ReturnType<typeof useSpecificationRows>;

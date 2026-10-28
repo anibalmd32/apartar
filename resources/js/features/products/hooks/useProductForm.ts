@@ -1,4 +1,3 @@
-import { type SpecificationPayloadRow } from '@/features/products/hooks/useSpecificationRows';
 import { suggestSku } from '@/features/products/lib/sku';
 import { type ProductDefaults, type ProductFormValues } from '@/types/product';
 import { router, useForm } from '@inertiajs/react';
@@ -72,7 +71,7 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         return () => window.clearTimeout(timer);
     }, [data.price, data.down_payment, data.installments_count, data.frequency_days]);
 
-    const submit = (specifications: SpecificationPayloadRow[]) => {
+    const submit = (specifications: string[]) => {
         form.transform((current) => ({ ...current, specifications }));
 
         if (product) {

@@ -14,9 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $organization_id
  * @property int $product_id
- * @property string|null $group
- * @property string $label
- * @property string $value
+ * @property string $text
  * @property int $position
  */
 class ProductSpecification extends Model
@@ -29,9 +27,7 @@ class ProductSpecification extends Model
      */
     protected $fillable = [
         'product_id',
-        'group',
-        'label',
-        'value',
+        'text',
         'position',
     ];
 

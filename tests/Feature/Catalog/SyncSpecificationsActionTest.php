@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Catalog;
 
 use App\Actions\Product\ProductData;
-use App\Actions\Product\SpecificationInput;
 use App\Actions\Product\SyncSpecificationsAction;
 use App\Actions\Product\UpsertProductAction;
 use App\Domain\Money\Money;
@@ -45,16 +44,37 @@ final class SyncSpecificationsActionTest extends TestCase
         $product = Product::factory()->create();
 
         $this->sync()->handle($product, [
-            SpecificationInput::of('Motor', 'Potencia', '750 W'),
-            SpecificationInput::of('Motor', 'Velocidades', '2'),
-            SpecificationInput::of(null, 'Material', 'Acero'),
+            'Potencia',
+            'Velocidades',
+            'Material',
         ]);
 
         expect($this->rowsOf($product))->toBe([
-            ['position' => 1, 'group' => 'Motor', 'label' => 'Potencia'],
-            ['position' => 2, 'group' => 'Motor', 'label' => 'Velocidades'],
-            ['position' => 3, 'group' => null, 'label' => 'Material'],
+            ['position' => 1, 'text' => 'Potencia'],
+            ['position' => 2, 'text' => 'Velocidades'],
+            ['position' => 3, 'text' => 'Material'],
         ]);
+    }
+
+    public function test_it_collapses_whitespace_and_drops_empty_items(): void
+    {
+        $product = Product::factory()->create();
+
+        $this->sync()->handle($product, ["  Pantalla de   6,5\tpulgadas ", '', '   ', 'Batería de 5000 mAh']);
+
+        expect($this->rowsOf($product))->toBe([
+            ['position' => 1, 'text' => 'Pantalla de 6,5 pulgadas'],
+            ['position' => 2, 'text' => 'Batería de 5000 mAh'],
+        ]);
+    }
+
+    public function test_empty_items_do_not_count_toward_the_limit(): void
+    {
+        $product = Product::factory()->create();
+
+        $this->sync()->handle($product, [...$this->rows(SyncSpecificationsAction::MAX_ROWS), '', ' ']);
+
+        expect(ProductSpecification::query()->count())->toBe(SyncSpecificationsAction::MAX_ROWS);
     }
 
     public function test_reordering_renumbers_the_whole_sheet(): void
@@ -62,19 +82,19 @@ final class SyncSpecificationsActionTest extends TestCase
         $product = Product::factory()->create();
 
         $this->sync()->handle($product, [
-            SpecificationInput::of(null, 'Primera', 'A'),
-            SpecificationInput::of(null, 'Segunda', 'B'),
-            SpecificationInput::of(null, 'Tercera', 'C'),
+            'Primera',
+            'Segunda',
+            'Tercera',
         ]);
 
         $this->sync()->handle($product, [
-            SpecificationInput::of(null, 'Tercera', 'C'),
-            SpecificationInput::of(null, 'Primera', 'A'),
+            'Tercera',
+            'Primera',
         ]);
 
         expect($this->rowsOf($product))->toBe([
-            ['position' => 1, 'group' => null, 'label' => 'Tercera'],
-            ['position' => 2, 'group' => null, 'label' => 'Primera'],
+            ['position' => 1, 'text' => 'Tercera'],
+            ['position' => 2, 'text' => 'Primera'],
         ]);
     }
 
@@ -82,11 +102,11 @@ final class SyncSpecificationsActionTest extends TestCase
     {
         $product = Product::factory()->create();
 
-        $this->sync()->handle($product, [SpecificationInput::of(null, 'Material', 'Acero')]);
+        $this->sync()->handle($product, ['Material']);
 
         $before = ProductSpecification::query()->sole()->getKey();
 
-        $this->sync()->handle($product, [SpecificationInput::of(null, 'Material', 'Acero')]);
+        $this->sync()->handle($product, ['Material']);
 
         expect(ProductSpecification::query()->count())->toBe(1);
         expect(ProductSpecification::query()->sole()->getKey())->not->toBe($before);
@@ -97,8 +117,8 @@ final class SyncSpecificationsActionTest extends TestCase
         $product = Product::factory()->create();
 
         $this->sync()->handle($product, [
-            SpecificationInput::of(null, 'Material', 'Acero'),
-            SpecificationInput::of(null, 'Peso', '2 kg'),
+            'Material',
+            'Peso',
         ]);
 
         $this->sync()->handle($product, []);
@@ -111,16 +131,16 @@ final class SyncSpecificationsActionTest extends TestCase
         $product = Product::factory()->create();
 
         $this->sync()->handle($product, [
-            SpecificationInput::of(null, 'Material', 'Acero'),
-            SpecificationInput::of(null, 'Peso', '2 kg'),
+            'Material',
+            'Peso',
         ]);
 
-        $this->sync()->handle($product, [SpecificationInput::of(null, 'Color', 'Azul')]);
+        $this->sync()->handle($product, ['Color']);
 
-        expect(array_column($this->rowsOf($product), 'label'))->toBe(['Color']);
+        expect(array_column($this->rowsOf($product), 'text'))->toBe(['Color']);
     }
 
-    public function test_it_accepts_fifty_rows_and_rejects_fifty_one(): void
+    public function test_it_accepts_thirty_rows_and_rejects_thirty_one(): void
     {
         $product = Product::factory()->create();
 
@@ -130,7 +150,7 @@ final class SyncSpecificationsActionTest extends TestCase
 
         try {
             $this->sync()->handle($product, $this->rows(SyncSpecificationsAction::MAX_ROWS + 1));
-            $this->fail('Cincuenta y una filas deberían rechazarse.');
+            $this->fail('Treinta y una filas deberían rechazarse.');
         } catch (ValidationException $exception) {
             expect($exception->errors())->toHaveKey('specifications');
         }
@@ -155,8 +175,8 @@ final class SyncSpecificationsActionTest extends TestCase
         $product = Product::factory()->create(['sku' => 'BOSCH-01']);
 
         $this->sync()->handle($product, [
-            SpecificationInput::of('Motor', 'Potencia', '750 W'),
-            SpecificationInput::of(null, 'Material', 'Acero'),
+            'Potencia',
+            'Material',
         ]);
 
         $foreignTag = $this->withinOrganization(
@@ -168,7 +188,7 @@ final class SyncSpecificationsActionTest extends TestCase
 
         try {
             app(UpsertProductAction::class)->handle(
-                $this->productData([SpecificationInput::of(null, 'Color', 'Azul')], [(int) $foreignTag->getKey()]),
+                $this->productData(['Color'], [(int) $foreignTag->getKey()]),
                 $this->actor,
                 $product,
             );
@@ -176,26 +196,26 @@ final class SyncSpecificationsActionTest extends TestCase
         } catch (CrossTenantRelationException) {
         }
 
-        expect(array_column($this->rowsOf($product), 'label'))->toBe(['Potencia', 'Material']);
+        expect(array_column($this->rowsOf($product), 'text'))->toBe(['Potencia', 'Material']);
     }
 
     public function test_the_sheet_is_saved_with_the_product(): void
     {
         $product = app(UpsertProductAction::class)->handle(
             $this->productData([
-                SpecificationInput::of('Motor', 'Potencia', '750 W'),
-                SpecificationInput::of(null, 'Material', 'Acero'),
+                'Potencia',
+                'Material',
             ]),
             $this->actor,
         );
 
-        expect(array_column($this->rowsOf($product), 'label'))->toBe(['Potencia', 'Material']);
+        expect(array_column($this->rowsOf($product), 'text'))->toBe(['Potencia', 'Material']);
     }
 
     public function test_a_null_sheet_leaves_the_rows_alone(): void
     {
         $product = app(UpsertProductAction::class)->handle(
-            $this->productData([SpecificationInput::of(null, 'Material', 'Acero')]),
+            $this->productData(['Material']),
             $this->actor,
         );
 
@@ -219,13 +239,13 @@ final class SyncSpecificationsActionTest extends TestCase
         $product = Product::factory()->create();
         $attack = '<script>alert("xss")</script>';
 
-        $this->sync()->handle($product, [SpecificationInput::of(null, 'Nota', $attack)]);
+        $this->sync()->handle($product, [$attack]);
 
-        expect(ProductSpecification::query()->sole()->value)->toBe($attack);
+        expect(ProductSpecification::query()->sole()->text)->toBe($attack);
     }
 
     /**
-     * @return list<array{position: int, group: string|null, label: string}>
+     * @return list<array{position: int, text: string}>
      */
     private function rowsOf(Product $product): array
     {
@@ -236,28 +256,27 @@ final class SyncSpecificationsActionTest extends TestCase
             ->get()
             ->map(fn (ProductSpecification $row): array => [
                 'position' => $row->position,
-                'group' => $row->group,
-                'label' => $row->label,
+                'text' => $row->text,
             ])
             ->all();
     }
 
     /**
-     * @return list<SpecificationInput>
+     * @return list<string>
      */
     private function rows(int $count): array
     {
         $rows = [];
 
         for ($number = 1; $number <= $count; $number++) {
-            $rows[] = SpecificationInput::of(null, 'Característica '.$number, 'Valor '.$number);
+            $rows[] = 'Característica '.$number;
         }
 
         return $rows;
     }
 
     /**
-     * @param  list<SpecificationInput>|null  $specifications
+     * @param  list<string>|null  $specifications
      * @param  list<int>  $tagIds
      */
     private function productData(?array $specifications, array $tagIds = []): ProductData

@@ -201,16 +201,13 @@ final class ProductPageTest extends TestCase
         $this->assertSame(ProductStatus::Archived, $product->refresh()->status);
     }
 
-    public function test_the_specification_sheet_is_saved_with_the_product(): void
+    public function test_the_characteristics_are_saved_in_order_with_the_product(): void
     {
         $owner = $this->owner();
 
         $this->actingAs($owner)
             ->post('/backoffice/productos', $this->payload([
-                'specifications' => [
-                    ['group' => 'Motor', 'label' => 'Potencia', 'value' => '750 W'],
-                    ['group' => '', 'label' => 'Material', 'value' => 'Acero'],
-                ],
+                'specifications' => ['  Potencia de   750 W ', '', 'Cuerpo de acero'],
             ]))
             ->assertSessionHasNoErrors();
 
@@ -219,53 +216,67 @@ final class ProductPageTest extends TestCase
         $this->actingAs($owner)
             ->get("/backoffice/productos/{$product->getKey()}/editar")
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('product.specifications', 2)
-                ->where('product.specifications.0.label', 'Potencia')
-                ->where('product.specifications.0.group', 'Motor')
-                ->where('product.specifications.1.label', 'Material')
-                ->where('product.specifications.1.group', null));
+                ->where('product.specifications', ['Potencia de 750 W', 'Cuerpo de acero']));
     }
 
-    public function test_a_row_without_a_label_is_rejected_with_its_index(): void
+    public function test_a_repeated_characteristic_is_rejected_with_its_index(): void
     {
         $this->actingAs($this->owner())
             ->post('/backoffice/productos', $this->payload([
-                'specifications' => [
-                    ['group' => '', 'label' => 'Material', 'value' => 'Acero'],
-                    ['group' => '', 'label' => '', 'value' => 'Sin característica'],
-                ],
+                'specifications' => ['Cuerpo de acero', 'Potencia de 750 W', 'cuerpo  de ACERO'],
             ]))
-            ->assertSessionHasErrors('specifications.1.label');
+            ->assertSessionHasErrors(['specifications.2' => 'Esta característica ya está en la lista. Quítala o escribe otra distinta.'])
+            ->assertSessionDoesntHaveErrors(['specifications.0', 'specifications.1']);
 
         $this->assertSame(0, $this->inTenant(fn (): int => Product::query()->count()));
     }
 
-    public function test_a_row_over_the_column_limits_is_rejected(): void
+    public function test_a_characteristic_over_the_length_limit_is_rejected(): void
     {
         $owner = $this->owner();
 
         $this->actingAs($owner)
             ->post('/backoffice/productos', $this->payload([
-                'specifications' => [['group' => '', 'label' => str_repeat('a', 61), 'value' => 'Acero']],
+                'specifications' => ['Cuerpo de acero', str_repeat('a', 201)],
             ]))
-            ->assertSessionHasErrors('specifications.0.label');
+            ->assertSessionHasErrors('specifications.1');
 
         $this->actingAs($owner)
             ->post('/backoffice/productos', $this->payload([
-                'specifications' => [['group' => '', 'label' => 'Material', 'value' => str_repeat('a', 501)]],
+                'specifications' => [str_repeat('a', 200)],
             ]))
-            ->assertSessionHasErrors('specifications.0.value');
+            ->assertSessionHasNoErrors();
     }
 
-    public function test_more_than_fifty_rows_are_rejected(): void
+    public function test_a_characteristic_must_be_text(): void
     {
         $this->actingAs($this->owner())
             ->post('/backoffice/productos', $this->payload([
-                'specifications' => $this->specificationRows(51),
+                'specifications' => [['label' => 'Material', 'value' => 'Acero']],
+            ]))
+            ->assertSessionHasErrors('specifications.0');
+    }
+
+    public function test_more_than_thirty_characteristics_are_rejected(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => $this->specificationRows(31),
             ]))
             ->assertSessionHasErrors('specifications');
 
         $this->assertSame(0, $this->inTenant(fn (): int => Product::query()->count()));
+    }
+
+    public function test_empty_rows_do_not_count_toward_the_limit(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload([
+                'specifications' => [...$this->specificationRows(30), '', '   '],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(30, $this->inTenant(fn (): int => ProductSpecification::query()->count()));
     }
 
     public function test_saving_with_zero_rows_clears_the_sheet(): void
@@ -273,7 +284,7 @@ final class ProductPageTest extends TestCase
         $product = $this->inTenant(function (): Product {
             $product = Product::factory()->create(['sku' => 'BOSCH-01', 'slug' => 'taladro-bosch']);
 
-            ProductSpecification::factory()->forProduct($product)->create(['label' => 'Material', 'value' => 'Acero']);
+            ProductSpecification::factory()->forProduct($product)->create(['text' => 'Cuerpo de acero']);
 
             return $product;
         });
@@ -285,19 +296,11 @@ final class ProductPageTest extends TestCase
         $this->assertSame(0, $this->inTenant(fn (): int => ProductSpecification::query()->count()));
     }
 
-    public function test_the_form_carries_the_group_suggestions(): void
+    public function test_the_form_no_longer_carries_group_suggestions(): void
     {
-        $this->inTenant(function (): void {
-            $product = Product::factory()->create();
-
-            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Motor']);
-            ProductSpecification::factory()->forProduct($product)->create(['group' => 'Acabado']);
-        });
-
         $this->actingAs($this->owner())
             ->get('/backoffice/productos/crear')
-            ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('specificationGroups', ['Acabado', 'Motor']));
+            ->assertInertia(fn (AssertableInertia $page) => $page->missing('specificationGroups'));
     }
 
     public function test_a_product_of_another_organization_is_not_found(): void
@@ -508,14 +511,14 @@ final class ProductPageTest extends TestCase
     }
 
     /**
-     * @return list<array<string, string>>
+     * @return list<string>
      */
     private function specificationRows(int $count): array
     {
         $rows = [];
 
         for ($number = 1; $number <= $count; $number++) {
-            $rows[] = ['group' => '', 'label' => 'Característica '.$number, 'value' => 'Valor '.$number];
+            $rows[] = 'Característica '.$number;
         }
 
         return $rows;

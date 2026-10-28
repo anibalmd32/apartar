@@ -60,7 +60,7 @@ function detail(overrides: Partial<ProductDetail> = {}): ProductDetail {
         description: 'Percutor de 800 W.',
         sku: 'TAL-500',
         images: [],
-        specificationGroups: [],
+        specifications: [],
         maxQuantity: 5,
         paymentAccounts: [ACCOUNT],
         canBeReserved: true,
@@ -153,13 +153,25 @@ it('sin plan de pago enseña el precio y no una cuota', () => {
     expect(container.textContent).not.toContain('cuotas de');
 });
 
-it('omite entera la ficha técnica si no hay', () => {
+it('omite entera la lista de características si no hay', () => {
     renderPage();
-    expect(screen.queryByRole('heading', { name: 'Especificaciones' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Características' })).toBeNull();
+});
 
-    renderPage(detail({ specificationGroups: [{ group: null, items: [{ label: 'Potencia', value: '800 W' }] }] }));
-    expect(screen.getByRole('heading', { name: 'Especificaciones' })).toBeInTheDocument();
-    expect(screen.getByText('800 W')).toBeInTheDocument();
+it('muestra las características como una lista en su orden', () => {
+    renderPage(detail({ description: '', specifications: ['Potencia de 800 W', 'Cuerpo de acero'] }));
+
+    const section = screen.getByRole('heading', { name: 'Características' }).closest('section');
+    const items = within(section as HTMLElement).getAllByRole('listitem');
+
+    expect(items.map((item) => item.textContent)).toEqual(['Potencia de 800 W', 'Cuerpo de acero']);
+});
+
+it('pinta las características como texto, sin interpretar HTML', () => {
+    const { container } = renderPage(detail({ specifications: ['<img src=x onerror=alert(1)>'] }));
+
+    expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
+    expect(container.querySelector('img[src="x"]')).toBeNull();
 });
 
 it('sin fotos pinta la inicial del nombre y ninguna imagen', () => {

@@ -9,6 +9,7 @@ use App\Domain\Money\Money;
 use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreProductRequest extends FormRequest
 {
@@ -60,6 +61,14 @@ class StoreProductRequest extends FormRequest
             'stock' => 'existencias',
             'slug' => 'enlace',
         ] + $this->specificationAttributes();
+    }
+
+    /**
+     * @return list<callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [$this->specificationChecks()];
     }
 
     public function toData(): ProductData
