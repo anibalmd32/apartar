@@ -61,6 +61,7 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
                 only: ['plan'],
                 data: {
                     price: data.price,
+                    compare_at_price: data.compare_at_price,
                     down_payment: data.down_payment,
                     installments_count: data.installments_count,
                     frequency_days: data.frequency_days,
@@ -69,7 +70,7 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         }, PREVIEW_DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);
-    }, [data.price, data.down_payment, data.installments_count, data.frequency_days]);
+    }, [data.price, data.compare_at_price, data.down_payment, data.installments_count, data.frequency_days]);
 
     const submit = (specifications: string[], images: readonly File[] = []) => {
         form.transform((current) => ({ ...current, specifications, ...(images.length > 0 ? { images: [...images] } : {}) }));

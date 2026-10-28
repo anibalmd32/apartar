@@ -8,12 +8,14 @@ import { ProductCopyAssistant } from '@/features/products/components/ProductCopy
 import { ProductIdentityFields } from '@/features/products/components/ProductIdentityFields';
 import { ProductImageGallery } from '@/features/products/components/ProductImageGallery';
 import { ProductInventoryFields } from '@/features/products/components/ProductInventoryFields';
+import { ProductPreview } from '@/features/products/components/ProductPreview';
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
 import { SpecificationBuilder } from '@/features/products/components/SpecificationBuilder';
 import { usePendingImages } from '@/features/products/hooks/usePendingImages';
 import { useProductForm } from '@/features/products/hooks/useProductForm';
 import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
+import { type PreviewSource } from '@/features/products/lib/preview';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import {
     type AiAvailability,
@@ -68,6 +70,21 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
         />
     );
 
+    const previewSource = (): PreviewSource => ({
+        name: data.name,
+        sku: data.sku,
+        description: data.description,
+        stock: data.stock,
+        categoryName,
+        specifications: sheet.payload(),
+        images:
+            product === null
+                ? photos.images.map((image) => ({ thumb: image.src, card: image.src, zoom: image.src, alt: data.name }))
+                : product.images.map((image) => image.set),
+        plan,
+        fewLeft: defaults.fewLeft,
+    });
+
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
 
@@ -90,6 +107,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                             Ver en catálogo
                         </a>
                     ) : null}
+                    <ProductPreview source={previewSource} />
                     <Link className="btn" href="/backoffice/productos">
                         Cancelar
                     </Link>

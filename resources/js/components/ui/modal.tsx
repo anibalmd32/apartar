@@ -4,6 +4,8 @@ import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react
 import { type ReactNode } from 'react';
 import { Icon } from './icon';
 
+const SIZES = { md: 'sm:max-w-[520px]', lg: 'sm:max-w-[680px]', xl: 'sm:max-w-[1200px]' } as const;
+
 interface ModalProps {
     open: boolean;
     onClose: () => void;
@@ -12,7 +14,7 @@ interface ModalProps {
     children: ReactNode;
     actions?: ReactNode;
     footnote?: ReactNode;
-    size?: 'md' | 'lg';
+    size?: 'md' | 'lg' | 'xl';
 }
 
 export function Modal({ open, onClose, title, description, children, actions, footnote, size = 'lg' }: ModalProps) {
@@ -23,7 +25,7 @@ export function Modal({ open, onClose, title, description, children, actions, fo
                 <DialogPanel
                     className={cn(
                         'bg-base-100 border-line shadow-pop flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[18px] border sm:rounded-[18px]',
-                        size === 'md' ? 'sm:max-w-[520px]' : 'sm:max-w-[680px]',
+                        SIZES[size],
                     )}
                 >
                     <div className="flex items-start gap-3.5 px-6 pt-[22px] pb-4">

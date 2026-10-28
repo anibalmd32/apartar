@@ -3,22 +3,26 @@ import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { cn } from '@/lib/utils';
 import { type ProductDetail } from '@/types/catalog-view';
 
+export type PriceOffer = Pick<ProductDetail, 'price' | 'compareAtPrice' | 'savingsPercent'>;
+
+export type PlanOffer = Pick<ProductDetail, 'downPayment' | 'installmentAmount' | 'lastInstallmentAmount' | 'installmentsCount' | 'frequencyDays'>;
+
 function frequencyLabel(days: number): string {
     return days === 1 ? 'cada día' : `cada ${days} días`;
 }
 
-export function PriceTag({ product }: { product: ProductDetail }) {
+export function PriceTag({ product }: { product: PriceOffer }) {
     return (
         <div className="flex items-start gap-2.5">
-            <MoneyLabel money={product.price} stacked className="text-[34px] leading-[1.2] font-extrabold tracking-[-1px] lg:text-[40px]" />
+            <MoneyLabel money={product.price} stacked className="text-[34px] leading-[1.2] font-extrabold tracking-[-1px] @3xl:text-[40px]" />
             {product.compareAtPrice !== null ? (
-                <s className="text-ink-3 mt-3 text-lg lg:mt-4">
+                <s className="text-ink-3 mt-3 text-lg @3xl:mt-4">
                     <span className="sr-only">Antes </span>
                     <PrimaryAmount money={product.compareAtPrice} />
                 </s>
             ) : null}
             {product.savingsPercent ? (
-                <span className="bg-success-soft text-success mt-3 rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap lg:mt-4">
+                <span className="bg-success-soft text-success mt-3 rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap @3xl:mt-4">
                     Ahorras {product.savingsPercent}%
                 </span>
             ) : null}
@@ -41,7 +45,7 @@ function Tile({ label, amount, hint, first = false }: { label: string; amount: P
     );
 }
 
-export function PlanBreakdown({ product }: { product: ProductDetail }) {
+export function PlanBreakdown({ product }: { product: PlanOffer }) {
     const installment = product.installmentAmount;
 
     if (installment === null) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Concerns;
 
 use App\Domain\Catalog\NewArrival;
+use App\Domain\Catalog\Savings;
 use App\Models\Product;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -25,14 +26,7 @@ trait DescribesProductOffer
 
     private function savingsPercent(Product $product): ?int
     {
-        $before = $product->compare_at_price_cents?->cents;
-        $now = $product->price_cents->cents;
-
-        if ($before === null || $before <= $now) {
-            return null;
-        }
-
-        return (int) round(100 - ($now * 100 / $before));
+        return Savings::percent($product->price_cents, $product->compare_at_price_cents);
     }
 
     private function stockLeft(Product $product): ?int

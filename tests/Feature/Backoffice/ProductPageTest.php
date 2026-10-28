@@ -120,6 +120,52 @@ final class ProductPageTest extends TestCase
                 ->where('plan.hasUnevenLastInstallment', true));
     }
 
+    public function test_the_plan_carries_the_price_before_and_the_saving_for_the_preview(): void
+    {
+        $this->actingAs($this->owner())
+            ->get('/backoffice/productos/crear?price=75.00&compare_at_price=100.00&down_payment=15.00&installments_count=3&frequency_days=15')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('plan.total.usd', '$75,00')
+                ->where('plan.compareAtPrice.usd', '$100,00')
+                ->where('plan.savingsPercent', 25)
+                ->where('defaults.fewLeft', 10));
+    }
+
+    public function test_a_cleared_or_lower_price_before_carries_no_saving(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->get('/backoffice/productos/crear?price=75.00&compare_at_price=&down_payment=15.00&installments_count=3&frequency_days=15')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('plan.compareAtPrice', null)
+                ->where('plan.savingsPercent', null));
+
+        $this->actingAs($owner)
+            ->get('/backoffice/productos/crear?price=75.00&compare_at_price=60.00&down_payment=15.00&installments_count=3&frequency_days=15')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('plan.compareAtPrice.usd', '$60,00')
+                ->where('plan.savingsPercent', null));
+    }
+
+    public function test_the_edit_plan_falls_back_to_the_stored_price_before(): void
+    {
+        $product = $this->inTenant(fn (): Product => Product::factory()->create([
+            'price_cents' => 8_000,
+            'compare_at_price_cents' => 10_000,
+            'down_payment_cents' => 2_000,
+            'installments_count' => 3,
+            'frequency_days' => 15,
+        ]));
+
+        $this->actingAs($this->owner())
+            ->get("/backoffice/productos/{$product->id}/editar")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('plan.compareAtPrice.usd', '$100,00')
+                ->where('plan.savingsPercent', 20));
+    }
+
     public function test_impossible_terms_carry_no_plan(): void
     {
         $this->actingAs($this->owner())

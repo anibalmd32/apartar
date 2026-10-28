@@ -13,6 +13,7 @@ use App\Domain\Catalog\IncompleteProductException;
 use App\Domain\Catalog\InventorySort;
 use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Catalog\Savings;
 use App\Domain\Money\Money;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\CrossTenantRelationException;
@@ -24,6 +25,7 @@ use App\Http\Requests\Backoffice\StoreProductImagesRequest;
 use App\Http\Requests\Backoffice\StoreProductRequest;
 use App\Http\Requests\Backoffice\UpdateProductRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
+use App\Http\Resources\ProductDetailResource;
 use App\Models\Catalog;
 use App\Models\Category;
 use App\Models\Product;
@@ -214,6 +216,8 @@ final class ProductController extends Controller
             return null;
         }
 
+        $compareAt = $this->compareAtAmount($request, $product);
+
         return [
             'downPayment' => $this->money($plan->downPayment),
             'installmentsCount' => $plan->installmentsCount,
@@ -223,7 +227,24 @@ final class ProductController extends Controller
             'hasUnevenLastInstallment' => $plan->hasUnevenLastInstallment(),
             'financedAmount' => $this->money($plan->financedAmount()),
             'total' => $this->money($plan->price),
+            'compareAtPrice' => $compareAt === null ? null : $this->money($compareAt),
+            'savingsPercent' => Savings::percent($plan->price, $compareAt),
         ];
+    }
+
+    private function compareAtAmount(Request $request, ?Product $product): ?Money
+    {
+        if (! $request->query->has('compare_at_price')) {
+            return $product?->compare_at_price_cents;
+        }
+
+        $value = $request->query('compare_at_price');
+
+        try {
+            return is_string($value) && trim($value) !== '' ? Money::fromDecimalString(trim($value)) : null;
+        } catch (InvalidArgumentException) {
+            return null;
+        }
     }
 
     private function termAmount(Request $request, string $key, ?Money $fallback): Money
@@ -258,6 +279,7 @@ final class ProductController extends Controller
             'frequencyDays' => $this->settingInteger(SettingKey::DefaultFrequencyDays),
             'skuSequence' => Product::withTrashed()->count() + 1,
             'maxImages' => StoreProductImagesRequest::MAX_IMAGES,
+            'fewLeft' => ProductDetailResource::FEW_LEFT,
         ];
     }
 

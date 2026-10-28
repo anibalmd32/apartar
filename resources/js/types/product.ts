@@ -21,6 +21,8 @@ export interface FinancingPlanView {
     readonly hasUnevenLastInstallment: boolean;
     readonly financedAmount: MoneyView;
     readonly total: MoneyView;
+    readonly compareAtPrice: MoneyView | null;
+    readonly savingsPercent: number | null;
 }
 
 export interface SpecificationFormRow {
@@ -77,6 +79,7 @@ export interface ProductDefaults {
     readonly frequencyDays: number;
     readonly skuSequence?: number;
     readonly maxImages?: number;
+    readonly fewLeft?: number;
 }
 
 export interface AiAvailability {
