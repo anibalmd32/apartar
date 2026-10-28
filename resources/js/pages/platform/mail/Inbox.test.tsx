@@ -8,7 +8,6 @@ vi.mock('@/layouts/platform-layout', () => ({ default: ({ children }: { children
 vi.mock('@/features/platform/mail/MailTabs', () => ({ MailTabs: () => null }));
 vi.mock('@inertiajs/react', () => ({
     router: { get: vi.fn() },
-    usePoll: vi.fn(),
     Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
         <a href={href} className={className}>
             {children}

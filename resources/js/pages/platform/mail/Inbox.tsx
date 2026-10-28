@@ -8,7 +8,7 @@ import PlatformLayout from '@/layouts/platform-layout';
 import { cn } from '@/lib/utils';
 import { type MailThreadRow } from '@/types/mail';
 import { cilInbox, cilSearch } from '@coreui/icons';
-import { Link, router, usePoll } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface InboxFilters {
@@ -24,14 +24,10 @@ interface InboxProps {
     unreadThreads: number;
 }
 
-export const INBOX_POLL_MS = 60_000;
-
 export default function MailInboxPage({ threads, hasMore, page, filters, unreadThreads }: InboxProps) {
     const [search, setSearch] = useState(filters.q ?? '');
     const visit = (changes: Partial<Record<keyof InboxFilters | 'pagina', string | number | null>>) =>
         router.get('/plataforma/correos/bandeja', { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
-
-    usePoll(INBOX_POLL_MS, { only: ['threads', 'hasMore', 'unreadThreads', 'platformOperator'] });
 
     return (
         <PlatformLayout title="Bandeja" description="Lo que llega a cualquier dirección @apartar.app. Las respuestas salen desde info@.">

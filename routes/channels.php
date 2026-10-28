@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Broadcasting\ConversationChannel;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\OrganizationStatus;
+use App\Events\MailActivity;
 use App\Models\Customer;
+use App\Models\PlatformUser;
 use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -53,4 +55,10 @@ Broadcast::channel(
         return $user->role->can(OrganizationCapability::Chat);
     },
     ['guards' => ['web']],
+);
+
+Broadcast::channel(
+    MailActivity::CHANNEL,
+    fn (mixed $user): bool => $user instanceof PlatformUser && $user->isActive() && ! $user->must_change_password,
+    ['guards' => ['platform']],
 );

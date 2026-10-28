@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Actions\Mail;
 
 use App\Domain\Mail\ComposeMode;
+use App\Domain\Mail\MailActivityKind;
 use App\Domain\Mail\MailBody;
 use App\Domain\Mail\MailStatus;
+use App\Events\MailActivity;
 use App\Mail\OwnerMail;
 use App\Models\InboundMail;
 use App\Models\MailThread;
@@ -59,6 +61,7 @@ final class SendOwnerMailAction
             Mail::to($to)->cc($cc)->send($mail);
         } catch (Throwable $exception) {
             SentMail::query()->where('uuid', $uuid)->update(['status' => MailStatus::Failed->value, 'updated_at' => now()]);
+            MailActivity::announce(MailActivityKind::Sent, [$uuid]);
             report($exception);
 
             throw new RuntimeException('No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.', previous: $exception);
@@ -70,6 +73,7 @@ final class SendOwnerMailAction
         $sent->forceFill(['platform_user_id' => $operator->getKey(), 'mail_thread_id' => $thread->getKey()])->save();
         $this->markRead($thread);
         $this->threads->touch($thread, MailBody::plainText($body));
+        MailActivity::announce(MailActivityKind::Sent, [$uuid], [(int) $thread->getKey()]);
 
         PlatformAudit::record(PlatformAudit::MAIL_SENT, sprintf('%s a %s: %s', $mode->label(), implode(', ', $to), $sent->subject), $operator, properties: [
             'sent_mail' => $uuid,

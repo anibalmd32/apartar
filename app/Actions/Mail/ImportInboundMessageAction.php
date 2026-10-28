@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Mail;
 
+use App\Domain\Mail\MailActivityKind;
 use App\Domain\Mail\MailAddress;
 use App\Domain\Mail\MailBody;
+use App\Events\MailActivity;
 use App\Models\InboundMail;
 use App\Models\InboundMailAttachment;
 use App\Support\Mail\MailThreads;
@@ -85,6 +87,7 @@ final class ImportInboundMessageAction
             ]);
 
             $this->threads->touch($thread, MailBody::textOf($text, $html));
+            MailActivity::announce(MailActivityKind::Inbound, threads: [(int) $thread->getKey()]);
 
             return $mail;
         });

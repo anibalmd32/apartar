@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Support\Mail;
 
+use App\Domain\Mail\MailActivityKind;
 use App\Domain\Mail\MailCategory;
 use App\Domain\Mail\MailStatus;
 use App\Domain\Mail\RecipientProvider;
+use App\Events\MailActivity;
 use App\Models\SentMail;
 use Illuminate\Support\Str;
 use Symfony\Component\Mime\Address;
@@ -49,7 +51,7 @@ final class OutgoingMailRecorder
         $from = $email?->getFrom()[0] ?? null;
         $to = self::addresses($email?->getTo() ?? []);
 
-        return SentMail::query()->create([
+        $mail = SentMail::query()->create([
             'uuid' => $uuid,
             'message_id' => self::messageId($message),
             'from_address' => $from?->getAddress() ?? (string) config('mail.from.address'),
@@ -66,6 +68,10 @@ final class OutgoingMailRecorder
             'status' => MailStatus::Sending,
             'target_organization_id' => $this->context->organizationFor($data),
         ]);
+
+        MailActivity::announce(MailActivityKind::Sent, [$uuid]);
+
+        return $mail;
     }
 
     public function markSent(Message $message): void
@@ -76,11 +82,15 @@ final class OutgoingMailRecorder
             return;
         }
 
-        SentMail::query()->where('uuid', $uuid)->where('status', MailStatus::Sending->value)->update([
+        $updated = SentMail::query()->where('uuid', $uuid)->where('status', MailStatus::Sending->value)->update([
             'status' => MailStatus::Sent->value,
             'sent_at' => now(),
             'updated_at' => now(),
         ]);
+
+        if ($updated > 0) {
+            MailActivity::announce(MailActivityKind::Sent, [$uuid]);
+        }
     }
 
     public static function uuidOf(Message $message): ?string

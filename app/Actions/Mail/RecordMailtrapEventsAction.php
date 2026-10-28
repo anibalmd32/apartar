@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Mail;
 
+use App\Domain\Mail\MailActivityKind;
 use App\Domain\Mail\MailEventType;
+use App\Events\MailActivity;
 use App\Models\SentMail;
 use App\Models\SentMailEvent;
 use App\Support\Mail\OutgoingMailRecorder;
@@ -21,9 +23,14 @@ final class RecordMailtrapEventsAction
     public function handle(array $events): int
     {
         $recorded = 0;
+        $mails = [];
 
         foreach ($events as $event) {
-            $recorded += $this->record($event) ? 1 : 0;
+            $recorded += $this->record($event, $mails) ? 1 : 0;
+        }
+
+        if ($recorded > 0) {
+            MailActivity::announce(MailActivityKind::Event, $mails);
         }
 
         return $recorded;
@@ -31,8 +38,9 @@ final class RecordMailtrapEventsAction
 
     /**
      * @param  array<string, mixed>  $event
+     * @param  list<string>  $mails
      */
-    private function record(array $event): bool
+    private function record(array $event, array &$mails): bool
     {
         $type = MailEventType::fromMailtrap($event['event'] ?? null);
 
@@ -47,7 +55,7 @@ final class RecordMailtrapEventsAction
         }
 
         try {
-            return DB::transaction(function () use ($event, $eventId, $type): bool {
+            return DB::transaction(function () use ($event, $eventId, $type, &$mails): bool {
                 $messageId = self::text($event['message_id'] ?? null, 100) ?? '';
                 $mail = $this->correlate($event, $messageId);
                 $occurredAt = self::occurredAt($event['timestamp'] ?? null);
@@ -71,6 +79,7 @@ final class RecordMailtrapEventsAction
 
                 if ($mail !== null) {
                     $this->advance($mail, $type, $messageId, $occurredAt);
+                    $mails[] = $mail->uuid;
                 }
 
                 return true;

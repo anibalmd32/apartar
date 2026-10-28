@@ -22,6 +22,8 @@ final class BroadcastChannelIsolationTest extends TestCase
      */
     private const ORGANIZATION_PARAMETERS = ['orgId', 'organizationId', 'organization'];
 
+    private const PLATFORM_PREFIX = 'platform.';
+
     public function test_no_registered_channel_leaks_across_organizations(): void
     {
         $this->assertSame([], $this->channelViolations());
@@ -63,6 +65,16 @@ final class BroadcastChannelIsolationTest extends TestCase
         $this->assertStringContainsString('conversation.{conversationId}', $violations[0]);
     }
 
+    public function test_a_platform_channel_open_to_team_members_breaks_the_mechanism(): void
+    {
+        Broadcast::channel('platform.abierto', fn (): bool => true);
+
+        $violations = $this->channelViolations();
+
+        $this->assertCount(1, $violations);
+        $this->assertStringContainsString('platform.abierto', $violations[0]);
+    }
+
     public function test_a_channel_that_checks_membership_passes(): void
     {
         Broadcast::channel(
@@ -88,6 +100,14 @@ final class BroadcastChannelIsolationTest extends TestCase
         $violations = [];
 
         foreach ($this->registeredChannels() as $name => $callback) {
+            if (str_starts_with($name, self::PLATFORM_PREFIX)) {
+                if ($this->authorises($name, $callback, $member, [])) {
+                    $violations[] = sprintf('%s · autoriza a un miembro de un negocio en un canal de la plataforma.', $name);
+                }
+
+                continue;
+            }
+
             $outsider = $this->argumentsFor($name, $neighbour);
 
             if ($outsider === null) {

@@ -4,6 +4,7 @@ import { UserMenu } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { PlatformBell } from '@/features/platform/components/PlatformBell';
+import { useMailActivity } from '@/features/platform/mail/useMailActivity';
 import { cilSearch, cilShieldAlt } from '@coreui/icons';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -22,6 +23,8 @@ export default function PlatformLayout({ title, description, actions, back, chil
         platformOperator?: { name: string; email: string } | null;
     }>();
     const operator = props.platformOperator ?? null;
+
+    useMailActivity();
 
     const userMenu = (
         <UserMenu
