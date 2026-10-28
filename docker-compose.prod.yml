@@ -1,0 +1,112 @@
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+      args:
+        VITE_APP_NAME: ${APP_NAME:-Apartar}
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 768m
+    environment:
+      CONTAINER_ROLE: app
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage/app
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - apartar
+      - dokploy-network
+
+  nginx:
+    build:
+      context: .
+      target: web
+      args:
+        VITE_APP_NAME: ${APP_NAME:-Apartar}
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-443}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+    image: apartar/web
+    restart: unless-stopped
+    mem_limit: 128m
+    volumes:
+      - app_storage:/var/www/html/storage/app:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - apartar
+      - dokploy-network
+
+  queue:
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      CONTAINER_ROLE: queue
+    env_file:
+      - .env
+    command:
+      - php
+      - artisan
+      - queue:work
+      - redis
+      - --queue=high,default,exports,telemetry
+      - --tries=3
+      - --max-time=3600
+    volumes:
+      - app_storage:/var/www/html/storage/app
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - apartar
+      - dokploy-network
+
+  reverb:
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      CONTAINER_ROLE: reverb
+    env_file:
+      - .env
+    command:
+      - php
+      - artisan
+      - reverb:start
+      - --host=0.0.0.0
+      - --port=8080
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8080) ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - apartar
+      - dokploy-network
+
+volumes:
+  app_storage:
+
+networks:
+  apartar:
+    driver: bridge
+  dokploy-network:
+    external: true

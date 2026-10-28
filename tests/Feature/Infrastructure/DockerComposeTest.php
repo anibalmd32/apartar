@@ -51,8 +51,45 @@ it('usa una sola red y no conoce traefik_proxy en local', function (): void {
         ->not->toContain('labels:');
 });
 
-it('no crea el archivo de producción', function (): void {
-    expect(file_exists(base_path('docker-compose.prod.yml')))->toBeFalse();
+it('produccion corre solo la app, detras de Traefik y con MySQL y Redis gestionados por Dokploy', function (): void {
+    $production = ComposeFile::read('docker-compose.prod.yml');
+
+    expect($production->keys('services'))->toEqualCanonicalizing(['app', 'nginx', 'queue', 'reverb']);
+    expect($production->keys('volumes'))->toBe(['app_storage']);
+    expect($production->block('networks', 'dokploy-network'))->toContain('external: true');
+    expect((string) file_get_contents(base_path('docker-compose.prod.yml')))
+        ->not->toContain('ports:')
+        ->not->toContain('labels:')
+        ->not->toContain('APP_KEY=');
+});
+
+it('en produccion cada servicio reinicia, tiene limite de memoria, su rol y la red de Dokploy', function (string $service, ?string $role): void {
+    $block = ComposeFile::read('docker-compose.prod.yml')->service($service);
+
+    expect($block)
+        ->toContain('restart: unless-stopped')
+        ->toMatch('/mem_limit:\s*\S+/')
+        ->toContain('- dokploy-network');
+
+    if ($role !== null) {
+        expect($block)->toContain("CONTAINER_ROLE: {$role}")->toContain('env_file:');
+    }
+})->with([
+    ['app', 'app'],
+    ['nginx', null],
+    ['queue', 'queue'],
+    ['reverb', 'reverb'],
+]);
+
+it('en produccion comparte app_storage y construye los assets con el host publico de Reverb', function (): void {
+    $production = ComposeFile::read('docker-compose.prod.yml');
+
+    foreach (['app', 'queue', 'nginx'] as $service) {
+        expect($production->service($service))->toContain('app_storage:/var/www/html/storage/app');
+    }
+
+    expect($production->service('nginx'))->toContain('target: web')->toContain('VITE_REVERB_HOST: ${VITE_REVERB_HOST}');
+    expect($production->service('reverb'))->toContain('--host=0.0.0.0')->toContain('--port=8080');
 });
 
 it('declara healthcheck en mysql, redis y app', function (string $service): void {
