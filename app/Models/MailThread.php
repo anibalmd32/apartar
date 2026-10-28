@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -44,15 +45,15 @@ class MailThread extends Model
 
     public function refreshCounters(): void
     {
-        $inbound = $this->inboundMails()->count();
-        $sent = $this->sentMails()->count();
-        $latestInbound = $this->inboundMails()->max('received_at');
-        $latestSent = $this->sentMails()->max('created_at');
+        $latest = array_filter([
+            $this->inboundMails()->max('received_at'),
+            $this->sentMails()->max('created_at'),
+        ], fn (mixed $value): bool => is_string($value) && $value !== '');
 
         $this->forceFill([
-            'messages_count' => $inbound + $sent,
+            'messages_count' => $this->inboundMails()->count() + $this->sentMails()->count(),
             'unread_count' => $this->inboundMails()->whereNull('read_at')->count(),
-            'last_message_at' => max(array_filter([(string) $latestInbound, (string) $latestSent, (string) $this->last_message_at])),
+            'last_message_at' => $latest === [] ? $this->last_message_at : CarbonImmutable::parse(max($latest)),
         ])->save();
     }
 

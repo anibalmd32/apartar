@@ -11,4 +11,5 @@ Route::middleware('outside-tenancy')->group(function (): void {
     Route::get('tasa', ExchangeRateController::class)->name('api.rate');
     Route::post('telemetry', TelemetryController::class)->middleware('throttle:telemetria')->name('api.telemetry');
     Route::post('webhooks/mailtrap/envios', [MailtrapWebhookController::class, 'sending'])->middleware('throttle:webhooks')->name('api.mailtrap.sending');
+    Route::post('webhooks/mailtrap/entrantes', [MailtrapWebhookController::class, 'inbound'])->middleware('throttle:webhooks')->name('api.mailtrap.inbound');
 });

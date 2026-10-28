@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Domain\Mail\MailtrapPayload;
 use App\Domain\Mail\MailtrapSignature;
 use App\Http\Controllers\Controller;
+use App\Jobs\ImportInboundMessage;
 use App\Jobs\ProcessMailtrapEvents;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,6 +15,8 @@ use Illuminate\Http\Response;
 final class MailtrapWebhookController extends Controller
 {
     public const MAX_BODY_BYTES = 5_242_880;
+
+    public const INBOUND_EVENT = 'inbound.message_received';
 
     public function sending(Request $request): Response
     {
@@ -25,6 +28,28 @@ final class MailtrapWebhookController extends Controller
 
         if ($events !== []) {
             ProcessMailtrapEvents::dispatch($events);
+        }
+
+        return response()->noContent(200);
+    }
+
+    public function inbound(Request $request): Response
+    {
+        $events = $this->verifiedEvents($request, 'services.mailtrap.inbound_webhook_secret');
+
+        if ($events instanceof Response) {
+            return $events;
+        }
+
+        foreach ($events as $event) {
+            $inboxId = $event['inbox_id'] ?? null;
+            $messageId = $event['message_id'] ?? null;
+
+            if (($event['event'] ?? null) !== self::INBOUND_EVENT || ! is_numeric($inboxId) || (! is_string($messageId) && ! is_int($messageId)) || (string) $messageId === '') {
+                continue;
+            }
+
+            ImportInboundMessage::dispatch((int) $inboxId, (string) $messageId);
         }
 
         return response()->noContent(200);
