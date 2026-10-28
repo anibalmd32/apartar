@@ -28,6 +28,7 @@ use App\Http\Controllers\Backoffice\OrganizationSwitchController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
 use App\Http\Controllers\Backoffice\ProductController;
+use App\Http\Controllers\Backoffice\ProductCopyController;
 use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\ProfileController;
 use App\Http\Controllers\Backoffice\ReceiptInboxController;
@@ -151,6 +152,10 @@ Route::prefix('backoffice')->group(function (): void {
             Route::get('productos', [ProductController::class, 'index'])->name('products.index');
             Route::get('productos/crear', [ProductController::class, 'create'])->name('products.create');
             Route::post('productos', [ProductController::class, 'store'])->name('products.store');
+
+            Route::post('productos/ia/sugerencia', ProductCopyController::class)
+                ->middleware('throttle:20,1')
+                ->name('products.ai.suggest');
 
             Route::get('productos/{product}/editar', [ProductController::class, 'edit'])->name('products.edit');
             Route::put('productos/{product}', [ProductController::class, 'update'])->name('products.update');

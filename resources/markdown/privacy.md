@@ -51,6 +51,7 @@ Solo con los proveedores que necesitamos para funcionar, y solo lo imprescindibl
 - **Google**, cuando eliges entrar con tu cuenta.
 - **Los servicios de notificaciones de tu navegador** (por ejemplo Google, Mozilla o Apple), que reciben el aviso cifrado para entregarlo.
 - **El proveedor de correo** que entrega nuestros mensajes.
+- **Un proveedor externo de inteligencia artificial (DeepSeek)**, solo cuando un negocio usa el asistente de descripciones: recibe las fotos y los textos del producto que el negocio decide enviarle, únicamente para generar la sugerencia.
 
 La consulta de la tasa de cambio a fuentes públicas no incluye ningún dato personal. Fuera de esto, solo entregaremos datos si lo exige una autoridad competente conforme a la ley.
 

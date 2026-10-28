@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Product\ChangeProductStatusAction;
+use App\Actions\Product\SuggestProductCopyAction;
 use App\Actions\Product\UpsertProductAction;
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
@@ -48,6 +49,7 @@ final class ProductController extends Controller
     public function __construct(
         private readonly TenantContext $context,
         private readonly Settings $settings,
+        private readonly SuggestProductCopyAction $copywriter,
     ) {}
 
     public function index(Request $request): Response
@@ -179,6 +181,10 @@ final class ProductController extends Controller
             'categories' => $this->categories(),
             'tags' => $this->tags(),
             'plan' => $this->plan($request, $product),
+            'ai' => [
+                'available' => $this->copywriter->available(),
+                'remaining' => $this->copywriter->remaining(),
+            ],
         ];
     }
 
@@ -251,6 +257,7 @@ final class ProductController extends Controller
             'installmentsCount' => $this->settingInteger(SettingKey::DefaultInstallmentsCount),
             'frequencyDays' => $this->settingInteger(SettingKey::DefaultFrequencyDays),
             'skuSequence' => Product::withTrashed()->count() + 1,
+            'maxImages' => StoreProductImagesRequest::MAX_IMAGES,
         ];
     }
 

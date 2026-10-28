@@ -63,5 +63,7 @@
         <server name="BROADCAST_CONNECTION" value="null"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
         <server name="MAIL_MAILER" value="array"/>
+        <env name="DEEPSEEK_API_KEY" value="" force="true"/>
+        <server name="DEEPSEEK_API_KEY" value=""/>
     </php>
 </phpunit>

@@ -15,16 +15,17 @@ function xsrfToken(): string | null {
 
 async function request<T>(method: 'GET' | 'POST', url: string, body?: unknown): Promise<T> {
     const token = xsrfToken();
+    const isForm = body instanceof FormData;
     const response = await fetch(url, {
         method,
         credentials: 'same-origin',
         headers: {
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+            ...(body === undefined || isForm ? {} : { 'Content-Type': 'application/json' }),
             ...(token === null ? {} : { 'X-XSRF-TOKEN': token }),
         },
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -41,5 +42,9 @@ export function getJson<T>(url: string): Promise<T> {
 }
 
 export function postJson<T>(url: string, body: unknown): Promise<T> {
+    return request<T>('POST', url, body);
+}
+
+export function postForm<T>(url: string, body: FormData): Promise<T> {
     return request<T>('POST', url, body);
 }

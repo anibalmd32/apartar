@@ -4,16 +4,17 @@ import { TextField } from '@/components/ui/text-field';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
 import { suggestSku } from '@/features/products/lib/sku';
 import { type ProductFormValues } from '@/types/product';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 interface ProductIdentityFieldsProps extends ProductFieldsProps {
     product: ProductFormValues | null;
     skuSequence?: number;
+    descriptionActions?: ReactNode;
 }
 
 const DESCRIPTION_MAX = 5000;
 
-export function ProductIdentityFields({ data, setData, errors, product, skuSequence = 1 }: ProductIdentityFieldsProps) {
+export function ProductIdentityFields({ data, setData, errors, product, skuSequence = 1, descriptionActions }: ProductIdentityFieldsProps) {
     const [skuEdited, setSkuEdited] = useState(product !== null);
 
     const changeName = (name: string) => {
@@ -78,6 +79,8 @@ export function ProductIdentityFields({ data, setData, errors, product, skuSeque
                         autoComplete="off"
                     />
                 )}
+
+                {descriptionActions}
 
                 <RichTextField
                     label="Descripción"

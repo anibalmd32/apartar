@@ -76,6 +76,20 @@ export interface ProductDefaults {
     readonly installmentsCount: number;
     readonly frequencyDays: number;
     readonly skuSequence?: number;
+    readonly maxImages?: number;
+}
+
+export interface AiAvailability {
+    readonly available: boolean;
+    readonly remaining: number | null;
+}
+
+export type CopywritingMode = 'suggest' | 'improve';
+
+export interface CopySuggestion {
+    readonly description: string;
+    readonly characteristics: readonly string[];
+    readonly remaining: number;
 }
 
 export interface ProductListItem {

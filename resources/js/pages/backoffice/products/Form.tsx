@@ -3,16 +3,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ArchiveToggle } from '@/features/products/components/ArchiveToggle';
+import { PendingImagePicker } from '@/features/products/components/PendingImagePicker';
+import { ProductCopyAssistant } from '@/features/products/components/ProductCopyAssistant';
 import { ProductIdentityFields } from '@/features/products/components/ProductIdentityFields';
 import { ProductImageGallery } from '@/features/products/components/ProductImageGallery';
 import { ProductInventoryFields } from '@/features/products/components/ProductInventoryFields';
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
 import { SpecificationBuilder } from '@/features/products/components/SpecificationBuilder';
+import { usePendingImages } from '@/features/products/hooks/usePendingImages';
 import { useProductForm } from '@/features/products/hooks/useProductForm';
 import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
 import BackofficeLayout from '@/layouts/backoffice-layout';
-import { type FinancingPlanView, type ProductDefaults, type ProductFormValues, type ProductStatus, type TaxonomyOption } from '@/types/product';
+import {
+    type AiAvailability,
+    type FinancingPlanView,
+    type ProductDefaults,
+    type ProductFormValues,
+    type ProductStatus,
+    type TaxonomyOption,
+} from '@/types/product';
 import { cilCheckAlt, cilExternalLink } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -23,6 +33,7 @@ interface ProductFormPageProps {
     categories: TaxonomyOption[];
     tags: TaxonomyOption[];
     plan: FinancingPlanView | null;
+    ai: AiAvailability;
     [key: string]: unknown;
 }
 
@@ -34,17 +45,33 @@ const STATUS_BADGES: Readonly<Record<ProductStatus, { label: string; tone: 'neut
 
 const FORM_ID = 'product-form';
 
-export default function ProductForm({ product, defaults, categories, tags, plan }: ProductFormPageProps) {
+export default function ProductForm({ product, defaults, categories, tags, plan, ai }: ProductFormPageProps) {
     const { data, setData, errors, processing, submit } = useProductForm(defaults, product);
 
     const sheet = useSpecificationRows(product);
 
+    const photos = usePendingImages(defaults.maxImages ?? 10);
+
     const fields = { data, setData, errors };
+
+    const categoryName = categories.find((category) => String(category.id) === data.category_id)?.name ?? data.category_name;
+
+    const assistant = (
+        <ProductCopyAssistant
+            ai={ai}
+            input={{ name: data.name, categoryName, description: data.description, photos: photos.files, productId: product?.id ?? null }}
+            hasStoredPhotos={(product?.images.length ?? 0) > 0}
+            onApply={(description, characteristics) => {
+                setData('description', description);
+                sheet.append(characteristics);
+            }}
+        />
+    );
 
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        submit(sheet.payload());
+        submit(sheet.payload(), product === null ? photos.files : []);
     };
 
     const status = product === null ? null : STATUS_BADGES[product.status];
@@ -81,8 +108,11 @@ export default function ProductForm({ product, defaults, categories, tags, plan 
 
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
                 <form id={FORM_ID} className="contents" onSubmit={onSubmit} noValidate>
-                    <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:gap-6">
-                        <ProductIdentityFields {...fields} product={product} skuSequence={defaults.skuSequence} />
+                    <div
+                        className={`flex flex-col gap-4 max-lg:order-2 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-1' : 'lg:row-start-2'}`}
+                    >
+                        {product === null ? <PendingImagePicker photos={photos} errors={errors} /> : null}
+                        <ProductIdentityFields {...fields} product={product} skuSequence={defaults.skuSequence} descriptionActions={assistant} />
                     </div>
 
                     <div
@@ -105,7 +135,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan 
                 </form>
 
                 {product === null ? null : (
-                    <div className="max-lg:order-2 lg:col-start-1 lg:row-start-2">
+                    <div className="max-lg:order-1 lg:col-start-1 lg:row-start-1">
                         <ProductImageGallery productId={product.id} images={product.images} maxImages={product.maxImages} errors={errors} />
                     </div>
                 )}
