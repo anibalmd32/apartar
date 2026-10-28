@@ -35,6 +35,7 @@ final class UpsertProductAction
         private readonly TaxonomyByName $taxonomy,
         private readonly SyncSpecificationsAction $specifications,
         private readonly LimitEnforcer $limits,
+        private readonly AttachProductImagesAction $images,
     ) {}
 
     /**
@@ -48,8 +49,9 @@ final class UpsertProductAction
 
         return DB::transaction(function () use ($data, $actor, $product): Product {
             $reserved = 0;
+            $creating = ! $product instanceof Product;
 
-            if (! $product instanceof Product) {
+            if ($creating) {
                 $this->limits->assertCanCreate(UsageMetric::Products);
             }
 
@@ -92,6 +94,10 @@ final class UpsertProductAction
 
             if ($data->specifications !== null) {
                 $this->specifications->handle($product, $data->specifications);
+            }
+
+            if ($creating && $data->images !== []) {
+                $this->images->handle($product, $data->images);
             }
 
             $after = $this->auditedTermsOf($product);

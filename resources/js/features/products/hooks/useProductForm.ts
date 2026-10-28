@@ -71,8 +71,8 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         return () => window.clearTimeout(timer);
     }, [data.price, data.down_payment, data.installments_count, data.frequency_days]);
 
-    const submit = (specifications: string[]) => {
-        form.transform((current) => ({ ...current, specifications }));
+    const submit = (specifications: string[], images: readonly File[] = []) => {
+        form.transform((current) => ({ ...current, specifications, ...(images.length > 0 ? { images: [...images] } : {}) }));
 
         if (product) {
             form.put(`/backoffice/productos/${product.id}`, { preserveScroll: true });
@@ -80,7 +80,7 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
             return;
         }
 
-        form.post('/backoffice/productos', { preserveScroll: true });
+        form.post('/backoffice/productos', { preserveScroll: true, forceFormData: images.length > 0 });
     };
 
     return { ...form, submit };

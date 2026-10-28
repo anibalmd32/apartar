@@ -9,8 +9,10 @@ use App\Domain\Catalog\ProductDescription;
 use App\Domain\Money\Money;
 use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
+use App\Rules\RealMimeType;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Validator;
 
 class StoreProductRequest extends FormRequest
@@ -44,7 +46,18 @@ class StoreProductRequest extends FormRequest
             'tag_ids.*' => ['integer'],
             'tag_names' => ['array'],
             'tag_names.*' => ['string', 'max:80'],
-        ] + $this->specificationRules();
+        ] + $this->specificationRules() + $this->imageRules();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'images.max' => sprintf('Un producto admite %d imágenes.', StoreProductImagesRequest::MAX_IMAGES),
+            'images.*.max' => 'Cada imagen puede pesar hasta 8 MB.',
+        ];
     }
 
     /**
@@ -62,6 +75,7 @@ class StoreProductRequest extends FormRequest
             'frequency_days' => 'días entre cuotas',
             'stock' => 'existencias',
             'slug' => 'enlace',
+            'images' => 'imágenes',
         ] + $this->specificationAttributes();
     }
 
@@ -97,6 +111,27 @@ class StoreProductRequest extends FormRequest
         };
     }
 
+    /**
+     * @return array<string, list<mixed>>
+     */
+    protected function imageRules(): array
+    {
+        return [
+            'images' => ['nullable', 'array', 'max:'.StoreProductImagesRequest::MAX_IMAGES],
+            'images.*' => ['required', 'file', 'max:'.StoreProductImagesRequest::MAX_KILOBYTES, new RealMimeType],
+        ];
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    protected function uploadedImages(): array
+    {
+        $files = $this->file('images', []);
+
+        return is_array($files) ? array_values($files) : [];
+    }
+
     protected function requestedSlug(): ?string
     {
         return null;
@@ -120,6 +155,7 @@ class StoreProductRequest extends FormRequest
             tagIds: $this->integerList('tag_ids'),
             tagNames: $this->stringList('tag_names'),
             specifications: $this->specifications(),
+            images: $this->uploadedImages(),
         );
     }
 

@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backoffice;
 
+use App\Actions\Product\AttachProductImagesAction;
 use App\Actions\Product\SyncImageOrderAction;
-use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
-use App\Domain\Subscription\LimitEnforcer;
-use App\Domain\Subscription\UsageCalculator;
-use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
@@ -17,40 +14,24 @@ use App\Http\Requests\Backoffice\StoreProductImagesRequest;
 use App\Http\Requests\Backoffice\SyncImageOrderRequest;
 use App\Models\Product;
 use App\Models\User;
-use App\Support\Media\TenantPathGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Throwable;
 
 final class ProductImageController extends Controller
 {
     public function __construct(
         private readonly TenantContext $context,
-        private readonly UsageCalculator $usage,
-        private readonly LimitEnforcer $limits,
+        private readonly AttachProductImagesAction $images,
     ) {}
 
     public function store(StoreProductImagesRequest $request, Product $product): RedirectResponse
     {
         $this->authorizeInventory($request);
 
-        try {
-            foreach ($request->images() as $file) {
-                DB::transaction(function () use ($product, $file): void {
-                    $this->usage->recountLocked(UsageMetric::StorageMb);
-                    $this->limits->assertCanCreate(UsageMetric::StorageMb, $this->usage->megabytesAdded((int) $file->getSize()));
-                    $this->attach($product, $file);
-                    $this->usage->recountLocked(UsageMetric::StorageMb);
-                });
-            }
-        } finally {
-            $this->measureStorage();
-        }
+        $this->images->handle($product, $request->images());
 
         return $this->back($product, 'Imágenes subidas. Las versiones optimizadas se generan en segundo plano.');
     }
@@ -83,7 +64,7 @@ final class ProductImageController extends Controller
 
         $order->handle($product->fresh() ?? $product, [], $actor);
 
-        $this->measureStorage();
+        $this->images->measureStorage();
 
         return $this->back($product, 'Imagen eliminada.');
     }
@@ -108,28 +89,6 @@ final class ProductImageController extends Controller
         }
 
         return $this->back($product, 'Galería guardada.');
-    }
-
-    private function measureStorage(): void
-    {
-        try {
-            $this->usage->refresh($this->context->organization(), UsageMetric::StorageMb);
-        } catch (Throwable $exception) {
-            report($exception);
-        }
-    }
-
-    private function attach(Product $product, UploadedFile $file): void
-    {
-        $position = $product->getMedia(Product::IMAGES)->count() + 1;
-
-        $product
-            ->addMedia($file)
-            ->usingName(ImageSet::defaultAlt($product->name, $position))
-            ->withCustomProperties([
-                TenantPathGenerator::ORGANIZATION_PROPERTY => $this->context->organizationId(),
-            ])
-            ->toMediaCollection(Product::IMAGES);
     }
 
     /**

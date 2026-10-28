@@ -6,6 +6,7 @@ namespace App\Actions\Product;
 
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Money\Money;
+use Illuminate\Http\UploadedFile;
 
 final readonly class ProductData
 {
@@ -13,6 +14,7 @@ final readonly class ProductData
      * @param  list<int>  $tagIds
      * @param  list<string>  $tagNames
      * @param  list<string>|null  $specifications
+     * @param  list<UploadedFile>  $images
      */
     public function __construct(
         public string $name,
@@ -30,6 +32,7 @@ final readonly class ProductData
         public array $tagIds = [],
         public array $tagNames = [],
         public ?array $specifications = null,
+        public array $images = [],
     ) {}
 
     public function financingPlan(): ?FinancingPlan

@@ -23,6 +23,22 @@ final class UpdateProductRequest extends StoreProductRequest
         return $this->productData($this->requestedSlug());
     }
 
+    /**
+     * @return array<string, list<mixed>>
+     */
+    protected function imageRules(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Illuminate\Http\UploadedFile>
+     */
+    protected function uploadedImages(): array
+    {
+        return [];
+    }
+
     protected function requestedSlug(): ?string
     {
         return $this->nullableString('slug');
