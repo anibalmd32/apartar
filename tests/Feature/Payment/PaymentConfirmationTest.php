@@ -9,6 +9,9 @@ use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * @param  list<array{int, int}>  $allocations
+ */
 function confirmedPayment(int $amount, int $unallocated, array $allocations): Payment
 {
     $payment = (new Payment)->forceFill([
