@@ -16,7 +16,14 @@ interface FilterTabsProps<T extends string | null> {
 
 export function FilterTabs<T extends string | null>({ tabs, value, onChange, label, className }: FilterTabsProps<T>) {
     return (
-        <div role="group" aria-label={label} className={cn('border-line flex gap-1 overflow-x-auto border-b', className)}>
+        <div
+            role="group"
+            aria-label={label}
+            className={cn(
+                'border-line flex gap-1 overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+                className,
+            )}
+        >
             {tabs.map((tab) => {
                 const active = tab.value === value;
 
