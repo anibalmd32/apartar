@@ -8,6 +8,7 @@ use App\Domain\Payment\ReceiptFile;
 use App\Domain\Tenancy\TenantContext;
 use App\Jobs\CompressReceiptImage;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Receipt;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,32 @@ final class CompressReceiptImageTest extends TestCase
         $this->assertSame(strlen($contents), $stored->file_size);
         $this->assertSame($hash, $stored->file_hash, 'Recomprimir cambió el hash.');
         $this->assertSame([$stored->file_path], Storage::disk(Receipt::DISK)->allFiles(), 'Quedó el temporal en el disco.');
+    }
+
+    public function test_the_proof_attached_to_a_recorded_payment_is_resized_and_counted(): void
+    {
+        $file = $this->receiptImage(3000, 1500);
+        $contents = (string) file_get_contents((string) $file->getRealPath());
+        $path = ReceiptFile::pathFor((int) $this->organization->getKey(), 'jpg');
+        Storage::disk(Receipt::DISK)->put($path, $contents);
+        $layaway = $this->layawayIn($this->organization);
+        $payment = $this->withinOrganization($this->organization, fn (): Payment => Payment::factory()->createOne([
+            'layaway_id' => $layaway->getKey(),
+            'file_path' => $path,
+            'file_hash' => hash('sha256', $contents),
+            'file_mime' => 'image/jpeg',
+            'file_size' => 3 * 1024 * 1024,
+        ]));
+        $this->recalculateUsage($this->organization);
+        $this->assertSame(3, $this->storageCounter());
+        $this->withoutOrganization();
+
+        CompressReceiptImage::ofPayment((int) $payment->getKey(), (int) $this->organization->getKey())->handle();
+
+        $stored = $this->withinOrganization($this->organization, fn (): Payment => Payment::query()->findOrFail($payment->getKey()));
+        $this->assertSame([2000, 1000], $this->dimensionsOf((string) Storage::disk(Receipt::DISK)->get($path)));
+        $this->assertSame(strlen((string) Storage::disk(Receipt::DISK)->get($path)), $stored->file_size);
+        $this->assertSame(1, $this->storageCounter());
     }
 
     public function test_recompressing_lowers_the_storage_counter(): void

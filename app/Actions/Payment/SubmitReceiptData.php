@@ -39,6 +39,22 @@ final readonly class SubmitReceiptData
     ) {
         PaymentAmounts::assertPositive($declaredAmount, $declaredCurrency, 'declarado');
 
+        self::assertReferenceFits($method, $bank, $reference);
+
+        if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
+            throw new InvalidArgumentException(sprintf('La nota tiene como mucho %d caracteres.', self::NOTE_MAX));
+        }
+
+        if ($paymentAccount !== null && (int) $paymentAccount->organization_id !== (int) $layaway->organization_id) {
+            throw CrossTenantRelationException::between(PaymentAccount::class, Layaway::class);
+        }
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    public static function assertReferenceFits(PaymentMethod $method, ?string $bank, ?string $reference): void
+    {
         if ($method->requiresReference()) {
             foreach (['banco' => $bank, 'referencia' => $reference] as $field => $value) {
                 if ($value === null || trim($value) === '' || mb_strlen($value) > self::TEXT_MAX) {
@@ -55,14 +71,6 @@ final readonly class SubmitReceiptData
                 'Un pago en %s no lleva banco ni referencia: no deja nada que buscar.',
                 mb_strtolower($method->label()),
             ));
-        }
-
-        if ($note !== null && mb_strlen($note) > self::NOTE_MAX) {
-            throw new InvalidArgumentException(sprintf('La nota tiene como mucho %d caracteres.', self::NOTE_MAX));
-        }
-
-        if ($paymentAccount !== null && (int) $paymentAccount->organization_id !== (int) $layaway->organization_id) {
-            throw CrossTenantRelationException::between(PaymentAccount::class, Layaway::class);
         }
     }
 

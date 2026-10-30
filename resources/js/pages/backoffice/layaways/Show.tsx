@@ -88,7 +88,7 @@ export default function LayawayShow({
                     open={paying}
                     onClose={() => setPaying(false)}
                     title="Registrar pago manual"
-                    description={`${layaway.code}${customer !== null ? ` · ${customer.fullName}` : ''}. Úsalo para pagos en efectivo o confirmados sin comprobante.`}
+                    description={`${layaway.code}${customer !== null ? ` · ${customer.fullName}` : ''}. Úsalo para pagos que recibiste por fuera del portal; puedes adjuntar el comprobante.`}
                 >
                     <section aria-label="Registrar un pago">
                         <ManualPaymentForm options={manualPayment} />

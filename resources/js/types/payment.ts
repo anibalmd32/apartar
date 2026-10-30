@@ -22,3 +22,8 @@ export interface PaymentAccountView {
     readonly isActive: boolean;
     readonly position: number;
 }
+
+export interface PaymentEvidence {
+    readonly bankReference: string | null;
+    readonly attachmentUrl: string | null;
+}

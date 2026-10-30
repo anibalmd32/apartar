@@ -9,6 +9,7 @@ use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Jobs\Concerns\RunsInTenantContext;
+use App\Models\Payment;
 use App\Models\Receipt;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -41,8 +42,14 @@ final class CompressReceiptImage implements ShouldQueue
     public function __construct(
         public readonly int $receiptId,
         public readonly int $organizationId,
+        public readonly ?int $paymentId = null,
     ) {
         $this->onQueue('default');
+    }
+
+    public static function ofPayment(int $paymentId, int $organizationId): self
+    {
+        return new self(0, $organizationId, $paymentId);
     }
 
     public static function compresses(string $mime): bool
@@ -61,19 +68,21 @@ final class CompressReceiptImage implements ShouldQueue
     public function handle(): void
     {
         $this->runInTenantContext(function (): void {
-            $receipt = Receipt::query()->find($this->receiptId);
+            $receipt = $this->paymentId === null
+                ? Receipt::query()->find($this->receiptId)
+                : Payment::query()->find($this->paymentId);
 
-            if (! $receipt instanceof Receipt) {
+            if (! $receipt instanceof Receipt && ! $receipt instanceof Payment) {
                 Log::warning('receipt.compression.missing', $this->logContext());
 
                 return;
             }
 
-            if (! self::compresses($receipt->file_mime)) {
+            if ($receipt->file_path === null || $receipt->file_mime === null || ! self::compresses($receipt->file_mime)) {
                 return;
             }
 
-            $this->compress($receipt);
+            $this->compress($receipt, $receipt->file_path, $receipt->file_mime);
 
             try {
                 app(UsageCalculator::class)->refresh(app(TenantContext::class)->organization(), UsageMetric::StorageMb);
@@ -83,20 +92,20 @@ final class CompressReceiptImage implements ShouldQueue
         });
     }
 
-    private function compress(Receipt $receipt): void
+    private function compress(Receipt|Payment $receipt, string $path, string $mime): void
     {
         $disk = Storage::disk(Receipt::DISK);
-        $extension = self::COMPRESSIBLE[$receipt->file_mime];
+        $extension = self::COMPRESSIBLE[$mime];
         $original = null;
         $output = null;
         $staged = null;
 
         try {
-            $original = $this->localCopy($disk, $receipt->file_path);
+            $original = $this->localCopy($disk, $path);
             $dimensions = @getimagesize($original);
 
             if ($dimensions === false) {
-                throw new RuntimeException(sprintf('El archivo %s no tiene una cabecera de imagen legible.', $receipt->file_path));
+                throw new RuntimeException(sprintf('El archivo %s no tiene una cabecera de imagen legible.', $path));
             }
 
             [$width, $height] = $dimensions;
@@ -129,11 +138,11 @@ final class CompressReceiptImage implements ShouldQueue
                 throw new RuntimeException('La recompresión no produjo ningún archivo.');
             }
 
-            $staged = dirname($receipt->file_path).'/.'.Str::uuid()->toString().'.compressing';
+            $staged = dirname($path).'/.'.Str::uuid()->toString().'.compressing';
             $this->upload($disk, $output, $staged);
 
-            if (! $disk->move($staged, $receipt->file_path)) {
-                throw new RuntimeException(sprintf('No se pudo sustituir %s por su versión recomprimida.', $receipt->file_path));
+            if (! $disk->move($staged, $path)) {
+                throw new RuntimeException(sprintf('No se pudo sustituir %s por su versión recomprimida.', $path));
             }
 
             $staged = null;
@@ -221,6 +230,6 @@ final class CompressReceiptImage implements ShouldQueue
      */
     private function logContext(): array
     {
-        return ['receipt_id' => $this->receiptId, 'organization_id' => $this->organizationId];
+        return ($this->paymentId === null ? ['receipt_id' => $this->receiptId] : ['payment_id' => $this->paymentId]) + ['organization_id' => $this->organizationId];
     }
 }

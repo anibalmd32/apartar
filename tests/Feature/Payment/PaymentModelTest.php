@@ -9,6 +9,7 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptStatus;
+use App\Models\Bank;
 use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Organization;
@@ -70,6 +71,12 @@ final class PaymentModelTest extends TestCase
             'payment_method' => PaymentMethod::EfectivoUsd,
             'payment_account_id' => $this->within(fn (): PaymentAccount => PaymentAccount::factory()->create())->getKey(),
             'paid_on' => now()->subDays(2)->toDateString(),
+            'bank' => 'Mercantil',
+            'bank_id' => Bank::query()->where('code', '0134')->value('id'),
+            'reference' => '0123456789',
+            'file_path' => '1/captura.jpg',
+            'file_hash' => hash('sha256', 'captura'),
+            'file_mime' => 'image/jpeg',
             'idempotency_key' => '6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f',
             'amount_cents_usd' => new Money(1),
             'unallocated_cents' => new Money(1),

@@ -10,6 +10,7 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\BelongsToOrganization;
+use App\Models\Concerns\ReferencesBank;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,12 @@ use LogicException;
  * @property PaymentMethod|null $payment_method
  * @property int|null $payment_account_id
  * @property \Illuminate\Support\Carbon|null $paid_on
+ * @property string|null $bank
+ * @property string|null $reference
+ * @property string|null $file_path
+ * @property string|null $file_hash
+ * @property string|null $file_mime
+ * @property int|null $file_size
  * @property string|null $idempotency_key
  * @property Money $amount_cents_usd
  * @property Money $unallocated_cents
@@ -40,7 +47,7 @@ use LogicException;
 class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */
-    use BelongsToOrganization, HasFactory;
+    use BelongsToOrganization, HasFactory, ReferencesBank;
 
     /**
      * @var list<string>
@@ -51,6 +58,12 @@ class Payment extends Model
         'payment_method',
         'payment_account_id',
         'paid_on',
+        'bank',
+        'bank_id',
+        'reference',
+        'file_path',
+        'file_hash',
+        'file_mime',
         'idempotency_key',
         'amount_cents_usd',
         'unallocated_cents',
@@ -126,6 +139,11 @@ class Payment extends Model
         return $this->receipt_id === null;
     }
 
+    public function hasAttachment(): bool
+    {
+        return $this->file_path !== null;
+    }
+
     /**
      * @return array<string, string|class-string>
      */
@@ -142,6 +160,7 @@ class Payment extends Model
             'settled_at' => 'datetime',
             'payment_method' => PaymentMethod::class,
             'paid_on' => 'date',
+            'file_size' => 'integer',
         ];
     }
 }

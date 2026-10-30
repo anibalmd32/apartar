@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Actions\Payment\SubmitReceiptAction;
-use App\Domain\Payment\DuplicateCriterion;
 use App\Domain\Payment\DuplicateReceiptException;
+use App\Domain\Payment\DuplicateReceipts;
 use App\Domain\Payment\ReceiptFile;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -18,6 +17,8 @@ final class UniqueReceiptFingerprint implements ValidationRule
     public function __construct(
         private readonly ?string $bank,
         private readonly ?string $reference,
+        private readonly bool $recordedByBusiness = false,
+        private readonly ?string $exceptIdempotencyKey = null,
     ) {}
 
     /**
@@ -25,16 +26,14 @@ final class UniqueReceiptFingerprint implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $action = app(SubmitReceiptAction::class);
-
         $criterion = match (true) {
-            $value instanceof UploadedFile => $action->duplicateOf(ReceiptFile::fingerprint($value), $this->bank, $this->reference),
-            is_string($value) => $action->referenceTaken($this->bank, trim($value)) ? DuplicateCriterion::BankReference : null,
+            $value instanceof UploadedFile => DuplicateReceipts::inOrganization(ReceiptFile::fingerprint($value), $this->bank, $this->reference, $this->exceptIdempotencyKey),
+            is_string($value) => DuplicateReceipts::inOrganization(null, $this->bank, trim($value), $this->exceptIdempotencyKey),
             default => null,
         };
 
         if ($criterion !== null) {
-            $fail(DuplicateReceiptException::MESSAGE);
+            $fail($this->recordedByBusiness ? DuplicateReceiptException::recordedMessageFor($criterion) : DuplicateReceiptException::MESSAGE);
         }
     }
 }

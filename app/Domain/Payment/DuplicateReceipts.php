@@ -4,12 +4,29 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Models\Payment;
+use App\Models\Receipt;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\UniqueConstraintViolationException;
 
 final class DuplicateReceipts
 {
+    public static function inOrganization(?string $fileHash, ?string $bank, ?string $reference, ?string $exceptIdempotencyKey = null): ?DuplicateCriterion
+    {
+        $payments = Payment::query()->when($exceptIdempotencyKey !== null, fn (Builder $query) => $query->where(
+            fn (Builder $query) => $query->whereNull('idempotency_key')->orWhere('idempotency_key', '!=', $exceptIdempotencyKey),
+        ));
+
+        if ($fileHash !== null && (self::fileTaken(Receipt::query(), $fileHash) || self::fileTaken($payments, $fileHash))) {
+            return DuplicateCriterion::FileHash;
+        }
+
+        return self::referenceTaken(Receipt::query(), $bank, $reference) || self::referenceTaken($payments, $bank, $reference)
+            ? DuplicateCriterion::BankReference
+            : null;
+    }
+
     /**
      * @template TModel of Model
      *

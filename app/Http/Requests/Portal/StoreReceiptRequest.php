@@ -64,7 +64,7 @@ final class StoreReceiptRequest extends FormRequest
                 'file',
                 'max:'.(ReceiptFile::maxSizeMb() * 1024),
                 RealMimeType::receipts(),
-                $this->withinPixelLimit(),
+                self::withinPixelLimit(),
                 new UniqueReceiptFingerprint(null, null),
             ],
         ];
@@ -200,7 +200,7 @@ final class StoreReceiptRequest extends FormRequest
         };
     }
 
-    private function withinPixelLimit(): Closure
+    public static function withinPixelLimit(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
             if (! $value instanceof UploadedFile) {

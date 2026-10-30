@@ -38,10 +38,13 @@ export interface BackofficeInstallmentRow {
     readonly reschedule: RescheduleOption | null;
 }
 
-export interface ManualPaymentOptions {
-    readonly storeUrl: string;
-    readonly previewUrl: string;
-    readonly methods: readonly { readonly value: PaymentMethod; readonly label: string; readonly defaultCurrency: Currency }[];
+export interface PaymentFieldOptions {
+    readonly methods: readonly {
+        readonly value: PaymentMethod;
+        readonly label: string;
+        readonly defaultCurrency: Currency;
+        readonly requiresReference: boolean;
+    }[];
     readonly paymentAccounts: readonly {
         readonly id: number;
         readonly methodLabel: string;
@@ -51,6 +54,12 @@ export interface ManualPaymentOptions {
     readonly currencies: readonly { readonly value: Currency; readonly label: string }[];
     readonly paidAt: { readonly min: string; readonly max: string };
     readonly rate: { readonly rate: string; readonly sourceLabel: string } | null;
+    readonly file: { readonly accept: string; readonly maxMb: number };
+}
+
+export interface ManualPaymentOptions extends PaymentFieldOptions {
+    readonly storeUrl: string;
+    readonly previewUrl: string;
 }
 
 export interface ReallocationOptions {

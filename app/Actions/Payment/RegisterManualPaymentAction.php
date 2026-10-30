@@ -14,22 +14,37 @@ use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Money;
 use App\Domain\Notification\CustomerNotices;
 use App\Domain\Payment\AppliedPayment;
+use App\Domain\Payment\DuplicateReceiptException;
+use App\Domain\Payment\DuplicateReceipts;
 use App\Domain\Payment\IdempotencyKeyReusedException;
 use App\Domain\Payment\PaymentApplier;
+use App\Domain\Payment\PaymentAttachment;
 use App\Domain\Payment\PaymentNotApplicableException;
+use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\UnconfirmedExcessException;
+use App\Domain\Subscription\UsageCalculator;
+use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\TenantContext;
+use App\Jobs\CompressReceiptImage;
+use App\Models\Bank;
 use App\Models\Installment;
 use App\Models\Layaway;
+use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
+use App\Models\Receipt;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
+use Throwable;
 
 final class RegisterManualPaymentAction
 {
@@ -39,6 +54,7 @@ final class RegisterManualPaymentAction
         private readonly PaymentApplier $applier,
         private readonly ExchangeRateService $rates,
         private readonly TenantContext $context,
+        private readonly UsageCalculator $usage,
     ) {}
 
     /**
@@ -50,6 +66,7 @@ final class RegisterManualPaymentAction
      * @throws IdempotencyKeyReusedException
      * @throws UnconfirmedStaleRateException
      * @throws UnconfirmedRateDeviationException
+     * @throws DuplicateReceiptException
      */
     public function handle(Layaway $layaway, ManualPaymentData $data, User $actor): Payment
     {
@@ -67,15 +84,39 @@ final class RegisterManualPaymentAction
             return $existing;
         }
 
+        $stored = null;
+
         try {
-            return DB::transaction(fn (): Payment => $this->register($layaway, $data, $actor));
+            return DB::transaction(function () use ($layaway, $data, $actor, &$stored): Payment {
+                DB::afterCommit(function () use (&$stored): void {
+                    $stored = null;
+                });
+
+                return $this->register($layaway, $data, $actor, $stored);
+            });
         } catch (UniqueConstraintViolationException $exception) {
+            $this->discard($stored);
+
+            $criterion = DuplicateReceipts::fromViolation($exception, (new Payment)->getTable());
+
+            if ($criterion !== null) {
+                throw DuplicateReceiptException::recordedByBusiness($criterion, $exception);
+            }
+
             return $this->alreadyRegistered($layaway, $data) ?? throw $exception;
+        } catch (Throwable $exception) {
+            $this->discard($stored);
+
+            throw $exception;
         }
     }
 
-    private function register(Layaway $layaway, ManualPaymentData $data, User $actor): Payment
+    private function register(Layaway $layaway, ManualPaymentData $data, User $actor, ?string &$stored): Payment
     {
+        if ($data->reference !== null || $data->file instanceof UploadedFile) {
+            Organization::query()->whereKey($layaway->organization_id)->lockForUpdate()->firstOrFail();
+        }
+
         Layaway::query()->whereKey($layaway->getKey())->lockForUpdate()->firstOrFail();
 
         $existing = $this->alreadyRegistered($layaway, $data);
@@ -84,9 +125,20 @@ final class RegisterManualPaymentAction
             return $existing;
         }
 
+        $hash = $data->file instanceof UploadedFile ? ReceiptFile::fingerprint($data->file) : null;
+        $criterion = DuplicateReceipts::inOrganization($hash, Bank::canonicalName($data->bank), $data->reference);
+
+        if ($criterion !== null) {
+            throw DuplicateReceiptException::recordedByBusiness($criterion);
+        }
+
         $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
         StaleRate::in($rate, $data->currency)?->assertConfirmedBy($data->confirmedStaleRate);
         RateDeviation::in($rate, $this->rates->current($this->context->organization()), $data->currency)?->assertConfirmedBy($data->confirmedRateDeviation);
+
+        $attachment = $data->file instanceof UploadedFile && $hash !== null
+            ? $this->store($data->file, $hash, (int) $layaway->organization_id, $stored)
+            : null;
 
         $applied = $this->applier->apply(
             $layaway,
@@ -98,7 +150,7 @@ final class RegisterManualPaymentAction
             $actor,
             $data->note,
             $data->idempotencyKey,
-            $data->origin(),
+            $data->origin($attachment),
         );
 
         $excess = $applied->plan->unallocatedCents;
@@ -117,6 +169,10 @@ final class RegisterManualPaymentAction
         $credited = $applied->payment->amount_cents_usd;
         DB::afterCommit(fn () => app(CustomerNotices::class)->paymentCredited($layaway->refresh(), $credited));
 
+        if ($attachment instanceof PaymentAttachment) {
+            $this->processAttachmentAfterCommit($applied->payment, $attachment);
+        }
+
         return $applied->payment;
     }
 
@@ -133,9 +189,69 @@ final class RegisterManualPaymentAction
 
         $same = (int) $payment->layaway_id === (int) $layaway->getKey()
             && $payment->declared_currency === $data->currency
-            && bccomp((string) $payment->declared_amount, $data->amount, 2) === 0;
+            && bccomp((string) $payment->declared_amount, $data->amount, 2) === 0
+            && $payment->bank === Bank::canonicalName($data->bank)
+            && $payment->reference === $data->reference
+            && $payment->file_hash === ($data->file instanceof UploadedFile ? ReceiptFile::fingerprint($data->file) : null);
 
         return $same ? $payment : throw new IdempotencyKeyReusedException;
+    }
+
+    /**
+     * @param-out string $stored
+     *
+     * @throws RuntimeException
+     */
+    private function store(UploadedFile $file, string $hash, int $organizationId, ?string &$stored): PaymentAttachment
+    {
+        [$mime, $extension] = ReceiptFile::typeOf($file);
+        $path = ReceiptFile::pathFor($organizationId, $extension);
+
+        if (Storage::disk(Receipt::DISK)->putFileAs(dirname($path), $file, basename($path)) === false) {
+            throw new RuntimeException(sprintf('El disco «%s» no guardó el adjunto del pago en %s.', Receipt::DISK, $path));
+        }
+
+        $stored = $path;
+
+        return new PaymentAttachment($path, $hash, $mime, (int) $file->getSize());
+    }
+
+    private function discard(?string $path): void
+    {
+        if ($path === null) {
+            return;
+        }
+
+        try {
+            if (Payment::query()->where('file_path', $path)->exists()) {
+                return;
+            }
+
+            Storage::disk(Receipt::DISK)->delete($path);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    private function processAttachmentAfterCommit(Payment $payment, PaymentAttachment $attachment): void
+    {
+        $organization = $this->context->organization();
+        $paymentId = (int) $payment->getKey();
+        $compresses = CompressReceiptImage::compresses($attachment->mime);
+
+        DB::afterCommit(function () use ($organization, $paymentId, $compresses): void {
+            try {
+                if ($compresses) {
+                    $this->context->runFor($organization, function () use ($organization, $paymentId): void {
+                        Bus::dispatch(CompressReceiptImage::ofPayment($paymentId, (int) $organization->getKey()));
+                    });
+                }
+
+                $this->usage->refresh($organization, UsageMetric::StorageMb);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
     }
 
     /**
@@ -166,6 +282,8 @@ final class RegisterManualPaymentAction
             'unallocated_cents' => $applied->plan->unallocatedCents,
             'layaway_status' => $applied->statusBefore->value.' → '.$applied->statusAfter->value,
             'note' => $data->note,
-        ] + ($data->manualRate() !== null ? ['rate_override' => $data->rateOverride] : []);
+        ] + ($data->manualRate() !== null ? ['rate_override' => $data->rateOverride] : [])
+            + ($data->reference !== null ? ['bank' => $applied->payment->bank, 'reference' => $data->reference] : [])
+            + ($applied->payment->hasAttachment() ? ['attachment' => $applied->payment->file_mime] : []);
     }
 }

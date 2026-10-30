@@ -135,17 +135,7 @@ final class SubmitReceiptAction
 
     public function duplicateOf(string $fileHash, ?string $bank, ?string $reference): ?DuplicateCriterion
     {
-        return DuplicateReceipts::criterionFor(Receipt::query(), $fileHash, $bank, $reference);
-    }
-
-    public function fileTaken(string $fileHash): bool
-    {
-        return DuplicateReceipts::fileTaken(Receipt::query(), $fileHash);
-    }
-
-    public function referenceTaken(?string $bank, ?string $reference): bool
-    {
-        return DuplicateReceipts::referenceTaken(Receipt::query(), $bank, $reference);
+        return DuplicateReceipts::inOrganization($fileHash, $bank, $reference);
     }
 
     /**

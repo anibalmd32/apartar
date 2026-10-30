@@ -39,6 +39,7 @@ use App\Http\Controllers\Backoffice\SubscriptionController;
 use App\Http\Controllers\Backoffice\SubscriptionInvoiceController;
 use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
+use App\Http\Controllers\PaymentFileController;
 use App\Http\Controllers\ReceiptFileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -255,6 +256,11 @@ Route::prefix('backoffice')->group(function (): void {
                 Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
                     ->middleware('signed')
                     ->name('receipts.file');
+
+                Route::get('pagos/{payment}/archivo', PaymentFileController::class)
+                    ->whereNumber('payment')
+                    ->middleware('signed')
+                    ->name('payments.file');
 
                 Route::get('comprobantes', ReceiptInboxController::class)->name('receipts.index');
                 Route::get('comprobantes/pendientes', [ReceiptInboxController::class, 'pending'])->name('receipts.pending');

@@ -14,6 +14,7 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
+use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\IdempotencyKeyReusedException;
 use App\Domain\Payment\PaymentAmounts;
 use App\Domain\Payment\PaymentApplier;
@@ -62,6 +63,8 @@ final class ManualPaymentController extends Controller
             return back()->withErrors(['rate' => $exception->getMessage()]);
         } catch (PaymentNotApplicableException|IdempotencyKeyReusedException $exception) {
             return back()->withErrors(['amount' => $exception->getMessage()]);
+        } catch (DuplicateReceiptException $exception) {
+            return back()->withErrors([$exception->field() => $exception->getMessage()]);
         }
 
         return redirect()->route('layaways.show', $layaway)->with('status', $this->confirmationOf($payment));

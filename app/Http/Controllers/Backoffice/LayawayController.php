@@ -14,6 +14,7 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
 use App\Domain\Money\MoneyFormatter;
 use App\Domain\Payment\PaymentMethod;
+use App\Domain\Payment\ReceiptFile;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\CancelLayawayRequest;
@@ -137,6 +138,7 @@ final class LayawayController extends Controller
                 'value' => $method->value,
                 'label' => $method->label(),
                 'defaultCurrency' => $method->defaultCurrency()->value,
+                'requiresReference' => $method->requiresReference(),
             ], PaymentMethod::cases()),
             'paymentAccounts' => PaymentAccount::query()->orderBy('position')->get()
                 ->map(fn (PaymentAccount $account): array => [
@@ -150,6 +152,7 @@ final class LayawayController extends Controller
             'currencies' => array_map(fn (Currency $currency): array => ['value' => $currency->value, 'label' => $currency->label()], Currency::cases()),
             'paidAt' => ['min' => $min, 'max' => $max],
             'rate' => $rate instanceof RateSnapshot ? ['rate' => $rate->rate, 'sourceLabel' => $rate->source->label()] : null,
+            'file' => ['maxMb' => ReceiptFile::maxSizeMb(), 'accept' => ReceiptFile::ACCEPT],
         ];
     }
 

@@ -1,7 +1,7 @@
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type Paginated } from '@/types/data-table';
 import { type Currency, type MoneyView } from '@/types/money';
-import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
+import { type PaymentAccountView, type PaymentEvidence, type PaymentMethod } from '@/types/payment';
 import { type LayawaySummary } from '@/types/portal';
 import { type RateChecks } from '@/types/rate-deviation';
 
@@ -106,7 +106,7 @@ export interface ReceiptInboxProps extends Paginated<ReceiptInboxRow> {
     readonly timezone: string;
 }
 
-export interface PaymentRow {
+export interface PaymentRow extends PaymentEvidence {
     readonly settledAt: string;
     readonly amountUsd: MoneyView;
     readonly declaredAmount: string;

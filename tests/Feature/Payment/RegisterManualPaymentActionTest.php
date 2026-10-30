@@ -16,12 +16,14 @@ use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Notification\NotificationType;
+use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\IdempotencyKeyReusedException;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\OrganizationStatus;
+use App\Jobs\CompressReceiptImage;
 use App\Models\AuditEntry;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
@@ -29,23 +31,28 @@ use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
+use App\Models\Receipt;
 use App\Models\User;
 use App\Notifications\CustomerMessageNotification;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
 use Tests\Concerns\ReusesMigratedDatabase;
+use Tests\Concerns\UploadsReceiptFiles;
 use Tests\TestCase;
 
 final class RegisterManualPaymentActionTest extends TestCase
 {
-    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase, UploadsReceiptFiles;
 
     private const NOTE = 'Pago en efectivo recibido en tienda por Ana.';
 
@@ -171,12 +178,14 @@ final class RegisterManualPaymentActionTest extends TestCase
             'paid_at' => '2026-09-10',
             'declared_amount' => '3187.50',
             'declared_currency' => Currency::VES,
+            'bank' => 'Banesco',
+            'reference' => '0123456789',
         ]);
 
         $viaApproval = $this->within(fn () => app(ApproveReceiptAction::class)->handle($receipt, new ApproveReceiptData('3187.50', Currency::VES, null, null), $this->staff))->payment;
-        $viaManual = $this->register($manual, '3187.50', Currency::VES, method: PaymentMethod::PagoMovil, account: $account, paidAt: '2026-09-10');
+        $viaManual = $this->register($manual, '3187.50', Currency::VES, method: PaymentMethod::PagoMovil, account: $account, paidAt: '2026-09-10', bank: 'Banesco', reference: '9876543210');
 
-        $ignored = ['id', 'layaway_id', 'receipt_id', 'registered_by', 'idempotency_key', 'note', 'created_at', 'updated_at'];
+        $ignored = ['id', 'layaway_id', 'receipt_id', 'registered_by', 'idempotency_key', 'note', 'reference', 'created_at', 'updated_at'];
         $this->assertSame(
             array_diff_key((array) DB::table('payments')->where('id', $viaApproval->getKey())->first(), array_flip($ignored)),
             array_diff_key((array) DB::table('payments')->where('id', $viaManual->getKey())->first(), array_flip($ignored)),
@@ -217,6 +226,62 @@ final class RegisterManualPaymentActionTest extends TestCase
         $this->assertSame(1_000, $this->register($layaway, '160.00', Currency::USD, confirmed: 1_000)->unallocated_cents->cents);
     }
 
+    public function test_it_keeps_the_bank_the_reference_and_the_attached_proof(): void
+    {
+        Storage::fake(Receipt::DISK);
+        Queue::fake();
+        $layaway = $this->activeLayaway();
+        $file = $this->receiptImage();
+
+        $payment = $this->register($layaway, '1275.00', Currency::VES, method: PaymentMethod::PagoMovil, bank: 'Banesco', reference: '0123456789', file: $file);
+        $stored = $this->stored($payment);
+
+        $this->assertTrue($stored->isManual());
+        $this->assertSame(['Banesco', '0123456789', 'image/jpeg', hash_file('sha256', (string) $file->getRealPath())], [$stored->bank, $stored->reference, $stored->file_mime, $stored->file_hash]);
+        $this->assertStringStartsWith($this->organization->getKey().'/', (string) $stored->file_path);
+        Storage::disk(Receipt::DISK)->assertExists((string) $stored->file_path);
+        $this->assertSame(0, DB::table('receipts')->count(), 'El adjunto del negocio no es un comprobante por revisar.');
+        Queue::assertPushed(CompressReceiptImage::class, fn (CompressReceiptImage $job): bool => $job->paymentId === (int) $payment->getKey());
+
+        $detail = $this->within(fn (): array => AuditEntry::query()->where('event', AuditEvent::PaymentRecorded->value)->latest('id')->firstOrFail()->properties?->toArray()['changed'] ?? []);
+        $this->assertSame(['Banesco', '0123456789', 'image/jpeg'], [$detail['bank']['after'] ?? null, $detail['reference']['after'] ?? null, $detail['attachment']['after'] ?? null]);
+    }
+
+    public function test_a_bank_reference_or_file_already_recorded_is_refused_without_leaving_files(): void
+    {
+        Storage::fake(Receipt::DISK);
+        Queue::fake();
+        $layaway = $this->activeLayaway();
+        $file = $this->receiptImage();
+        $this->receiptFor($layaway, attributes: ['bank' => 'Banesco', 'reference' => '1111111111', 'file_hash' => hash_file('sha256', (string) $file->getRealPath())]);
+        $this->register($layaway, '1275.00', Currency::VES, method: PaymentMethod::Transferencia, bank: 'Mercantil', reference: '2222222222');
+
+        $onReceipt = $this->refused(fn () => $this->register($layaway, '1275.00', Currency::VES, method: PaymentMethod::PagoMovil, bank: 'Banesco', reference: '1111111111'));
+        $onPayment = $this->refused(fn () => $this->register($layaway, '1275.00', Currency::VES, method: PaymentMethod::PagoMovil, bank: 'Mercantil', reference: '2222222222', file: $this->receiptImage()));
+        $sameFile = $this->refused(fn () => $this->register($layaway, '30.00', Currency::USD, file: $this->sameFileAs($file)));
+
+        $this->assertInstanceOf(DuplicateReceiptException::class, $onReceipt);
+        $this->assertSame([DuplicateReceiptException::RECORDED_REFERENCE_MESSAGE, 'reference'], [$onReceipt->getMessage(), $onReceipt->field()]);
+        $this->assertInstanceOf(DuplicateReceiptException::class, $onPayment);
+        $this->assertInstanceOf(DuplicateReceiptException::class, $sameFile);
+        $this->assertSame([DuplicateReceiptException::RECORDED_FILE_MESSAGE, 'file'], [$sameFile->getMessage(), $sameFile->field()]);
+        $this->assertSame(2, DB::table('payments')->count());
+        $this->assertSame([], Storage::disk(Receipt::DISK)->allFiles());
+    }
+
+    public function test_a_refused_payment_leaves_no_attached_file(): void
+    {
+        Storage::fake(Receipt::DISK);
+        Queue::fake();
+        $layaway = $this->activeLayaway();
+
+        $this->assertInstanceOf(UnconfirmedExcessException::class, $this->refused(fn () => $this->register($layaway, '160.00', Currency::USD, file: $this->receiptImage())));
+
+        $this->assertSame(1, DB::table('payments')->count());
+        $this->assertSame([], Storage::disk(Receipt::DISK)->allFiles());
+        Queue::assertNotPushed(CompressReceiptImage::class);
+    }
+
     public function test_it_works_with_the_organization_suspended(): void
     {
         $layaway = $this->activeLayaway();
@@ -235,10 +300,13 @@ final class RegisterManualPaymentActionTest extends TestCase
         ?string $key = null,
         ?int $confirmed = null,
         ?string $rate = null,
+        ?string $bank = null,
+        ?string $reference = null,
+        ?UploadedFile $file = null,
     ): Payment {
         return $this->within(fn (): Payment => app(RegisterManualPaymentAction::class)->handle(
             $layaway,
-            $this->data($amount, $currency, $method, $account, $paidAt, $key, $confirmed, $rate),
+            $this->data($amount, $currency, $method, $account, $paidAt, $key, $confirmed, $rate, $bank, $reference, $file),
             $this->staff,
         ));
     }
@@ -252,8 +320,14 @@ final class RegisterManualPaymentActionTest extends TestCase
         ?string $key = null,
         ?int $confirmed = null,
         ?string $rate = null,
+        ?string $bank = null,
+        ?string $reference = null,
+        ?UploadedFile $file = null,
     ): ManualPaymentData {
-        return new ManualPaymentData($method, $account, $amount, $currency, $rate, CarbonImmutable::parse($paidAt), self::NOTE, $key ?? (string) Str::uuid(), $confirmed);
+        return new ManualPaymentData(
+            $method, $account, $amount, $currency, $rate, CarbonImmutable::parse($paidAt), self::NOTE, $key ?? (string) Str::uuid(), $confirmed,
+            bank: $bank, reference: $reference, file: $file,
+        );
     }
 
     private function stored(Payment $payment): Payment

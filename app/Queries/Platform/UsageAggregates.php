@@ -11,6 +11,7 @@ use App\Domain\Subscription\UsageMetric;
 use App\Models\Catalog;
 use App\Models\ExportJob;
 use App\Models\Layaway;
+use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Models\Product;
 use App\Models\Receipt;
@@ -117,6 +118,12 @@ final class UsageAggregates
             ->groupBy('organization_id')
             ->selectRaw('organization_id AS organization, SUM(file_size) AS total'), $locking);
 
+        $attachments = $this->totals(Payment::query()->withoutTenantScope()
+            ->whereIn('organization_id', $organizationIds)
+            ->whereNotNull('file_size')
+            ->groupBy('organization_id')
+            ->selectRaw('organization_id AS organization, SUM(file_size) AS total'), false);
+
         $media = $this->totals(Product::query()->withoutTenantScope()->withTrashed()
             ->join('media', function ($join): void {
                 $join->on('media.model_id', '=', 'products.id')
@@ -135,7 +142,7 @@ final class UsageAggregates
         $bytes = [];
 
         foreach ($organizationIds as $organization) {
-            $bytes[$organization] = (int) ($receipts[$organization] ?? 0) + (int) ($media[$organization] ?? 0) + (int) ($exports[$organization] ?? 0);
+            $bytes[$organization] = (int) ($receipts[$organization] ?? 0) + (int) ($attachments[$organization] ?? 0) + (int) ($media[$organization] ?? 0) + (int) ($exports[$organization] ?? 0);
         }
 
         return $bytes;

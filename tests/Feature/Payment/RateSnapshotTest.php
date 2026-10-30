@@ -162,7 +162,7 @@ final class RateSnapshotTest extends TestCase
     {
         $layaway = $this->activeLayaway();
         $payload = [
-            'method' => 'pago_movil', 'amount' => '120.00', 'currency' => 'VES', 'rate' => '425.00', 'paid_at' => '2026-09-10',
+            'method' => 'pago_movil', 'bank' => 'Banesco', 'reference' => '0123456789', 'amount' => '120.00', 'currency' => 'VES', 'rate' => '425.00', 'paid_at' => '2026-09-10',
             'note' => 'Pago móvil confirmado por teléfono con Ana.', 'idempotency_key' => (string) Str::uuid(),
         ];
         $this->actingAs($this->staff)->from(route('layaways.show', $layaway));
@@ -181,7 +181,7 @@ final class RateSnapshotTest extends TestCase
         $layaway = $this->activeLayaway();
         $token = 'bcv@40.00000000@'.$this->publishStaleRate()->getTimestamp();
         $payload = [
-            'method' => 'pago_movil', 'amount' => '1200.00', 'currency' => 'VES', 'paid_at' => '2026-09-10',
+            'method' => 'pago_movil', 'bank' => 'Banesco', 'reference' => '0123456789', 'amount' => '1200.00', 'currency' => 'VES', 'paid_at' => '2026-09-10',
             'note' => 'Pago móvil confirmado por teléfono con Ana.', 'idempotency_key' => (string) Str::uuid(),
         ];
         $this->actingAs($this->staff)->from(route('layaways.show', $layaway));

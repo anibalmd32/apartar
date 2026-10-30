@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Catalog\CatalogSubscriptionController;
+use App\Http\Controllers\PaymentFileController;
 use App\Http\Controllers\Portal\AccessController;
 use App\Http\Controllers\Portal\Auth\GoogleAccountController;
 use App\Http\Controllers\Portal\ChatController;
@@ -74,5 +75,10 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
         Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
             ->middleware('signed')
             ->name('receipts.file');
+
+        Route::get('pagos/{payment}/archivo', PaymentFileController::class)
+            ->whereNumber('payment')
+            ->middleware('signed')
+            ->name('payments.file');
     });
 });

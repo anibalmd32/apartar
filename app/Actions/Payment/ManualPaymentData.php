@@ -10,10 +10,12 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentAmounts;
+use App\Domain\Payment\PaymentAttachment;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentOrigin;
 use App\Models\PaymentAccount;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -37,8 +39,12 @@ final readonly class ManualPaymentData
         public ?int $confirmedExcessCents = null,
         public ?string $confirmedStaleRate = null,
         public ?string $confirmedRateDeviation = null,
+        public ?string $bank = null,
+        public ?string $reference = null,
+        public ?UploadedFile $file = null,
     ) {
         PaymentAmounts::assertPositive($amount, $currency, 'del pago');
+        SubmitReceiptData::assertReferenceFits($method, $bank, $reference);
 
         if ($rateOverride !== null) {
             new ManualRate($rateOverride);
@@ -62,9 +68,16 @@ final readonly class ManualPaymentData
         return $this->rateOverride !== null && $this->currency !== Currency::USD ? new ManualRate($this->rateOverride) : null;
     }
 
-    public function origin(): PaymentOrigin
+    public function origin(?PaymentAttachment $attachment = null): PaymentOrigin
     {
-        return new PaymentOrigin($this->method, $this->paymentAccount?->getKey() === null ? null : (int) $this->paymentAccount->getKey(), $this->paidAt->startOfDay());
+        return new PaymentOrigin(
+            $this->method,
+            $this->paymentAccount?->getKey() === null ? null : (int) $this->paymentAccount->getKey(),
+            $this->paidAt->startOfDay(),
+            $this->bank,
+            $this->reference,
+            $attachment,
+        );
     }
 
     public function money(): Money

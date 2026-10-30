@@ -123,6 +123,8 @@ final class ManualPaymentPageTest extends TestCase
 
         $this->actingAs($this->member)->post(route('layaways.payments.store', $layaway), $this->payload([
             'method' => 'pago_movil',
+            'bank' => 'Banesco',
+            'reference' => '0123456789',
             'payment_account' => (string) $account->getKey(),
             'amount' => '2000.00',
             'currency' => 'VES',

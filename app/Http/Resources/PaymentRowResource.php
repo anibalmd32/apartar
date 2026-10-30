@@ -9,6 +9,7 @@ use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Support\SignedFileUrl;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -54,6 +55,10 @@ final class PaymentRowResource extends JsonResource
             'unallocated' => $payment->unallocated_cents->cents > 0 ? MoneyFormatter::format($payment->unallocated_cents) : null,
             'registeredByBusiness' => $manual,
             'note' => $manual ? $payment->note : null,
+            'bankReference' => $manual && $payment->reference !== null ? sprintf('%s · ref. %s', $payment->bank, $payment->reference) : null,
+            'attachmentUrl' => $manual && $payment->hasAttachment()
+                ? ($request->routeIs('portal.*') ? SignedFileUrl::forCustomerPayment($payment) : SignedFileUrl::forBackofficePayment($payment))
+                : null,
         ];
     }
 }

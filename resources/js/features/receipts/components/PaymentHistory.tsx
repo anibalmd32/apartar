@@ -54,6 +54,12 @@ export function PaymentHistory({ payments, empty }: PaymentHistoryProps) {
                         </p>
                         <div className="text-ink-3 flex flex-wrap items-center gap-2 text-xs">
                             <span>{payment.method}</span>
+                            {payment.bankReference !== null ? <span>{payment.bankReference}</span> : null}
+                            {payment.attachmentUrl !== null ? (
+                                <a href={payment.attachmentUrl} target="_blank" rel="noopener noreferrer" className="link link-primary">
+                                    Ver comprobante
+                                </a>
+                            ) : null}
                             {payment.registeredByBusiness ? (
                                 <Badge tone="info" outline>
                                     Registrado por el negocio

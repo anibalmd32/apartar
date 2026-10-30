@@ -3,15 +3,15 @@ import { RejectForm } from '@/features/receipts/components/RejectForm';
 import { PREVIEW_DEBOUNCE_MS } from '@/features/receipts/hooks/useApprovalPreview';
 import ReceiptCreate from '@/pages/portal/ReceiptCreate';
 import { fakeRoute } from '@/test/fakes';
+import { chooseBank, MANUAL_PAYMENT_OPTIONS as OPTIONS } from '@/test/manual-payment-fixtures';
 import { receiptProps, stubObjectUrls } from '@/test/receipt-fixtures';
 import { PREVIEW } from '@/test/receipt-review-fixtures';
-import { type ManualPaymentOptions } from '@/types/layaway-backoffice';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-const { post, usePage } = vi.hoisted(() => ({ post: vi.fn(), usePage: vi.fn() }));
+const { post, postOptions, usePage } = vi.hoisted(() => ({ post: vi.fn(), postOptions: vi.fn(), usePage: vi.fn() }));
 
 vi.mock('@inertiajs/react', async () => {
     const { useState } = await import('react');
@@ -28,6 +28,7 @@ vi.mock('@inertiajs/react', async () => {
 
             const send = (url: string, options?: { onSuccess?: () => void }) => {
                 post(url, data);
+                postOptions(options);
                 options?.onSuccess?.();
             };
 
@@ -35,22 +36,6 @@ vi.mock('@inertiajs/react', async () => {
         },
     };
 });
-
-const OPTIONS: ManualPaymentOptions = {
-    storeUrl: '/backoffice/apartados/AP-7K3M9QRT/pagos',
-    previewUrl: '/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa',
-    methods: [
-        { value: 'efectivo_usd', label: 'Efectivo en dólares', defaultCurrency: 'USD' },
-        { value: 'pago_movil', label: 'Pago móvil', defaultCurrency: 'VES' },
-    ],
-    paymentAccounts: [],
-    currencies: [
-        { value: 'USD', label: 'Dólares' },
-        { value: 'VES', label: 'Bolívares' },
-    ],
-    paidAt: { min: '2026-09-10', max: '2026-09-11' },
-    rate: { rate: '42.50000000', sourceLabel: 'BCV' },
-};
 
 function withQueries(node: ReactNode) {
     return render(<QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>);
@@ -63,6 +48,7 @@ beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
     vi.stubGlobal('route', fakeRoute);
     post.mockReset();
+    postOptions.mockReset();
     usePage.mockReturnValue({
         props: { auth: { portal: { fullName: 'María González' } }, currency: { display: 'usd_primary', rate: { rate: null } }, errors: {} },
     });
@@ -101,6 +87,8 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
     expect(screen.getByLabelText('Moneda')).toHaveValue('VES');
+    chooseBank('Banesco');
+    fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '0123456789' } });
     fireEvent.change(screen.getByLabelText('Moneda'), { target: { value: 'USD' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '160.00' } });
     fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
@@ -118,7 +106,15 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
 
     const [url, sent] = post.mock.calls[0] as [string, Record<string, unknown>];
     expect(url).toBe(OPTIONS.storeUrl);
-    expect(sent).toMatchObject({ method: 'pago_movil', amount: '160.00', currency: 'USD', paid_at: '2026-09-11', confirm_excess: 1_000 });
+    expect(sent).toMatchObject({
+        method: 'pago_movil',
+        bank: 'Banesco',
+        reference: '0123456789',
+        amount: '160.00',
+        currency: 'USD',
+        paid_at: '2026-09-11',
+        confirm_excess: 1_000,
+    });
     expect(sent.idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
 });
 
@@ -152,6 +148,8 @@ it('pide confirmar una tasa de más de 30 días y manda su publicación', async 
     withQueries(<ManualPaymentForm options={OPTIONS} />);
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
+    chooseBank('Banesco');
+    fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '0123456789' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '1200.00' } });
     fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
     await act(async () => {
@@ -166,6 +164,52 @@ it('pide confirmar una tasa de más de 30 días y manda su publicación', async 
     fireEvent.click(record);
 
     expect(post.mock.calls[0]?.[1]).toMatchObject({ currency: 'VES', confirm_stale_rate: 'bcv@40.00000000@1753000000' });
+});
+
+it('pide banco y referencia solo a los métodos que los llevan y manda el comprobante como formulario', async () => {
+    vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
+    withQueries(<ManualPaymentForm options={OPTIONS} />);
+    const record = screen.getByRole('button', { name: 'Registrar el pago' });
+
+    fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
+    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '1275.00' } });
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Pago móvil confirmado por Ana.' } });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
+    });
+    expect(record).toBeDisabled();
+
+    chooseBank('Banesco');
+    fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '0123456789' } });
+    fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
+    expect(screen.queryByLabelText('Banco')).toBeNull();
+    expect(screen.queryByLabelText('Número de referencia')).toBeNull();
+
+    const proof = new File(['captura'], 'captura.png', { type: 'image/png' });
+    fireEvent.change(screen.getByLabelText(/Elegir archivo/), { target: { files: [proof] } });
+    await vi.waitFor(() => expect(record).toBeEnabled());
+    fireEvent.click(record);
+
+    expect(post.mock.calls[0]?.[1]).toMatchObject({ method: 'efectivo_usd', bank: '', reference: '', file: proof });
+    expect(postOptions.mock.calls[0]?.[0]).toMatchObject({ forceFormData: true });
+});
+
+it('no deja registrar con un comprobante de más del máximo', async () => {
+    vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
+    withQueries(<ManualPaymentForm options={OPTIONS} />);
+
+    fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
+    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30.00' } });
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
+    const heavy = new File(['x'], 'pesado.pdf', { type: 'application/pdf' });
+    Object.defineProperty(heavy, 'size', { value: 6 * 1024 * 1024 });
+    fireEvent.change(screen.getByLabelText(/Elegir archivo/), { target: { files: [heavy] } });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
+    });
+
+    expect(screen.getByText(/Este archivo pasa de 5 MB/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Registrar el pago' })).toBeDisabled();
 });
 
 it('el formulario del cliente dice a qué comprobante rechazado sustituye', () => {

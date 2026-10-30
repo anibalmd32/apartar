@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Payment;
 
+use App\Models\Payment;
 use App\Models\Receipt;
 use App\Support\SignedFileUrl;
 use Illuminate\Http\Request;
@@ -43,6 +44,22 @@ final class SignedFileUrlTest extends TestCase
 
         $this->assertNotSame($url, $moved);
         $this->assertFalse(URL::hasValidSignature(Request::create($moved)));
+    }
+
+    public function test_the_payment_urls_live_on_their_own_routes_with_the_same_ttls(): void
+    {
+        $this->freezeSecond();
+        $payment = (new Payment)->forceFill(['id' => 42, 'organization_id' => 7]);
+
+        $customer = SignedFileUrl::forCustomerPayment($payment);
+        $backoffice = SignedFileUrl::forBackofficePayment($payment);
+
+        $this->assertSame('/mi-cuenta/pagos/42/archivo', parse_url($customer, PHP_URL_PATH));
+        $this->assertSame(now()->addMinutes(SignedFileUrl::CUSTOMER_TTL_MINUTES)->getTimestamp(), $this->expiresOf($customer));
+        $this->assertSame('/backoffice/pagos/42/archivo', parse_url($backoffice, PHP_URL_PATH));
+        $this->assertSame(now()->addMinutes(SignedFileUrl::BACKOFFICE_TTL_MINUTES)->getTimestamp(), $this->expiresOf($backoffice));
+        $this->assertTrue(URL::hasValidSignature(Request::create($backoffice)));
+        $this->assertFalse(URL::hasValidSignature(Request::create(str_replace('/pagos/42/', '/comprobantes/42/', $backoffice))));
     }
 
     private function receipt(int $id): Receipt

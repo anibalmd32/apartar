@@ -18,6 +18,8 @@ const PAYMENT: PaymentRow = {
     unallocated: null,
     registeredByBusiness: false,
     note: null,
+    bankReference: null,
+    attachmentUrl: null,
 };
 
 function receipt(overrides: Partial<ReceiptRow> = {}): ReceiptRow {
@@ -58,6 +60,26 @@ it('marca el pago registrado por el negocio, con su nota', () => {
     expect(screen.getByText('$30,00 · cuota 3')).toBeInTheDocument();
     expect(screen.getByText('Registrado por el negocio')).toBeInTheDocument();
     expect(screen.getByText('Efectivo en tienda.')).toBeInTheDocument();
+});
+
+it('enlaza el comprobante que adjuntó el negocio, con su banco y referencia', () => {
+    render(
+        <PaymentHistory
+            payments={[
+                {
+                    ...PAYMENT,
+                    registeredByBusiness: true,
+                    note: 'Confirmado por teléfono.',
+                    bankReference: 'Banesco · ref. 0123456789',
+                    attachmentUrl: '/backoffice/pagos/7/archivo?signature=x',
+                },
+            ]}
+            empty="—"
+        />,
+    );
+
+    expect(screen.getByText('Banesco · ref. 0123456789')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver comprobante' })).toHaveAttribute('href', '/backoffice/pagos/7/archivo?signature=x');
 });
 
 it('dice qué parte fue a la inicial y qué sobró', () => {
