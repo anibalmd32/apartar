@@ -25,7 +25,7 @@ async function ask(url: string, values: ApprovalValues): Promise<Answer> {
         query.set('rate', values.rate);
     }
 
-    const response = await fetch(`${url}?${query.toString()}`, {
+    const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}${query.toString()}`, {
         headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin',
     });

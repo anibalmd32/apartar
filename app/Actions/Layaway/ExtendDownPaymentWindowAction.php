@@ -48,7 +48,7 @@ final class ExtendDownPaymentWindowAction
             return DownPaymentExtension::AlreadyExtended;
         }
 
-        if ($layaway->expires_at !== null && $layaway->expires_at->greaterThanOrEqualTo($rejectedAt)) {
+        if ($layaway->expires_at === null || $layaway->expires_at->greaterThanOrEqualTo($rejectedAt)) {
             return DownPaymentExtension::WindowStillOpen;
         }
 

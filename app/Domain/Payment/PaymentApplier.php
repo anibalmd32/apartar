@@ -164,8 +164,11 @@ final class PaymentApplier
 
     /**
      * @return array{Money, array{rate: string, source: RateSource, publishedAt: ?CarbonImmutable}}
+     *
+     * @throws MissingExchangeRateException
+     * @throws PaymentNotApplicableException
      */
-    private function toDollars(Money $settled, RateSnapshot|ManualRate|null $rate): array
+    public function toDollars(Money $settled, RateSnapshot|ManualRate|null $rate): array
     {
         if ($settled->currency === Currency::USD) {
             return [$settled, ['rate' => self::UNIT_RATE] + $this->sourceOf($rate)];

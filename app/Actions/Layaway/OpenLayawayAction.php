@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Layaway;
 
+use App\Domain\Layaway\DownPaymentWindow;
 use App\Domain\Layaway\IllegalLayawayTransitionException;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Layaway\ScheduleAlreadyMaterializedException;
@@ -19,13 +20,13 @@ final class OpenLayawayAction
         private readonly ActivateLayawayAction $activation,
     ) {}
 
-    public function expiresAt(LayawayTerms $terms): ?CarbonImmutable
+    public function expiresAt(LayawayTerms $terms, ?DownPaymentWindow $window = null): ?CarbonImmutable
     {
         if (! $terms->requiresDownPayment()) {
             return null;
         }
 
-        return CarbonImmutable::now()->addHours($this->downPaymentWindowHours());
+        return ($window ?? DownPaymentWindow::organizationDefault())->expiresAt(CarbonImmutable::now(), $this->downPaymentWindowHours());
     }
 
     /**
@@ -41,7 +42,7 @@ final class OpenLayawayAction
         $this->activation->handle($layaway);
     }
 
-    private function downPaymentWindowHours(): int
+    public function downPaymentWindowHours(): int
     {
         $hours = $this->settings->get(SettingKey::DownPaymentWindowHours);
 

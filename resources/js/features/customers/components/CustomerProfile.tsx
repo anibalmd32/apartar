@@ -39,7 +39,11 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
             <Contact icon={cilCalendar} label="Cliente desde">
                 {customer.createdAt !== null ? formatDay(customer.createdAt) : '—'}
                 {customer.termsAcceptedAt !== null ? (
-                    <span className="text-ink-3 block text-xs font-normal">Términos aceptados el {formatDay(customer.termsAcceptedAt)}</span>
+                    <span className="text-ink-3 block text-xs font-normal">
+                        {customer.termsDeclaredBy !== null
+                            ? `Condiciones aceptadas el ${formatDay(customer.termsAcceptedAt)}, declaradas por ${customer.termsDeclaredBy}`
+                            : `Términos aceptados el ${formatDay(customer.termsAcceptedAt)}`}
+                    </span>
                 ) : null}
             </Contact>
         </section>

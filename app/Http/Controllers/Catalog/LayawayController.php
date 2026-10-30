@@ -13,7 +13,7 @@ use App\Domain\Catalog\ProductNotAvailableException;
 use App\Domain\Catalog\PublicCatalogAccess;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Layaway\NotAcceptingLayawaysException;
-use App\Domain\Money\MoneyFormatter;
+use App\Domain\Notification\LayawayConfirmationMailer;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
@@ -28,7 +28,6 @@ use App\Models\Customer;
 use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Product;
-use App\Notifications\LayawayConfirmationNotification;
 use App\Queries\ActivePaymentAccountsQuery;
 use App\Queries\CatalogProductsQuery;
 use App\Support\InvalidDocumentNumberException;
@@ -39,7 +38,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -54,6 +52,7 @@ final class LayawayController extends Controller
         private readonly LimitEnforcer $limits,
         private readonly CatalogProductsQuery $products,
         private readonly ActivePaymentAccountsQuery $paymentAccounts,
+        private readonly LayawayConfirmationMailer $mailer,
     ) {}
 
     /**
@@ -112,7 +111,7 @@ final class LayawayController extends Controller
         $request->session()->push(self::SESSION_KEY, $layaway->code);
 
         if ($layaway->wasRecentlyCreated) {
-            $this->sendConfirmation($catalog, $layaway);
+            $this->mailer->send($layaway);
         }
 
         $customer = $layaway->customer;
@@ -192,32 +191,6 @@ final class LayawayController extends Controller
         }
 
         return (new LayawayPlanResource($terms, $this->timezone()))->resolve($request);
-    }
-
-    private function sendConfirmation(Catalog $catalog, Layaway $layaway): void
-    {
-        $email = Customer::query()->whereKey($layaway->customer_id)->value('email');
-
-        if (! is_string($email) || $email === '') {
-            return;
-        }
-
-        $terms = $layaway->terms();
-        $first = $this->firstInstallment($layaway);
-
-        Notification::route('mail', $email)->notify(new LayawayConfirmationNotification(
-            code: $layaway->code,
-            businessName: $catalog->organization->name,
-            productName: $layaway->product_name_snapshot,
-            quantity: $terms->quantity,
-            total: MoneyFormatter::format($terms->total()),
-            downPayment: MoneyFormatter::format($terms->totalDownPayment()),
-            expiresAt: $this->expiresAt($layaway) ?? '',
-            paymentAccounts: $this->paymentAccounts->all(),
-            requiresDownPayment: $terms->requiresDownPayment(),
-            firstInstallment: $first === null ? null : MoneyFormatter::format($first->amount_cents),
-            firstDueDate: $first?->due_date->locale('es')->isoFormat('D [de] MMMM'),
-        ));
     }
 
     private function firstInstallment(Layaway $layaway): ?Installment

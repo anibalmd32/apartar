@@ -1,3 +1,4 @@
+import { type LayawayPlanView } from '@/types/layaway';
 import { type Currency, type MoneyView } from '@/types/money';
 import { type PaymentMethod } from '@/types/payment';
 import { type LayawayStatus } from '@/types/portal';
@@ -95,4 +96,30 @@ export interface BackofficeLayawayShowProps {
     readonly payments: readonly PaymentRow[];
     readonly manualPayment: ManualPaymentOptions | null;
     readonly reallocation: ReallocationOptions | null;
+}
+
+export interface LayawayCustomerOption {
+    readonly id: number;
+    readonly name: string;
+    readonly detail: string | null;
+}
+
+export interface LayawayProductOption {
+    readonly id: number;
+    readonly name: string;
+    readonly sku: string;
+    readonly stock: number;
+    readonly maxQuantity: number;
+}
+
+export type DownPaymentWindowChoice = 'default' | 'hours' | 'days' | 'none';
+
+export interface BackofficeLayawayCreateProps {
+    readonly products: readonly LayawayProductOption[];
+    readonly selection: { readonly product: number | null; readonly quantity: number };
+    readonly plan: (LayawayPlanView & { readonly productName: string }) | null;
+    readonly customer: LayawayCustomerOption | null;
+    readonly window: { readonly defaultHours: number; readonly maxHours: number; readonly maxDays: number };
+    readonly payment: PaymentFieldOptions;
+    readonly urls: { readonly store: string; readonly customers: string; readonly paymentPreview: string };
 }

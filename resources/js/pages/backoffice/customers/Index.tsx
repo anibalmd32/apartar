@@ -19,7 +19,7 @@ export default function CustomerIndex({ rows, meta, options, filterCounts }: Cus
     return (
         <BackofficeLayout
             title="Clientes"
-            description="Se crean solos cuando alguien aparta desde tu catálogo."
+            description="Se crean cuando alguien aparta desde tu catálogo o cuando le creas un apartado desde Cobranza."
             actions={<ExportButton type="customers" filters={meta.filters} />}
         >
             <DataTable
@@ -39,8 +39,8 @@ export default function CustomerIndex({ rows, meta, options, filterCounts }: Cus
                                 </Link>
                             }
                         >
-                            Cada persona que aparta desde tu catálogo aparece aquí con su teléfono y sus apartados. Comparte el enlace de tu catálogo
-                            para empezar.
+                            Cada persona que aparta desde tu catálogo, o a la que le creas un apartado desde Cobranza, aparece aquí con su teléfono y
+                            sus apartados. Comparte el enlace de tu catálogo para empezar.
                         </EmptyState>
                     )
                 }

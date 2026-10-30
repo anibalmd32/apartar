@@ -173,6 +173,19 @@ final class CustomerProfileTest extends TestCase
         $this->get(route('customers.show', $customer))->assertInertia(fn (AssertableInertia $page) => $page->where('layaways.history.0.resendCodeUrl', null));
     }
 
+    public function test_the_profile_tells_apart_terms_declared_by_the_business(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $customer = $this->customerOf($layaway);
+        $this->actingAs($this->member);
+
+        $this->get(route('customers.show', $customer))->assertInertia(fn (AssertableInertia $page) => $page->where('customer.termsDeclaredBy', null));
+
+        DB::table('customers')->where('id', $customer->getKey())->update(['terms_declared_by_user_id' => $this->member->getKey()]);
+
+        $this->get(route('customers.show', $customer))->assertInertia(fn (AssertableInertia $page) => $page->where('customer.termsDeclaredBy', 'Ana Pérez'));
+    }
+
     private function customerOf(Layaway $layaway): Customer
     {
         return Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id);

@@ -12,6 +12,7 @@ const CUSTOMER_CREATOR = 'app/Actions/Customer/ResolveCustomerAction.php';
 const CUSTOMER_RESOLVER_REFERENCES = [
     CUSTOMER_CREATOR,
     'app/Actions/Layaway/CreateLayawayAction.php',
+    'app/Actions/Layaway/CreateBackofficeLayawayAction.php',
 ];
 
 function codeWithoutComments(string $code, bool $withStrings = true): string
@@ -67,7 +68,7 @@ it('solo crea fichas de cliente ResolveCustomerAction', function (): void {
 
     expect($offenders)->toBe([], sprintf(
         'Estos archivos crean fichas de cliente por fuera de ResolveCustomerAction: %s. Una ficha nace del '
-        .'apartado y el backoffice no las crea a mano; además, por fuera de la acción '
+        .'apartado, también el que crea el backoffice, nunca a mano; además, por fuera de la acción '
         .'se saltan la evidencia de consentimiento y la auditoría de la reutilización.',
         implode(', ', $offenders),
     ));
@@ -87,7 +88,7 @@ it('reconoce la creación en la propia ResolveCustomerAction', function (): void
     expect(str_contains(codeWithoutComments((string) file_get_contents(base_path('app/Domain/Auditing/AuditEvent.php')), withStrings: false), 'ResolveCustomerAction'))->toBeFalse();
 });
 
-it('solo llama a ResolveCustomerAction la creación del apartado', function (): void {
+it('solo llaman a ResolveCustomerAction las creaciones del apartado', function (): void {
     $offenders = [];
 
     foreach (applicationCode(withStrings: false) as $path => $code) {
@@ -97,7 +98,7 @@ it('solo llama a ResolveCustomerAction la creación del apartado', function (): 
     }
 
     expect($offenders)->toBe([], sprintf(
-        'Estos archivos usan ResolveCustomerAction y no son CreateLayawayAction: %s. La ficha se crea en la misma '
+        'Estos archivos usan ResolveCustomerAction y no crean apartados: %s. La ficha se crea en la misma '
         .'transacción que el apartado; no hay endpoint de «crear cliente».',
         implode(', ', $offenders),
     ));

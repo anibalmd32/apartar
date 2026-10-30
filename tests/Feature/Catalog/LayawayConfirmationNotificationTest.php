@@ -60,6 +60,97 @@ final class LayawayConfirmationNotificationTest extends TestCase
         $this->assertStringNotContainsString('paga la inicial', $text);
     }
 
+    public function test_without_expiry_it_asks_for_the_down_payment_without_a_date(): void
+    {
+        $notification = new LayawayConfirmationNotification(
+            code: 'AP-7K3MQ2XH',
+            businessName: 'Ferretería Oriente',
+            productName: 'Nevera Mabe',
+            quantity: 1,
+            total: '$150,00',
+            downPayment: '$50,00',
+            expiresAt: '',
+            paymentAccounts: [],
+        );
+
+        $text = implode('
+', $notification->toMail(new AnonymousNotifiable)->introLines);
+
+        $this->assertStringContainsString('Total: $150,00. Para confirmarlo, paga la inicial de $50,00.', $text);
+        $this->assertStringNotContainsString('antes del', $text);
+    }
+
+    public function test_with_the_down_payment_already_paid_it_says_it_is_active(): void
+    {
+        $notification = new LayawayConfirmationNotification(
+            code: 'AP-7K3MQ2XH',
+            businessName: 'Ferretería Oriente',
+            productName: 'Nevera Mabe',
+            quantity: 1,
+            total: '$150,00',
+            downPayment: '$50,00',
+            expiresAt: '30 de septiembre a las 10:00 a. m.',
+            paymentAccounts: [],
+            firstInstallment: '$25,00',
+            firstDueDate: '12 de octubre',
+            downPaymentPaid: true,
+        );
+
+        $text = implode('
+', $notification->toMail(new AnonymousNotifiable)->introLines);
+
+        $this->assertStringContainsString('La inicial de $50,00 ya quedó pagada: tu apartado está activo. La primera cuota, de $25,00, vence el 12 de octubre.', $text);
+        $this->assertStringNotContainsString('paga la inicial', $text);
+    }
+
+    public function test_with_the_first_installment_started_it_names_the_next_one_and_what_is_left(): void
+    {
+        $notification = new LayawayConfirmationNotification(
+            code: 'AP-7K3MQ2XH',
+            businessName: 'Ferretería Oriente',
+            productName: 'Nevera Mabe',
+            quantity: 1,
+            total: '$150,00',
+            downPayment: '$50,00',
+            expiresAt: '',
+            paymentAccounts: [],
+            firstInstallment: '$15,00',
+            firstDueDate: '26 de octubre',
+            downPaymentPaid: true,
+            firstInstallmentNumber: 2,
+            firstInstallmentStarted: true,
+        );
+
+        $text = implode("\n", $notification->toMail(new AnonymousNotifiable)->introLines);
+
+        $this->assertStringContainsString('tu apartado está activo. Lo próximo es la cuota N.º 2: te quedan $15,00 por pagar y vence el 26 de octubre.', $text);
+        $this->assertStringNotContainsString('La primera cuota', $text);
+    }
+
+    public function test_fully_paid_it_says_nothing_is_pending_and_lists_no_payment_accounts(): void
+    {
+        $account = $this->withinOrganization(Organization::factory()->create(), fn (): PaymentAccount => PaymentAccount::factory()->create());
+
+        $notification = new LayawayConfirmationNotification(
+            code: 'AP-7K3MQ2XH',
+            businessName: 'Ferretería Oriente',
+            productName: 'Nevera Mabe',
+            quantity: 1,
+            total: '$150,00',
+            downPayment: '$50,00',
+            expiresAt: '',
+            paymentAccounts: [PaymentAccountView::of($account)],
+            downPaymentPaid: true,
+            fullyPaid: true,
+        );
+
+        $text = implode("\n", $notification->toMail(new AnonymousNotifiable)->introLines);
+
+        $this->assertStringContainsString('Total: $150,00. Ya quedó pagado por completo: no tienes nada pendiente.', $text);
+        $this->assertStringNotContainsString('está activo', $text);
+        $this->assertStringNotContainsString('Puedes pagarle', $text);
+    }
+
     public function test_without_payment_accounts_it_sends_to_ask_the_business(): void
     {
         $mail = $this->notification([])->toMail(new AnonymousNotifiable);

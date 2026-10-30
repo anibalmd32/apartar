@@ -25,6 +25,7 @@ final class LayawayActivityQuery
     {
         $layaway->loadMissing([
             'catalog:id,organization_id,name',
+            'createdBy:id,name',
             'receipts.reviewer:id,name',
             'payments.registeredBy:id,name',
             'installments',
@@ -32,7 +33,7 @@ final class LayawayActivityQuery
 
         $events = [];
         $catalog = $layaway->catalog;
-        $events[] = $this->event('created', 'Apartado creado', $catalog instanceof Catalog ? 'Desde el catálogo «'.$catalog->name.'»' : null, null, $layaway->created_at);
+        $events[] = $this->event('created', 'Apartado creado', $this->originOf($catalog, $layaway->createdBy), null, $layaway->created_at);
 
         if ($layaway->activated_at !== null) {
             $events[] = $this->event(
@@ -93,6 +94,15 @@ final class LayawayActivityQuery
         usort($events, fn (array $a, array $b): int => strcmp($b['at'], $a['at']));
 
         return array_slice($events, 0, $limit);
+    }
+
+    private function originOf(?Catalog $catalog, ?User $creator): ?string
+    {
+        return match (true) {
+            $catalog instanceof Catalog => 'Desde el catálogo «'.$catalog->name.'»',
+            $creator instanceof User => 'Creado por '.$creator->name.' desde el backoffice',
+            default => null,
+        };
     }
 
     private function wentOverdue(Installment $installment): bool

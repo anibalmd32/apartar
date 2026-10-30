@@ -20,6 +20,7 @@ use App\Http\Controllers\Backoffice\GlobalSearchController;
 use App\Http\Controllers\Backoffice\InstallmentController;
 use App\Http\Controllers\Backoffice\LayawayCodeController;
 use App\Http\Controllers\Backoffice\LayawayController;
+use App\Http\Controllers\Backoffice\LayawayCreationController;
 use App\Http\Controllers\Backoffice\ManualPaymentController;
 use App\Http\Controllers\Backoffice\ManualPushController;
 use App\Http\Controllers\Backoffice\OrganizationClosureController;
@@ -220,6 +221,17 @@ Route::prefix('backoffice')->group(function (): void {
             Route::post('etiquetas', [TagController::class, 'store'])->name('tags.store');
             Route::put('etiquetas/{tag}', [TagController::class, 'update'])->name('tags.update');
             Route::delete('etiquetas/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
+
+            Route::get('apartados/nuevo', [LayawayCreationController::class, 'create'])->name('layaways.create');
+            Route::get('apartados/nuevo/clientes', [LayawayCreationController::class, 'customers'])
+                ->middleware('throttle:60,1')
+                ->name('layaways.create.customers');
+            Route::get('apartados/nuevo/vista-previa-pago', [LayawayCreationController::class, 'paymentPreview'])
+                ->middleware('throttle:60,1')
+                ->name('layaways.create.payment-preview');
+            Route::post('apartados', [LayawayCreationController::class, 'store'])
+                ->middleware('throttle:30,1')
+                ->name('layaways.store');
 
             Route::middleware('during-suspension')->group(function (): void {
                 Route::get('cobranza', CollectionController::class)->name('collections.index');

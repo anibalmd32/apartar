@@ -11,7 +11,7 @@ import { MergeCustomerDialog } from '@/features/customers/components/MergeCustom
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type CustomerShowProps } from '@/types/customers';
-import { cilBell, cilChatBubble, cilLibrary, cilLink } from '@coreui/icons';
+import { cilBell, cilChatBubble, cilLibrary, cilLink, cilPlus } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -45,6 +45,10 @@ export default function CustomerShow(props: CustomerShowProps) {
             }
             actions={
                 <>
+                    <Link href={`/backoffice/apartados/nuevo?cliente=${customer.id}`} className="btn btn-secondary">
+                        <Icon icon={cilPlus} />
+                        Nuevo apartado
+                    </Link>
                     <Link href={`/backoffice/avisos?cliente=${customer.id}`} className="btn btn-secondary">
                         <Icon icon={cilBell} />
                         Notificar

@@ -88,6 +88,7 @@ export function profileProps(overrides: Partial<CustomerShowProps> = {}): Custom
             email: null,
             createdAt: '2026-09-01',
             termsAcceptedAt: '2026-09-01',
+            termsDeclaredBy: null,
             hasLinkedAccount: false,
         },
         totals: {

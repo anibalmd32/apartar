@@ -15,6 +15,11 @@ final class LayawayPolicy
         return $user->disabled_at === null && $user->role->can(OrganizationCapability::Collections);
     }
 
+    public function create(User $user): bool
+    {
+        return $user->disabled_at === null && $user->role->can(OrganizationCapability::Collections);
+    }
+
     public function manage(User $user, Layaway $layaway): bool
     {
         return $user->organization_id === (int) $layaway->organization_id

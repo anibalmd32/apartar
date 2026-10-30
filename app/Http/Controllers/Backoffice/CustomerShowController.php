@@ -156,6 +156,7 @@ final class CustomerShowController extends Controller
             'email' => $customer->email,
             'createdAt' => $this->day($customer->created_at, $timezone),
             'termsAcceptedAt' => $this->day($customer->terms_accepted_at, $timezone),
+            'termsDeclaredBy' => $customer->terms_declared_by_user_id === null ? null : User::query()->whereKey($customer->terms_declared_by_user_id)->value('name'),
             'hasLinkedAccount' => $customer->account_id !== null,
         ];
     }

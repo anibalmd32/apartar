@@ -9,6 +9,7 @@ use App\Domain\Customer\NameDivergence;
 use App\Domain\Customer\TermsConsent;
 use App\Domain\Tenancy\MissingTenantContextException;
 use App\Models\Customer;
+use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\DocumentNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -55,6 +56,29 @@ final class ResolveCustomerAction
         });
     }
 
+    /**
+     * @throws MissingTenantContextException
+     */
+    public function declaredBy(CustomerContactData $contact, TermsConsent $consent, User $declarant): Customer
+    {
+        return DB::transaction(function () use ($contact, $consent, $declarant): Customer {
+            $collision = null;
+
+            if (! $this->exists($contact->documentNumber)) {
+                try {
+                    return $this->create($contact, $consent, $declarant);
+                } catch (UniqueConstraintViolationException $exception) {
+                    $collision = $exception;
+                }
+            }
+
+            return $this->lockedFind($contact->documentNumber) ?? throw $collision ?? new LogicException(sprintf(
+                'La ficha %s existía al leerla y había desaparecido al bloquearla.',
+                $contact->documentNumber->value,
+            ));
+        });
+    }
+
     private function exists(DocumentNumber $document): bool
     {
         return Customer::query()->where('document_number', $document->value)->exists();
@@ -65,15 +89,16 @@ final class ResolveCustomerAction
         return Customer::query()->where('document_number', $document->value)->lockForUpdate()->first();
     }
 
-    private function create(CustomerContactData $contact, TermsConsent $consent): Customer
+    private function create(CustomerContactData $contact, TermsConsent $consent, ?User $declarant = null): Customer
     {
-        return DB::transaction(function () use ($contact, $consent): Customer {
+        return DB::transaction(function () use ($contact, $consent, $declarant): Customer {
             $customer = new Customer;
 
             $customer->forceFill([
                 'document_number' => $contact->documentNumber->value,
                 'document_kind' => $contact->documentNumber->kind,
                 ...$this->contactAttributes($contact, $consent),
+                'terms_declared_by_user_id' => $declarant?->getKey(),
             ])->save();
 
             return $customer;
@@ -121,6 +146,7 @@ final class ResolveCustomerAction
             'phone' => $contact->phone->value,
             'terms_accepted_at' => $consent->acceptedAt,
             'terms_ip_address' => $consent->ipAddress,
+            'terms_declared_by_user_id' => null,
         ];
 
         if ($contact->email !== null) {

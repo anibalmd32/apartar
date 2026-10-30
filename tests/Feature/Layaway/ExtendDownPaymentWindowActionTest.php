@@ -80,6 +80,17 @@ final class ExtendDownPaymentWindowActionTest extends TestCase
         $this->assertSame(DownPaymentExtension::Granted, $this->extend($layaway, '2026-09-13 10:00:01'));
     }
 
+    public function test_a_layaway_without_expiry_keeps_waiting_without_one(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $this->assertSame(DownPaymentExtension::WindowStillOpen, $this->extend($layaway, '2026-09-13 11:00:00'));
+        $row = DB::table('layaways')->where('id', $layaway->getKey())->first();
+        $this->assertNotNull($row);
+        $this->assertNull($row->expires_at);
+        $this->assertNull($row->extended_at);
+    }
+
     public function test_a_layaway_not_awaiting_its_down_payment_is_not_extended(): void
     {
         $layaway = $this->layawayIn($this->organization, LayawayStatus::Expired);

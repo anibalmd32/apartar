@@ -92,6 +92,7 @@ export interface CustomerShowProps {
         readonly email: string | null;
         readonly createdAt: string | null;
         readonly termsAcceptedAt: string | null;
+        readonly termsDeclaredBy: string | null;
         readonly hasLinkedAccount: boolean;
     };
     readonly totals: {

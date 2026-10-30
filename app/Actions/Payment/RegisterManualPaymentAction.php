@@ -68,7 +68,7 @@ final class RegisterManualPaymentAction
      * @throws UnconfirmedRateDeviationException
      * @throws DuplicateReceiptException
      */
-    public function handle(Layaway $layaway, ManualPaymentData $data, User $actor): Payment
+    public function handle(Layaway $layaway, ManualPaymentData $data, User $actor, bool $notifyCustomer = true): Payment
     {
         Gate::forUser($actor)->authorize('manage', $layaway);
 
@@ -87,12 +87,12 @@ final class RegisterManualPaymentAction
         $stored = null;
 
         try {
-            return DB::transaction(function () use ($layaway, $data, $actor, &$stored): Payment {
+            return DB::transaction(function () use ($layaway, $data, $actor, $notifyCustomer, &$stored): Payment {
                 DB::afterCommit(function () use (&$stored): void {
                     $stored = null;
                 });
 
-                return $this->register($layaway, $data, $actor, $stored);
+                return $this->register($layaway, $data, $actor, $notifyCustomer, $stored);
             });
         } catch (UniqueConstraintViolationException $exception) {
             $this->discard($stored);
@@ -111,7 +111,7 @@ final class RegisterManualPaymentAction
         }
     }
 
-    private function register(Layaway $layaway, ManualPaymentData $data, User $actor, ?string &$stored): Payment
+    private function register(Layaway $layaway, ManualPaymentData $data, User $actor, bool $notifyCustomer, ?string &$stored): Payment
     {
         if ($data->reference !== null || $data->file instanceof UploadedFile) {
             Organization::query()->whereKey($layaway->organization_id)->lockForUpdate()->firstOrFail();
@@ -166,8 +166,10 @@ final class RegisterManualPaymentAction
             after: $this->detailOf($applied, $data),
         );
 
-        $credited = $applied->payment->amount_cents_usd;
-        DB::afterCommit(fn () => app(CustomerNotices::class)->paymentCredited($layaway->refresh(), $credited));
+        if ($notifyCustomer) {
+            $credited = $applied->payment->amount_cents_usd;
+            DB::afterCommit(fn () => app(CustomerNotices::class)->paymentCredited($layaway->refresh(), $credited));
+        }
 
         if ($attachment instanceof PaymentAttachment) {
             $this->processAttachmentAfterCommit($applied->payment, $attachment);

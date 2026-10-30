@@ -25,6 +25,7 @@ use LogicException;
  * @property int $customer_id
  * @property int $product_id
  * @property int|null $catalog_id
+ * @property int|null $created_by_user_id
  * @property int $quantity
  * @property Money $unit_price_cents
  * @property Money $down_payment_cents
@@ -57,6 +58,7 @@ class Layaway extends Model
         'code',
         'idempotency_key',
         'product_id',
+        'created_by_user_id',
         'quantity',
         'unit_price_cents',
         'down_payment_cents',
@@ -204,6 +206,14 @@ class Layaway extends Model
     public function catalog(): BelongsTo
     {
         return $this->belongsTo(Catalog::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     /**

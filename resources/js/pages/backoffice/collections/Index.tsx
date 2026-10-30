@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/ui/empty-state';
+import { Icon } from '@/components/ui/icon';
 import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
 import { CollectionSummary } from '@/features/collections/components/CollectionSummary';
 import { installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
@@ -8,7 +9,8 @@ import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type CollectionIndexProps, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
-import { cilWallet } from '@coreui/icons';
+import { cilPlus, cilWallet } from '@coreui/icons';
+import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
 export default function CollectionIndex(props: CollectionIndexProps) {
@@ -16,7 +18,15 @@ export default function CollectionIndex(props: CollectionIndexProps) {
         <BackofficeLayout
             title="Cobranza"
             description="Lo que tienes por cobrar, cuota por cuota, con el teléfono de cada cliente a la vista."
-            actions={<ExportButton type="collections" filters={props.meta.filters} />}
+            actions={
+                <>
+                    <ExportButton type="collections" filters={props.meta.filters} />
+                    <Link href="/backoffice/apartados/nuevo" className="btn btn-primary">
+                        <Icon icon={cilPlus} />
+                        Nuevo apartado
+                    </Link>
+                </>
+            }
         >
             {props.kind === 'layaways' ? (
                 <CollectionTable key="layaways" {...props} rows={props.rows} columns={layawayColumns} label="Apartados pagados sin entregar" />

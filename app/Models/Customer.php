@@ -28,6 +28,7 @@ use NotificationChannels\WebPush\HasPushSubscriptions;
  * @property int|null $account_id
  * @property \Illuminate\Support\Carbon|null $terms_accepted_at
  * @property string|null $terms_ip_address
+ * @property int|null $terms_declared_by_user_id
  * @property \Illuminate\Support\Carbon|null $last_login_at
  * @property string|null $remember_token
  */
