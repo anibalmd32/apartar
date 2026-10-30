@@ -181,7 +181,7 @@ final class LayawayBalanceRecalculator
         $total = $layaway->terms()->totalDownPayment()->cents;
 
         if ($layaway->activated_at !== null) {
-            return $total;
+            return $total - ($layaway->down_payment_shortfall_cents->cents ?? 0);
         }
 
         return max(0, min($total, $paid ?? $this->ledger->paidOn($layaway)));
@@ -251,7 +251,7 @@ final class LayawayBalanceRecalculator
         };
     }
 
-    private function toleranceCents(): int
+    public function toleranceCents(): int
     {
         $cents = $this->settings->get(SettingKey::SettlementToleranceCents);
 

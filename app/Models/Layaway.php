@@ -29,6 +29,7 @@ use LogicException;
  * @property int $quantity
  * @property Money $unit_price_cents
  * @property Money $down_payment_cents
+ * @property Money $down_payment_shortfall_cents
  * @property int $installments_count
  * @property int $frequency_days
  * @property string $product_name_snapshot
@@ -226,6 +227,7 @@ class Layaway extends Model
             'quantity' => 'integer',
             'unit_price_cents' => MoneyCast::class,
             'down_payment_cents' => MoneyCast::class,
+            'down_payment_shortfall_cents' => MoneyCast::class,
             'installments_count' => 'integer',
             'frequency_days' => 'integer',
             'total_cents' => MoneyCast::class,

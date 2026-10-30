@@ -255,13 +255,57 @@ final class PaymentApplierTest extends TestCase
     {
         $layaway = $this->layawayIn($this->organization);
 
-        $this->apply($layaway, new Money(4_999), $this->bcv('42.50'), '49.99', Currency::USD);
-        $applied = $this->apply($layaway, new Money(1), $this->bcv('42.50'), '0.01', Currency::USD);
+        $first = $this->apply($layaway, new Money(4_949), $this->bcv('42.50'), '49.49', Currency::USD);
+        $this->assertSame(LayawayStatus::PendingDownPayment, $first->statusAfter);
+        $this->assertSame(51, $first->downPaymentMissingCents);
+
+        $applied = $this->apply($layaway, new Money(51), $this->bcv('42.50'), '0.51', Currency::USD);
 
         $this->assertSame(LayawayStatus::Active, $applied->statusAfter);
-        $this->assertSame(1, $applied->downPaymentCents);
+        $this->assertSame(51, $applied->downPaymentCents);
         $this->assertSame([], $applied->plan->allocations);
         $this->assertSame([5_000, 15_000], [$this->fresh($layaway)->paid_cents->cents, $this->fresh($layaway)->remaining_cents->cents]);
+        $this->assertSame(0, $this->fresh($layaway)->down_payment_shortfall_cents->cents);
+        $this->assertNull($this->diff($layaway));
+    }
+
+    public function test_a_down_payment_short_by_the_tolerance_activates_and_keeps_the_shortfall_owed(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $this->apply($layaway, new Money(3_000), $this->bcv('42.50'), '30.00', Currency::USD);
+        $applied = $this->apply($layaway, new Money(1_970), $this->bcv('42.50'), '19.70', Currency::USD);
+
+        $this->assertTrue($applied->activated());
+        $this->assertSame([1_970, 3_000, 0], [$applied->downPaymentCents, $applied->downPaymentPaidBeforeCents, $applied->downPaymentMissingCents]);
+        $this->assertSame('abono de $19,70 que completa la inicial', $applied->downPayment()->label());
+        $this->assertSame([], $applied->plan->allocations);
+
+        $row = $this->fresh($layaway);
+        $this->assertSame(LayawayStatus::Active, $row->status);
+        $this->assertSame(30, $row->down_payment_shortfall_cents->cents);
+        $this->assertSame([4_970, 15_030], [$row->paid_cents->cents, $row->remaining_cents->cents]);
+        $this->assertSame(15_000, $this->within(fn (): int => (int) Installment::query()->where('layaway_id', $layaway->getKey())->sum('amount_cents')));
+        $this->assertNull($this->diff($layaway));
+
+        $this->apply($layaway, new Money(15_000), $this->bcv('42.50'), '150.00', Currency::USD);
+
+        $paidOff = $this->fresh($layaway);
+        $this->assertSame(LayawayStatus::Completed, $paidOff->status);
+        $this->assertSame([19_970, 30], [$paidOff->paid_cents->cents, $paidOff->remaining_cents->cents]);
+        $this->assertNull($this->diff($layaway));
+    }
+
+    public function test_a_down_payment_short_by_more_than_the_tolerance_keeps_waiting(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $applied = $this->apply($layaway, new Money(4_949), $this->bcv('42.50'), '49.49', Currency::USD);
+
+        $this->assertFalse($applied->activated());
+        $this->assertSame(51, $applied->downPaymentMissingCents);
+        $this->assertSame(LayawayStatus::PendingDownPayment, $this->fresh($layaway)->status);
+        $this->assertSame(0, $this->fresh($layaway)->down_payment_shortfall_cents->cents);
         $this->assertNull($this->diff($layaway));
     }
 

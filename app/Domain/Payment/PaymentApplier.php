@@ -98,8 +98,9 @@ final class PaymentApplier
                 $downPayment = min($dollars->cents, $required - $paidBefore);
                 $missing = $required - $paidBefore - $downPayment;
 
-                if ($missing === 0) {
-                    $this->activation->handle($locked);
+                if ($missing <= $this->balance->toleranceCents()) {
+                    $this->activation->handle($locked, $missing);
+                    $missing = 0;
                 }
             }
 

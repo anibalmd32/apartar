@@ -12,6 +12,7 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\ScheduleAlreadyMaterializedException;
 use App\Domain\Layaway\ScheduledInstallment;
 use App\Domain\Layaway\ScheduleGenerator;
+use App\Domain\Money\Money;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Installment;
 use App\Models\Layaway;
@@ -37,12 +38,23 @@ final class ActivateLayawayAction
      * @throws IllegalLayawayTransitionException
      * @throws ScheduleAlreadyMaterializedException
      */
-    public function handle(Layaway $layaway): AmortizationSchedule
+    public function handle(Layaway $layaway, int $shortfallCents = 0): AmortizationSchedule
     {
+        if ($shortfallCents < 0 || $shortfallCents > $layaway->terms()->totalDownPayment()->cents) {
+            throw new LogicException(sprintf(
+                'Lo que le falta a la inicial al activar va de 0 a la inicial completa, y es de %d céntimos.',
+                $shortfallCents,
+            ));
+        }
+
         try {
-            return DB::transaction(function () use ($layaway): AmortizationSchedule {
+            return DB::transaction(function () use ($layaway, $shortfallCents): AmortizationSchedule {
                 /** @var Layaway $locked */
                 $locked = Layaway::query()->whereKey($layaway->getKey())->lockForUpdate()->firstOrFail();
+
+                if ($shortfallCents > 0) {
+                    $locked->forceFill(['down_payment_shortfall_cents' => new Money($shortfallCents)])->save();
+                }
 
                 $this->machine->transition($locked, LayawayStatus::Active);
 
