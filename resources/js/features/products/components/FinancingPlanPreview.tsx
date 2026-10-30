@@ -19,23 +19,32 @@ export function FinancingPlanPreview({ plan }: FinancingPlanPreviewProps) {
     }
 
     const installments = Array.from({ length: plan.installmentsCount }, (_, index) => index + 1);
+    const requiresDownPayment = Number(plan.downPayment.cents) > 0;
 
     return (
         <div className="bg-primary-soft flex flex-col gap-3 rounded-xl p-4">
             <p className="text-eyebrow text-primary-ink">Vista previa del plan</p>
 
             <p className="text-ink-2 text-sm">
-                <MoneyLabel money={plan.downPayment} compact className="text-base-content text-[22px] font-extrabold" /> de inicial +{' '}
+                {requiresDownPayment ? (
+                    <>
+                        <MoneyLabel money={plan.downPayment} compact className="text-base-content text-[22px] font-extrabold" /> de inicial +{' '}
+                    </>
+                ) : (
+                    <>Sin inicial: </>
+                )}
                 <span className="text-base-content text-[22px] font-extrabold">{plan.installmentsCount} ×</span>{' '}
                 <MoneyLabel money={plan.installmentAmount} compact className="text-base-content text-[22px] font-extrabold" /> cada{' '}
                 {plan.frequencyDays} {days(plan.frequencyDays)}
             </p>
 
             <ol aria-hidden="true" className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
-                <li className="bg-base-100 flex flex-col items-center rounded-lg px-1.5 py-1.5 text-center">
-                    <span className="text-xs font-bold">Inicial</span>
-                    <span className="text-ink-3 text-[11px]">Hoy</span>
-                </li>
+                {requiresDownPayment ? (
+                    <li className="bg-base-100 flex flex-col items-center rounded-lg px-1.5 py-1.5 text-center">
+                        <span className="text-xs font-bold">Inicial</span>
+                        <span className="text-ink-3 text-[11px]">Hoy</span>
+                    </li>
+                ) : null}
                 {installments.map((n) => (
                     <li key={n} className="bg-base-100 flex flex-col items-center rounded-lg px-1.5 py-1.5 text-center">
                         <span className="text-xs font-bold">{n}</span>

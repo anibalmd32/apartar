@@ -61,6 +61,11 @@ final readonly class LayawayTerms
         return $this->downPayment->multiply($this->quantity);
     }
 
+    public function requiresDownPayment(): bool
+    {
+        return $this->totalDownPayment()->cents > 0;
+    }
+
     public function financedAmount(): Money
     {
         return $this->financingPlan()?->financedAmount() ?? new Money(0, $this->unitPrice->currency);

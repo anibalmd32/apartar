@@ -142,7 +142,7 @@ export function inventoryColumns(statusLabels: Readonly<Record<ProductStatus, st
                         <span className="text-ink-3 text-xs">
                             {product.sku}
                             {product.plan
-                                ? ` · Inicial ${product.plan.downPayment.usd} + ${product.plan.installments} ${product.plan.installments === 1 ? 'cuota' : 'cuotas'}`
+                                ? ` · ${Number(product.plan.downPayment.cents) === 0 ? 'Sin inicial · ' : `Inicial ${product.plan.downPayment.usd} + `}${product.plan.installments} ${product.plan.installments === 1 ? 'cuota' : 'cuotas'}`
                                 : ''}
                         </span>
                     </div>

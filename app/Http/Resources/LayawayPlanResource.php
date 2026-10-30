@@ -17,8 +17,11 @@ final class LayawayPlanResource extends JsonResource
 {
     use ProjectsMoney;
 
-    public function __construct(LayawayTerms $terms, private readonly DateTimeZone $timezone)
-    {
+    public function __construct(
+        LayawayTerms $terms,
+        private readonly DateTimeZone $timezone,
+        private readonly ?CarbonImmutable $startsAt = null,
+    ) {
         parent::__construct($terms);
     }
 
@@ -31,12 +34,13 @@ final class LayawayPlanResource extends JsonResource
         $terms = $this->resource;
         $plan = $terms->financingPlan();
 
-        $schedule = (new ScheduleGenerator)->generate($terms, CarbonImmutable::now(), $this->timezone);
+        $schedule = (new ScheduleGenerator)->generate($terms, $this->startsAt ?? CarbonImmutable::now(), $this->timezone);
 
         return [
             'quantity' => $terms->quantity,
             'total' => $this->money($terms->total()),
             'downPayment' => $this->money($terms->totalDownPayment()),
+            'requiresDownPayment' => $terms->requiresDownPayment(),
             'financedAmount' => $this->money($terms->financedAmount()),
             'installmentsCount' => $terms->installmentsCount,
             'frequencyDays' => $terms->frequencyDays,

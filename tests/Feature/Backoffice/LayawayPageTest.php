@@ -6,6 +6,8 @@ namespace Tests\Feature\Backoffice;
 
 use App\Actions\Layaway\ActivateLayawayAction;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Layaway\LayawayTerms;
+use App\Domain\Money\Money;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Installment;
 use App\Models\Layaway;
@@ -78,6 +80,17 @@ final class LayawayPageTest extends TestCase
             ->where('customer.url', route('customers.show', $layaway->customer_id))
             ->where('customer.chatUrl', null)
             ->has('customer.email'));
+    }
+
+    public function test_the_activity_of_a_layaway_without_down_payment_does_not_claim_a_paid_inicial(): void
+    {
+        $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(0), 1, 4, 15));
+        $this->withinOrganization($this->organization, fn () => app(ActivateLayawayAction::class)->handle($layaway));
+        $this->withoutOrganization();
+
+        $this->actingAs($this->member)->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('activity', fn (iterable $activity): bool => in_array('Apartado activo · sin inicial', array_column(iterator_to_array($activity), 'title'), true)
+                && ! in_array('Inicial pagada · apartado activo', array_column(iterator_to_array($activity), 'title'), true)));
     }
 
     public function test_a_cancelled_layaway_shows_its_reason_to_the_business(): void

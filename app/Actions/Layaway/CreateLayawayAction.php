@@ -18,7 +18,6 @@ use App\Domain\Catalog\ProductNotAvailableException;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Layaway\NotAcceptingLayawaysException;
-use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanLimitReachedException;
@@ -37,8 +36,6 @@ use App\Models\PlanLimitRejection;
 use App\Models\Product;
 use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\LayawayCode;
-use App\Support\Settings;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -52,11 +49,11 @@ final class CreateLayawayAction
     public function __construct(
         private readonly TenantContext $context,
         private readonly LimitEnforcer $limits,
-        private readonly Settings $settings,
         private readonly ResolveCustomerAction $customers,
         private readonly ReserveStockAction $stock,
         private readonly SubscribeToCatalogAction $subscribe,
         private readonly LinkAccountAction $link,
+        private readonly OpenLayawayAction $opening,
     ) {}
 
     /**
@@ -139,6 +136,8 @@ final class CreateLayawayAction
         $this->stock->handle($product, $data->quantity);
         $this->limits->adjust(UsageMetric::ActiveLayaways, 1);
 
+        $this->opening->handle($layaway);
+
         if ($data->account !== null) {
             $this->linkOrRecordAnomaly($customer, $data->account);
             $this->subscribe->handle($data->account, $data->catalog);
@@ -197,7 +196,7 @@ final class CreateLayawayAction
             'remaining_cents' => $total,
 
             'status' => LayawayStatus::PendingDownPayment,
-            'expires_at' => CarbonImmutable::now()->addHours($this->downPaymentWindowHours()),
+            'expires_at' => $this->opening->expiresAt($terms),
         ])->save();
 
         return $layaway;
@@ -263,12 +262,5 @@ final class CreateLayawayAction
     private function findByKey(string $key): ?Layaway
     {
         return Layaway::query()->where('idempotency_key', $key)->first();
-    }
-
-    private function downPaymentWindowHours(): int
-    {
-        $hours = $this->settings->get(SettingKey::DownPaymentWindowHours);
-
-        return is_numeric($hours) ? (int) $hours : (int) SettingKey::DownPaymentWindowHours->defaultValue();
     }
 }

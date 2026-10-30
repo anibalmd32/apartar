@@ -132,6 +132,34 @@ it('esperando la inicial, enseña la inicial y el plazo en lugar del cronograma'
     expect(screen.getByRole('region', { name: 'Dónde pagar' })).toBeInTheDocument();
 });
 
+it('sin inicial, no pide pagar la inicial y la cifra dice que no la lleva', () => {
+    render(<LayawayShow {...props({}, { downPayment: money('$0,00', 0) })} />);
+
+    expect(screen.getByText('Sin inicial')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Inicial' })).toBeNull();
+    expect(screen.getByText('Tus cuotas')).toBeInTheDocument();
+});
+
+it('un apartado viejo sin inicial que sigue esperando explica que el primer pago lo activa', () => {
+    render(
+        <LayawayShow
+            {...props(
+                { installments: [] },
+                {
+                    status: 'pending_down_payment',
+                    statusLabel: 'Esperando la inicial',
+                    downPayment: money('$0,00', 0),
+                    expiresAt: '13 de septiembre a las 10:00 am',
+                },
+            )}
+        />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Inicial' })).toHaveTextContent('Este apartado no lleva inicial');
+    expect(screen.getByRole('region', { name: 'Inicial' })).toHaveTextContent(/hazlo antes del .+ o el apartado se cancela/);
+    expect(screen.queryByText(/Paga la inicial/)).toBeNull();
+});
+
 it('cancelado, solo lectura con el texto neutro', () => {
     render(
         <LayawayShow

@@ -7,19 +7,24 @@ namespace Tests\Feature\Layaway;
 use App\Actions\Customer\CustomerContactData;
 use App\Actions\Layaway\CreateLayawayAction;
 use App\Actions\Layaway\CreateLayawayData;
+use App\Actions\Layaway\ExpireLayawaysAction;
+use App\Actions\Notification\DispatchDueRemindersAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\CatalogUnavailableException;
 use App\Domain\Catalog\InsufficientStockException;
 use App\Domain\Catalog\ProductNotAvailableException;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Customer\TermsConsent;
+use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\NotAcceptingLayawaysException;
 use App\Domain\Money\Money;
+use App\Domain\Notification\NotificationType;
 use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\PlanLimitReachedException;
 use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
+use App\Domain\Telemetry\TelemetryEventName;
 use App\Domain\Tenancy\TenantAlreadySetException;
 use App\Models\Account;
 use App\Models\AuditEntry;
@@ -123,6 +128,72 @@ final class CreateLayawayActionTest extends TestCase
         $this->assertSame(1, $this->usage());
 
         $this->assertSame(0, DB::table('installments')->count());
+    }
+
+    public function test_a_product_without_down_payment_is_born_active_with_its_schedule_from_today(): void
+    {
+        $product = $this->productWithoutDownPayment();
+
+        $layaway = $this->create(quantity: 2, product: $product);
+
+        $this->assertTrue($layaway->wasRecentlyCreated);
+        $this->assertSame(LayawayStatus::Active, $layaway->status);
+
+        $row = DB::table('layaways')->where('id', $layaway->getKey())->first();
+        $this->assertNotNull($row);
+        $this->assertSame(LayawayStatus::Active->value, $row->status);
+        $this->assertSame('2026-09-27 10:00:00', $row->activated_at);
+        $this->assertNull($row->expires_at);
+        $this->assertSame(0, (int) $row->down_payment_cents);
+        $this->assertSame(40_000, (int) $row->total_cents);
+        $this->assertSame(0, (int) $row->paid_cents);
+        $this->assertSame(40_000, (int) $row->remaining_cents);
+        $this->assertSame('2026-10-12', $row->next_due_date);
+
+        $installments = DB::table('installments')->where('layaway_id', $layaway->getKey())->orderBy('number')->get();
+        $this->assertSame([1, 2, 3, 4], $installments->pluck('number')->map(fn ($number): int => (int) $number)->all());
+        $this->assertSame([10_000, 10_000, 10_000, 10_000], $installments->pluck('amount_cents')->map(fn ($cents): int => (int) $cents)->all());
+        $this->assertSame(['2026-10-12', '2026-10-27', '2026-11-11', '2026-11-26'], $installments->pluck('due_date')->map(fn ($day): string => substr((string) $day, 0, 10))->all());
+
+        $this->assertSame(1, (int) DB::table('products')->where('id', $product->getKey())->value('stock'));
+        $this->assertSame(1, $this->usage());
+        $this->assertSame(1, DB::table('telemetry_events')->where('event_name', TelemetryEventName::LayawayCreated->value)->count());
+    }
+
+    public function test_a_layaway_without_down_payment_never_expires_nor_is_reminded_of_it_and_reconciles(): void
+    {
+        $layaway = $this->create(product: $this->productWithoutDownPayment());
+
+        $this->withinOrganization($this->organization, function () use ($layaway): void {
+            $outcome = app(ExpireLayawaysAction::class)->handle(CarbonImmutable::now()->addDays(10));
+
+            $this->assertSame(0, $outcome->expired);
+            $this->assertSame(LayawayStatus::Active->value, DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+            $this->assertNull(app(LayawayBalanceRecalculator::class)->diff($layaway));
+        });
+
+        foreach ([1, 12, 71] as $hours) {
+            $sent = app(DispatchDueRemindersAction::class)->handle($this->organization, CarbonImmutable::now()->addHours($hours), installments: false)['sent'];
+            $this->assertSame(0, $sent);
+        }
+
+        $this->assertSame(0, DB::table('notification_dispatches')->where('type', NotificationType::DownPaymentReminder->value)->count());
+    }
+
+    public function test_a_second_submission_without_down_payment_returns_the_same_active_layaway(): void
+    {
+        $product = $this->productWithoutDownPayment();
+        $key = (string) Str::uuid();
+
+        $first = $this->create(key: $key, product: $product);
+        $second = $this->create(key: $key, product: $product);
+
+        $this->assertTrue($first->is($second));
+        $this->assertFalse($second->wasRecentlyCreated);
+        $this->assertSame(LayawayStatus::Active, $second->status);
+        $this->assertSame(4, DB::table('installments')->where('layaway_id', $first->getKey())->count());
+        $this->assertSame(2, (int) DB::table('products')->where('id', $product->getKey())->value('stock'));
+        $this->assertSame(1, $this->usage());
     }
 
     public function test_the_layaway_inherits_the_organization_of_the_catalog(): void
@@ -653,6 +724,28 @@ final class CreateLayawayActionTest extends TestCase
         $this->assertSame(0, DB::table('customers')->where('organization_id', $this->organization->getKey())->count(), 'Quedó una ficha.');
         $this->assertSame(3, $this->stock(), 'Quedó stock reservado.');
         $this->assertSame($usage, $this->usage(), 'Se movió el cupo del plan.');
+    }
+
+    private function productWithoutDownPayment(): Product
+    {
+        $product = $this->withinOrganization($this->organization, function (): Product {
+            $product = Product::factory()->published()->create([
+                'name' => 'Lavadora Samsung',
+                'sku' => 'LAV-01',
+                'price_cents' => 20_000,
+                'down_payment_cents' => 0,
+                'installments_count' => 4,
+                'frequency_days' => 15,
+                'stock' => 3,
+            ]);
+            $this->catalog->products()->attach($product, ['position' => 2]);
+
+            return $product;
+        });
+
+        $this->withoutOrganization();
+
+        return $product;
     }
 
     private function stock(): int

@@ -121,6 +121,12 @@ it('sin pagos, cancela sin confirmación reforzada', () => {
     expect(within(dialog).getByRole('button', { name: 'Cancelar apartado' })).toBeEnabled();
 });
 
+it('un apartado sin inicial enseña «Sin inicial» en lugar de una inicial de cero', () => {
+    render(<LayawayShow {...props({ downPayment: money('$0,00', 0) })} />);
+
+    expect(screen.getByText('Sin inicial')).toBeInTheDocument();
+});
+
 it('enseña el motivo de la cancelación al negocio y ya no ofrece cancelar', () => {
     render(
         <LayawayShow

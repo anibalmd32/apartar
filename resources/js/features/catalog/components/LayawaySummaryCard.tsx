@@ -54,7 +54,14 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
 
             <dl>
                 <Row label="Total" money={plan.total} />
-                <Row label="Inicial (pagas ahora)" money={plan.downPayment} strong />
+                {plan.requiresDownPayment ? (
+                    <Row label="Inicial (pagas ahora)" money={plan.downPayment} strong />
+                ) : (
+                    <div className="flex items-baseline justify-between gap-4 py-1.5">
+                        <dt className="text-ink-2 text-[13px]">Inicial</dt>
+                        <dd className="text-primary-ink text-right text-sm font-bold">Sin inicial</dd>
+                    </div>
+                )}
                 <Row label="Financiado" money={plan.financedAmount} />
                 {plan.lastInstallmentAmount !== null ? <Row label="Última cuota" money={plan.lastInstallmentAmount} /> : null}
             </dl>
@@ -67,7 +74,8 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
                             <li key={installment.number} className="flex items-baseline justify-between gap-4 py-1.5 text-[13px]">
                                 <span className="text-ink-2 flex items-baseline gap-2">
                                     <span aria-hidden="true" className="bg-primary size-1.5 shrink-0 -translate-y-0.5 rounded-full" />
-                                    Cuota {installment.number} · ~ {installment.estimatedDueDate}
+                                    Cuota {installment.number} · {plan.requiresDownPayment ? '~ ' : ''}
+                                    {installment.estimatedDueDate}
                                 </span>
                                 <span className="shrink-0 text-right whitespace-nowrap">
                                     <MoneyLabel money={installment.amount} stacked className="font-semibold" />
@@ -75,7 +83,11 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
                             </li>
                         ))}
                     </ol>
-                    <p className="text-ink-3 text-xs">Las fechas cuentan desde que el negocio apruebe tu inicial; si la pagas otro día, se corren.</p>
+                    <p className="text-ink-3 text-xs">
+                        {plan.requiresDownPayment
+                            ? 'Las fechas cuentan desde que el negocio apruebe tu inicial; si la pagas otro día, se corren.'
+                            : 'Sin inicial: el apartado arranca activo hoy y las fechas cuentan desde hoy.'}
+                    </p>
                 </div>
             ) : null}
         </section>

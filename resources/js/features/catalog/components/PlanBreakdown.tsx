@@ -58,20 +58,23 @@ export function PlanBreakdown({ product }: { product: PlanOffer }) {
         return { n: index + 1, amount: last && product.lastInstallmentAmount !== null ? product.lastInstallmentAmount : installment };
     });
 
+    const requiresDownPayment = Number(product.downPayment.cents) > 0;
+
     return (
         <section aria-labelledby="plan-heading" className="bg-primary-soft flex flex-col gap-3 rounded-2xl p-[18px]">
             <h2 id="plan-heading" className="text-[15px] font-bold">
-                Apártalo hoy y págalo en cuotas
+                {requiresDownPayment ? 'Apártalo hoy y págalo en cuotas' : 'Apártalo hoy sin inicial y págalo en cuotas'}
             </h2>
 
             <ol aria-hidden="true" className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-1.5">
-                <Tile label="Inicial" amount={product.downPayment} hint="Hoy" first />
+                {requiresDownPayment ? <Tile label="Inicial" amount={product.downPayment} hint="Hoy" first /> : null}
                 {tiles.map((tile) => (
                     <Tile
                         key={tile.n}
                         label={`Cuota ${tile.n}`}
                         amount={tile.amount}
                         hint={`+${tile.n * product.frequencyDays} ${tile.n * product.frequencyDays === 1 ? 'día' : 'días'}`}
+                        first={!requiresDownPayment && tile.n === 1}
                     />
                 ))}
             </ol>
@@ -79,7 +82,11 @@ export function PlanBreakdown({ product }: { product: PlanOffer }) {
             <dl className="text-ink-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
                 <dt>Inicial</dt>
                 <dd>
-                    <MoneyLabel money={product.downPayment} className="text-base-content font-semibold" />
+                    {requiresDownPayment ? (
+                        <MoneyLabel money={product.downPayment} className="text-base-content font-semibold" />
+                    ) : (
+                        <span className="text-base-content font-semibold">Sin inicial</span>
+                    )}
                 </dd>
 
                 <dt>Cuotas</dt>

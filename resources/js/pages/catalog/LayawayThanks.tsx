@@ -7,7 +7,7 @@ import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { LayawayPlanSummary } from '@/features/layaway/components/LayawayPlanSummary';
 import CatalogLayout from '@/layouts/catalog-layout';
 import { type LayawayThanksProps } from '@/types/layaway';
-import { cilCheckCircle, cilClock, cilCloudUpload } from '@coreui/icons';
+import { cilCalendar, cilCheckCircle, cilClock, cilCloudUpload } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 
 export default function LayawayThanks({ catalog, layaway, paymentAccounts, receiptUrl, follow }: LayawayThanksProps) {
@@ -53,20 +53,40 @@ export default function LayawayThanks({ catalog, layaway, paymentAccounts, recei
                     </Alert>
                 )}
 
-                <section aria-labelledby="next-heading" className="bg-warning-soft flex items-start gap-3 rounded-2xl px-4 py-3.5">
-                    <Icon icon={cilClock} size={20} className="text-warning mt-0.5" />
-                    <div className="flex flex-col gap-0.5">
-                        <h2 id="next-heading" className="text-sm font-bold">
-                            Para confirmarlo, paga la inicial de <MoneyLabel money={layaway.plan.downPayment} />
-                        </h2>
-                        {layaway.expiresAt !== null ? (
+                {layaway.plan.requiresDownPayment ? (
+                    <section aria-labelledby="next-heading" className="bg-warning-soft flex items-start gap-3 rounded-2xl px-4 py-3.5">
+                        <Icon icon={cilClock} size={20} className="text-warning mt-0.5" />
+                        <div className="flex flex-col gap-0.5">
+                            <h2 id="next-heading" className="text-sm font-bold">
+                                Para confirmarlo, paga la inicial de <MoneyLabel money={layaway.plan.downPayment} />
+                            </h2>
+                            {layaway.expiresAt !== null ? (
+                                <p className="text-ink-2 text-xs">
+                                    Tienes hasta el <strong>{layaway.expiresAt}</strong>. Si no llega el pago de la inicial, el apartado se cancela y
+                                    la unidad vuelve a estar a la venta.
+                                </p>
+                            ) : null}
+                        </div>
+                    </section>
+                ) : (
+                    <section aria-labelledby="next-heading" className="bg-success-soft flex items-start gap-3 rounded-2xl px-4 py-3.5">
+                        <Icon icon={cilCalendar} size={20} className="text-success mt-0.5" />
+                        <div className="flex flex-col gap-0.5">
+                            <h2 id="next-heading" className="text-sm font-bold">
+                                No lleva inicial: tu apartado ya está activo
+                            </h2>
                             <p className="text-ink-2 text-xs">
-                                Tienes hasta el <strong>{layaway.expiresAt}</strong>. Si no llega el pago de la inicial, el apartado se cancela y la
-                                unidad vuelve a estar a la venta.
+                                Lo pagas solo en cuotas.
+                                {layaway.firstDueDate !== null ? (
+                                    <>
+                                        {' '}
+                                        La primera vence el <strong>{layaway.firstDueDate}</strong>.
+                                    </>
+                                ) : null}
                             </p>
-                        ) : null}
-                    </div>
-                </section>
+                        </div>
+                    </section>
+                )}
 
                 <details className="border-line rounded-2xl border [&_section]:rounded-none [&_section]:bg-transparent">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">Ver tu plan de pago completo</summary>

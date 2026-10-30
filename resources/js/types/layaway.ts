@@ -24,6 +24,7 @@ export interface LayawayPlanView {
     readonly quantity: number;
     readonly total: MoneyView;
     readonly downPayment: MoneyView;
+    readonly requiresDownPayment: boolean;
     readonly financedAmount: MoneyView;
     readonly installmentsCount: number;
     readonly frequencyDays: number;
@@ -57,6 +58,7 @@ export interface LayawayThanksProps {
         readonly productName: string;
         readonly plan: LayawayPlanView;
         readonly expiresAt: string | null;
+        readonly firstDueDate: string | null;
         readonly hasEmail: boolean;
     };
     readonly paymentAccounts: readonly PaymentAccountView[];

@@ -25,6 +25,7 @@ use App\Jobs\LinkVisitorEventsToCustomer;
 use App\Models\Account;
 use App\Models\Catalog;
 use App\Models\Customer;
+use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Product;
 use App\Notifications\LayawayConfirmationNotification;
@@ -32,6 +33,7 @@ use App\Queries\ActivePaymentAccountsQuery;
 use App\Queries\CatalogProductsQuery;
 use App\Support\InvalidDocumentNumberException;
 use App\Support\InvalidPhoneNumberException;
+use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
@@ -139,8 +141,9 @@ final class LayawayController extends Controller
             'layaway' => [
                 'code' => $layaway->code,
                 'productName' => $layaway->product_name_snapshot,
-                'plan' => (new LayawayPlanResource($terms, $this->timezone()))->resolve($request),
+                'plan' => (new LayawayPlanResource($terms, $this->timezone(), $layaway->activated_at === null ? null : CarbonImmutable::instance($layaway->activated_at)))->resolve($request),
                 'expiresAt' => $this->expiresAt($layaway),
+                'firstDueDate' => $this->firstInstallment($layaway)?->due_date->locale('es')->isoFormat('D [de] MMMM'),
                 'hasEmail' => $customer?->email !== null,
             ],
             'paymentAccounts' => array_map(fn ($account): array => $account->toArray(), $this->paymentAccounts->all()),
@@ -200,6 +203,7 @@ final class LayawayController extends Controller
         }
 
         $terms = $layaway->terms();
+        $first = $this->firstInstallment($layaway);
 
         Notification::route('mail', $email)->notify(new LayawayConfirmationNotification(
             code: $layaway->code,
@@ -210,7 +214,15 @@ final class LayawayController extends Controller
             downPayment: MoneyFormatter::format($terms->totalDownPayment()),
             expiresAt: $this->expiresAt($layaway) ?? '',
             paymentAccounts: $this->paymentAccounts->all(),
+            requiresDownPayment: $terms->requiresDownPayment(),
+            firstInstallment: $first === null ? null : MoneyFormatter::format($first->amount_cents),
+            firstDueDate: $first?->due_date->locale('es')->isoFormat('D [de] MMMM'),
         ));
+    }
+
+    private function firstInstallment(Layaway $layaway): ?Installment
+    {
+        return Installment::query()->where('layaway_id', $layaway->getKey())->orderBy('number')->first();
     }
 
     private function expiresAt(Layaway $layaway): ?string

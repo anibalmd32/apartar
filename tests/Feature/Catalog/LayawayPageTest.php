@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Catalog;
 
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Models\Account;
 use App\Models\Catalog;
@@ -16,6 +17,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
+use App\Notifications\CustomerMessageNotification;
 use App\Notifications\LayawayConfirmationNotification;
 use App\Providers\AppServiceProvider;
 use App\Rules\ValidVenezuelanPhone;
@@ -268,6 +270,62 @@ final class LayawayPageTest extends TestCase
             ->where('receiptUrl', route('portal.receipts.create', ['code' => $layaway->code])));
     }
 
+    public function test_without_down_payment_the_form_says_so_and_the_plan_counts_from_today(): void
+    {
+        $this->withoutDownPayment();
+
+        $this->get($this->formUrl())->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('plan.requiresDownPayment', false)
+            ->where('plan.downPayment.cents', 0)
+            ->where('plan.financedAmount.usd', '$150,00')
+            ->where('plan.installments.0.estimatedDueDate', '12 de octubre de 2026'));
+    }
+
+    public function test_without_down_payment_one_coherent_email_says_it_is_active_and_when_the_first_installment_is_due(): void
+    {
+        $this->withoutDownPayment();
+
+        $this->submit()->assertRedirect();
+        $layaway = $this->onlyLayaway();
+
+        $this->assertSame(LayawayStatus::Active, $layaway->status);
+
+        Notification::assertSentOnDemand(
+            LayawayConfirmationNotification::class,
+            fn (LayawayConfirmationNotification $notification): bool => $notification->code === $layaway->code
+                && $notification->requiresDownPayment === false
+                && $notification->firstInstallment === '$50,00'
+                && $notification->firstDueDate === '12 de octubre',
+        );
+        Notification::assertSentTimes(CustomerMessageNotification::class, 0);
+
+        $this->get($this->thanksUrl($layaway->code))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.plan.requiresDownPayment', false)
+            ->where('layaway.expiresAt', null)
+            ->where('layaway.firstDueDate', '12 de octubre'));
+
+        CarbonImmutable::setTestNow('2026-09-29 10:00:00');
+
+        $this->get($this->thanksUrl($layaway->code))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.firstDueDate', '12 de octubre')
+            ->where('layaway.plan.installments.0.estimatedDueDate', '12 de octubre de 2026'));
+    }
+
+    public function test_with_down_payment_the_thanks_page_has_no_first_due_date_yet(): void
+    {
+        $this->submit();
+        $layaway = $this->onlyLayaway();
+
+        Notification::assertSentOnDemand(
+            LayawayConfirmationNotification::class,
+            fn (LayawayConfirmationNotification $notification): bool => $notification->requiresDownPayment && $notification->firstDueDate === null,
+        );
+
+        $this->get($this->thanksUrl($layaway->code))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.plan.requiresDownPayment', true)
+            ->where('layaway.firstDueDate', null));
+    }
+
     public function test_the_thanks_page_is_only_for_the_session_that_created_it(): void
     {
         $this->submit();
@@ -380,6 +438,11 @@ final class LayawayPageTest extends TestCase
             'X-Inertia-Partial-Component' => 'catalog/LayawayCreate',
             'X-Inertia-Partial-Data' => $prop,
         ];
+    }
+
+    private function withoutDownPayment(): void
+    {
+        DB::table('products')->where('id', $this->product->getKey())->update(['down_payment_cents' => 0]);
     }
 
     private function onlyLayaway(): Layaway

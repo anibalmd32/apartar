@@ -9,6 +9,8 @@ use App\Actions\Layaway\ExpireLayawaysAction;
 use App\Actions\Layaway\MarkDeliveredAction;
 use App\Actions\Notification\DispatchDueRemindersAction;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Layaway\LayawayTerms;
+use App\Domain\Money\Money;
 use App\Domain\Notification\NotificationType;
 use App\Models\Customer;
 use App\Models\Installment;
@@ -162,6 +164,45 @@ final class DispatchDueRemindersActionTest extends TestCase
         $this->withoutOrganization();
 
         Notification::assertSentTo(Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id), CustomerMessageNotification::class, fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated);
+    }
+
+    public function test_a_layaway_born_active_without_down_payment_is_already_confirmed_by_mail(): void
+    {
+        $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(0), 1, 5, 15));
+        DB::table('customers')->where('id', $layaway->customer_id)->update(['email' => 'maria@ejemplo.test']);
+
+        $this->withinOrganization($this->organization, fn () => app(ActivateLayawayAction::class)->handle($layaway));
+        $this->withoutOrganization();
+
+        Notification::assertNotSentTo(Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id), CustomerMessageNotification::class, fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated);
+        $this->assertSame(LayawayStatus::Active->value, DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+    }
+
+    public function test_a_layaway_born_active_without_down_payment_and_without_email_is_announced_by_push(): void
+    {
+        $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(0), 1, 5, 15));
+        $customer = Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id);
+        $this->withinOrganization($this->organization, fn () => $customer->updatePushSubscription('https://push.test/sin-inicial', 'k', 't', 'aes128gcm'));
+
+        $this->withinOrganization($this->organization, fn () => app(ActivateLayawayAction::class)->handle($layaway));
+        $this->withoutOrganization();
+
+        Notification::assertSentTo($customer, CustomerMessageNotification::class, fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated
+            && str_contains($notification->lines[0], 'no lleva inicial')
+            && ! str_contains($notification->lines[0], 'Recibimos la inicial'));
+    }
+
+    public function test_an_old_pending_layaway_without_down_payment_activated_by_its_first_payment_is_announced_without_a_down_payment(): void
+    {
+        $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(0), 1, 5, 15));
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['expires_at' => now()->addHours(72)]);
+        DB::table('customers')->where('id', $layaway->customer_id)->update(['email' => 'maria@ejemplo.test']);
+
+        $this->withinOrganization($this->organization, fn () => app(ActivateLayawayAction::class)->handle($layaway->refresh()));
+        $this->withoutOrganization();
+
+        Notification::assertSentTo(Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id), CustomerMessageNotification::class, fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated
+            && str_contains($notification->lines[0], 'no lleva inicial'));
     }
 
     public function test_delivery_notifies_once(): void

@@ -57,6 +57,7 @@ function renderPage(
                 quantity: 1,
                 total: money('$150,00'),
                 downPayment: money('$100,00'),
+                requiresDownPayment: true,
                 financedAmount: money('$50,00'),
                 installmentsCount: 3,
                 frequencyDays: 15,
@@ -65,6 +66,7 @@ function renderPage(
                 installments: [],
             },
             expiresAt: '30 de septiembre a las 10:00 am',
+            firstDueDate: null,
             hasEmail: false,
             ...overrides,
         },
@@ -92,6 +94,30 @@ it('enseña el código bien visible, el plazo de la inicial y dónde pagar', () 
     expect(screen.getByText('30 de septiembre a las 10:00 am')).toBeInTheDocument();
     expect(screen.getByText('0414-1234567')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cómo pagarle a Ferretería Oriente' })).toBeInTheDocument();
+});
+
+it('sin inicial, dice que ya está activo y cuándo vence la primera cuota en vez del plazo de la inicial', () => {
+    renderPage({
+        plan: {
+            quantity: 1,
+            total: money('$150,00'),
+            downPayment: { cents: centsUsd(0), usd: '$0,00', ves: null },
+            requiresDownPayment: false,
+            financedAmount: money('$150,00'),
+            installmentsCount: 3,
+            frequencyDays: 15,
+            installmentAmount: money('$50,00'),
+            lastInstallmentAmount: null,
+            installments: [],
+        },
+        expiresAt: null,
+        firstDueDate: '12 de octubre',
+    });
+
+    expect(screen.getByRole('heading', { name: 'No lleva inicial: tu apartado ya está activo' })).toBeInTheDocument();
+    expect(screen.getByText('12 de octubre')).toBeInTheDocument();
+    expect(screen.queryByText(/paga la inicial/)).toBeNull();
+    expect(screen.getByText('Sin inicial')).toBeInTheDocument();
 });
 
 it('sin correo, avisa de que es el único canal e invita a anotar el código', () => {

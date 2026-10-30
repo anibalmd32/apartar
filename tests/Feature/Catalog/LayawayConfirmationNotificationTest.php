@@ -38,6 +38,28 @@ final class LayawayConfirmationNotificationTest extends TestCase
         $this->assertStringContainsString('El compromiso de pago es con Ferretería Oriente', $text);
     }
 
+    public function test_without_down_payment_it_says_it_is_active_and_when_the_first_installment_is_due(): void
+    {
+        $notification = new LayawayConfirmationNotification(
+            code: 'AP-7K3MQ2XH',
+            businessName: 'Ferretería Oriente',
+            productName: 'Nevera Mabe',
+            quantity: 1,
+            total: '$150,00',
+            downPayment: '$0,00',
+            expiresAt: '',
+            paymentAccounts: [],
+            requiresDownPayment: false,
+            firstInstallment: '$50,00',
+            firstDueDate: '12 de octubre',
+        );
+
+        $text = implode("\n", $notification->toMail(new AnonymousNotifiable)->introLines);
+
+        $this->assertStringContainsString('No lleva inicial: tu apartado ya está activo y lo pagas solo en cuotas. La primera, de $50,00, vence el 12 de octubre.', $text);
+        $this->assertStringNotContainsString('paga la inicial', $text);
+    }
+
     public function test_without_payment_accounts_it_sends_to_ask_the_business(): void
     {
         $mail = $this->notification([])->toMail(new AnonymousNotifiable);

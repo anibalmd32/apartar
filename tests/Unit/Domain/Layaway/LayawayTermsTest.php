@@ -24,6 +24,15 @@ it('multiplica precio e inicial por la cantidad, y no las cuotas ni la frecuenci
         ->and($terms->financingPlan()?->frequencyDays)->toBe(15);
 });
 
+it('con inicial cero no pide inicial y financia el total en cuotas', function (): void {
+    $terms = frozenTerms(20_000, 0, quantity: 2, installments: 4);
+
+    expect($terms->requiresDownPayment())->toBeFalse()
+        ->and(frozenTerms()->requiresDownPayment())->toBeTrue()
+        ->and($terms->financedAmount()->cents)->toBe(40_000)
+        ->and(array_map(fn (Money $m): int => $m->cents, $terms->financingPlan()?->installments() ?? []))->toBe([10_000, 10_000, 10_000, 10_000]);
+});
+
 it('construye el plan del apartado entero', function (): void {
     $plan = frozenTerms(6_000, 1_000, quantity: 2, installments: 3)->financingPlan();
 

@@ -47,7 +47,11 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     value={data.down_payment}
                     onChange={(event) => setData('down_payment', event.target.value)}
                     error={errors.down_payment}
-                    hint="Menor que el precio: lo que queda es lo que se financia."
+                    hint={
+                        plan !== null && Number(plan.downPayment.cents) === 0
+                            ? 'Sin inicial: el apartado arranca activo y solo se paga en cuotas.'
+                            : 'Menor que el precio: lo que queda es lo que se financia.'
+                    }
                     autoComplete="off"
                     required
                 />

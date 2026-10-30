@@ -51,7 +51,7 @@ export function PortalLayawayHero({ layaway, businessName, className }: PortalLa
 
             <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <Amount label="Total" money={layaway.total} />
-                <Amount label="Inicial" money={layaway.downPayment} />
+                <Amount label="Inicial" money={layaway.downPayment} zeroLabel="Sin inicial" />
                 <Amount label="Pagado" money={layaway.paid} className="text-success" />
                 <Amount label="Te falta" money={layaway.remaining} />
             </dl>
@@ -68,12 +68,12 @@ export function PortalLayawayHero({ layaway, businessName, className }: PortalLa
     );
 }
 
-function Amount({ label, money, className }: { label: string; money: Layaway['total']; className?: string }) {
+function Amount({ label, money, className, zeroLabel }: { label: string; money: Layaway['total']; className?: string; zeroLabel?: string }) {
     return (
         <div className="bg-surface-2 flex flex-col gap-0.5 rounded-xl px-3 py-2.5">
             <dt className="text-ink-3 text-xs">{label}</dt>
             <dd className={cn('text-[17px] leading-tight font-extrabold', className)}>
-                <MoneyLabel money={money} stacked />
+                {zeroLabel !== undefined && Number(money.cents) === 0 ? zeroLabel : <MoneyLabel money={money} stacked />}
             </dd>
         </div>
     );

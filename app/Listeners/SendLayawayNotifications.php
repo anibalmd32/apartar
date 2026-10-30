@@ -9,6 +9,7 @@ use App\Domain\Notification\CustomerNotices;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use App\Events\Layaway\LayawayTransitioned;
+use App\Models\Customer;
 use App\Models\Layaway;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -37,12 +38,38 @@ final class SendLayawayNotifications implements ShouldQueue
             }
 
             match (true) {
-                $event->to() === LayawayStatus::Active && $event->from() === LayawayStatus::PendingDownPayment => $this->notices->activated($layaway),
+                $event->to() === LayawayStatus::Active && $event->from() === LayawayStatus::PendingDownPayment => $this->activated($layaway),
                 $event->to() === LayawayStatus::Completed => $this->notices->completed($layaway),
                 $event->to() === LayawayStatus::Cancelled => $this->notices->cancelled($layaway),
                 $event->to() === LayawayStatus::Expired => $this->notices->expired($layaway),
                 default => null,
             };
         });
+    }
+
+    private function activated(Layaway $layaway): void
+    {
+        if ($layaway->terms()->requiresDownPayment()) {
+            $this->notices->activated($layaway);
+
+            return;
+        }
+
+        if ($this->bornActiveAndConfirmedByMail($layaway)) {
+            return;
+        }
+
+        $this->notices->activatedWithoutDownPayment($layaway);
+    }
+
+    private function bornActiveAndConfirmedByMail(Layaway $layaway): bool
+    {
+        if ($layaway->expires_at !== null) {
+            return false;
+        }
+
+        $email = Customer::query()->whereKey($layaway->customer_id)->value('email');
+
+        return is_string($email) && $email !== '';
     }
 }

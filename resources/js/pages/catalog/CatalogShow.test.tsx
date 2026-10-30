@@ -103,6 +103,14 @@ it('pinta precio, inicial y cuota en las dos monedas, con el sello', () => {
     expect(container.textContent).toContain('Tasa BCV del 18/09 09:00');
 });
 
+it('un producto sin inicial no pinta una inicial de cero en su card', () => {
+    const { container } = renderPage(BCV, [card({ downPayment: { cents: centsUsd(0), usd: '$0,00', ves: 'Bs. 0,00' } })]);
+
+    expect(container.textContent).toContain('Sin inicial, 4 cuotas de $50,00 (Bs. 2.000,00) cada 15 días');
+    expect(container.textContent).not.toContain('$0,00');
+    expect(container.textContent).not.toContain('Inicial');
+});
+
 it('sin tasa enseña solo dólares y deshabilita el toggle', () => {
     const noVes = money('$250,00', null);
     const { container } = renderPage(NO_RATE, [card({ price: noVes, downPayment: money('$50,00', null), installmentAmount: money('$50,00', null) })]);

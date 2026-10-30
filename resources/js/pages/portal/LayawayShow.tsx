@@ -42,7 +42,18 @@ export default function LayawayShow({
                 <div className="contents lg:flex lg:flex-col lg:gap-4">
                     <PortalLayawayHero layaway={layaway} businessName={business.name} className="order-1" />
 
-                    {pending ? (
+                    {pending && Number(layaway.downPayment.cents) === 0 ? (
+                        <section className={cn(card, 'order-3 flex flex-col gap-2 p-5')} aria-label="Inicial">
+                            <h2 className="text-[17px] font-bold">Este apartado no lleva inicial</h2>
+                            <p className="text-ink-2 text-sm">
+                                Lo pagas solo en cuotas, pero tu primer pago lo activa
+                                {layaway.expiresAt !== null ? <>: hazlo antes del {layaway.expiresAt} o el apartado se cancela.</> : '.'} Cuando{' '}
+                                {business.name} lo apruebe, verás aquí tu cronograma de cuotas.
+                            </p>
+                        </section>
+                    ) : null}
+
+                    {pending && Number(layaway.downPayment.cents) > 0 ? (
                         <section className={cn(card, 'order-3 flex flex-col gap-2 p-5')} aria-label="Inicial">
                             <h2 className="text-[17px] font-bold">Paga la inicial para confirmar tu apartado</h2>
                             <p className="text-ink-2 text-sm">

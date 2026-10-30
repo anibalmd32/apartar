@@ -39,6 +39,7 @@ const PLAN: LayawayPlanView = {
     quantity: 1,
     total: money('$150,00'),
     downPayment: money('$100,00'),
+    requiresDownPayment: true,
     financedAmount: money('$50,00'),
     installmentsCount: 3,
     frequencyDays: 15,
@@ -128,6 +129,16 @@ afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+});
+
+it('sin inicial, el resumen y los pasos hablan de cuotas y no de pagar la inicial', () => {
+    renderPage({ plan: { ...PLAN, downPayment: money('$0,00'), requiresDownPayment: false, financedAmount: money('$150,00') } });
+
+    expect(screen.getByText('Sin inicial')).toBeInTheDocument();
+    expect(screen.queryByText('Inicial (pagas ahora)')).toBeNull();
+    expect(screen.getByText('Paga tus cuotas')).toBeInTheDocument();
+    expect(screen.queryByText('Paga la inicial')).toBeNull();
+    expect(screen.getByText(/arranca activo hoy/)).toBeInTheDocument();
 });
 
 it('llega con el producto, cantidad 1, el plan del servidor y dónde pagar', () => {

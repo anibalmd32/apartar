@@ -28,6 +28,11 @@ final class CustomerNotices
         $this->send($layaway, NotificationType::LayawayActivated, [$this->line('layaway_activated.line', $layaway)]);
     }
 
+    public function activatedWithoutDownPayment(Layaway $layaway): void
+    {
+        $this->send($layaway, NotificationType::LayawayActivated, [$this->line('layaway_activated.line_without_down_payment', $layaway)]);
+    }
+
     public function completed(Layaway $layaway): void
     {
         $this->send($layaway, NotificationType::LayawayCompleted, [$this->line('layaway_completed.line', $layaway)]);

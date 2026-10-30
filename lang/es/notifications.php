@@ -20,6 +20,7 @@ return [
     'layaway_activated' => [
         'title' => ':negocio · tu apartado está activo',
         'line' => 'Recibimos la inicial de «:product» (:code). Ya tienes tu cronograma de cuotas en el portal.',
+        'line_without_down_payment' => '«:product» (:code) no lleva inicial: tu apartado ya está activo y lo pagas solo en cuotas. Tu cronograma está en el portal.',
     ],
     'payment_credited' => [
         'title' => ':negocio · acreditamos tu pago',

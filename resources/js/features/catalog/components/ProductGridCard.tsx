@@ -16,6 +16,8 @@ function shortFrequency(days: number): string {
 }
 
 export function ProductGridCard({ product }: { product: ProductCard }) {
+    const withoutDownPayment = Number(product.downPayment.cents) === 0;
+
     return (
         <Link
             href={route('catalog.product', { catalog: product.catalogSlug, product: product.slug })}
@@ -55,14 +57,24 @@ export function ProductGridCard({ product }: { product: ProductCard }) {
                     <p className="bg-primary-soft text-primary-ink mt-auto flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold">
                         <Icon icon={cilCalendar} size={12} />
                         <span aria-hidden="true" className="truncate">
-                            <PrimaryAmount money={product.downPayment} /> + {product.installmentsCount} ×{' '}
-                            <PrimaryAmount money={product.installmentAmount} />
+                            {withoutDownPayment ? null : (
+                                <>
+                                    <PrimaryAmount money={product.downPayment} /> +{' '}
+                                </>
+                            )}
+                            {product.installmentsCount} × <PrimaryAmount money={product.installmentAmount} />
                             <span className="max-sm:hidden"> · {shortFrequency(product.frequencyDays)}</span>
                         </span>
                         <span className="sr-only">
-                            Inicial <MoneyLabel money={product.downPayment} /> y {product.installmentsCount}{' '}
-                            {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de <MoneyLabel money={product.installmentAmount} />{' '}
-                            {frequencyLabel(product.frequencyDays)}
+                            {withoutDownPayment ? (
+                                'Sin inicial, '
+                            ) : (
+                                <>
+                                    Inicial <MoneyLabel money={product.downPayment} /> y{' '}
+                                </>
+                            )}
+                            {product.installmentsCount} {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de{' '}
+                            <MoneyLabel money={product.installmentAmount} /> {frequencyLabel(product.frequencyDays)}
                             {product.lastInstallmentAmount !== null ? (
                                 <>
                                     {' '}

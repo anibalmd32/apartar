@@ -12,7 +12,10 @@ use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Money\Currency;
+use App\Domain\Money\Money;
+use App\Domain\Notification\NotificationType;
 use App\Domain\Payment\IdempotencyKeyReusedException;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentNotApplicableException;
@@ -20,17 +23,20 @@ use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\AuditEntry;
+use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Models\User;
+use App\Notifications\CustomerMessageNotification;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\CreatesReceipts;
@@ -88,6 +94,27 @@ final class RegisterManualPaymentActionTest extends TestCase
             'payment_method', 'payment_account', 'paid_on', 'paid', 'amount_cents_usd', 'down_payment_cents', 'allocations', 'unallocated_cents', 'layaway_status',
         ]));
         $this->assertArrayNotHasKey('rate_override', $changed);
+    }
+
+    public function test_an_old_pending_layaway_without_down_payment_is_activated_by_its_first_payment(): void
+    {
+        Notification::fake();
+        $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(0), 1, 4, 15));
+
+        $payment = $this->register($layaway, '30.00', Currency::USD);
+
+        $this->assertSame('active', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        $this->assertSame([[1, 3_000]], $this->allocationsOf($payment));
+        $this->assertSame([3_000, 17_000], [
+            (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'),
+            (int) DB::table('layaways')->where('id', $layaway->getKey())->value('remaining_cents'),
+        ]);
+        Notification::assertNotSentTo(
+            Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id),
+            CustomerMessageNotification::class,
+            fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated
+                && str_contains($notification->lines[0], 'Recibimos la inicial'),
+        );
     }
 
     public function test_the_same_key_returns_the_same_payment(): void

@@ -26,6 +26,9 @@ final class LayawayConfirmationNotification extends Notification implements Shou
         public readonly string $downPayment,
         public readonly string $expiresAt,
         public readonly array $paymentAccounts,
+        public readonly bool $requiresDownPayment = true,
+        public readonly ?string $firstInstallment = null,
+        public readonly ?string $firstDueDate = null,
     ) {
         $this->onQueue('high');
     }
@@ -50,12 +53,7 @@ final class LayawayConfirmationNotification extends Notification implements Shou
                 $this->businessName,
                 $this->code,
             ))
-            ->line(sprintf(
-                'Total: %s. Para confirmarlo, paga la inicial de %s antes del %s.',
-                $this->total,
-                $this->downPayment,
-                $this->expiresAt,
-            ));
+            ->line($this->nextStep());
 
         if ($this->paymentAccounts === []) {
             return $message->line(sprintf('%s todavía no ha publicado sus formas de pago: consúltale cómo pagarle.', $this->businessName));
@@ -79,5 +77,28 @@ final class LayawayConfirmationNotification extends Notification implements Shou
             'El compromiso de pago es con %s. Apartar es la plataforma que usa para gestionar tu apartado.',
             $this->businessName,
         ));
+    }
+
+    private function nextStep(): string
+    {
+        if ($this->requiresDownPayment) {
+            return sprintf(
+                'Total: %s. Para confirmarlo, paga la inicial de %s antes del %s.',
+                $this->total,
+                $this->downPayment,
+                $this->expiresAt,
+            );
+        }
+
+        if ($this->firstInstallment === null || $this->firstDueDate === null) {
+            return sprintf('Total: %s. No lleva inicial: tu apartado ya está activo y lo pagas solo en cuotas.', $this->total);
+        }
+
+        return sprintf(
+            'Total: %s. No lleva inicial: tu apartado ya está activo y lo pagas solo en cuotas. La primera, de %s, vence el %s.',
+            $this->total,
+            $this->firstInstallment,
+            $this->firstDueDate,
+        );
     }
 }

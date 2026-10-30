@@ -35,7 +35,13 @@ final class LayawayActivityQuery
         $events[] = $this->event('created', 'Apartado creado', $catalog instanceof Catalog ? 'Desde el catálogo «'.$catalog->name.'»' : null, null, $layaway->created_at);
 
         if ($layaway->activated_at !== null) {
-            $events[] = $this->event('activated', 'Inicial pagada · apartado activo', null, null, $layaway->activated_at);
+            $events[] = $this->event(
+                'activated',
+                $layaway->terms()->requiresDownPayment() ? 'Inicial pagada · apartado activo' : 'Apartado activo · sin inicial',
+                null,
+                null,
+                $layaway->activated_at,
+            );
         }
 
         foreach ($layaway->receipts as $receipt) {

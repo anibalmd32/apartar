@@ -38,6 +38,7 @@ const PLAN: LayawayPlanView = {
     quantity: 1,
     total: money('$150,00'),
     downPayment: money('$100,00'),
+    requiresDownPayment: true,
     financedAmount: money('$50,00'),
     installmentsCount: 3,
     frequencyDays: 15,

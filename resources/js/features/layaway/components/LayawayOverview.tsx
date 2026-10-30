@@ -24,12 +24,12 @@ function todayIso(): string {
     return new Date().toISOString().slice(0, 10);
 }
 
-function Figure({ label, money, tone }: { label: string; money: BackofficeLayaway['total']; tone?: 'success' }) {
+function Figure({ label, money, tone, zeroLabel }: { label: string; money: BackofficeLayaway['total']; tone?: 'success'; zeroLabel?: string }) {
     return (
         <div className="bg-surface-2 flex flex-col gap-1 rounded-[10px] p-3">
             <dt className="text-ink-3 text-xs">{label}</dt>
             <dd className={cn('text-xl leading-tight font-bold tracking-[-0.4px]', tone === 'success' && 'text-success')}>
-                <MoneyLabel money={money} stacked />
+                {zeroLabel !== undefined && Number(money.cents) === 0 ? zeroLabel : <MoneyLabel money={money} stacked />}
             </dd>
         </div>
     );
@@ -55,7 +55,7 @@ export function LayawaySummary({ layaway, installments }: { layaway: BackofficeL
 
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Figure label="Total" money={layaway.total} />
-                <Figure label="Inicial" money={layaway.downPayment} />
+                <Figure label="Inicial" money={layaway.downPayment} zeroLabel="Sin inicial" />
                 <Figure label="Pagado" money={layaway.paid} tone="success" />
                 <Figure label="Pendiente" money={layaway.remaining} />
             </dl>

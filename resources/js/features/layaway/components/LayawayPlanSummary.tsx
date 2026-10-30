@@ -29,9 +29,7 @@ export function LayawayPlanSummary({ plan, stale = false }: LayawayPlanSummaryPr
                 </dd>
 
                 <dt className="opacity-70">Inicial</dt>
-                <dd>
-                    <MoneyLabel money={plan.downPayment} className="font-medium" />
-                </dd>
+                <dd>{plan.requiresDownPayment ? <MoneyLabel money={plan.downPayment} className="font-medium" /> : 'Sin inicial'}</dd>
 
                 {plan.installmentAmount !== null ? (
                     <>
@@ -55,8 +53,14 @@ export function LayawayPlanSummary({ plan, stale = false }: LayawayPlanSummaryPr
 
             {plan.installments.length > 0 ? (
                 <details className="text-sm">
-                    <summary className="cursor-pointer">Fechas estimadas de las cuotas</summary>
-                    <p className="mt-2 text-xs opacity-70">Cuentan desde que el negocio apruebe tu inicial; si la pagas otro día, se corren.</p>
+                    <summary className="cursor-pointer">
+                        {plan.requiresDownPayment ? 'Fechas estimadas de las cuotas' : 'Fechas de las cuotas'}
+                    </summary>
+                    <p className="mt-2 text-xs opacity-70">
+                        {plan.requiresDownPayment
+                            ? 'Cuentan desde que el negocio apruebe tu inicial; si la pagas otro día, se corren.'
+                            : 'Cuentan desde el día en que apartas: no hay inicial que esperar.'}
+                    </p>
                     <ol className="mt-2 flex flex-col gap-1">
                         {plan.installments.map((installment) => (
                             <li key={installment.number} className="flex justify-between gap-4">

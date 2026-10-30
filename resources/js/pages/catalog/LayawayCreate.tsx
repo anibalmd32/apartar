@@ -32,7 +32,11 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
             showsPlatformBadge={catalog.showsPlatformBadge}
         >
             <div className="flex flex-col gap-4">
-                <LayawaySteps current={2} productUrl={route('catalog.product', { catalog: catalog.slug, product: product.slug })} />
+                <LayawaySteps
+                    current={2}
+                    productUrl={route('catalog.product', { catalog: catalog.slug, product: product.slug })}
+                    requiresDownPayment={plan?.requiresDownPayment ?? true}
+                />
                 <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-[34px]">Aparta tu producto</h1>
             </div>
 

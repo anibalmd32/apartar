@@ -1,5 +1,5 @@
 import { StockBreakdown } from '@/features/products/components/StockBreakdown';
-import { StockCell } from '@/features/products/components/inventoryColumns';
+import { inventoryColumns, StockCell } from '@/features/products/components/inventoryColumns';
 import { centsUsd } from '@/lib/money';
 import { type ProductListItem } from '@/types/product';
 import { render, screen } from '@testing-library/react';
@@ -64,4 +64,16 @@ it('no pinta apartadas ni faltante en un producto sin apartados', () => {
 
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.queryByText(/apartadas/)).toBeNull();
+});
+
+it('en el listado, un producto sin inicial dice que no la lleva en lugar de una inicial de cero', () => {
+    const columns = inventoryColumns({ draft: 'Borrador', published: 'Publicado', archived: 'Archivado' });
+    const plan = { downPayment: { cents: centsUsd(0), usd: '$0,00', ves: null }, installments: 4, frequencyDays: 15 };
+
+    const product = columns.find((column) => column.id === 'product');
+
+    render(<>{product?.cell(listItem({ plan }))}</>);
+
+    expect(screen.getByText('NEV-1 · Sin inicial · 4 cuotas')).toBeInTheDocument();
+    expect(screen.queryByText(/Inicial $0,00/)).toBeNull();
 });

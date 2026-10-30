@@ -6,14 +6,17 @@ import { Link } from '@inertiajs/react';
 interface LayawayStepsProps {
     current: 2 | 3;
     productUrl?: string;
+    requiresDownPayment?: boolean;
 }
 
 const STEPS = ['Producto', 'Tus datos', 'Paga la inicial'] as const;
 
-export function LayawaySteps({ current, productUrl }: LayawayStepsProps) {
+const STEPS_WITHOUT_DOWN_PAYMENT = ['Producto', 'Tus datos', 'Paga tus cuotas'] as const;
+
+export function LayawaySteps({ current, productUrl, requiresDownPayment = true }: LayawayStepsProps) {
     return (
         <ol aria-label="Pasos del apartado" className="flex items-center gap-2.5 overflow-x-auto text-sm">
-            {STEPS.map((label, index) => {
+            {(requiresDownPayment ? STEPS : STEPS_WITHOUT_DOWN_PAYMENT).map((label, index) => {
                 const n = index + 1;
                 const done = n < current;
                 const active = n === current;
