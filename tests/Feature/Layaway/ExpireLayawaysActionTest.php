@@ -11,7 +11,10 @@ use App\Actions\Layaway\CreateLayawayData;
 use App\Actions\Layaway\ExpireLayawaysAction;
 use App\Domain\Customer\TermsConsent;
 use App\Domain\Layaway\ExpirationOutcome;
+use App\Domain\Money\Currency;
+use App\Domain\Money\Money;
 use App\Domain\Payment\LayawayReceipts;
+use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\UsageMetric;
@@ -26,6 +29,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\UsageCounter;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -127,6 +131,20 @@ final class ExpireLayawaysActionTest extends TestCase
         $this->assertSame(['expired' => 1, 'held' => 1], $this->expireAt('2026-09-13 10:05:00')->toArray());
         $this->assertSame('pending_down_payment', $this->statusOf($held));
         $this->assertSame('expired', $this->statusOf($rejected));
+    }
+
+    public function test_a_down_payment_paid_in_part_holds_the_expiration(): void
+    {
+        $partial = $this->pendingUntil('2026-09-13 09:59:00');
+        $untouched = $this->pendingUntil('2026-09-13 09:59:00');
+        $this->withinOrganization($this->organization, fn () => app(PaymentApplier::class)->apply(
+            $partial, new Money(1_000), null, '10.00', Currency::USD, null, User::factory()->create(), 'Abono en tienda.',
+        ));
+        $this->dispatched = [];
+
+        $this->assertSame(['expired' => 1, 'held' => 0], $this->expireAt('2026-09-13 10:05:00')->toArray());
+        $this->assertSame('pending_down_payment', $this->statusOf($partial));
+        $this->assertSame('expired', $this->statusOf($untouched));
     }
 
     public function test_active_layaways_and_open_windows_are_left_alone(): void

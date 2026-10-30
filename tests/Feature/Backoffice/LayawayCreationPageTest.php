@@ -160,14 +160,20 @@ final class LayawayCreationPageTest extends TestCase
         $this->assertSame(LayawayStatus::Active, $layaway->status);
     }
 
-    public function test_a_payment_below_the_down_payment_creates_nothing(): void
+    public function test_a_payment_below_the_down_payment_is_credited_and_the_layaway_waits_for_the_rest(): void
     {
         $this->actingAs($this->member)->from(route('layaways.create'))
             ->post(route('layaways.store'), $this->payload($this->payment('20.00')))
-            ->assertRedirect(route('layaways.create'))
-            ->assertSessionHasErrors('amount');
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', fn (string $status): bool => str_ends_with($status, 'Pago registrado: $20,00 (abono a la inicial de $20,00, faltan $30,00).'));
 
-        $this->assertSame([0, 0, 3], [DB::table('layaways')->count(), DB::table('payments')->count(), (int) DB::table('products')->where('id', $this->product->getKey())->value('stock')]);
+        $layaway = $this->withinOrganization($this->organization, fn (): Layaway => Layaway::query()->sole());
+        $this->assertSame(LayawayStatus::PendingDownPayment, $layaway->status);
+        $this->assertSame([2_000, 1], [$layaway->paid_cents->cents, DB::table('payments')->count()]);
+
+        $this->get(route('layaways.show', $layaway))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.downPaymentProgress.paid.usd', '$20,00')
+            ->where('layaway.downPaymentProgress.missing.usd', '$30,00'));
     }
 
     public function test_the_window_can_be_custom_or_without_expiry(): void
@@ -259,7 +265,11 @@ final class LayawayCreationPageTest extends TestCase
             ->assertOk()
             ->assertJsonPath('preview.summary', 'Activará el apartado con la inicial de $100,00; se aplicará a la cuota 1.')
             ->assertJsonPath('preview.allocations.0.covers', false);
-        $this->getJson(route('layaways.create.payment-preview', [...$query, 'amount' => '99.99']))->assertStatus(422);
+        $this->getJson(route('layaways.create.payment-preview', [...$query, 'amount' => '99.99']))
+            ->assertOk()
+            ->assertJsonPath('preview.summary', 'Abonará $99,99 a la inicial y faltarán $0,01 para activar el apartado.')
+            ->assertJsonPath('preview.downPaymentMissing', '$0,01')
+            ->assertJsonPath('preview.statusAfter', 'pending_down_payment');
         $this->getJson(route('layaways.create.payment-preview', [...$query, 'amount' => '500.00']))
             ->assertOk()->assertJsonPath('preview.unallocatedCents', 10_000)->assertJsonPath('preview.statusAfter', 'completed');
         $this->getJson(route('layaways.create.payment-preview', ['amount' => '10.00', 'currency' => 'USD']))->assertStatus(422);

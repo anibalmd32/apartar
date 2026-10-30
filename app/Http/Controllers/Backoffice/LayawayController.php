@@ -71,6 +71,7 @@ final class LayawayController extends Controller
                 'quantity' => $layaway->quantity,
                 'total' => $this->money($layaway->total_cents),
                 'downPayment' => $this->money($layaway->terms()->totalDownPayment()),
+                'downPaymentProgress' => $this->downPaymentProgressOf($layaway),
                 'paid' => $this->money($layaway->paid_cents),
                 'remaining' => $this->money($layaway->remaining_cents),
                 'createdAt' => $this->moment($layaway->created_at, $timezone),

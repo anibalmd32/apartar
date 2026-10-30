@@ -14,7 +14,7 @@ function appliedTo(payment: PaymentRow): string | null {
     const numbers = payment.appliedTo;
 
     if (payment.downPayment !== null) {
-        parts.push(`inicial de ${payment.downPayment}`);
+        parts.push(`${payment.downPayment} a la inicial`);
     }
 
     if (numbers.length === 1) {

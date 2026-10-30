@@ -36,14 +36,11 @@ final class OpeningPaymentPreview
     public function for(LayawayTerms $terms, Money $settled, RateSnapshot|ManualRate|null $rate): ApprovalPreview
     {
         [$dollars, $snapshot] = $this->applier->toDollars($settled, $rate);
-        $required = $terms->totalDownPayment();
         $statusBefore = $terms->requiresDownPayment() ? LayawayStatus::PendingDownPayment : LayawayStatus::Active;
+        $downPayment = min($dollars->cents, $terms->totalDownPayment()->cents);
+        $missing = $terms->totalDownPayment()->cents - $downPayment;
 
-        if ($dollars->cents < $required->cents) {
-            throw PaymentNotApplicableException::belowDownPayment($dollars, $required);
-        }
-
-        $excess = $dollars->cents - $required->cents;
+        $excess = $dollars->cents - $downPayment;
         $schedule = $this->scheduleOf($terms);
         $plan = $excess > 0 && $schedule->installments !== []
             ? FifoAllocator::planFor($schedule, new Money($excess))
@@ -59,7 +56,7 @@ final class OpeningPaymentPreview
             amount: $dollars,
             rate: $snapshot['rate'],
             rateSource: $snapshot['source'],
-            downPaymentCents: $required->cents,
+            downPaymentCents: $downPayment,
             allocations: array_map(fn (array $allocation): array => [
                 'number' => $allocation['installmentId'],
                 'cents' => $allocation['cents'],
@@ -67,9 +64,14 @@ final class OpeningPaymentPreview
             ], $plan->allocations),
             unallocatedCents: $plan->unallocatedCents,
             statusBefore: $statusBefore,
-            statusAfter: $dollars->cents >= $terms->total()->cents ? LayawayStatus::Completed : LayawayStatus::Active,
+            statusAfter: match (true) {
+                $missing > 0 => LayawayStatus::PendingDownPayment,
+                $dollars->cents >= $terms->total()->cents => LayawayStatus::Completed,
+                default => LayawayStatus::Active,
+            },
             staleRate: StaleRate::in($rate, $settled->currency),
             rateDeviation: RateDeviation::in($rate, $this->rates->current($this->context->organization()), $settled->currency),
+            downPaymentMissingCents: $missing,
         );
     }
 

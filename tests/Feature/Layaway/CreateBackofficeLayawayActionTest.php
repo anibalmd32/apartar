@@ -22,7 +22,6 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
 use App\Domain\Notification\NotificationType;
 use App\Domain\Payment\PaymentMethod;
-use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Subscription\CreationSuspendedException;
 use App\Domain\Subscription\PlanLimitReachedException;
 use App\Domain\Subscription\UsageMetric;
@@ -43,6 +42,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use stdClass;
 use Tests\Concerns\AssertsStockLockOrder;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
@@ -197,8 +197,8 @@ final class CreateBackofficeLayawayActionTest extends TestCase
         $created = $this->create(payment: $this->payment('80.00'));
         $layaway = $created->layaway->fresh();
 
-        $this->assertSame(LayawayStatus::Active, $layaway?->status);
-        $this->assertSame(8_000, $layaway?->paid_cents->cents);
+        $this->assertSame(LayawayStatus::Active, $layaway->status);
+        $this->assertSame(8_000, $layaway->paid_cents->cents);
         $this->assertSame((int) $this->member->getKey(), (int) $created->payment?->registered_by);
         Notification::assertSentOnDemand(
             LayawayConfirmationNotification::class,
@@ -252,16 +252,43 @@ final class CreateBackofficeLayawayActionTest extends TestCase
         Notification::assertSentTo($customer, CustomerMessageNotification::class, fn (CustomerMessageNotification $notice): bool => $notice->type === NotificationType::LayawayActivated);
     }
 
-    public function test_a_payment_below_the_down_payment_rolls_the_whole_creation_back(): void
+    public function test_a_payment_below_the_down_payment_is_credited_and_the_confirmation_says_what_is_missing(): void
     {
-        try {
-            $this->create(payment: $this->payment('30.00'));
-            $this->fail('Se creó el apartado con un pago por debajo de la inicial.');
-        } catch (PaymentNotApplicableException) {
-        }
+        $layaway = $this->create(payment: $this->payment('30.00'))->layaway->fresh();
 
-        $this->assertNothingPersisted();
-        Notification::assertNothingSent();
+        $this->assertSame(LayawayStatus::PendingDownPayment, $layaway->status);
+        $this->assertSame([3_000, 17_000], [$layaway->paid_cents->cents, $layaway->remaining_cents->cents]);
+        Notification::assertSentOnDemandTimes(LayawayConfirmationNotification::class, 1);
+        Notification::assertSentOnDemand(
+            LayawayConfirmationNotification::class,
+            function (LayawayConfirmationNotification $mail): bool {
+                $line = (string) ($mail->toMail(new stdClass)->introLines[1] ?? '');
+
+                return ! $mail->downPaymentPaid
+                    && $mail->downPaymentPaidSoFar === '$30,00'
+                    && $mail->downPaymentMissing === '$20,00'
+                    && $line === 'Total: $200,00. Ya abonaste $30,00 de la inicial de $50,00 y tu apartado ya no vence: para activarlo, paga los $20,00 que faltan.';
+            },
+        );
+        Notification::assertSentTimes(CustomerMessageNotification::class, 0);
+        $this->assertSame(0, app(ExpireLayawaysAction::class)->handle(CarbonImmutable::now()->addDays(30))->expired);
+    }
+
+    public function test_the_payment_that_completes_a_partial_opening_down_payment_is_announced_with_the_activation(): void
+    {
+        $layaway = $this->create(payment: $this->payment('30.00'))->layaway;
+
+        app(RegisterManualPaymentAction::class)->handle($layaway, $this->payment('40.00'), $this->member);
+
+        $fresh = $layaway->fresh();
+        $this->assertSame(LayawayStatus::Active, $fresh->status);
+        $this->assertSame(7_000, $fresh->paid_cents->cents);
+
+        $customer = Customer::query()->findOrFail($layaway->customer_id);
+        $this->assertSame(
+            [NotificationType::LayawayActivated, NotificationType::PaymentCredited],
+            collect(Notification::sent($customer, CustomerMessageNotification::class))->map(fn (CustomerMessageNotification $notice): NotificationType => $notice->type)->sortBy(fn (NotificationType $type): string => $type->value)->values()->all(),
+        );
     }
 
     public function test_a_second_submission_with_the_same_key_returns_the_same_layaway_and_payment(): void

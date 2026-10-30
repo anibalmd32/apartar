@@ -16,6 +16,8 @@ return [
     'down_payment_reminder' => [
         'title' => ':negocio · tu apartado vence pronto',
         'line' => 'Para confirmar «:product» (:code), paga la inicial de :amount antes del :date. Si no llega, el apartado se cancela.',
+        'title_partial' => ':negocio · completa la inicial de tu apartado',
+        'line_partial' => 'Ya abonaste :paid de la inicial de :amount de «:product» (:code). Tu apartado ya no vence: para activarlo, paga los :missing que faltan.',
     ],
     'layaway_activated' => [
         'title' => ':negocio · tu apartado está activo',

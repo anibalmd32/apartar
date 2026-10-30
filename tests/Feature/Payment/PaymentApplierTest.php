@@ -199,19 +199,83 @@ final class PaymentApplierTest extends TestCase
         $this->assertNull($this->diff($layaway));
     }
 
-    public function test_less_than_the_down_payment_is_refused(): void
+    public function test_less_than_the_down_payment_is_credited_to_it_and_the_layaway_keeps_waiting(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        Event::fake([LayawayActivated::class]);
+
+        $applied = $this->apply($layaway, new Money(2_000), $this->bcv('42.50'), '20.00', Currency::USD);
+
+        $this->assertSame(LayawayStatus::PendingDownPayment, $applied->statusAfter);
+        $this->assertFalse($applied->activated());
+        $this->assertSame([2_000, 0, 3_000], [$applied->downPaymentCents, $applied->downPaymentPaidBeforeCents, $applied->downPaymentMissingCents]);
+        $this->assertSame('abono a la inicial de $20,00, faltan $30,00', $applied->downPayment()->label());
+        $this->assertSame([], $applied->plan->allocations);
+        $this->assertSame(0, $this->stored($applied)->unallocated_cents->cents);
+
+        $row = $this->fresh($layaway);
+        $this->assertSame(LayawayStatus::PendingDownPayment, $row->status);
+        $this->assertNull($row->activated_at);
+        $this->assertSame([2_000, 18_000], [$row->paid_cents->cents, $row->remaining_cents->cents]);
+        $this->assertNull($row->next_due_date);
+        $this->assertSame(1, $this->paymentsOf($layaway));
+        $this->assertSame(0, $this->within(fn (): int => Installment::query()->where('layaway_id', $layaway->getKey())->count()));
+        $this->assertNull($this->diff($layaway));
+        Event::assertNotDispatched(LayawayActivated::class);
+    }
+
+    public function test_the_payment_that_completes_the_down_payment_activates_and_sends_the_rest_fifo(): void
     {
         $layaway = $this->layawayIn($this->organization);
 
-        $this->expectException(PaymentNotApplicableException::class);
+        $this->apply($layaway, new Money(2_000), $this->bcv('42.50'), '20.00', Currency::USD);
+        $second = $this->apply($layaway, new Money(1_000), $this->bcv('42.50'), '10.00', Currency::USD);
+        $this->assertSame([1_000, 2_000, 2_000], [$second->downPaymentCents, $second->downPaymentPaidBeforeCents, $second->downPaymentMissingCents]);
+        $this->assertSame(LayawayStatus::PendingDownPayment, $this->fresh($layaway)->status);
+        $this->assertSame(3_000, $this->fresh($layaway)->paid_cents->cents);
+        $this->assertNull($this->diff($layaway));
 
-        try {
-            $this->apply($layaway, new Money(4_999), $this->bcv('42.50'), '49.99', Currency::USD);
-        } finally {
-            $this->assertSame(LayawayStatus::PendingDownPayment, $this->fresh($layaway)->status);
-            $this->assertSame(0, $this->paymentsOf($layaway));
-            $this->assertSame(0, $this->within(fn (): int => Installment::query()->where('layaway_id', $layaway->getKey())->count()));
-        }
+        $third = $this->apply($layaway, new Money(6_000), $this->bcv('42.50'), '60.00', Currency::USD);
+
+        $this->assertTrue($third->activated());
+        $this->assertSame([2_000, 3_000, 0], [$third->downPaymentCents, $third->downPaymentPaidBeforeCents, $third->downPaymentMissingCents]);
+        $this->assertSame('abono de $20,00 que completa la inicial', $third->downPayment()->label());
+        $this->assertSame(4_000, $third->plan->allocatedCents());
+        $this->assertSame([[1, 3_000, 'paid'], [2, 1_000, 'partially_paid'], [3, 0, 'pending']], $this->installments($layaway, 3));
+
+        $row = $this->fresh($layaway);
+        $this->assertSame(LayawayStatus::Active, $row->status);
+        $this->assertSame([9_000, 11_000], [$row->paid_cents->cents, $row->remaining_cents->cents]);
+        $this->assertSame('2026-10-10', $row->next_due_date?->toDateString());
+        $this->assertSame(15_000, $this->within(fn (): int => (int) Installment::query()->where('layaway_id', $layaway->getKey())->sum('amount_cents')));
+        $this->assertNull($this->diff($layaway));
+    }
+
+    public function test_exactly_the_missing_down_payment_activates_without_allocations(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $this->apply($layaway, new Money(4_999), $this->bcv('42.50'), '49.99', Currency::USD);
+        $applied = $this->apply($layaway, new Money(1), $this->bcv('42.50'), '0.01', Currency::USD);
+
+        $this->assertSame(LayawayStatus::Active, $applied->statusAfter);
+        $this->assertSame(1, $applied->downPaymentCents);
+        $this->assertSame([], $applied->plan->allocations);
+        $this->assertSame([5_000, 15_000], [$this->fresh($layaway)->paid_cents->cents, $this->fresh($layaway)->remaining_cents->cents]);
+        $this->assertNull($this->diff($layaway));
+    }
+
+    public function test_a_partial_down_payment_followed_by_an_overpayment_completes_and_keeps_the_excess(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $this->apply($layaway, new Money(1_500), $this->bcv('42.50'), '15.00', Currency::USD);
+        $applied = $this->apply($layaway, new Money(19_000), $this->bcv('42.50'), '190.00', Currency::USD);
+
+        $this->assertSame(LayawayStatus::Completed, $applied->statusAfter);
+        $this->assertSame([3_500, 15_000, 500], [$applied->downPaymentCents, $applied->plan->allocatedCents(), $applied->plan->unallocatedCents]);
+        $this->assertSame([20_000, 0], [$this->fresh($layaway)->paid_cents->cents, $this->fresh($layaway)->remaining_cents->cents]);
+        $this->assertNull($this->diff($layaway));
     }
 
     public function test_a_zero_financed_layaway_completes_and_keeps_the_excess_unallocated(): void
@@ -314,15 +378,28 @@ final class PaymentApplierTest extends TestCase
         Event::assertNotDispatched(LayawayActivated::class);
     }
 
-    public function test_the_preview_refuses_what_applying_refuses(): void
+    public function test_the_preview_of_a_partial_down_payment_says_what_will_be_missing(): void
     {
         $layaway = $this->layawayIn($this->organization);
+        $this->apply($layaway, new Money(1_000), $this->bcv('42.50'), '10.00', Currency::USD);
 
-        $this->expectException(PaymentNotApplicableException::class);
-
-        $this->within(fn (): ApprovalPreview => app(PaymentApplier::class)->preview(
-            $layaway, new Money(4_000), $this->bcv('42.50'), '40.00', Currency::USD, $this->receiptFor($layaway),
+        $partial = $this->within(fn (): ApprovalPreview => app(PaymentApplier::class)->preview(
+            $layaway, new Money(2_000), $this->bcv('42.50'), '20.00', Currency::USD, $this->receiptFor($layaway),
         ));
+
+        $this->assertFalse($partial->activates());
+        $this->assertSame(LayawayStatus::PendingDownPayment, $partial->statusAfter);
+        $this->assertSame('Abonará $20,00 a la inicial y faltarán $20,00 para activar el apartado.', $partial->summary());
+        $this->assertSame('$20,00', $partial->toArray()['downPaymentMissing']);
+
+        $completing = $this->within(fn (): ApprovalPreview => app(PaymentApplier::class)->preview(
+            $layaway, new Money(7_000), $this->bcv('42.50'), '70.00', Currency::USD, $this->receiptFor($layaway),
+        ));
+
+        $this->assertTrue($completing->activates());
+        $this->assertSame('Completará la inicial con $40,00 y activará el apartado; se aplicará a la cuota 1.', $completing->summary());
+        $this->assertSame(1, $this->paymentsOf($layaway));
+        $this->assertSame(1_000, $this->fresh($layaway)->paid_cents->cents);
     }
 
     public function test_a_terminal_layaway_is_refused(): void

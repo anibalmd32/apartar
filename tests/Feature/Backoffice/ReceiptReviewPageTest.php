@@ -167,15 +167,36 @@ final class ReceiptReviewPageTest extends TestCase
             ->assertSessionHasErrors(['amount' => 'Este comprobante ya fue aprobado por Ana Pérez.']);
     }
 
-    public function test_the_down_payment_is_refused_short_and_named_in_the_confirmation(): void
+    public function test_the_down_payment_is_named_in_the_confirmation(): void
     {
         $receipt = $this->receiptFor($this->layawayIn($this->organization), attributes: ['declared_amount' => '80.00', 'declared_currency' => Currency::USD]);
         $this->actingAs($this->member)->from(route('receipts.show', $receipt));
 
-        $this->post(route('receipts.approve', $receipt), ['amount' => '40.00', 'currency' => 'USD'])->assertSessionHasErrors('amount');
-
         $this->post(route('receipts.approve', $receipt), ['amount' => '80.00', 'currency' => 'USD'])
             ->assertSessionHas('status', 'Comprobante aprobado: acreditamos $80,00 (inicial de $50,00; $30,00 a la cuota 1).');
+    }
+
+    public function test_a_short_down_payment_is_credited_to_it_and_the_confirmation_says_what_is_missing(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $short = $this->receiptFor($layaway, attributes: ['declared_amount' => '20.00', 'declared_currency' => Currency::USD]);
+        $rest = $this->receiptFor($layaway, attributes: ['declared_amount' => '60.00', 'declared_currency' => Currency::USD]);
+        $this->actingAs($this->member)->from(route('receipts.show', $short));
+
+        $this->get(route('receipts.show', $short))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('preview.summary', 'Abonará $20,00 a la inicial y faltarán $30,00 para activar el apartado.'));
+
+        $this->post(route('receipts.approve', $short), ['amount' => '20.00', 'currency' => 'USD'])
+            ->assertSessionHas('status', 'Comprobante aprobado: acreditamos $20,00 (abono a la inicial de $20,00, faltan $30,00).');
+        $this->assertSame(LayawayStatus::PendingDownPayment->value, DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+
+        $this->get(route('receipts.show', $rest))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.downPaymentProgress.paid.usd', '$20,00')
+            ->where('layaway.downPaymentProgress.missing.usd', '$30,00'));
+
+        $this->post(route('receipts.approve', $rest), ['amount' => '60.00', 'currency' => 'USD'])
+            ->assertSessionHas('status', 'Comprobante aprobado: acreditamos $60,00 (abono de $30,00 que completa la inicial; $30,00 a la cuota 1).');
+        $this->assertSame(LayawayStatus::Active->value, DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
     }
 
     public function test_the_preview_accepts_what_the_approval_accepts(): void

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Domain\Layaway\DownPaymentLedger;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
+use App\Models\Layaway;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 
@@ -20,8 +22,10 @@ final class PaymentConfirmation
 
         $parts = [];
 
-        if ($downPayment > 0) {
-            $parts[] = sprintf('inicial de %s', MoneyFormatter::format(new Money($downPayment)));
+        $downPaymentLabel = self::downPaymentOf($payment, $downPayment)->label();
+
+        if ($downPaymentLabel !== null) {
+            $parts[] = $downPaymentLabel;
         }
 
         if ($numbers !== []) {
@@ -35,5 +39,23 @@ final class PaymentConfirmation
         }
 
         return sprintf('Pago registrado: %s (%s).', MoneyFormatter::format($payment->amount_cents_usd), implode('; ', $parts));
+    }
+
+    private static function downPaymentOf(Payment $payment, int $applied): DownPaymentProgress
+    {
+        if ($applied <= 0 || ! $payment->exists) {
+            return new DownPaymentProgress(max(0, $applied));
+        }
+
+        $layaway = Layaway::query()->find($payment->layaway_id);
+
+        if (! $layaway instanceof Layaway) {
+            return new DownPaymentProgress($applied);
+        }
+
+        $required = $layaway->terms()->totalDownPayment()->cents;
+        $through = min($required, app(DownPaymentLedger::class)->paidThrough($payment));
+
+        return new DownPaymentProgress($applied, max(0, $through - $applied), $required - $through);
     }
 }

@@ -19,6 +19,7 @@ final class LayawayBalanceRecalculator
     public function __construct(
         private readonly LayawayStateMachine $machine,
         private readonly Settings $settings,
+        private readonly DownPaymentLedger $ledger,
     ) {}
 
     public function recalculate(Layaway $layaway): void
@@ -93,6 +94,12 @@ final class LayawayBalanceRecalculator
             $installments[(int) $installment->layaway_id][] = $installment;
         }
 
+        $pendingIds = array_values(array_map(
+            fn (Layaway $layaway): int => (int) $layaway->getKey(),
+            array_filter($layaways, fn (Layaway $layaway): bool => $layaway->activated_at === null),
+        ));
+        $downPayments = $this->ledger->paidOnEach($pendingIds);
+
         $fromPayments = Payment::query()
             ->whereIn('layaway_id', $ids)
             ->groupBy('layaway_id')
@@ -104,7 +111,7 @@ final class LayawayBalanceRecalculator
 
         foreach ($layaways as $layaway) {
             $id = (int) $layaway->getKey();
-            $discrepancy = $this->discrepancyOf($layaway, $installments[$id] ?? [], (int) ($fromPayments[$id] ?? 0));
+            $discrepancy = $this->discrepancyOf($layaway, $installments[$id] ?? [], (int) ($fromPayments[$id] ?? 0), $downPayments[$id] ?? 0);
 
             if ($discrepancy instanceof BalanceDiscrepancy) {
                 $discrepancies[$id] = $discrepancy;
@@ -117,9 +124,9 @@ final class LayawayBalanceRecalculator
     /**
      * @param  list<Installment>  $installments
      */
-    private function discrepancyOf(Layaway $layaway, array $installments, int $fromPayments): ?BalanceDiscrepancy
+    private function discrepancyOf(Layaway $layaway, array $installments, int $fromPayments, ?int $downPaymentPaid = null): ?BalanceDiscrepancy
     {
-        $derived = $this->derive($layaway, $installments);
+        $derived = $this->derive($layaway, $installments, $downPaymentPaid);
         $fields = $this->changedColumns($this->stored($layaway), $derived);
 
         $target = $this->targetStatus($layaway->status, $derived['remaining_cents'], $installments);
@@ -145,9 +152,9 @@ final class LayawayBalanceRecalculator
      * @param  list<Installment>  $installments
      * @return array{paid_cents: int, remaining_cents: int, next_due_date: ?string, overpaid: int}
      */
-    private function derive(Layaway $layaway, array $installments): array
+    private function derive(Layaway $layaway, array $installments, ?int $downPaymentPaid = null): array
     {
-        $paid = $this->downPaymentApplied($layaway);
+        $paid = $this->downPaymentApplied($layaway, $downPaymentPaid);
         $nextDue = null;
 
         foreach ($installments as $installment) {
@@ -169,9 +176,15 @@ final class LayawayBalanceRecalculator
         ];
     }
 
-    private function downPaymentApplied(Layaway $layaway): int
+    private function downPaymentApplied(Layaway $layaway, ?int $paid): int
     {
-        return $layaway->activated_at === null ? 0 : $layaway->terms()->totalDownPayment()->cents;
+        $total = $layaway->terms()->totalDownPayment()->cents;
+
+        if ($layaway->activated_at !== null) {
+            return $total;
+        }
+
+        return max(0, min($total, $paid ?? $this->ledger->paidOn($layaway)));
     }
 
     private function paidFromPayments(Layaway $layaway): int

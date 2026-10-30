@@ -74,10 +74,16 @@ final class CustomerNotices
 
     public function downPaymentReminder(Layaway $layaway): void
     {
-        $this->send($layaway, NotificationType::DownPaymentReminder, [$this->line('down_payment_reminder.line', $layaway, [
-            'amount' => MoneyFormatter::format($layaway->terms()->totalDownPayment()),
+        $total = $layaway->terms()->totalDownPayment();
+        $paid = new Money(min($total->cents, $layaway->paid_cents->cents));
+        $partial = $paid->cents > 0;
+
+        $this->send($layaway, NotificationType::DownPaymentReminder, [$this->line($partial ? 'down_payment_reminder.line_partial' : 'down_payment_reminder.line', $layaway, [
+            'amount' => MoneyFormatter::format($total),
+            'paid' => MoneyFormatter::format($paid),
+            'missing' => MoneyFormatter::format($total->subtract($paid)),
             'date' => $layaway->expires_at === null ? '' : $this->localDate($layaway->expires_at),
-        ])], action: __('notifications.report_payment', [], 'es'), url: route('portal.receipts.create', ['code' => $layaway->code]));
+        ])], action: __('notifications.report_payment', [], 'es'), url: route('portal.receipts.create', ['code' => $layaway->code]), title: $partial ? 'down_payment_reminder.title_partial' : null);
     }
 
     /**
@@ -113,7 +119,7 @@ final class CustomerNotices
     /**
      * @param  list<string>  $lines
      */
-    private function send(Layaway $layaway, NotificationType $type, array $lines, ?string $action = null, ?string $url = null): void
+    private function send(Layaway $layaway, NotificationType $type, array $lines, ?string $action = null, ?string $url = null, ?string $title = null): void
     {
         $customer = Customer::query()->find($layaway->customer_id);
 
@@ -127,13 +133,14 @@ final class CustomerNotices
             $lines,
             $action ?? __('notifications.open_portal', [], 'es'),
             $url ?? route('portal.layaways.show', ['code' => $layaway->code]),
+            $title,
         );
     }
 
     /**
      * @param  list<string>  $lines
      */
-    private function deliver(Customer $customer, NotificationType $type, array $lines, string $action, string $url): void
+    private function deliver(Customer $customer, NotificationType $type, array $lines, string $action, string $url, ?string $title = null): void
     {
         $business = $this->context->organization()->name;
         $feature = $type->pushFeature();
@@ -141,7 +148,7 @@ final class CustomerNotices
         $this->resolver->for($customer)->notify(new CustomerMessageNotification(
             $type,
             $business,
-            __('notifications.'.$type->value.'.title', ['negocio' => $business], 'es'),
+            __('notifications.'.($title ?? $type->value.'.title'), ['negocio' => $business], 'es'),
             $lines,
             $url,
             $action,

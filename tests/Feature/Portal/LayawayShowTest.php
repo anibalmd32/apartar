@@ -7,12 +7,16 @@ namespace Tests\Feature\Portal;
 use App\Actions\Layaway\ActivateLayawayAction;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
+use App\Domain\Money\Money;
+use App\Domain\Payment\PaymentApplier;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Catalog;
 use App\Models\Customer;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
@@ -143,6 +147,32 @@ final class LayawayShowTest extends TestCase
             ->where('layaway.expiresAt', null)
             ->where('layaway.statusMessage', 'Tu comprobante está en revisión: tu reserva está protegida aunque haya pasado el plazo de la inicial.')
             ->where('receiptUrl', route('portal.receipts.create', ['code' => $this->layaway->code])));
+    }
+
+    public function test_a_down_payment_paid_in_part_shows_what_is_missing_and_keeps_the_reservation(): void
+    {
+        CarbonImmutable::setTestNow('2026-09-12 10:00:00');
+        DB::table('layaways')->where('id', $this->layaway->getKey())->update(['expires_at' => '2026-09-13 10:00:00']);
+        $this->withinOrganization($this->organization, fn () => app(PaymentApplier::class)->apply(
+            $this->layaway, new Money(2_000), null, '20.00', Currency::USD, null, User::factory()->create(), 'Abono en tienda.',
+        ));
+        $this->withoutOrganization();
+
+        $this->show()->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.paid.cents', 2_000)
+            ->where('layaway.downPaymentProgress.paid.cents', 2_000)
+            ->where('layaway.downPaymentProgress.missing.cents', 3_000)
+            ->where('layaway.statusMessage', null)
+            ->where('nextPaymentSuggestion.kind', 'down_payment')
+            ->where('nextPaymentSuggestion.amount.cents', 3_000)
+            ->where('nextPaymentSuggestion.started', true)
+            ->where('payments.0.downPayment', '$20,00'));
+
+        CarbonImmutable::setTestNow('2026-09-20 10:00:00');
+
+        $this->show()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.expiresAt', null)
+            ->where('layaway.statusMessage', 'Ya abonaste parte de la inicial: tu reserva sigue protegida aunque haya pasado el plazo. Completa la inicial para activarla.'));
     }
 
     public function test_it_works_with_the_business_suspended(): void

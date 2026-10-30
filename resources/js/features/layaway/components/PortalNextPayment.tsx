@@ -20,7 +20,11 @@ export function PortalNextPayment({ suggestion, receiptUrl, className }: PortalN
             <h2 className="text-eyebrow text-ink-3">Te sugerimos pagar</h2>
             <p className="flex flex-col gap-1">
                 <span className="text-ink-2 text-[13px] font-semibold">
-                    {suggestion.kind === 'down_payment' ? 'La inicial: ' : `La cuota ${suggestion.installmentNumber}: `}
+                    {suggestion.kind === 'down_payment'
+                        ? suggestion.started
+                            ? 'Lo que falta de la inicial: '
+                            : 'La inicial: '
+                        : `La cuota ${suggestion.installmentNumber}: `}
                 </span>
                 <MoneyLabel money={suggestion.amount} className="text-[30px] leading-tight font-extrabold tracking-[-0.6px]" stacked />
             </p>

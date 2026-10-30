@@ -20,9 +20,3 @@ it('dice el importe y la tasa de una conversión a cero', function (): void {
 
     expect($message)->toContain('1 céntimos')->toContain('VES')->toContain('42.50');
 });
-
-it('dice lo pagado y la inicial que falta cubrir', function (): void {
-    $message = PaymentNotApplicableException::belowDownPayment(new Money(4_999), new Money(5_000))->getMessage();
-
-    expect($message)->toContain('4999')->toContain('5000');
-});

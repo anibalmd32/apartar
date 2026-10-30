@@ -144,6 +144,26 @@ final class DispatchDueRemindersActionTest extends TestCase
         $this->assertSame(0, app(DispatchDueRemindersAction::class)->handle($this->organization, $expires->subHours(10), installments: false)['sent']);
     }
 
+    public function test_the_down_payment_reminder_says_what_is_missing_when_part_was_paid(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->withoutOrganization();
+        DB::table('customers')->where('id', $layaway->customer_id)->update(['email' => 'maria@ejemplo.test']);
+        $expires = CarbonImmutable::parse('2026-09-12 16:00:00');
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['expires_at' => $expires, 'paid_cents' => 2_000, 'remaining_cents' => 18_000]);
+
+        $this->assertSame(1, app(DispatchDueRemindersAction::class)->handle($this->organization, $expires->subHours(11), installments: false)['sent']);
+
+        Notification::assertSentTo(
+            Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id),
+            CustomerMessageNotification::class,
+            fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::DownPaymentReminder
+                && str_ends_with($notification->title, 'completa la inicial de tu apartado')
+                && str_starts_with($notification->lines[0], 'Ya abonaste $20,00 de la inicial de $50,00 de «')
+                && str_contains($notification->lines[0], 'Tu apartado ya no vence: para activarlo, paga los $30,00 que faltan.'),
+        );
+    }
+
     public function test_transitions_notify_and_a_rollback_does_not(): void
     {
         $layaway = $this->layawayIn($this->organization);

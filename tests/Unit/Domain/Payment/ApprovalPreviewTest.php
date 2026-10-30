@@ -49,3 +49,11 @@ it('sin inicial ni sobrante, no los pinta', function (): void {
 it('no se construye si las partes no suman el importe', function (): void {
     approvalPreview(3_000, 0, [['number' => 1, 'cents' => 2_000, 'covers' => false]], 0);
 })->throws(InvalidArgumentException::class);
+
+it('describe un abono a la inicial sin activar el apartado', function (): void {
+    $partial = new ApprovalPreview(new Money(2_000), '1.00000000', RateSource::Bcv, 2_000, [], 0, LayawayStatus::PendingDownPayment, LayawayStatus::PendingDownPayment, downPaymentMissingCents: 3_000);
+
+    expect($partial->activates())->toBeFalse()
+        ->and($partial->summary())->toBe('Abonará $20,00 a la inicial y faltarán $30,00 para activar el apartado.')
+        ->and($partial->toArray())->toMatchArray(['downPayment' => '$20,00', 'downPaymentMissing' => '$30,00', 'statusAfter' => 'pending_down_payment']);
+});

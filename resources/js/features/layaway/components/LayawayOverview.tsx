@@ -60,6 +60,13 @@ export function LayawaySummary({ layaway, installments }: { layaway: BackofficeL
                 <Figure label="Pendiente" money={layaway.remaining} />
             </dl>
 
+            {layaway.downPaymentProgress !== null ? (
+                <p className="bg-warning-soft text-ink-2 rounded-[10px] px-3 py-2 text-sm">
+                    Inicial abonada: <MoneyLabel money={layaway.downPaymentProgress.paid} className="font-semibold" /> · faltan{' '}
+                    <MoneyLabel money={layaway.downPaymentProgress.missing} className="font-semibold" /> para activar el apartado.
+                </p>
+            ) : null}
+
             <div className="flex flex-col gap-1.5">
                 <span className="bg-base-300 block h-1.5 overflow-hidden rounded-full" aria-hidden="true">
                     <span className="bg-success block h-full rounded-full" style={{ width: `${percent}%` }} />

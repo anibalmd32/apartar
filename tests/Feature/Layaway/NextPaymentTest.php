@@ -51,6 +51,20 @@ final class NextPaymentTest extends TestCase
         $this->assertSame(5_000, $next->amount->cents);
     }
 
+    public function test_a_down_payment_paid_in_part_suggests_what_is_missing(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['paid_cents' => 2_000, 'remaining_cents' => 18_000]);
+
+        $next = $this->nextOf($layaway);
+
+        $this->assertNotNull($next);
+        $this->assertSame(NextPaymentKind::DownPayment, $next->kind);
+        $this->assertSame(3_000, $next->amount->cents);
+        $this->assertTrue($next->started);
+        $this->assertFalse($this->nextOf($this->layawayIn($this->organization))?->started);
+    }
+
     public function test_a_zero_down_payment_suggests_nothing(): void
     {
         $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(0), 1, 5, 15));

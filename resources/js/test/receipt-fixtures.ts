@@ -41,6 +41,7 @@ export function receiptProps(overrides: Partial<ReceiptCreateProps> = {}): Recei
             kind: 'installment',
             installmentNumber: 2,
             amount: { cents: centsUsd(3_000), usd: '$30,00', ves: null },
+            started: false,
             amountUsd: '30.00',
             amountVes: '1275.00',
         },

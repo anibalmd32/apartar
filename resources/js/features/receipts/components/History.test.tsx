@@ -90,7 +90,7 @@ it('dice qué parte fue a la inicial y qué sobró', () => {
         />,
     );
 
-    expect(screen.getByText('$80,00 · inicial de $50,00, cuota 1, $0,50 sin asignar')).toBeInTheDocument();
+    expect(screen.getByText('$80,00 · $50,00 a la inicial, cuota 1, $0,50 sin asignar')).toBeInTheDocument();
 });
 
 it('sin pagos, lo dice', () => {

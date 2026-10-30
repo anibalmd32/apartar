@@ -129,6 +129,15 @@ it('enseña el monto sugerido como ayuda', () => {
     expect(screen.getByText(/Te sugerimos la cuota 2:/)).toHaveTextContent('Te sugerimos la cuota 2: $30,00. Si pagaste otro monto, escríbelo.');
 });
 
+it('con parte de la inicial abonada, sugiere lo que falta de la inicial', () => {
+    const suggestion = receiptProps().suggestion!;
+    renderPage({ suggestion: { ...suggestion, kind: 'down_payment', installmentNumber: null, started: true } });
+
+    expect(screen.getByText(/Te sugerimos lo que falta de la inicial:/)).toHaveTextContent(
+        'Te sugerimos lo que falta de la inicial: $30,00. Si pagaste otro monto, escríbelo.',
+    );
+});
+
 it('envía multipart con los nombres del contrato y el archivo', () => {
     renderPage();
 

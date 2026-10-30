@@ -33,13 +33,4 @@ final class PaymentNotApplicableException extends RuntimeException
             $rate,
         ));
     }
-
-    public static function belowDownPayment(Money $paid, Money $downPayment): self
-    {
-        return new self(sprintf(
-            'El pago es de %d centavos y la inicial del apartado es de %d: la inicial se paga entera para activarlo.',
-            $paid->cents,
-            $downPayment->cents,
-        ));
-    }
 }

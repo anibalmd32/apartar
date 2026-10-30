@@ -81,6 +81,27 @@ final class ManualPaymentPageTest extends TestCase
             ->where('payments.0.note', self::NOTE));
     }
 
+    public function test_a_payment_below_the_down_payment_is_credited_and_the_page_shows_what_is_missing(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->actingAs($this->member);
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '40.00']))
+            ->assertRedirect(route('layaways.show', $layaway))
+            ->assertSessionHas('status', 'Pago registrado: $40,00 (abono a la inicial de $40,00, faltan $10,00).');
+
+        $this->withoutOrganization();
+        $this->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.status', 'pending_down_payment')
+            ->where('layaway.paid.usd', '$40,00')
+            ->where('layaway.downPaymentProgress.paid.usd', '$40,00')
+            ->where('layaway.downPaymentProgress.missing.usd', '$10,00'));
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '40.00']))
+            ->assertSessionHas('status', 'Pago registrado: $40,00 (abono de $10,00 que completa la inicial; $30,00 a la cuota 1).');
+        $this->assertSame('active', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+    }
+
     public function test_each_refusal_comes_back_in_its_field(): void
     {
         $layaway = $this->layawayIn($this->organization);
@@ -96,7 +117,6 @@ final class ManualPaymentPageTest extends TestCase
             ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser anterior a la creación del apartado.']);
         $this->post(route('layaways.payments.store', $layaway), $this->payload(['payment_account' => (string) $foreign->getKey()]))
             ->assertSessionHasErrors(['payment_account' => 'Esa cuenta de cobro no es de tu negocio.']);
-        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '40.00']))->assertSessionHasErrors('amount');
 
         $this->assertSame(0, DB::table('payments')->count());
     }
@@ -174,7 +194,10 @@ final class ManualPaymentPageTest extends TestCase
             ->assertOk()->assertJsonPath('preview.summary', 'Activará el apartado con la inicial de $50,00; se aplicará a la cuota 1.');
         $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '250.00', 'currency' => 'USD']))
             ->assertOk()->assertJsonPath('preview.unallocatedCents', 5_000);
-        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '40.00', 'currency' => 'USD']))->assertStatus(422);
+        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '40.00', 'currency' => 'USD']))
+            ->assertOk()
+            ->assertJsonPath('preview.summary', 'Abonará $40,00 a la inicial y faltarán $10,00 para activar el apartado.')
+            ->assertJsonPath('preview.statusAfter', 'pending_down_payment');
         $this->getJson(route('layaways.payments.preview', $layaway).'?amount[]=1&currency=USD')->assertStatus(422);
         $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '0.00', 'currency' => 'USD']))->assertStatus(422);
 

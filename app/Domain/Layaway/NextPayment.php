@@ -18,6 +18,7 @@ final readonly class NextPayment
         public NextPaymentKind $kind,
         public ?int $installmentNumber,
         public Money $amount,
+        public bool $started = false,
     ) {
         if ($amount->cents <= 0) {
             throw new InvalidArgumentException(sprintf('Un pago sugerido es mayor que cero, y es de %d centavos.', $amount->cents));
@@ -38,16 +39,17 @@ final readonly class NextPayment
         }
 
         if ($layaway->status === LayawayStatus::PendingDownPayment) {
-            $downPayment = $layaway->terms()->totalDownPayment();
+            $downPayment = $layaway->terms()->totalDownPayment()->cents;
+            $paid = min($downPayment, $layaway->paid_cents->cents);
 
-            return $downPayment->cents > 0 ? new self(NextPaymentKind::DownPayment, null, $downPayment) : null;
+            return $downPayment > $paid ? new self(NextPaymentKind::DownPayment, null, new Money($downPayment - $paid), $paid > 0) : null;
         }
 
         foreach ($installments as $installment) {
             $pending = $installment->amount_cents->cents - $installment->paid_cents->cents;
 
             if ($pending > 0) {
-                return new self(NextPaymentKind::Installment, $installment->number, new Money($pending));
+                return new self(NextPaymentKind::Installment, $installment->number, new Money($pending), $installment->paid_cents->cents > 0);
             }
         }
 

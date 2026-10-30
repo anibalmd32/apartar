@@ -11,7 +11,6 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Payment\ApprovalPreview;
 use App\Domain\Payment\OpeningPaymentPreview;
-use App\Domain\Payment\PaymentNotApplicableException;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -72,14 +71,15 @@ final class OpeningPaymentPreviewTest extends TestCase
         $this->assertSame(5_000, $preview->amount->cents);
     }
 
-    public function test_less_than_the_down_payment_is_refused_without_writing(): void
+    public function test_less_than_the_down_payment_is_an_installment_toward_it_without_writing(): void
     {
-        try {
-            $this->preview(new LayawayTerms(new Money(20_000), new Money(5_000), 1, 5, 15), new Money(4_999));
-            $this->fail('La vista previa aceptó menos que la inicial.');
-        } catch (PaymentNotApplicableException) {
-        }
+        $preview = $this->preview(new LayawayTerms(new Money(20_000), new Money(5_000), 1, 5, 15), new Money(2_000));
 
+        $this->assertSame([2_000, 3_000], [$preview->downPaymentCents, $preview->downPaymentMissingCents]);
+        $this->assertSame([], $preview->allocations);
+        $this->assertFalse($preview->activates());
+        $this->assertSame([LayawayStatus::PendingDownPayment, LayawayStatus::PendingDownPayment], [$preview->statusBefore, $preview->statusAfter]);
+        $this->assertSame('Abonará $20,00 a la inicial y faltarán $30,00 para activar el apartado.', $preview->summary());
         $this->assertSame([0, 0], [DB::table('layaways')->count(), DB::table('payments')->count()]);
     }
 

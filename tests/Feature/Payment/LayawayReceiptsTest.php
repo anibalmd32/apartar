@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Payment;
 
+use App\Domain\Money\Currency;
+use App\Domain\Money\Money;
 use App\Domain\Payment\LayawayReceipts;
+use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Receipt;
+use App\Models\User;
 use Closure;
 use Illuminate\Database\QueryException;
 use Tests\Concerns\CreatesLayaways;
@@ -47,6 +51,16 @@ final class LayawayReceiptsTest extends TestCase
         $held = $this->within(fn (): array => array_map(fn (Layaway $layaway): bool => $this->receipts->holdExpiration($layaway), [$none, $rejected, $pending, $approved]));
 
         $this->assertSame([false, false, true, true], $held);
+    }
+
+    public function test_a_payment_recorded_by_the_business_holds_the_expiration_like_an_approved_receipt(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->within(fn () => app(PaymentApplier::class)->apply(
+            $layaway, new Money(1_000), null, '10.00', Currency::USD, null, User::factory()->create(), 'Abono en tienda.',
+        ));
+
+        $this->assertTrue($this->within(fn (): bool => $this->receipts->holdExpiration($layaway)));
     }
 
     public function test_it_counts_the_pending_receipts_per_layaway(): void

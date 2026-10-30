@@ -17,11 +17,15 @@ export function windowSummary(choice: DownPaymentWindowChoice, value: string, de
         case 'none':
             return 'La inicial no vence: el apartado espera hasta que la registres.';
         case 'hours':
-            return amount > 0 ? `Vence ${amount === 1 ? 'en 1 hora' : `en ${amount} horas`} si no se paga la inicial.` : 'Escribe cuántas horas.';
+            return amount > 0
+                ? `Vence ${amount === 1 ? 'en 1 hora' : `en ${amount} horas`} si no se abona nada de la inicial.`
+                : 'Escribe cuántas horas.';
         case 'days':
-            return amount > 0 ? `Vence ${amount === 1 ? 'en 1 día' : `en ${amount} días`} si no se paga la inicial.` : 'Escribe cuántos días.';
+            return amount > 0
+                ? `Vence ${amount === 1 ? 'en 1 día' : `en ${amount} días`} si no se abona nada de la inicial.`
+                : 'Escribe cuántos días.';
         default:
-            return `Vence en ${defaultHours} horas si no se paga la inicial, como en tu catálogo.`;
+            return `Vence en ${defaultHours} horas si no se abona nada de la inicial, como en tu catálogo.`;
     }
 }
 
@@ -37,7 +41,7 @@ export function DownPaymentWindowFields({ choice, value, onChange, limits, error
     const counted = choice === 'hours' || choice === 'days';
 
     return (
-        <SectionCard title="Plazo para la inicial" subtitle="Mientras no se pague la inicial, el apartado espera.">
+        <SectionCard title="Plazo para la inicial" subtitle="Con cualquier abono a la inicial, el apartado ya no vence.">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <SelectField
                     label="Vence"

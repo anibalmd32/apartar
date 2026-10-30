@@ -10,6 +10,7 @@ use App\Actions\Payment\ApproveReceiptData;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSource;
+use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
 use App\Domain\Payment\AppliedPayment;
@@ -103,6 +104,27 @@ final class ApproveReceiptActionTest extends TestCase
         $this->assertSame(5_000, $applied->downPaymentCents);
         $this->assertSame(5, DB::table('installments')->where('layaway_id', $layaway->getKey())->count());
         $this->assertSame([[1, 3_000, 'paid']], $this->installments($layaway, 1));
+    }
+
+    public function test_approving_part_of_the_down_payment_credits_it_and_the_next_receipt_activates(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $first = $this->approve($this->receiptFor($layaway, attributes: ['declared_amount' => '20.00', 'declared_currency' => Currency::USD]), '20.00', Currency::USD);
+
+        $this->assertSame(LayawayStatus::PendingDownPayment, $first->statusAfter);
+        $this->assertSame([2_000, 3_000], [$first->downPaymentCents, $first->downPaymentMissingCents]);
+        $this->assertSame(0, DB::table('installments')->where('layaway_id', $layaway->getKey())->count());
+        $this->assertSame([2_000, 18_000], [$this->fresh($layaway)->paid_cents->cents, $this->fresh($layaway)->remaining_cents->cents]);
+        $this->assertSame('approved', DB::table('receipts')->where('layaway_id', $layaway->getKey())->value('status'));
+
+        $second = $this->approve($this->receiptFor($layaway, attributes: ['declared_amount' => '60.00', 'declared_currency' => Currency::USD]), '60.00', Currency::USD);
+
+        $this->assertSame(LayawayStatus::Active, $second->statusAfter);
+        $this->assertSame([3_000, 2_000, 0], [$second->downPaymentCents, $second->downPaymentPaidBeforeCents, $second->downPaymentMissingCents]);
+        $this->assertSame([[1, 3_000, 'paid']], $this->installments($layaway, 1));
+        $this->assertSame(8_000, $this->fresh($layaway)->paid_cents->cents);
+        $this->assertNull($this->within(fn (): mixed => app(LayawayBalanceRecalculator::class)->diff($layaway)));
     }
 
     public function test_covering_the_overdue_installment_returns_the_layaway_to_active(): void

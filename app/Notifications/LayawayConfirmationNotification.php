@@ -33,6 +33,8 @@ final class LayawayConfirmationNotification extends Notification implements Shou
         public readonly int $firstInstallmentNumber = 1,
         public readonly bool $firstInstallmentStarted = false,
         public readonly bool $fullyPaid = false,
+        public readonly ?string $downPaymentPaidSoFar = null,
+        public readonly ?string $downPaymentMissing = null,
     ) {
         $this->onQueue('high');
     }
@@ -102,6 +104,16 @@ final class LayawayConfirmationNotification extends Notification implements Shou
             return $this->firstInstallment === null || $this->firstDueDate === null
                 ? $paid
                 : $paid.' '.$this->upcomingInstallment('La primera cuota');
+        }
+
+        if ($this->requiresDownPayment && $this->downPaymentPaidSoFar !== null && $this->downPaymentMissing !== null) {
+            return sprintf(
+                'Total: %s. Ya abonaste %s de la inicial de %s y tu apartado ya no vence: para activarlo, paga los %s que faltan.',
+                $this->total,
+                $this->downPaymentPaidSoFar,
+                $this->downPayment,
+                $this->downPaymentMissing,
+            );
         }
 
         if ($this->requiresDownPayment && $this->expiresAt === '') {

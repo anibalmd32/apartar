@@ -127,6 +127,7 @@ final class ReceiptController extends Controller
             'kind' => $next->kind->value,
             'installmentNumber' => $next->installmentNumber,
             'amount' => $this->money($next->amount),
+            'started' => $next->started,
             'amountUsd' => self::decimal($next->amount),
             'amountVes' => $snapshot === null ? null : self::decimal($next->amount->convertTo(Currency::VES, $snapshot)),
         ];

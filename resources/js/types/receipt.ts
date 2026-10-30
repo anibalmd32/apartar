@@ -1,16 +1,14 @@
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type Paginated } from '@/types/data-table';
+import { type DownPaymentProgressView } from '@/types/layaway';
 import { type Currency, type MoneyView } from '@/types/money';
 import { type PaymentAccountView, type PaymentEvidence, type PaymentMethod } from '@/types/payment';
-import { type LayawaySummary } from '@/types/portal';
+import { type LayawaySummary, type NextPaymentSuggestion } from '@/types/portal';
 import { type RateChecks } from '@/types/rate-deviation';
 
 export type ReceiptLayawaySummary = Pick<LayawaySummary, 'code' | 'productName' | 'statusLabel' | 'remaining'>;
 
-export interface ReceiptSuggestion {
-    readonly kind: 'down_payment' | 'installment';
-    readonly installmentNumber: number | null;
-    readonly amount: MoneyView;
+export interface ReceiptSuggestion extends Omit<NextPaymentSuggestion, 'payOff'> {
     readonly amountUsd: string;
     readonly amountVes: string | null;
 }
@@ -127,6 +125,7 @@ export interface ApprovalPreviewView extends RateChecks {
     readonly rateSource: string;
     readonly rateSourceLabel: string;
     readonly downPayment: string | null;
+    readonly downPaymentMissing: string | null;
     readonly allocations: readonly { readonly number: number; readonly amount: string; readonly covers: boolean }[];
     readonly unallocated: string | null;
     readonly unallocatedCents: number;
@@ -174,6 +173,7 @@ export interface ReceiptReviewProps {
         readonly productName: string;
         readonly total: MoneyView;
         readonly downPayment: MoneyView;
+        readonly downPaymentProgress: DownPaymentProgressView | null;
         readonly paid: MoneyView;
         readonly remaining: MoneyView;
     };

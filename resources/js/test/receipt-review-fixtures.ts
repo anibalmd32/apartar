@@ -9,6 +9,7 @@ export const PREVIEW: ApprovalPreviewView = {
     rateSource: 'bcv',
     rateSourceLabel: 'BCV',
     downPayment: null,
+    downPaymentMissing: null,
     allocations: [
         { number: 1, amount: '$30,00', covers: true },
         { number: 2, amount: '$30,00', covers: true },
@@ -52,6 +53,7 @@ export function reviewProps(overrides: Partial<ReceiptReviewProps> = {}): Receip
             productName: 'Nevera Mabe',
             total: money('$200,00', 20_000),
             downPayment: money('$50,00', 5_000),
+            downPaymentProgress: null,
             paid: money('$50,00', 5_000),
             remaining: money('$150,00', 15_000),
         },

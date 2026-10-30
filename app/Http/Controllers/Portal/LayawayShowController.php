@@ -60,6 +60,7 @@ final class LayawayShowController extends Controller
             'layaway' => [
                 ...(new LayawaySummaryResource($layaway))->resolve($request),
                 'downPayment' => $this->money($layaway->terms()->totalDownPayment()),
+                'downPaymentProgress' => $this->downPaymentProgressOf($layaway),
                 'expiresAt' => $layaway->status === LayawayStatus::PendingDownPayment && ! $this->windowClosed($layaway)
                     ? $layaway->expires_at?->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [a las] h:mm a')
                     : null,
@@ -113,6 +114,7 @@ final class LayawayShowController extends Controller
             'kind' => $next->kind->value,
             'installmentNumber' => $next->installmentNumber,
             'amount' => $this->money($next->amount),
+            'started' => $next->started,
             'payOff' => $this->money($layaway->remaining_cents),
         ];
     }
@@ -123,9 +125,12 @@ final class LayawayShowController extends Controller
             LayawayStatus::Cancelled => 'Este apartado fue cancelado por el negocio. Si tienes dudas, escríbele.',
             LayawayStatus::Expired => 'Este apartado venció porque la inicial no llegó a tiempo, y el producto volvió a la venta.',
             LayawayStatus::Completed => 'Este apartado está pagado. ¡Gracias!',
-            LayawayStatus::PendingDownPayment => $this->windowClosed($layaway) && $this->receipts->holdExpiration($layaway)
-                ? 'Tu comprobante está en revisión: tu reserva está protegida aunque haya pasado el plazo de la inicial.'
-                : null,
+            LayawayStatus::PendingDownPayment => match (true) {
+                ! $this->windowClosed($layaway) => null,
+                $layaway->paid_cents->cents > 0 => 'Ya abonaste parte de la inicial: tu reserva sigue protegida aunque haya pasado el plazo. Completa la inicial para activarla.',
+                $this->receipts->holdExpiration($layaway) => 'Tu comprobante está en revisión: tu reserva está protegida aunque haya pasado el plazo de la inicial.',
+                default => null,
+            },
             LayawayStatus::Active, LayawayStatus::Overdue => null,
         };
     }

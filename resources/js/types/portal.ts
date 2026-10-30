@@ -1,6 +1,7 @@
 import { type FeedPreview } from '@/types/account';
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type RateView } from '@/types/exchange';
+import { type DownPaymentProgressView } from '@/types/layaway';
 import { type MoneyView } from '@/types/money';
 import { type PaymentAccountView } from '@/types/payment';
 import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
@@ -114,6 +115,7 @@ export interface NextPaymentSuggestion {
     readonly kind: 'down_payment' | 'installment';
     readonly installmentNumber: number | null;
     readonly amount: MoneyView;
+    readonly started: boolean;
     readonly payOff: MoneyView;
 }
 
@@ -121,6 +123,7 @@ export interface PortalLayawayShowProps {
     readonly business: OrganizationBrand;
     readonly layaway: LayawaySummary & {
         readonly downPayment: MoneyView;
+        readonly downPaymentProgress: DownPaymentProgressView | null;
         readonly expiresAt: string | null;
         readonly activatedAt: string | null;
         readonly statusMessage: string | null;

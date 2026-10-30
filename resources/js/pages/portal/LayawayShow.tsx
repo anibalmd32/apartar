@@ -55,12 +55,25 @@ export default function LayawayShow({
 
                     {pending && Number(layaway.downPayment.cents) > 0 ? (
                         <section className={cn(card, 'order-3 flex flex-col gap-2 p-5')} aria-label="Inicial">
-                            <h2 className="text-[17px] font-bold">Paga la inicial para confirmar tu apartado</h2>
-                            <p className="text-ink-2 text-sm">
-                                La inicial es de <MoneyLabel money={layaway.downPayment} className="text-base-content font-semibold" />
-                                {layaway.expiresAt !== null ? <> y tienes hasta el {layaway.expiresAt} para pagarla.</> : '.'} Cuando {business.name}{' '}
-                                la apruebe, verás aquí tu cronograma de cuotas.
-                            </p>
+                            <h2 className="text-[17px] font-bold">
+                                {layaway.downPaymentProgress !== null
+                                    ? 'Completa la inicial para confirmar tu apartado'
+                                    : 'Paga la inicial para confirmar tu apartado'}
+                            </h2>
+                            {layaway.downPaymentProgress !== null ? (
+                                <p className="text-ink-2 text-sm">
+                                    Ya abonaste <MoneyLabel money={layaway.downPaymentProgress.paid} className="text-base-content font-semibold" /> de
+                                    la inicial de <MoneyLabel money={layaway.downPayment} />: te faltan{' '}
+                                    <MoneyLabel money={layaway.downPaymentProgress.missing} className="text-base-content font-semibold" />. Tu
+                                    apartado ya está reservado y no vence; cuando completes la inicial, verás aquí tu cronograma de cuotas.
+                                </p>
+                            ) : (
+                                <p className="text-ink-2 text-sm">
+                                    La inicial es de <MoneyLabel money={layaway.downPayment} className="text-base-content font-semibold" />
+                                    {layaway.expiresAt !== null ? <> y tienes hasta el {layaway.expiresAt} para pagarla.</> : '.'} Cuando{' '}
+                                    {business.name} la apruebe, verás aquí tu cronograma de cuotas.
+                                </p>
+                            )}
                         </section>
                     ) : null}
 

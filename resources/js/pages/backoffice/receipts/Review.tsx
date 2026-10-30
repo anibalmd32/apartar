@@ -135,7 +135,15 @@ function Schedule({ layaway, installments }: ReceiptReviewProps) {
         <SectionCard title="Cronograma" flush>
             {installments.length === 0 ? (
                 <p className="text-ink-2 px-5 pb-5 text-sm">
-                    Espera la inicial de <MoneyLabel money={layaway.downPayment} />: el cronograma nace al aprobarla.
+                    Espera la inicial de <MoneyLabel money={layaway.downPayment} />
+                    {layaway.downPaymentProgress !== null ? (
+                        <>
+                            {' '}
+                            (abonado <MoneyLabel money={layaway.downPaymentProgress.paid} />, faltan{' '}
+                            <MoneyLabel money={layaway.downPaymentProgress.missing} />)
+                        </>
+                    ) : null}
+                    : el cronograma nace al completarla.
                 </p>
             ) : (
                 <div className="border-line overflow-x-auto border-t">

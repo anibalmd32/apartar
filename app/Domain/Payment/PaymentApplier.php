@@ -13,6 +13,7 @@ use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Exchange\StaleRate;
+use App\Domain\Layaway\DownPaymentLedger;
 use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
@@ -42,6 +43,7 @@ final class PaymentApplier
         private readonly DetectOverdueAction $overdue,
         private readonly LayawayBalanceRecalculator $balance,
         private readonly ExchangeRateService $rates,
+        private readonly DownPaymentLedger $downPayments,
     ) {}
 
     /**
@@ -87,16 +89,18 @@ final class PaymentApplier
 
             [$dollars, $snapshot] = $this->toDollars($settled, $rate);
             $downPayment = 0;
+            $paidBefore = 0;
+            $missing = 0;
 
             if ($statusBefore === LayawayStatus::PendingDownPayment) {
-                $required = $locked->terms()->totalDownPayment();
+                $required = $locked->terms()->totalDownPayment()->cents;
+                $paidBefore = min($required, $this->downPayments->paidOn($locked));
+                $downPayment = min($dollars->cents, $required - $paidBefore);
+                $missing = $required - $paidBefore - $downPayment;
 
-                if ($dollars->cents < $required->cents) {
-                    throw PaymentNotApplicableException::belowDownPayment($dollars, $required);
+                if ($missing === 0) {
+                    $this->activation->handle($locked);
                 }
-
-                $this->activation->handle($locked);
-                $downPayment = $required->cents;
             }
 
             $excess = $dollars->cents - $downPayment;
@@ -115,7 +119,7 @@ final class PaymentApplier
 
             ModelState::adopt($layaway, $locked->getAttributes());
 
-            return new AppliedPayment($payment, $plan, $statusBefore, $locked->status, $downPayment);
+            return new AppliedPayment($payment, $plan, $statusBefore, $locked->status, $downPayment, $paidBefore, $missing);
         });
     }
 
@@ -156,6 +160,8 @@ final class PaymentApplier
                 statusAfter: $applied->statusAfter,
                 staleRate: StaleRate::in($rate, $settled->currency),
                 rateDeviation: RateDeviation::in($rate, $this->rates->current($this->context->organization()), $settled->currency),
+                downPaymentPaidBeforeCents: $applied->downPaymentPaidBeforeCents,
+                downPaymentMissingCents: $applied->downPaymentMissingCents,
             );
         } finally {
             DB::rollBack();

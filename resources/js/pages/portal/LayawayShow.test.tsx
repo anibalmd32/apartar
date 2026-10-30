@@ -31,6 +31,7 @@ function props(overrides: Partial<PortalLayawayShowProps> = {}, layaway: Partial
             nextDueDateLabel: '25 de septiembre',
             overdueInstallments: 0,
             downPayment: money('$50,00'),
+            downPaymentProgress: null,
             expiresAt: null,
             activatedAt: '10 de septiembre de 2026',
             statusMessage: null,
@@ -49,7 +50,7 @@ function props(overrides: Partial<PortalLayawayShowProps> = {}, layaway: Partial
                 tone: 'soon',
             },
         ],
-        nextPaymentSuggestion: { kind: 'installment', installmentNumber: 1, amount: money('$30,00'), payOff: money('$150,00') },
+        nextPaymentSuggestion: { kind: 'installment', installmentNumber: 1, amount: money('$30,00'), started: false, payOff: money('$150,00') },
         paymentAccounts: [],
         catalogUrl: null,
         receiptUrl: null,
@@ -108,6 +109,7 @@ it('avisa de que liquidar no tiene descuento y de que los bolívares se fijan al
                     kind: 'installment',
                     installmentNumber: 1,
                     amount: money('$30,00'),
+                    started: false,
                     payOff: { cents: centsUsd(15_000), usd: '$150,00', ves: 'Bs. 6.375,00' },
                 },
             })}
@@ -187,4 +189,37 @@ it('enlaza el catálogo de origen solo si sigue abierto', () => {
 
     rerender(<LayawayShow {...props({ catalogUrl: '/c/ofertas' })} />);
     expect(screen.getByRole('link', { name: 'Ver el catálogo de Ferretería Oriente' })).toHaveAttribute('href', '/c/ofertas');
+});
+
+it('con parte de la inicial abonada, dice cuánto abonó y cuánto falta', () => {
+    render(
+        <LayawayShow
+            {...props(
+                {
+                    installments: [],
+                    nextPaymentSuggestion: {
+                        kind: 'down_payment',
+                        installmentNumber: null,
+                        amount: money('$30,00'),
+                        started: true,
+                        payOff: money('$180,00'),
+                    },
+                },
+                {
+                    status: 'pending_down_payment',
+                    statusLabel: 'Esperando la inicial',
+                    paid: money('$20,00'),
+                    downPaymentProgress: { paid: money('$20,00'), missing: money('$30,00') },
+                    expiresAt: '13 de septiembre a las 10:00 am',
+                },
+            )}
+        />,
+    );
+
+    const card = screen.getByRole('region', { name: 'Inicial' });
+    expect(card).toHaveTextContent('Completa la inicial para confirmar tu apartado');
+    expect(card).toHaveTextContent(
+        'Ya abonaste $20,00 de la inicial de $50,00: te faltan $30,00. Tu apartado ya está reservado y no vence; cuando completes la inicial, verás aquí tu cronograma de cuotas.',
+    );
+    expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('Lo que falta de la inicial:');
 });

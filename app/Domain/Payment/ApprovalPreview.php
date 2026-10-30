@@ -28,6 +28,8 @@ final readonly class ApprovalPreview
         public LayawayStatus $statusAfter,
         public ?StaleRate $staleRate = null,
         public ?RateDeviation $rateDeviation = null,
+        public int $downPaymentPaidBeforeCents = 0,
+        public int $downPaymentMissingCents = 0,
     ) {
         $allocated = array_sum(array_column($allocations, 'cents'));
 
@@ -44,7 +46,12 @@ final readonly class ApprovalPreview
 
     public function activates(): bool
     {
-        return $this->downPaymentCents > 0;
+        return $this->statusBefore === LayawayStatus::PendingDownPayment && $this->statusAfter !== LayawayStatus::PendingDownPayment;
+    }
+
+    public function downPayment(): DownPaymentProgress
+    {
+        return new DownPaymentProgress($this->downPaymentCents, $this->downPaymentPaidBeforeCents, $this->downPaymentMissingCents);
     }
 
     public function completes(): bool
@@ -67,7 +74,8 @@ final readonly class ApprovalPreview
             'rate' => $this->rate,
             'rateSource' => $this->rateSource->value,
             'rateSourceLabel' => $this->rateSource->label(),
-            'downPayment' => $this->activates() ? MoneyFormatter::format(new Money($this->downPaymentCents)) : null,
+            'downPayment' => $this->downPaymentCents > 0 ? MoneyFormatter::format(new Money($this->downPaymentCents)) : null,
+            'downPaymentMissing' => $this->downPaymentMissingCents > 0 ? MoneyFormatter::format(new Money($this->downPaymentMissingCents)) : null,
             'allocations' => array_map(fn (array $allocation): array => [
                 'number' => $allocation['number'],
                 'amount' => MoneyFormatter::format(new Money($allocation['cents'])),
@@ -87,7 +95,17 @@ final readonly class ApprovalPreview
     {
         $parts = [];
 
-        if ($this->activates()) {
+        $downPayment = $this->downPayment();
+
+        if ($downPayment->partial()) {
+            $parts[] = sprintf(
+                'abonará %s a la inicial y faltarán %s para activar el apartado',
+                MoneyFormatter::format(new Money($this->downPaymentCents)),
+                MoneyFormatter::format(new Money($this->downPaymentMissingCents)),
+            );
+        } elseif ($this->activates() && $downPayment->completesEarlierPayments()) {
+            $parts[] = sprintf('completará la inicial con %s y activará el apartado', MoneyFormatter::format(new Money($this->downPaymentCents)));
+        } elseif ($this->activates()) {
             $parts[] = sprintf('activará el apartado con la inicial de %s', MoneyFormatter::format(new Money($this->downPaymentCents)));
         }
 

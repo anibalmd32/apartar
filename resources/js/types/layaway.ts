@@ -14,6 +14,11 @@ export interface LayawayFormValues {
     idempotencyKey: string;
 }
 
+export interface DownPaymentProgressView {
+    readonly paid: MoneyView;
+    readonly missing: MoneyView;
+}
+
 export interface LayawayPlanInstallment {
     readonly number: number;
     readonly estimatedDueDate: string;

@@ -180,6 +180,19 @@ final class PortalAlertsQueryTest extends TestCase
         $this->get(route('portal.dashboard'))->assertInertia(fn (AssertableInertia $page) => $page->has('alerts', 0));
     }
 
+    public function test_a_down_payment_paid_in_part_no_longer_counts_down_the_window(): void
+    {
+        $organization = $this->business('Ferretería Oriente');
+        $layaway = $this->layawayIn($organization);
+        $customer = $this->customerOf($layaway);
+        $this->window($layaway, '2026-09-27 12:40:00');
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['paid_cents' => 2_000, 'remaining_cents' => 18_000]);
+
+        CarbonImmutable::setTestNow('2026-09-27 12:00:00');
+
+        $this->assertSame([], $this->kinds($this->alertsFor($customer)));
+    }
+
     public function test_terminal_layaways_are_excluded(): void
     {
         $organization = $this->business('Ferretería Oriente');

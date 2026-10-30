@@ -11,6 +11,7 @@ use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSource;
+use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Money\Currency;
@@ -122,6 +123,30 @@ final class RegisterManualPaymentActionTest extends TestCase
             fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated
                 && str_contains($notification->lines[0], 'Recibimos la inicial'),
         );
+    }
+
+    public function test_a_payment_below_the_down_payment_is_credited_and_one_crossing_it_activates(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+
+        $partial = $this->register($layaway, '35.00', Currency::USD);
+
+        $this->assertSame([], $this->allocationsOf($partial));
+        $this->assertSame('pending_down_payment', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        $this->assertSame([3_500, 16_500], [
+            (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'),
+            (int) DB::table('layaways')->where('id', $layaway->getKey())->value('remaining_cents'),
+        ]);
+        $entry = $this->within(fn (): AuditEntry => AuditEntry::query()->where('event', AuditEvent::PaymentRecorded->value)->sole());
+        $changed = $entry->properties?->toArray()['changed'] ?? [];
+        $this->assertSame([3_500, 'pending_down_payment → pending_down_payment'], [$changed['down_payment_cents']['after'] ?? null, $changed['layaway_status']['after'] ?? null]);
+
+        $crossing = $this->register($layaway, '50.00', Currency::USD);
+
+        $this->assertSame('active', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        $this->assertSame([[1, 3_000], [2, 500]], $this->allocationsOf($crossing));
+        $this->assertSame(8_500, (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'));
+        $this->assertNull($this->within(fn (): mixed => app(LayawayBalanceRecalculator::class)->diff($layaway)));
     }
 
     public function test_the_same_key_returns_the_same_payment(): void

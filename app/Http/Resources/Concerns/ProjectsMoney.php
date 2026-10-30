@@ -6,10 +6,12 @@ namespace App\Http\Resources\Concerns;
 
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
 use App\Domain\Tenancy\TenantContext;
+use App\Models\Layaway;
 use App\Models\Organization;
 
 trait ProjectsMoney
@@ -46,6 +48,20 @@ trait ProjectsMoney
             'usd' => MoneyFormatter::format($usd),
             'ves' => $ves === null ? null : MoneyFormatter::format($ves),
         ];
+    }
+
+    /**
+     * @return array{paid: array{cents: int, usd: string, ves: string|null}, missing: array{cents: int, usd: string, ves: string|null}}|null
+     */
+    protected function downPaymentProgressOf(Layaway $layaway): ?array
+    {
+        $total = $layaway->terms()->totalDownPayment()->cents;
+        $paid = min($total, $layaway->paid_cents->cents);
+
+        return $layaway->status === LayawayStatus::PendingDownPayment && $paid > 0 ? [
+            'paid' => $this->money(new Money($paid)),
+            'missing' => $this->money(new Money($total - $paid)),
+        ] : null;
     }
 
     private function projectedToVes(Money $amount): ?string

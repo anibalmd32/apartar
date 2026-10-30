@@ -6,6 +6,7 @@ namespace App\Domain\Notification;
 
 use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Customer;
@@ -33,6 +34,9 @@ final class LayawayConfirmationMailer
 
         $terms = $layaway->terms();
         $first = $this->nextInstallment($layaway);
+        $partial = $layaway->status === LayawayStatus::PendingDownPayment && $layaway->paid_cents->cents > 0
+            ? new Money(min($terms->totalDownPayment()->cents, $layaway->paid_cents->cents))
+            : null;
 
         Notification::route('mail', $email)->notify(new LayawayConfirmationNotification(
             code: $layaway->code,
@@ -50,6 +54,8 @@ final class LayawayConfirmationMailer
             firstInstallmentNumber: $first === null ? 1 : (int) $first->number,
             firstInstallmentStarted: $first !== null && $first->paid_cents->cents > 0,
             fullyPaid: $layaway->status === LayawayStatus::Completed,
+            downPaymentPaidSoFar: $partial === null ? null : MoneyFormatter::format($partial),
+            downPaymentMissing: $partial === null ? null : MoneyFormatter::format($terms->totalDownPayment()->subtract($partial)),
         ));
     }
 

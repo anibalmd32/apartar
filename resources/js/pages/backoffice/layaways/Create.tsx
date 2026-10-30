@@ -185,7 +185,7 @@ export default function LayawayCreate({ products, selection, plan, customer, win
                                 onChange={(event) => set({ with_payment: event.target.checked })}
                                 hint={
                                     plan === null || plan.requiresDownPayment
-                                        ? 'Tiene que cubrir la inicial: el apartado nace activo con sus cuotas.'
+                                        ? 'Si cubre la inicial, el apartado nace activo con sus cuotas; si es menor, queda abonado y esperando el resto.'
                                         : 'Se aplica a las cuotas en orden.'
                                 }
                             />

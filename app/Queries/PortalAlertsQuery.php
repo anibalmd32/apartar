@@ -44,7 +44,7 @@ final class PortalAlertsQuery
             foreach ($block->awaitingDownPayment() as $layaway) {
                 $expiresAt = $layaway->expires_at;
 
-                if (($pending[(int) $layaway->getKey()] ?? 0) > 0 || $expiresAt === null || ! $expiresAt->greaterThan($now)) {
+                if (($pending[(int) $layaway->getKey()] ?? 0) > 0 || $layaway->paid_cents->cents > 0 || $expiresAt === null || ! $expiresAt->greaterThan($now)) {
                     continue;
                 }
 

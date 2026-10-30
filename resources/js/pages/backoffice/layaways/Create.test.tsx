@@ -144,7 +144,7 @@ it('elige un plazo propio o sin vencimiento para la inicial', () => {
     expect(submit).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Días'), { target: { value: '3' } });
-    expect(screen.getByText('Vence en 3 días si no se paga la inicial.')).toBeInTheDocument();
+    expect(screen.getByText('Vence en 3 días si no se abona nada de la inicial.')).toBeInTheDocument();
     expect(submit).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText('Vence'), { target: { value: 'none' } });

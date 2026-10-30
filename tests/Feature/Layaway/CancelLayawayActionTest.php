@@ -8,8 +8,12 @@ use App\Actions\Layaway\ActivateLayawayAction;
 use App\Actions\Layaway\CancelLayawayAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Layaway\IllegalLayawayTransitionException;
+use App\Domain\Layaway\LayawayBalanceRecalculator;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
+use App\Domain\Money\Money;
 use App\Domain\Payment\LayawayReceipts;
+use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Subscription\UsageMetric;
@@ -156,6 +160,25 @@ final class CancelLayawayActionTest extends TestCase
         $this->assertSame(11_000, (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'));
         $this->assertSame(5, DB::table('installments')->where('layaway_id', $layaway->getKey())->count());
         $this->assertSame('paid', DB::table('installments')->where('layaway_id', $layaway->getKey())->where('number', 1)->value('status'));
+    }
+
+    public function test_a_pending_layaway_with_part_of_the_down_payment_cancels_and_keeps_its_payment(): void
+    {
+        $product = $this->withinOrganization($this->organization, fn (): Product => Product::factory()->create(['stock' => 3]));
+        $layaway = $this->layawayIn($this->organization, product: $product);
+        $this->withinOrganization($this->organization, fn () => app(PaymentApplier::class)->apply(
+            $layaway, new Money(2_000), null, '20.00', Currency::USD, null, $this->actor, 'Abono en tienda.',
+        ));
+        $counter = $this->counter();
+
+        $this->cancel($layaway);
+
+        $this->assertSame('cancelled', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        $this->assertSame(2_000, (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'));
+        $this->assertSame(1, DB::table('payments')->where('layaway_id', $layaway->getKey())->count());
+        $this->assertSame(3, (int) DB::table('products')->where('id', $product->getKey())->value('stock'));
+        $this->assertSame($counter - 1, $this->counter());
+        $this->assertNull($this->withinOrganization($this->organization, fn (): mixed => app(LayawayBalanceRecalculator::class)->diff($layaway)));
     }
 
     public function test_it_is_audited_with_the_reason(): void

@@ -249,8 +249,10 @@ final class ReceiptReviewController extends Controller
 
         $parts = [];
 
-        if ($applied->downPaymentCents > 0) {
-            $parts[] = sprintf('inicial de %s', MoneyFormatter::format(new Money($applied->downPaymentCents)));
+        $downPayment = $applied->downPayment()->label();
+
+        if ($downPayment !== null) {
+            $parts[] = $downPayment;
         }
 
         if ($numbers !== []) {
@@ -334,6 +336,7 @@ final class ReceiptReviewController extends Controller
             'productName' => $layaway->product_name_snapshot,
             'total' => $this->money($layaway->total_cents),
             'downPayment' => $this->money($layaway->terms()->totalDownPayment()),
+            'downPaymentProgress' => $this->downPaymentProgressOf($layaway),
             'paid' => $this->money($layaway->paid_cents),
             'remaining' => $this->money($layaway->remaining_cents),
         ];

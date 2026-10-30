@@ -17,7 +17,8 @@ class LayawayReceipts
         return Receipt::query()
             ->where('layaway_id', $layaway->getKey())
             ->whereIn('status', ReceiptStatus::holdingExpiration())
-            ->exists();
+            ->exists()
+            || Payment::query()->where('layaway_id', $layaway->getKey())->exists();
     }
 
     /**

@@ -201,6 +201,25 @@ final class ReconcileLayawaysActionTest extends TestCase
         $this->assertSame($count(3), $count(9));
     }
 
+    public function test_a_down_payment_paid_in_parts_reconciles_without_discrepancies(): void
+    {
+        $partial = $this->paidLayaway($this->organization, ['20.00']);
+        $crossing = $this->paidLayaway($this->organization, ['20.00', '45.00']);
+        $settled = $this->paidLayaway($this->organization, ['10.00', '40.00', '30.00']);
+
+        $this->assertSame([2_000, 18_000], $this->balanceOf($partial));
+        $this->assertSame([6_500, 13_500], $this->balanceOf($crossing));
+        $this->assertSame([8_000, 12_000], $this->balanceOf($settled));
+        $this->assertSame(0, $this->reconcile(fix: false)->toArray()['discrepancies']);
+
+        DB::table('layaways')->where('id', $partial->getKey())->update(['paid_cents' => 0, 'remaining_cents' => 20_000]);
+        $this->assertSame(1, $this->reconcile(fix: false)->toArray()['discrepancies']);
+
+        $this->reconcile(fix: true);
+        $this->assertSame([2_000, 18_000], $this->balanceOf($partial));
+        $this->assertSame(0, $this->reconcile(fix: false)->toArray()['discrepancies']);
+    }
+
     public function test_the_job_visits_each_organization_with_its_tenant_and_leaves_the_summary(): void
     {
         $ours = $this->paidLayaway($this->organization);
@@ -253,12 +272,15 @@ final class ReconcileLayawaysActionTest extends TestCase
         return $this->withinOrganization($this->organization, fn (): ReconciliationReport => app(ReconcileLayawaysAction::class)->handle($fix, CarbonImmutable::now()));
     }
 
-    private function paidLayaway(Organization $organization): Layaway
+    /**
+     * @param  list<string>  $amounts
+     */
+    private function paidLayaway(Organization $organization, array $amounts = ['50.00', '60.00']): Layaway
     {
         $layaway = $this->layawayIn($organization);
         $staff = $this->withinOrganization($organization, fn (): User => User::factory()->create());
 
-        foreach (['50.00', '60.00'] as $amount) {
+        foreach ($amounts as $amount) {
             $this->withinOrganization($organization, fn () => app(RegisterManualPaymentAction::class)->handle(
                 $layaway,
                 new ManualPaymentData(PaymentMethod::EfectivoUsd, null, $amount, Currency::USD, null, CarbonImmutable::now(), 'Pago recibido en tienda por Ana.', (string) Str::uuid()),

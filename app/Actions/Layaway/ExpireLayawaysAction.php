@@ -30,6 +30,10 @@ final class ExpireLayawaysAction
         Layaway::query()
             ->where('status', LayawayStatus::PendingDownPayment)
             ->where('expires_at', '<', $now)
+            ->whereNotExists(fn ($payments) => $payments
+                ->selectRaw('1')
+                ->from('payments')
+                ->whereColumn('payments.layaway_id', 'layaways.id'))
             ->chunkById(self::CHUNK, function (Collection $layaways) use ($now, &$outcome): void {
                 foreach ($layaways as $layaway) {
                     $outcome = $this->expire($layaway, $now, $outcome);

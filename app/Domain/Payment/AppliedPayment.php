@@ -19,6 +19,8 @@ final readonly class AppliedPayment
         public LayawayStatus $statusBefore,
         public LayawayStatus $statusAfter,
         public int $downPaymentCents = 0,
+        public int $downPaymentPaidBeforeCents = 0,
+        public int $downPaymentMissingCents = 0,
     ) {
         if ($downPaymentCents < 0) {
             throw new InvalidArgumentException(sprintf('La inicial aplicada no puede ser negativa, y es %d.', $downPaymentCents));
@@ -50,6 +52,11 @@ final readonly class AppliedPayment
 
     public function activated(): bool
     {
-        return $this->downPaymentCents > 0;
+        return $this->statusBefore === LayawayStatus::PendingDownPayment && $this->statusAfter !== LayawayStatus::PendingDownPayment;
+    }
+
+    public function downPayment(): DownPaymentProgress
+    {
+        return new DownPaymentProgress($this->downPaymentCents, $this->downPaymentPaidBeforeCents, $this->downPaymentMissingCents);
     }
 }

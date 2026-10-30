@@ -35,6 +35,7 @@ function props(layaway: Partial<BackofficeLayawayShowProps['layaway']> = {}): Ba
             quantity: 1,
             total: money('$200,00', 20_000),
             downPayment: money('$50,00', 5_000),
+            downPaymentProgress: null,
             paid: money('$110,00', 11_000),
             remaining: money('$90,00', 9_000),
             createdAt: '10 de septiembre de 2026, 10:00 a. m.',
@@ -119,6 +120,21 @@ it('sin pagos, cancela sin confirmación reforzada', () => {
 
     expect(within(dialog).queryByRole('checkbox')).toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Cancelar apartado' })).toBeEnabled();
+});
+
+it('esperando el resto de la inicial, dice cuánto se abonó y cuánto falta', () => {
+    render(
+        <LayawayShow
+            {...props({
+                status: 'pending_down_payment',
+                statusLabel: 'Esperando la inicial',
+                paid: money('$20,00', 2_000),
+                downPaymentProgress: { paid: money('$20,00', 2_000), missing: money('$30,00', 3_000) },
+            })}
+        />,
+    );
+
+    expect(screen.getByText(/Inicial abonada:/)).toHaveTextContent('Inicial abonada: $20,00 · faltan $30,00 para activar el apartado.');
 });
 
 it('un apartado sin inicial enseña «Sin inicial» en lugar de una inicial de cero', () => {

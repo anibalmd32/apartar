@@ -13,7 +13,8 @@ interface ReceiptAmountFieldsProps {
 }
 
 function SuggestionHint({ suggestion }: { suggestion: ReceiptSuggestion }) {
-    const what = suggestion.kind === 'down_payment' ? 'la inicial' : `la cuota ${suggestion.installmentNumber ?? ''}`.trim();
+    const downPayment = suggestion.started ? 'lo que falta de la inicial' : 'la inicial';
+    const what = suggestion.kind === 'down_payment' ? downPayment : `la cuota ${suggestion.installmentNumber ?? ''}`.trim();
 
     return (
         <>

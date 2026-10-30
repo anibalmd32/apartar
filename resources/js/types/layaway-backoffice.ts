@@ -1,4 +1,4 @@
-import { type LayawayPlanView } from '@/types/layaway';
+import { type DownPaymentProgressView, type LayawayPlanView } from '@/types/layaway';
 import { type Currency, type MoneyView } from '@/types/money';
 import { type PaymentMethod } from '@/types/payment';
 import { type LayawayStatus } from '@/types/portal';
@@ -12,6 +12,7 @@ export interface BackofficeLayaway {
     readonly quantity: number;
     readonly total: MoneyView;
     readonly downPayment: MoneyView;
+    readonly downPaymentProgress: DownPaymentProgressView | null;
     readonly paid: MoneyView;
     readonly remaining: MoneyView;
     readonly createdAt: string | null;
