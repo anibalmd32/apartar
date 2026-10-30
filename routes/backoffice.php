@@ -15,6 +15,7 @@ use App\Http\Controllers\Backoffice\CustomerController;
 use App\Http\Controllers\Backoffice\CustomerMergeController;
 use App\Http\Controllers\Backoffice\CustomerShowController;
 use App\Http\Controllers\Backoffice\DashboardController;
+use App\Http\Controllers\Backoffice\DashboardLayoutController;
 use App\Http\Controllers\Backoffice\ExportController;
 use App\Http\Controllers\Backoffice\GlobalSearchController;
 use App\Http\Controllers\Backoffice\InstallmentController;
@@ -62,6 +63,10 @@ Route::prefix('backoffice')->group(function (): void {
             Route::get('/', DashboardController::class)
                 ->middleware('during-suspension')
                 ->name('dashboard');
+
+            Route::put('panel/disposicion', DashboardLayoutController::class)
+                ->middleware(['during-suspension', 'throttle:60,1'])
+                ->name('dashboard.layout');
 
             Route::post('negocios/{organization}/entrar', OrganizationSwitchController::class)
                 ->middleware(['during-suspension', 'throttle:30,1'])

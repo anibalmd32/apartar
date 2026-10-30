@@ -21,7 +21,6 @@ use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeZone;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Throwable;
 
 final class DashboardMetricsQuery
@@ -93,14 +92,6 @@ final class DashboardMetricsQuery
                 ->where('settled_at', '>=', $now->startOfMonth()->setTimezone($appZone))
                 ->where('settled_at', '<', $now->startOfMonth()->addMonth()->setTimezone($appZone))
                 ->sum('amount_cents_usd')),
-            'dueThisWeek' => $this->metric(function (): array {
-                $query = (new CollectionFilters(CollectionPreset::DueWithin7Days))->installments()->reorder();
-
-                return [
-                    'count' => (clone $query)->count(),
-                    'pendingCents' => (int) (clone $query)->sum(DB::raw('installments.amount_cents - installments.paid_cents')),
-                ];
-            }),
             'customersOverdue' => $this->metric(fn (): int => $this->directory->search(new CustomerDirectoryFilters(overdue: true))->reorder()->count()),
             'longOverdueLayaways' => $this->metric(fn (): int => (new CollectionFilters(CollectionPreset::LongOverdue))->installments()->reorder()->distinct()->count('installments.layaway_id')),
             'completedNotDelivered' => $this->metric(fn (): int => (new CollectionFilters(CollectionPreset::CompletedNotDelivered))->layaways()->reorder()->count()),

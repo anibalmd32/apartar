@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Dashboard;
 
-use App\Domain\Collections\CollectionPreset;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStatus;
@@ -25,7 +24,6 @@ use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Models\UsageCounter;
 use App\Models\User;
-use App\Queries\CollectionFilters;
 use App\Queries\DashboardMetricsQuery;
 use App\Queries\DashboardWarningsQuery;
 use Carbon\CarbonImmutable;
@@ -80,14 +78,12 @@ final class DashboardTest extends TestCase
         $metrics = $this->metrics();
 
         $this->assertSame([2, 1], [$metrics['pendingReceipts'], $metrics['overdueReceiptsCount']]);
-        $this->assertSame(['count' => 1, 'pendingCents' => 3_000], $metrics['dueThisWeek']);
-        $this->assertSame($this->within(fn (): int => (new CollectionFilters(CollectionPreset::DueWithin7Days))->installments()->count()), $metrics['dueThisWeek']['count']);
+        $this->assertArrayNotHasKey('dueThisWeek', $metrics);
         $this->assertSame([1, 1, 1], [$metrics['customersOverdue'], $metrics['longOverdueLayaways'], $metrics['completedNotDelivered']]);
 
         $this->actingAs($this->owner)->get(route('dashboard'))->assertInertia(fn (AssertableInertia $page) => $page
             ->component('backoffice/Dashboard')
-            ->where('metrics.dueThisWeek.amount.cents', 3_000)
-            ->where('links.dueThisWeek', route('collections.index', ['preset' => 'due_within_7_days']))
+            ->missing('links.dueThisWeek')
             ->where('links.customersOverdue', route('customers.index', ['overdue' => '1'])));
     }
 

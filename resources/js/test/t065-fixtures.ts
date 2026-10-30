@@ -116,7 +116,6 @@ export function dashboardProps(overrides: Partial<DashboardProps['metrics']> = {
             pendingReceipts: 6,
             overdueReceiptsCount: 2,
             collectedThisMonth: money('$1.250,00', 125_000),
-            dueThisWeek: { count: 4, amount: money('$120,00', 12_000) },
             customersOverdue: 3,
             longOverdueLayaways: 1,
             completedNotDelivered: 2,
@@ -130,7 +129,6 @@ export function dashboardProps(overrides: Partial<DashboardProps['metrics']> = {
         },
         links: {
             receipts: '/backoffice/comprobantes?status=pending_review',
-            dueThisWeek: '/backoffice/cobranza?preset=due_within_7_days',
             customersOverdue: '/backoffice/clientes?overdue=1',
             longOverdue: '/backoffice/cobranza?preset=overdue_over_15_days',
             completedNotDelivered: '/backoffice/cobranza?preset=completed_not_delivered',

@@ -15,7 +15,6 @@ export interface DashboardMetrics {
     readonly pendingReceipts: number | null;
     readonly overdueReceiptsCount: number | null;
     readonly collectedThisMonth: MoneyView | null;
-    readonly dueThisWeek: { readonly count: number; readonly amount: MoneyView } | null;
     readonly customersOverdue: number | null;
     readonly longOverdueLayaways: number | null;
     readonly completedNotDelivered: number | null;
@@ -60,14 +59,32 @@ export interface DashboardSuspension {
     } | null;
 }
 
+export type DashboardMode = 'stacked' | 'split';
+
+export type DashboardSection = 'stats' | 'plan';
+
+export type DashboardCard =
+    | 'pendingReceipts'
+    | 'collectedThisMonth'
+    | 'customersOverdue'
+    | 'longOverdue'
+    | 'completedNotDelivered'
+    | 'unreadMessages';
+
+export interface DashboardLayoutView {
+    readonly mode: DashboardMode;
+    readonly sections: readonly DashboardSection[];
+    readonly cards: readonly DashboardCard[];
+}
+
 export interface DashboardProps {
     readonly metrics: DashboardMetrics;
+    readonly layout?: DashboardLayoutView;
     readonly suspension?: DashboardSuspension | null;
     readonly longOverdueDays?: number;
     readonly pendingReceipts?: readonly DashboardPendingReceipt[] | null;
     readonly links: {
         readonly receipts: string;
-        readonly dueThisWeek: string;
         readonly customersOverdue: string;
         readonly longOverdue: string;
         readonly completedNotDelivered: string;

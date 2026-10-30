@@ -1,11 +1,14 @@
 import Dashboard from '@/pages/backoffice/Dashboard';
 import { planState, usage } from '@/test/plan-fixtures';
 import { dashboardProps } from '@/test/t065-fixtures';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { expect, it, vi } from 'vitest';
 
+const put = vi.fn();
+
 vi.mock('@inertiajs/react', () => ({
+    router: { put: (...args: unknown[]) => put(...args) },
     usePage: () => ({
         url: '/backoffice',
         props: {
@@ -21,7 +24,14 @@ vi.mock('@inertiajs/react', () => ({
     ),
 }));
 
-vi.mock('@/layouts/backoffice-layout', () => ({ default: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
+vi.mock('@/layouts/backoffice-layout', () => ({
+    default: ({ children, actions }: { children: ReactNode; actions?: ReactNode }) => (
+        <main>
+            <header>{actions}</header>
+            {children}
+        </main>
+    ),
+}));
 
 it('cada tarjeta lleva a su lista filtrada', () => {
     render(<Dashboard {...dashboardProps()} />);
@@ -30,7 +40,7 @@ it('cada tarjeta lleva a su lista filtrada', () => {
         'href',
         '/backoffice/comprobantes?status=pending_review',
     );
-    expect(screen.getByRole('link', { name: /Vencen en 7 días\s*4/ })).toHaveAttribute('href', '/backoffice/cobranza?preset=due_within_7_days');
+    expect(screen.queryByText('Vencen en 7 días')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Clientes en mora\s*3/ })).toHaveAttribute('href', '/backoffice/clientes?overdue=1');
     expect(screen.getByText('$1.250,00')).toBeInTheDocument();
 });
@@ -96,4 +106,63 @@ it('una instalación nueva ve el checklist de arranque', () => {
     expect(screen.getByRole('region', { name: 'Para empezar' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Carga tu primer producto' })).toHaveAttribute('href', '/backoffice/productos/crear');
     expect(screen.queryByRole('link', { name: 'Añade una cuenta de cobro' })).not.toBeInTheDocument();
+});
+
+it('muestra seis tarjetas en el orden guardado del usuario', () => {
+    render(
+        <Dashboard
+            {...dashboardProps()}
+            layout={{
+                mode: 'stacked',
+                sections: ['plan', 'stats'],
+                cards: ['unreadMessages', 'pendingReceipts', 'collectedThisMonth', 'customersOverdue', 'longOverdue', 'completedNotDelivered'],
+            }}
+        />,
+    );
+
+    const stats = screen.getByRole('region', { name: 'Cifras del día' });
+    const labels = within(stats)
+        .getAllByText(/Chats sin leer|Comprobantes por revisar|Cobrado este mes|Clientes en mora|Mora prolongada|Pagados sin entregar/)
+        .map((node) => node.textContent);
+
+    expect(labels).toEqual([
+        'Chats sin leer',
+        'Comprobantes por revisar',
+        'Cobrado este mes',
+        'Clientes en mora',
+        'Mora prolongada',
+        'Pagados sin entregar',
+    ]);
+});
+
+it('cambia a dos columnas y guarda la disposición', () => {
+    put.mockClear();
+    render(<Dashboard {...dashboardProps()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Dos columnas/ }));
+
+    expect(put).toHaveBeenCalledWith(
+        '/backoffice/panel/disposicion',
+        {
+            mode: 'split',
+            sections: ['stats', 'plan'],
+            cards: ['pendingReceipts', 'collectedThisMonth', 'customersOverdue', 'longOverdue', 'completedNotDelivered', 'unreadMessages'],
+        },
+        expect.objectContaining({ preserveScroll: true }),
+    );
+    expect(screen.getByRole('button', { name: /Apilado/ })).toBeInTheDocument();
+});
+
+it('al organizar cada sección y cada tarjeta tiene su asa', () => {
+    render(<Dashboard {...dashboardProps()} />);
+
+    expect(screen.queryByRole('button', { name: /^Mover/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Organizar/ }));
+
+    expect(screen.getByRole('button', { name: 'Mover las cifras del día' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mover el plan y la tasa' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mover Chats sin leer' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Mover/ })).toHaveLength(8);
+    expect(screen.getByRole('button', { name: /Listo/ })).toHaveAttribute('aria-pressed', 'true');
 });

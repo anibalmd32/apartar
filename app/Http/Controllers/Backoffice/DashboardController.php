@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Domain\Collections\CollectionPreset;
+use App\Domain\Dashboard\DashboardLayout;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
@@ -36,13 +37,12 @@ final class DashboardController extends Controller
         $user = $request->user();
         $metrics = $this->metrics->compute($this->context->organization());
         $collected = $metrics['collectedThisMonthCents'] ?? null;
-        $week = $metrics['dueThisWeek'] ?? null;
 
         return Inertia::render('backoffice/Dashboard', [
+            'layout' => DashboardLayout::of($user instanceof User ? $user : null)->toArray(),
             'metrics' => [
                 ...$metrics,
                 'collectedThisMonth' => is_int($collected) ? $this->money(new Money($collected)) : null,
-                'dueThisWeek' => is_array($week) ? ['count' => $week['count'], 'amount' => $this->money(new Money((int) $week['pendingCents']))] : null,
                 'warnings' => $this->suspendedFirst(is_array($metrics['warnings'] ?? null) ? $metrics['warnings'] : []),
             ],
             'pendingReceipts' => $user instanceof User && $user->role->can(OrganizationCapability::Receipts)
@@ -53,7 +53,6 @@ final class DashboardController extends Controller
             'links' => [
                 'receipts' => route('receipts.index', ['status' => 'pending_review']),
                 'invoices' => $user instanceof User && $user->role->canManageBilling() ? route('subscription.invoices.index') : null,
-                'dueThisWeek' => route('collections.index', ['preset' => 'due_within_7_days']),
                 'customersOverdue' => route('customers.index', ['overdue' => '1']),
                 'longOverdue' => route('collections.index', ['preset' => CollectionPreset::LongOverdue->value]),
                 'completedNotDelivered' => route('collections.index', ['preset' => 'completed_not_delivered']),
