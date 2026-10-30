@@ -4,17 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backoffice;
 
+use App\Actions\Customer\CreateCustomerAction;
+use App\Domain\Customer\CustomerAlreadyExistsException;
 use App\Http\Controllers\Concerns\ResolvesTableState;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backoffice\StoreCustomerRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Catalog;
 use App\Models\Customer;
+use App\Models\User;
 use App\Queries\CustomerDirectoryFilterInput;
 use App\Queries\CustomerDirectoryFilters;
 use App\Queries\CustomerDirectoryQuery;
 use App\Queries\CustomerDirectoryRow;
+use App\Support\InvalidDocumentNumberException;
+use App\Support\InvalidPhoneNumberException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,6 +53,27 @@ final class CustomerController extends Controller
                 'without_active' => $this->directory->search(new CustomerDirectoryFilters(withoutActive: true))->count(),
             ],
         ]);
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function store(StoreCustomerRequest $request, CreateCustomerAction $create): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $customer = $create->handle($request->contact(), $request->consent(), $actor);
+        } catch (CustomerAlreadyExistsException $exception) {
+            throw ValidationException::withMessages(['document_number' => $exception->getMessage()]);
+        } catch (InvalidDocumentNumberException $exception) {
+            throw ValidationException::withMessages(['document_number' => $exception->getMessage()]);
+        } catch (InvalidPhoneNumberException $exception) {
+            throw ValidationException::withMessages(['phone' => $exception->getMessage()]);
+        }
+
+        return to_route('customers.show', $customer)->with('status', sprintf('Cliente %s agregado.', $customer->full_name));
     }
 
     /**

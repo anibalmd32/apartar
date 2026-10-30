@@ -13,6 +13,7 @@ const CUSTOMER_RESOLVER_REFERENCES = [
     CUSTOMER_CREATOR,
     'app/Actions/Layaway/CreateLayawayAction.php',
     'app/Actions/Layaway/CreateBackofficeLayawayAction.php',
+    'app/Actions/Customer/CreateCustomerAction.php',
 ];
 
 function codeWithoutComments(string $code, bool $withStrings = true): string

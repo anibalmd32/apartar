@@ -15,6 +15,11 @@ final class CustomerPolicy
         return $user->disabled_at === null && $user->role->can(OrganizationCapability::Customers);
     }
 
+    public function create(User $user): bool
+    {
+        return $this->viewAny($user);
+    }
+
     public function view(User $user, Customer $customer): bool
     {
         return $this->viewAny($user) && $user->organization_id === (int) $customer->organization_id;

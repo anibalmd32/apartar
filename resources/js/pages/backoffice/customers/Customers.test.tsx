@@ -158,3 +158,15 @@ it('«Todos» quita los filtros rápidos en una sola visita y cada píldora llev
     expect(routerGet.mock.calls[0]?.[1]).not.toHaveProperty('overdue');
     expect(routerGet.mock.calls[0]?.[1]).not.toHaveProperty('due_soon');
 });
+
+it('«Nuevo cliente» abre el alta y la envía al directorio', () => {
+    render(<CustomerIndex {...directoryProps([])} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar un cliente' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Nuevo cliente' });
+    fireEvent.change(within(dialog).getByLabelText(/Nombre y apellido/), { target: { value: 'Luis Rojas' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Agregar cliente' }));
+
+    expect(post).toHaveBeenCalledWith('/backoffice/clientes', expect.objectContaining({ full_name: 'Luis Rojas', terms_accepted: false }));
+});

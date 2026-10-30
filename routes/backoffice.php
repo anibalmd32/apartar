@@ -227,6 +227,8 @@ Route::prefix('backoffice')->group(function (): void {
             Route::put('etiquetas/{tag}', [TagController::class, 'update'])->name('tags.update');
             Route::delete('etiquetas/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
+            Route::post('clientes', [CustomerController::class, 'store'])->middleware('throttle:30,1')->name('customers.store');
+
             Route::get('apartados/nuevo', [LayawayCreationController::class, 'create'])->name('layaways.create');
             Route::get('apartados/nuevo/clientes', [LayawayCreationController::class, 'customers'])
                 ->middleware('throttle:60,1')

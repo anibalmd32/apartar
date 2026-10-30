@@ -3,21 +3,29 @@ import { DocumentField } from '@/components/ui/document-field';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 
-export interface NewCustomerValues {
+export type NewCustomerValues = {
     full_name: string;
     document_number: string;
     phone: string;
     email: string;
     terms_accepted: boolean;
-}
+};
 
 interface NewCustomerFieldsProps {
     values: NewCustomerValues;
     onChange: (patch: Partial<NewCustomerValues>) => void;
     errors: Partial<Record<keyof NewCustomerValues, string>>;
+    documentHint?: string;
+    emailHint?: string;
 }
 
-export function NewCustomerFields({ values, onChange, errors }: NewCustomerFieldsProps) {
+export function NewCustomerFields({
+    values,
+    onChange,
+    errors,
+    documentHint = 'Si ya tienes una ficha con este documento, el apartado va a esa ficha y no se cambian sus datos.',
+    emailHint = 'Si lo dejas, le enviamos su código de apartado y cómo pagar.',
+}: NewCustomerFieldsProps) {
     return (
         <div className="flex flex-col gap-1">
             <TextField
@@ -34,7 +42,7 @@ export function NewCustomerFields({ values, onChange, errors }: NewCustomerField
                 value={values.document_number}
                 onChange={(value) => onChange({ document_number: value })}
                 error={errors.document_number}
-                hint="Si ya tienes una ficha con este documento, el apartado va a esa ficha y no se cambian sus datos."
+                hint={documentHint}
                 required
             />
             <PhoneField
@@ -52,7 +60,7 @@ export function NewCustomerFields({ values, onChange, errors }: NewCustomerField
                 value={values.email}
                 onChange={(event) => onChange({ email: event.target.value })}
                 error={errors.email}
-                hint="Si lo dejas, le enviamos su código de apartado y cómo pagar."
+                hint={emailHint}
             />
             <CheckboxField
                 label="El cliente aceptó las condiciones del apartado"

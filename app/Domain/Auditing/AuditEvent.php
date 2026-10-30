@@ -22,6 +22,7 @@ enum AuditEvent: string
     case CatalogUnpublished = 'catalog.unpublished';
     case CatalogExpirationScheduled = 'catalog.expiration_scheduled';
 
+    case CustomerCreated = 'customer.created';
     case CustomerMerged = 'customer.merged';
     case CustomerIdentityConflict = 'customer.identity_conflict';
     case CustomerContactUpdated = 'customer.contact_updated';
@@ -61,7 +62,7 @@ enum AuditEvent: string
             self::ProductPricingChanged, self::ProductStatusChanged, self::CatalogPublished,
             self::CatalogUnpublished, self::CatalogExpirationScheduled => AuditArea::Catalog,
 
-            self::CustomerMerged, self::CustomerIdentityConflict,
+            self::CustomerCreated, self::CustomerMerged, self::CustomerIdentityConflict,
             self::CustomerContactUpdated, self::AccountLinked => AuditArea::Customers,
 
             self::SettingsUpdated, self::IdentityUpdated, self::PaymentAccountCreated,
@@ -96,6 +97,7 @@ enum AuditEvent: string
             self::CatalogPublished, self::CatalogExpirationScheduled => 'App\Actions\Catalog\PublishCatalogAction',
             self::CatalogUnpublished => 'App\Actions\Catalog\UnpublishCatalogAction',
 
+            self::CustomerCreated => 'App\Actions\Customer\CreateCustomerAction',
             self::CustomerMerged => 'App\Actions\Customer\MergeCustomersAction',
             self::CustomerIdentityConflict,
             self::CustomerContactUpdated => 'App\Actions\Customer\ResolveCustomerAction',
@@ -145,6 +147,7 @@ enum AuditEvent: string
             self::CatalogUnpublished => 'Catálogo despublicado',
             self::CatalogExpirationScheduled => 'Fecha de expiración del catálogo cambiada',
 
+            self::CustomerCreated => 'Cliente dado de alta por el negocio',
             self::CustomerMerged => 'Fichas de cliente fusionadas',
             self::CustomerIdentityConflict => 'Conflicto de identidad detectado',
             self::CustomerContactUpdated => 'Ficha de cliente sobrescrita desde el formulario de apartado',
