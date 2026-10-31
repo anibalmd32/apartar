@@ -19,8 +19,8 @@ plan() {
 }
 
 case "$ROLE" in
-    app|queue|reverb) ;;
-    *) abort "CONTAINER_ROLE desconocido: '$ROLE' (esperado app, queue o reverb)" ;;
+    app|queue|reverb|pulse) ;;
+    *) abort "CONTAINER_ROLE desconocido: '$ROLE' (esperado app, queue, reverb o pulse)" ;;
 esac
 
 if [ "$APP_ENV" = "production" ]; then
@@ -107,6 +107,7 @@ default_command() {
         app) echo "php-fpm" ;;
         queue) echo "php artisan queue:work redis --queue=high,default,exports,telemetry --tries=3 --max-time=3600" ;;
         reverb) echo "php artisan reverb:start --host=0.0.0.0 --port=8080" ;;
+        pulse) echo "php artisan pulse:check" ;;
     esac
 }
 

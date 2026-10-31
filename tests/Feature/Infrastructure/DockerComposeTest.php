@@ -54,7 +54,7 @@ it('usa una sola red y no conoce traefik_proxy en local', function (): void {
 it('produccion corre solo la app, detras de Traefik y con MySQL y Redis gestionados por Dokploy', function (): void {
     $production = ComposeFile::read('docker-compose.prod.yml');
 
-    expect($production->keys('services'))->toEqualCanonicalizing(['app', 'nginx', 'queue', 'reverb']);
+    expect($production->keys('services'))->toEqualCanonicalizing(['app', 'nginx', 'queue', 'reverb', 'pulse']);
     expect($production->keys('volumes'))->toBe(['app_storage']);
     expect($production->block('networks', 'dokploy-network'))->toContain('external: true');
     expect((string) file_get_contents(base_path('docker-compose.prod.yml')))
@@ -79,6 +79,7 @@ it('en produccion cada servicio reinicia, tiene limite de memoria, su rol y la r
     ['nginx', null],
     ['queue', 'queue'],
     ['reverb', 'reverb'],
+    ['pulse', 'pulse'],
 ]);
 
 it('en produccion comparte app_storage y construye los assets con el host publico de Reverb', function (): void {
@@ -94,6 +95,7 @@ it('en produccion comparte app_storage y construye los assets con el host public
         expect($production->service($service))->toContain('target: runtime')->toContain('image: apartar/app');
     }
     expect($production->service('reverb'))->toContain('--host=0.0.0.0')->toContain('--port=8080');
+    expect($production->service('pulse'))->toContain('image: apartar/app')->toContain('- pulse:check');
 });
 
 it('declara healthcheck en mysql, redis y app', function (string $service): void {

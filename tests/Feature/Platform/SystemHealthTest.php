@@ -70,8 +70,7 @@ final class SystemHealthTest extends TestCase
             event(new ScheduledTaskFinished(app(Schedule::class)->call(fn () => null)->name($name), 0.1));
         }
 
-        $this->asOperator();
-        $health = $this->get('/plataforma/salud')->assertOk()->viewData('page')['props']['health'];
+        $health = app(SystemHealthQuery::class)->compute();
 
         $this->assertSame(3, $health['reconciliation']['discrepancies']);
         $this->assertSame(['source' => 'bcv', 'ageHours' => 30, 'isStale' => true], $health['exchangeRate']);

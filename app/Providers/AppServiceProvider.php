@@ -10,6 +10,7 @@ use App\Domain\Notification\PushReportHandler;
 use App\Domain\Tenancy\TenantContext;
 use App\Support\FrameworkMails;
 use App\Support\Mail\OutgoingMailContext;
+use App\Support\MonitorAccess;
 use App\Support\Settings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
@@ -18,11 +19,13 @@ use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use NotificationChannels\WebPush\ReportHandlerInterface;
 use NotificationChannels\WebPush\WebPushChannel;
+use Opcodes\LogViewer\Facades\LogViewer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,6 +46,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Password::defaults(fn (): Password => Password::min(6)->letters()->numbers()->uncompromised());
         FrameworkMails::register();
+
+        Gate::define('viewPulse', fn (mixed $user = null): bool => MonitorAccess::granted(request()));
+        LogViewer::auth(fn (Request $request): bool => MonitorAccess::granted($request));
 
         $this->app->when(WebPushChannel::class)
             ->needs(ReportHandlerInterface::class)

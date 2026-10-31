@@ -27,7 +27,6 @@ Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->gr
         Route::put('contrasena', [LoginController::class, 'updatePassword'])->name('password.update');
 
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-        Route::get('salud', [DashboardController::class, 'health'])->name('health');
 
         Route::get('organizaciones', [OrganizationController::class, 'index'])->name('organizations.index');
         Route::get('organizaciones/{organization}', [OrganizationController::class, 'show'])->withTrashed()->name('organizations.show');

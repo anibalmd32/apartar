@@ -62,6 +62,12 @@ final class TenancyAudit extends Command
         'failed_jobs' => 'Tabla del framework.',
         'media' => 'Tabla de spatie/laravel-medialibrary: se ata a su modelo por relación polimórfica.',
         'push_subscriptions' => 'Tabla de laravel-notification-channels/webpush: se ata a su notificable.',
+        'pulse_values' => 'Tabla de laravel/pulse: métricas técnicas de toda la plataforma.',
+        'pulse_entries' => 'Tabla de laravel/pulse: métricas técnicas de toda la plataforma.',
+        'pulse_aggregates' => 'Tabla de laravel/pulse: métricas técnicas de toda la plataforma.',
+        'telescope_entries' => 'Tabla de laravel/telescope: trazas técnicas de toda la plataforma.',
+        'telescope_entries_tags' => 'Tabla de laravel/telescope: etiquetas de sus trazas.',
+        'telescope_monitoring' => 'Tabla de laravel/telescope: etiquetas vigiladas.',
 
     ];
 

@@ -32,7 +32,6 @@ export interface PlatformMetrics {
     readonly periodDays?: number;
     readonly network: { readonly accounts: number; readonly subscriptions: number; readonly multiBusinessAccounts: number } | null;
     readonly gmv: { readonly committedLast30Days: MoneyView; readonly collectedLast30Days: MoneyView } | null;
-    readonly health: { readonly failedJobs: number; readonly rateAgeHours: number | null; readonly queueBacklog: number } | null;
 }
 
 export interface SystemHealth {

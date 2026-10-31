@@ -21,6 +21,12 @@ function foreignTables(): array
         'failed_jobs',
         'sessions',
         'password_reset_tokens',
+        'pulse_values',
+        'pulse_entries',
+        'pulse_aggregates',
+        'telescope_entries',
+        'telescope_entries_tags',
+        'telescope_monitoring',
     ];
 }
 

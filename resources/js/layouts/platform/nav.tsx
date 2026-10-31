@@ -1,6 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHeart, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
+import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
 export interface PlatformSection {
@@ -15,7 +15,6 @@ export const PLATFORM_SECTIONS: readonly PlatformSection[] = [
     { label: 'Organizaciones', short: 'Orgs', href: '/plataforma/organizaciones', icon: cilBuilding },
     { label: 'Comprobantes', short: 'Comprobantes', href: '/plataforma/facturas', icon: cilDescription },
     { label: 'Correos', short: 'Correos', href: '/plataforma/correos', icon: cilEnvelopeClosed },
-    { label: 'Salud del sistema', short: 'Salud', href: '/plataforma/salud', icon: cilHeart },
 ];
 
 export const PLATFORM_SUPPORT_SECTIONS: readonly PlatformSection[] = [

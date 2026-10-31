@@ -85,3 +85,8 @@ Schedule::command('telemetry:purge')
     ->dailyAt('03:45')
     ->withoutOverlapping()
     ->name('telemetry:purge');
+
+Schedule::command('telescope:prune', ['--hours' => 72])
+    ->dailyAt('04:15')
+    ->withoutOverlapping()
+    ->name('telescope:prune');

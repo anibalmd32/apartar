@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Queries\Platform\MailMetricsQuery;
 use App\Queries\Platform\PlatformMetricsQuery;
-use App\Queries\Platform\SystemHealthQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,10 +37,5 @@ final class DashboardController extends Controller
 
             return null;
         }
-    }
-
-    public function health(SystemHealthQuery $health): Response
-    {
-        return Inertia::render('platform/Health', ['health' => $health->compute()]);
     }
 }

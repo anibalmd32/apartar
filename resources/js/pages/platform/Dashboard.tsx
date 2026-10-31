@@ -32,7 +32,7 @@ interface DashboardProps {
 }
 
 export default function PlatformDashboard({ metrics, periods = [30], mail }: DashboardProps) {
-    const { organizations, byPlan, mrr, invoices, network, gmv, health } = metrics;
+    const { organizations, byPlan, mrr, invoices, network, gmv } = metrics;
     const days = metrics.periodDays ?? 30;
     const periodLabel = PERIOD_LABELS[days] ?? `${days} días`;
     const planTotal = byPlan === null ? 0 : Object.values(byPlan).reduce((sum, total) => sum + total, 0);
@@ -117,7 +117,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
 
             {mail === undefined ? null : <MailSummaryCard summary={mail} />}
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4">
                 <SectionCard title="Organizaciones por plan" aria-label="Por plan">
                     {byPlan === null ? (
                         <p>{DASH}</p>
@@ -133,25 +133,6 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                                 />
                             ))}
                         </ul>
-                    )}
-                </SectionCard>
-
-                <SectionCard
-                    title="Salud"
-                    action={
-                        <Link href="/plataforma/salud" className="link-hover">
-                            Ver detalle
-                        </Link>
-                    }
-                >
-                    {health === null ? (
-                        <p>{DASH}</p>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            <Tile label="Jobs fallidos">{count(health.failedJobs)}</Tile>
-                            <Tile label="En cola">{count(health.queueBacklog)}</Tile>
-                            <Tile label="Edad de la tasa">{health.rateAgeHours === null ? DASH : `${health.rateAgeHours} h`}</Tile>
-                        </div>
                     )}
                 </SectionCard>
             </div>

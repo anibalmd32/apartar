@@ -84,6 +84,25 @@ services:
       - apartar
       - dokploy-network
 
+  pulse:
+    image: apartar/app
+    restart: unless-stopped
+    mem_limit: 192m
+    environment:
+      CONTAINER_ROLE: pulse
+    env_file:
+      - .env
+    command:
+      - php
+      - artisan
+      - pulse:check
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - apartar
+      - dokploy-network
+
   reverb:
     build:
       context: .

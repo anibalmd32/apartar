@@ -89,11 +89,6 @@ final class PlatformMetricsQuery
                 'committedLast30Days' => $this->money->view((int) DB::table('layaways')->where('created_at', '>=', $since)->sum('total_cents')),
                 'collectedLast30Days' => $this->money->view((int) DB::table('payments')->where('settled_at', '>=', $since)->sum('amount_cents_usd')),
             ]),
-            'health' => $this->isolated(fn (): array => [
-                'failedJobs' => DB::table('failed_jobs')->count(),
-                'rateAgeHours' => $this->rateAgeHours(),
-                'queueBacklog' => DB::table('jobs')->count(),
-            ]),
         ];
     }
 
@@ -158,13 +153,6 @@ final class PlatformMetricsQuery
             ->select('catalog_subscriptions.account_id');
 
         return DB::query()->fromSub($accounts, 'multi')->count();
-    }
-
-    private function rateAgeHours(): ?int
-    {
-        $latest = DB::table('exchange_rates')->max('published_at');
-
-        return $latest === null ? null : (int) floor(CarbonImmutable::parse((string) $latest)->diffInHours(CarbonImmutable::now(), true));
     }
 
     /**

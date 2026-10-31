@@ -41,6 +41,7 @@ final class SystemHealthQuery
         'push:purge-stale' => '30 3 * * 0',
         'notifications:dispatch-reminders' => '0 * * * *',
         'telemetry:purge' => '45 3 * * *',
+        'telescope:prune' => '15 4 * * *',
     ];
 
     public function __construct(private readonly ExchangeRateService $rates) {}

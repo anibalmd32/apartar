@@ -16,7 +16,6 @@ const metrics: PlatformMetrics = {
     invoices: { pendingReview: 3, overdue: 2 },
     network: { accounts: 1230, subscriptions: 2890, multiBusinessAccounts: 214 },
     gmv: null,
-    health: { failedJobs: 2, rateAgeHours: 1, queueBacklog: 0 },
 };
 
 it('pinta cada bloque y la definición del MRR', () => {

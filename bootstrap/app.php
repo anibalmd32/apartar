@@ -19,6 +19,7 @@ use App\Http\Middleware\EnforcePlanLimit;
 use App\Http\Middleware\EnsureAccountSession;
 use App\Http\Middleware\EnsureAdminIsActive;
 use App\Http\Middleware\EnsureIsOwner;
+use App\Http\Middleware\EnsureMonitorAccess;
 use App\Http\Middleware\EnsureOrganizationIsActive;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsurePlatformUserIsActive;
@@ -47,7 +48,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
+        web: [__DIR__.'/../routes/monitor.php', __DIR__.'/../routes/web.php'],
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
@@ -86,6 +87,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'password-changed' => EnsurePasswordIsChanged::class,
             'during-suspension' => AllowedDuringSuspension::class,
             'plan-feature' => EnforcePlanLimit::class,
+            'monitor' => EnsureMonitorAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
