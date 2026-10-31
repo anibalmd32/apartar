@@ -19,7 +19,7 @@ export default function Chat({ businessName, thread }: PortalChatProps) {
                 Tus conversaciones
             </Link>
 
-            <section className="border-line bg-base-100 flex h-[calc(100dvh-250px)] min-h-[440px] flex-col overflow-hidden rounded-2xl border lg:h-[calc(100dvh-200px)]">
+            <section className="border-line bg-base-100 flex h-[calc(100dvh-190px)] min-h-[480px] resize-y flex-col overflow-hidden rounded-2xl border lg:h-[calc(100dvh-150px)]">
                 <header className="border-line flex items-center gap-2.5 border-b px-5 py-3.5 lg:px-6">
                     <Avatar name={businessName} size={40} tone="accent" />
                     <h1 className="min-w-0 truncate text-[15px] font-bold">Escríbele a {businessName}</h1>

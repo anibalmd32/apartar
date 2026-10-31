@@ -1,10 +1,12 @@
-import { mergeById, REALTIME_POLL_MS, useRealtimeMessages } from '@/features/chat/hooks/useRealtimeMessages';
+import { LIVE_SAFETY_POLL_MS, mergeById, REALTIME_POLL_MS, useRealtimeMessages } from '@/features/chat/hooks/useRealtimeMessages';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/echo', () => ({ echo: () => null }));
+const { echoClient } = vi.hoisted(() => ({ echoClient: { current: null as unknown } }));
+
+vi.mock('@/lib/echo', () => ({ echo: () => echoClient.current }));
 
 interface Message {
     readonly id: number;
@@ -21,7 +23,16 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.useRealTimers();
+    echoClient.current = null;
 });
+
+function silentLiveClient() {
+    return {
+        private: () => ({ listen: vi.fn() }),
+        leave: vi.fn(),
+        connector: { pusher: { connection: { state: 'connected', bind: vi.fn(), unbind: vi.fn() } } },
+    };
+}
 
 it('une por id, sin repetir y en orden', () => {
     const merged = mergeById<Message>(
@@ -84,4 +95,32 @@ it('lo que se añade a mano y llega luego por el sondeo cuenta una vez', async (
     });
 
     expect(result.current.messages).toHaveLength(1);
+});
+
+it('conectado en vivo pero sin eventos, los mensajes llegan igual por el sondeo de respaldo', async () => {
+    echoClient.current = silentLiveClient();
+    let replies: readonly Message[] = [];
+    const fetchAfter = vi.fn(async () => replies);
+
+    const { result } = renderHook(
+        () =>
+            useRealtimeMessages<Message>({
+                channel: 'organization.7.conversation.42',
+                event: 'MessageSent',
+                initial: [{ id: 1, body: 'hola' }],
+                fetchAfter,
+                queryKey: ['chat', 'silencioso'],
+            }),
+        { wrapper },
+    );
+
+    expect(result.current.mode).toBe('live');
+
+    replies = [{ id: 2, body: 'respuesta del negocio' }];
+
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(LIVE_SAFETY_POLL_MS + 10);
+    });
+
+    expect(result.current.messages.map((message) => message.id)).toEqual([1, 2]);
 });

@@ -28,7 +28,7 @@ export default function ChatIndex({ threads, nextPageUrl, search, active, histor
         <BackofficeLayout title="Chat" description="Las conversaciones con tus clientes.">
             <div
                 className={cn(
-                    'border-line bg-base-100 grid grid-cols-1 overflow-hidden rounded-2xl border lg:h-[calc(100dvh-230px)] lg:min-h-[560px] lg:grid-cols-[300px_minmax(0,1fr)]',
+                    'border-line bg-base-100 grid grid-cols-1 overflow-hidden rounded-2xl border lg:h-[calc(100dvh-170px)] lg:min-h-[600px] lg:resize-y lg:grid-cols-[300px_minmax(0,1fr)]',
                     active !== null && 'xl:grid-cols-[320px_minmax(0,1fr)_280px]',
                 )}
             >
@@ -93,7 +93,12 @@ export default function ChatIndex({ threads, nextPageUrl, search, active, histor
 
                 <section
                     aria-label="Conversación abierta"
-                    className={cn('flex min-h-0 flex-col', active === null ? 'max-lg:hidden' : 'max-lg:h-[calc(100dvh-250px)] max-lg:min-h-[440px]')}
+                    className={cn(
+                        'flex min-h-0 flex-col',
+                        active === null
+                            ? 'max-lg:hidden'
+                            : 'max-lg:h-[calc(100dvh-190px)] max-lg:min-h-[480px] max-lg:resize-y max-lg:overflow-hidden',
+                    )}
                 >
                     {active === null ? (
                         <div className="text-ink-3 flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-sm">

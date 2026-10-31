@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const REALTIME_CONNECT_TIMEOUT_MS = 5_000;
 
-export const REALTIME_POLL_MS = 10_000;
+export const REALTIME_POLL_MS = 5_000;
+
+export const LIVE_SAFETY_POLL_MS = 8_000;
 
 export type RealtimeMode = 'connecting' | 'live' | 'polling';
 
@@ -82,9 +84,10 @@ export function useRealtimeMessages<T extends Identified>({ channel, event, init
 
             return fresh.length;
         },
-        enabled: mode === 'polling',
-        refetchInterval: mode === 'polling' ? REALTIME_POLL_MS : false,
-        refetchOnWindowFocus: false,
+        enabled: mode !== 'connecting',
+        refetchInterval: mode === 'polling' ? REALTIME_POLL_MS : LIVE_SAFETY_POLL_MS,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: 'always',
         retry: false,
     });
 
