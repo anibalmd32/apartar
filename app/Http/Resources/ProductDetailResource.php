@@ -8,7 +8,6 @@ use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\UnavailableReason;
-use App\Domain\Payment\PaymentAccountView;
 use App\Http\Resources\Concerns\DescribesProductOffer;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Catalog;
@@ -28,13 +27,9 @@ final class ProductDetailResource extends JsonResource
 
     public const MAX_QUANTITY = 10;
 
-    /**
-     * @param  list<PaymentAccountView>  $paymentAccounts
-     */
     public function __construct(
         Product $product,
         private readonly Catalog $catalog,
-        private readonly array $paymentAccounts,
         private readonly bool $businessAccepts = true,
     ) {
         parent::__construct($product);
@@ -83,7 +78,6 @@ final class ProductDetailResource extends JsonResource
                 ->values()
                 ->all(),
             'maxQuantity' => max(0, min($product->stock, self::MAX_QUANTITY)),
-            'paymentAccounts' => array_map(fn (PaymentAccountView $account): array => $account->toArray(), $this->paymentAccounts),
             'canBeReserved' => $reason === null,
             'unavailableReason' => $reason?->message(),
         ];

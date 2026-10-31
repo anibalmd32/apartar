@@ -72,7 +72,6 @@ function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
         images: [],
         specifications: [],
         maxQuantity: 3,
-        paymentAccounts: [],
         canBeReserved: true,
         unavailableReason: null,
         ...overrides,
@@ -141,7 +140,7 @@ it('sin inicial, el resumen y los pasos hablan de cuotas y no de pagar la inicia
     expect(screen.getByText(/arranca activo hoy/)).toBeInTheDocument();
 });
 
-it('llega con el producto, cantidad 1, el plan del servidor y dónde pagar', () => {
+it('llega con el producto, cantidad 1 y el plan del servidor, sin las cuentas de cobro', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { name: 'Aparta tu producto' })).toBeInTheDocument();
@@ -149,7 +148,7 @@ it('llega con el producto, cantidad 1, el plan del servidor y dónde pagar', () 
     expect(screen.getByLabelText('Cantidad')).toHaveValue(1);
     expect(screen.getByText('$150,00')).toBeInTheDocument();
     expect(screen.getByText('Última cuota')).toBeInTheDocument();
-    expect(screen.getByText(/todavía no ha publicado sus formas de pago/)).toBeInTheDocument();
+    expect(screen.queryByText(/Cómo pagarle|formas de pago/)).toBeNull();
 });
 
 it('manda la misma clave de idempotencia en cada envío', () => {

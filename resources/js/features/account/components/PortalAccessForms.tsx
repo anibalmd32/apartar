@@ -16,10 +16,10 @@ interface LinkForm {
     email: string;
 }
 
-export function CodeAccess() {
+export function CodeAccess({ initialCode = null }: { initialCode?: string | null }) {
     const { data, setData, post, processing, errors } = useForm<CodeForm>({
         document: '',
-        code: '',
+        code: initialCode ?? '',
     });
 
     const submit: FormEventHandler = (event) => {
@@ -46,14 +46,14 @@ export function CodeAccess() {
                 value={data.code}
                 onChange={(event) => setData('code', event.target.value)}
                 error={errors.code}
-                hint="Está en el correo o en la pantalla de confirmación."
+                hint={initialCode ? 'Ya va puesto el del apartado que acabas de hacer.' : 'Está en el correo o en la pantalla de confirmación.'}
                 autoComplete="off"
                 placeholder="AP-7K3M9QRT"
                 required
             />
 
             <Button type="submit" size="lg" block loading={processing} className="mt-2">
-                Ver mi apartado
+                {initialCode ? 'Continuar al pago' : 'Ver mi apartado'}
             </Button>
         </form>
     );

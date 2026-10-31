@@ -2,15 +2,15 @@ import { Alert } from '@/components/ui/alert';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CopyButton } from '@/features/catalog/components/CopyButton';
-import { PaymentMethodsCard } from '@/features/catalog/components/PaymentMethodsCard';
+import { LayawaySteps } from '@/features/catalog/components/LayawaySteps';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { LayawayPlanSummary } from '@/features/layaway/components/LayawayPlanSummary';
 import CatalogLayout from '@/layouts/catalog-layout';
 import { type LayawayThanksProps } from '@/types/layaway';
-import { cilCalendar, cilCheckCircle, cilClock, cilCloudUpload } from '@coreui/icons';
+import { cilArrowRight, cilCalendar, cilCheckCircle, cilClock } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 
-export default function LayawayThanks({ catalog, layaway, paymentAccounts, receiptUrl, follow }: LayawayThanksProps) {
+export default function LayawayThanks({ catalog, layaway, payUrl, follow }: LayawayThanksProps) {
     return (
         <CatalogLayout
             title={`Apartado ${layaway.code} · ${catalog.name}`}
@@ -18,6 +18,8 @@ export default function LayawayThanks({ catalog, layaway, paymentAccounts, recei
             showsPlatformBadge={catalog.showsPlatformBadge}
             width="narrow"
         >
+            <LayawaySteps current={3} requiresDownPayment={layaway.plan.requiresDownPayment} />
+
             <div className="bg-base-100 border-line shadow-card mx-auto flex w-full max-w-[640px] flex-col gap-[18px] rounded-2xl border p-5 lg:p-10">
                 <header className="flex flex-col items-center gap-2 text-center">
                     <IconChip icon={cilCheckCircle} tone="success" size={64} className="mb-2 rounded-2xl" />
@@ -93,18 +95,13 @@ export default function LayawayThanks({ catalog, layaway, paymentAccounts, recei
                     <LayawayPlanSummary plan={layaway.plan} />
                 </details>
 
-                <PaymentMethodsCard accounts={paymentAccounts} businessName={catalog.business.name} />
-
-                {receiptUrl !== null ? (
-                    <Link href={receiptUrl} className="btn btn-primary btn-lg btn-block">
-                        <Icon icon={cilCloudUpload} />
-                        Subir el comprobante de pago
-                    </Link>
-                ) : null}
-
-                <Link href={route('portal.access')} className="btn btn-lg btn-block">
-                    Ver mi apartado
+                <Link href={payUrl} className="btn btn-primary btn-lg btn-block">
+                    Continuar al pago
+                    <Icon icon={cilArrowRight} />
                 </Link>
+                <p className="text-ink-3 -mt-2 text-center text-xs">
+                    Ahí ves las cuentas de {catalog.business.name} y subes tu comprobante. El código ya va puesto: solo escribe tu cédula.
+                </p>
 
                 {layaway.hasEmail ? <Alert tone="info">También te lo enviamos por correo, con las formas de pago.</Alert> : null}
 

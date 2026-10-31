@@ -17,7 +17,18 @@ export interface PortalSessionView {
 
 export interface PortalAccessProps {
     readonly status?: string | null;
+    readonly code?: string | null;
     readonly googleUrl: string;
+}
+
+export interface PayableLayaway extends LayawaySummary {
+    readonly businessName: string;
+    readonly payUrl: string;
+}
+
+export interface PortalPayProps {
+    readonly layaways: readonly PayableLayaway[];
+    readonly dashboardUrl: string;
 }
 
 export type LayawayStatus = 'pending_down_payment' | 'active' | 'overdue' | 'completed' | 'cancelled' | 'expired';

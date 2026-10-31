@@ -15,7 +15,10 @@ const STEPS_WITHOUT_DOWN_PAYMENT = ['Producto', 'Tus datos', 'Paga tus cuotas'] 
 
 export function LayawaySteps({ current, productUrl, requiresDownPayment = true }: LayawayStepsProps) {
     return (
-        <ol aria-label="Pasos del apartado" className="flex items-center gap-2.5 overflow-x-auto text-sm">
+        <ol
+            aria-label="Pasos del apartado"
+            className="mx-auto flex max-w-full items-center justify-center gap-2.5 overflow-x-auto overflow-y-hidden text-sm"
+        >
             {(requiresDownPayment ? STEPS : STEPS_WITHOUT_DOWN_PAYMENT).map((label, index) => {
                 const n = index + 1;
                 const done = n < current;

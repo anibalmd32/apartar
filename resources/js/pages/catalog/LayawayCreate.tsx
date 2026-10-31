@@ -1,7 +1,6 @@
 import { IconChip } from '@/components/ui/icon-chip';
 import { LayawaySteps } from '@/features/catalog/components/LayawaySteps';
 import { LayawaySummaryCard } from '@/features/catalog/components/LayawaySummaryCard';
-import { PaymentMethodsCard } from '@/features/catalog/components/PaymentMethodsCard';
 import { LayawayForm } from '@/features/layaway/components/LayawayForm';
 import { useLayawayForm } from '@/features/layaway/hooks/useLayawayForm';
 import { track } from '@/features/telemetry/hooks/useTelemetry';
@@ -31,7 +30,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
             business={catalog.business}
             showsPlatformBadge={catalog.showsPlatformBadge}
         >
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col items-center gap-4 text-center">
                 <LayawaySteps
                     current={2}
                     productUrl={route('catalog.product', { catalog: catalog.slug, product: product.slug })}
@@ -49,7 +48,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                     </Link>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+                <div className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
                     <section
                         aria-labelledby="data-heading"
                         className="bg-base-100 border-line shadow-card flex flex-col gap-4 rounded-2xl border p-5"
@@ -73,7 +72,6 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                             plan={plan}
                             stale={planIsStale}
                         />
-                        <PaymentMethodsCard accounts={product.paymentAccounts} businessName={catalog.business.name} />
                     </div>
                 </div>
             )}

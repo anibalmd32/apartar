@@ -74,3 +74,12 @@ it('ofrece entrar con Google', () => {
 
     expect(screen.getByRole('link', { name: 'Entrar con Google' })).toHaveAttribute('href', GOOGLE);
 });
+
+it('desde el tercer paso llega con el código puesto y promete el pago', () => {
+    render(<Access googleUrl={GOOGLE} code="AP-7K3M9QRT" />);
+
+    expect(useForm).toHaveBeenCalledWith(expect.objectContaining({ code: 'AP-7K3M9QRT' }));
+    expect(screen.getByRole('heading', { name: 'Paga tu apartado' })).toBeInTheDocument();
+    expect(screen.getByText(/el código AP-7K3M9QRT ya va puesto/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuar al pago' })).toBeInTheDocument();
+});

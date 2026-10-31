@@ -9,6 +9,7 @@ use App\Auth\AccountSession;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StartScopedSessionRequest;
 use App\Jobs\LinkVisitorEventsToCustomer;
+use App\Support\LayawayCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,15 +18,25 @@ use Inertia\Response;
 
 final class AccessController extends Controller
 {
+    public const CODE_PARAMETER = 'codigo';
+
     public function create(Request $request): Response|RedirectResponse
     {
+        $code = $this->codeFrom($request);
+        $next = $code === null ? 'portal.dashboard' : 'portal.pay';
+
         if (Auth::guard('account')->check() || Auth::guard('customer')->check()) {
-            return redirect()->route('portal.dashboard');
+            return redirect()->route($next);
+        }
+
+        if ($code !== null) {
+            redirect()->setIntendedUrl(route('portal.pay'));
         }
 
         return Inertia::render('portal/Access', [
             'status' => $request->session()->get('status'),
-            'googleUrl' => route('account.google.redirect', ['luego' => route('portal.dashboard', absolute: false)]),
+            'code' => $code,
+            'googleUrl' => route('account.google.redirect', ['luego' => route($next, absolute: false)]),
         ]);
     }
 
@@ -38,6 +49,19 @@ final class AccessController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('portal.dashboard'));
+    }
+
+    private function codeFrom(Request $request): ?string
+    {
+        $raw = $request->query(self::CODE_PARAMETER);
+
+        if (! is_string($raw)) {
+            return null;
+        }
+
+        $code = LayawayCode::normalize($raw);
+
+        return LayawayCode::isWellFormed($code) ? $code : null;
     }
 
     public function destroy(Request $request, AccountSession $account): RedirectResponse

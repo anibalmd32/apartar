@@ -15,7 +15,7 @@ const WAYS: { value: Way; label: string }[] = [
     { value: 'link', label: 'Recibir enlace por correo' },
 ];
 
-export default function Access({ status, googleUrl }: PortalAccessProps) {
+export default function Access({ status, code = null, googleUrl }: PortalAccessProps) {
     const [way, setWay] = useState<Way>(status ? 'link' : 'code');
 
     return (
@@ -29,9 +29,13 @@ export default function Access({ status, googleUrl }: PortalAccessProps) {
                 </span>
 
                 <header className="flex flex-col gap-2">
-                    <h1 className="text-[26px] leading-tight font-extrabold tracking-[-1px] sm:text-[32px]">Mira tus apartados</h1>
+                    <h1 className="text-[26px] leading-tight font-extrabold tracking-[-1px] sm:text-[32px]">
+                        {code ? 'Paga tu apartado' : 'Mira tus apartados'}
+                    </h1>
                     <p className="text-ink-2 text-[15px] leading-normal">
-                        Consulta tus pagos, tus cuotas y sube comprobantes de cualquier negocio donde hayas apartado.
+                        {code
+                            ? `Escribe tu cédula para seguir: el código ${code} ya va puesto. Luego eliges qué apartado pagar y subes el comprobante.`
+                            : 'Consulta tus pagos, tus cuotas y sube comprobantes de cualquier negocio donde hayas apartado.'}
                     </p>
                 </header>
 
@@ -73,7 +77,7 @@ export default function Access({ status, googleUrl }: PortalAccessProps) {
                     </div>
 
                     <div role="tabpanel" id="acceso-code-panel" aria-labelledby="acceso-code" hidden={way !== 'code'}>
-                        <CodeAccess />
+                        <CodeAccess initialCode={code} />
                     </div>
                     <div role="tabpanel" id="acceso-link-panel" aria-labelledby="acceso-link" hidden={way !== 'link'}>
                         <LinkAccess />

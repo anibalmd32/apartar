@@ -214,29 +214,12 @@ final class ProductShowTest extends TestCase
             ->where('currency.rate.rate', 42.5));
     }
 
-    public function test_only_the_active_payment_accounts_travel_in_their_order(): void
+    public function test_the_payment_accounts_do_not_travel_with_the_product(): void
     {
         $this->stock([$this->product('Taladro')]);
-        $this->withinOrganization($this->organization, function (): void {
-            PaymentAccount::factory()->create(['identifier' => '0414-2', 'position' => 2]);
-            PaymentAccount::factory()->inactive()->create(['identifier' => '0414-inactiva', 'position' => 0]);
-            PaymentAccount::factory()->create(['identifier' => '0414-1', 'position' => 1]);
-        });
-        $this->withinOrganization($this->neighbour, fn () => PaymentAccount::factory()->create(['identifier' => '0414-vecina']));
+        $this->withinOrganization($this->organization, fn () => PaymentAccount::factory()->create(['identifier' => '0414-1']));
 
-        $accounts = $this->props($this->visit('taladro'))['product']['paymentAccounts'];
-
-        $this->assertSame(['0414-1', '0414-2'], array_column($accounts, 'identifier'));
-        $this->assertSame([true, true], array_column($accounts, 'isActive'));
-        $this->assertSame('Pago móvil', $accounts[0]['methodLabel']);
-    }
-
-    public function test_without_active_accounts_the_list_is_empty(): void
-    {
-        $this->stock([$this->product('Taladro')]);
-        $this->withinOrganization($this->organization, fn () => PaymentAccount::factory()->inactive()->create());
-
-        $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page->where('product.paymentAccounts', []));
+        $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page->missing('product.paymentAccounts'));
     }
 
     /**

@@ -3,7 +3,6 @@ import ProductShow from '@/pages/catalog/ProductShow';
 import { fakeRoute } from '@/test/fakes';
 import { type CatalogView, type ProductCard, type ProductDetail } from '@/types/catalog-view';
 import { type RateView } from '@/types/exchange';
-import { type PaymentAccountView } from '@/types/payment';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
@@ -28,20 +27,6 @@ const CATALOG: CatalogView = {
     showsPlatformBadge: true,
 };
 
-const ACCOUNT: PaymentAccountView = {
-    id: 1,
-    method: 'pago_movil',
-    methodLabel: 'Pago móvil',
-    identifierLabel: 'Teléfono',
-    bank: 'Banesco',
-    holderName: 'Ana Pérez',
-    holderDocument: 'V-12.345.678',
-    identifier: '0414-1234567',
-    instructions: null,
-    isActive: true,
-    position: 1,
-};
-
 function detail(overrides: Partial<ProductDetail> = {}): ProductDetail {
     return {
         slug: 'taladro',
@@ -62,7 +47,6 @@ function detail(overrides: Partial<ProductDetail> = {}): ProductDetail {
         images: [],
         specifications: [],
         maxQuantity: 5,
-        paymentAccounts: [ACCOUNT],
         canBeReserved: true,
         unavailableReason: null,
         ...overrides,
@@ -111,24 +95,11 @@ it('cambia la moneda de todos los importes sin pedir nada', () => {
     expect(reload).not.toHaveBeenCalled();
 });
 
-it('enseña las cuentas de cobro que llegan', () => {
+it('no enseña las cuentas de cobro: solo salen donde se paga', () => {
     renderPage();
 
-    const payments = screen.getByRole('region', { name: 'Formas de pago' });
-    expect(payments.textContent).toContain('Pago móvil');
-    expect(payments.textContent).toContain('Banesco');
-    expect(payments.textContent).toContain('0414-1234567');
-    expect(payments.textContent).toContain('Ana Pérez');
-    expect(payments.textContent).toContain('V-12.345.678');
-    expect(within(payments).getByRole('button', { name: 'Copiar todos los datos' })).toBeInTheDocument();
-});
-
-it('sin cuentas de cobro manda a consultar al negocio', () => {
-    renderPage(detail({ paymentAccounts: [] }));
-
-    const payments = screen.getByRole('region', { name: 'Formas de pago' });
-    expect(payments.textContent).toContain('Consulta a Ferretería Oriente por el chat');
-    expect(within(payments).queryByRole('link')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Formas de pago' })).toBeNull();
+    expect(screen.queryByText(/Cómo pagarle/)).toBeNull();
 });
 
 it('deshabilita «Apartar» con el motivo cuando no se puede', () => {

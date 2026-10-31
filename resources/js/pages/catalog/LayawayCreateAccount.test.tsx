@@ -71,7 +71,6 @@ function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
         images: [],
         specifications: [],
         maxQuantity: 3,
-        paymentAccounts: [],
         canBeReserved: true,
         unavailableReason: null,
         ...overrides,

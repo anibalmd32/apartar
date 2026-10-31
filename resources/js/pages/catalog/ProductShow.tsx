@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { PaymentMethodsCard } from '@/features/catalog/components/PaymentMethodsCard';
 import { ProductDetailView } from '@/features/catalog/components/ProductDetailView';
 import { ProductGridCard } from '@/features/catalog/components/ProductGridCard';
 import { useDwellTime } from '@/features/telemetry/hooks/useDwellTime';
@@ -65,9 +64,7 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                         ) : null}
                     </div>
                 }
-            >
-                <PaymentMethodsCard accounts={product.paymentAccounts} businessName={catalog.business.name} />
-            </ProductDetailView>
+            />
 
             {related.length > 0 ? (
                 <section aria-labelledby="related-heading" className="flex flex-col gap-4">

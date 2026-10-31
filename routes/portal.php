@@ -12,6 +12,7 @@ use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\FeedController;
 use App\Http\Controllers\Portal\LayawayShowController;
 use App\Http\Controllers\Portal\LoginLinkController;
+use App\Http\Controllers\Portal\PayController;
 use App\Http\Controllers\Portal\PushSubscriptionController;
 use App\Http\Controllers\Portal\ReceiptController;
 use App\Http\Controllers\Portal\SubscriptionsController;
@@ -65,6 +66,7 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
 
     Route::middleware(['portal', 'portal-tenant'])->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('pagar', PayController::class)->name('pay');
         Route::get('apartados/{code}', LayawayShowController::class)->name('layaways.show');
 
         Route::get('apartados/{code}/comprobante', [ReceiptController::class, 'create'])->name('receipts.create');

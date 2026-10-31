@@ -13,7 +13,6 @@ use App\Http\Resources\ProductCardResource;
 use App\Http\Resources\ProductDetailResource;
 use App\Models\Catalog;
 use App\Models\Product;
-use App\Queries\ActivePaymentAccountsQuery;
 use App\Queries\CatalogProductsQuery;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -27,7 +26,6 @@ final class ProductShowController extends Controller
     public function __construct(
         private readonly LimitEnforcer $limits,
         private readonly CatalogProductsQuery $products,
-        private readonly ActivePaymentAccountsQuery $paymentAccounts,
     ) {}
 
     /**
@@ -42,7 +40,7 @@ final class ProductShowController extends Controller
 
         return Inertia::render('catalog/ProductShow', [
             'catalog' => CatalogViewResource::forVisitor($catalog, $this->limits->plan(), $this->products)->resolve($request),
-            'product' => (new ProductDetailResource($product, $catalog, $this->paymentAccounts->all(), $this->limits->offersLayaways()))->resolve($request),
+            'product' => (new ProductDetailResource($product, $catalog, $this->limits->offersLayaways()))->resolve($request),
             'related' => array_map(
                 fn (Product $related): array => (new ProductCardResource($related, $catalog))->resolve($request),
                 $this->related($catalog, $product),

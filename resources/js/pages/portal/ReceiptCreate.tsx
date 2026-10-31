@@ -34,7 +34,7 @@ export default function ReceiptCreate({
             businessName={business.name}
             customerName={auth.portal?.fullName ?? ''}
         >
-            <div className="flex w-full max-w-[640px] flex-col gap-4 lg:gap-6">
+            <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 lg:gap-6">
                 <Link href={backUrl} className="text-ink-3 hover:text-base-content self-start text-[13px] font-semibold">
                     ← Volver al apartado
                 </Link>

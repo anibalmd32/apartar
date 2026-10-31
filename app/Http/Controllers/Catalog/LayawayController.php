@@ -17,6 +17,7 @@ use App\Domain\Notification\LayawayConfirmationMailer;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Portal\AccessController;
 use App\Http\Requests\Catalog\StoreLayawayRequest;
 use App\Http\Resources\CatalogViewResource;
 use App\Http\Resources\LayawayPlanResource;
@@ -28,7 +29,6 @@ use App\Models\Customer;
 use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Product;
-use App\Queries\ActivePaymentAccountsQuery;
 use App\Queries\CatalogProductsQuery;
 use App\Support\InvalidDocumentNumberException;
 use App\Support\InvalidPhoneNumberException;
@@ -51,7 +51,6 @@ final class LayawayController extends Controller
         private readonly TenantContext $context,
         private readonly LimitEnforcer $limits,
         private readonly CatalogProductsQuery $products,
-        private readonly ActivePaymentAccountsQuery $paymentAccounts,
         private readonly LayawayConfirmationMailer $mailer,
     ) {}
 
@@ -65,7 +64,7 @@ final class LayawayController extends Controller
 
         $product->load(['category', 'tags', 'media', 'specifications']);
 
-        $detail = (new ProductDetailResource($product, $catalog, $this->paymentAccounts->all(), $this->limits->offersLayaways()))->resolve($request);
+        $detail = (new ProductDetailResource($product, $catalog, $this->limits->offersLayaways()))->resolve($request);
         $maxQuantity = max(1, (int) $detail['maxQuantity']);
         $quantity = $this->quantityFrom($request, $maxQuantity);
 
@@ -145,8 +144,7 @@ final class LayawayController extends Controller
                 'firstDueDate' => $this->firstInstallment($layaway)?->due_date->locale('es')->isoFormat('D [de] MMMM'),
                 'hasEmail' => $customer?->email !== null,
             ],
-            'paymentAccounts' => array_map(fn ($account): array => $account->toArray(), $this->paymentAccounts->all()),
-            'receiptUrl' => route('portal.receipts.create', ['code' => $layaway->code]),
+            'payUrl' => route('portal.access', [AccessController::CODE_PARAMETER => $layaway->code]),
             'follow' => $this->followState($catalog),
         ]);
     }

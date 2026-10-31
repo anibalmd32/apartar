@@ -1,7 +1,6 @@
 import { type LayawayFollowNotice } from '@/types/account';
 import { type CatalogView, type ProductDetail } from '@/types/catalog-view';
 import { type MoneyView } from '@/types/money';
-import { type PaymentAccountView } from '@/types/payment';
 
 export interface LayawayFormValues {
     [key: string]: string | number | boolean;
@@ -66,7 +65,6 @@ export interface LayawayThanksProps {
         readonly firstDueDate: string | null;
         readonly hasEmail: boolean;
     };
-    readonly paymentAccounts: readonly PaymentAccountView[];
-    readonly receiptUrl: string | null;
+    readonly payUrl: string;
     readonly follow: LayawayFollowNotice | null;
 }

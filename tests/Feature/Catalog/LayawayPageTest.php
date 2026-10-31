@@ -96,7 +96,7 @@ final class LayawayPageTest extends TestCase
             ->where('consent.businessName', $this->organization->name)
             ->missing('recognisedAreaCodes')
             ->has('catalogs.mobilePrefixes', 6)
-            ->has('product.paymentAccounts', 1));
+            ->missing('product.paymentAccounts'));
     }
 
     public function test_the_plan_for_two_units_is_split_over_the_whole_layaway(): void
@@ -252,7 +252,7 @@ final class LayawayPageTest extends TestCase
         $this->from($this->formUrl())->submit()->assertSessionHasErrors(['catalog' => 'Este negocio no puede recibir nuevos apartados en este momento.']);
     }
 
-    public function test_the_thanks_page_shows_the_code_the_deadline_and_the_payment_accounts(): void
+    public function test_the_thanks_page_shows_the_code_and_the_deadline_and_sends_to_pay_with_the_code(): void
     {
         $this->submit(['quantity' => 2]);
         $layaway = $this->onlyLayaway();
@@ -265,9 +265,9 @@ final class LayawayPageTest extends TestCase
             ->where('layaway.plan.downPayment.usd', '$200,00')
             ->where('layaway.expiresAt', '30 de septiembre a las 10:00 a. m.')
             ->where('layaway.hasEmail', true)
-            ->has('paymentAccounts', 1)
-            ->where('paymentAccounts.0.identifier', '0414-7654321')
-            ->where('receiptUrl', route('portal.receipts.create', ['code' => $layaway->code])));
+            ->missing('paymentAccounts')
+            ->missing('receiptUrl')
+            ->where('payUrl', route('portal.access', ['codigo' => $layaway->code])));
     }
 
     public function test_without_down_payment_the_form_says_so_and_the_plan_counts_from_today(): void

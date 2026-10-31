@@ -4,7 +4,6 @@ import { fakeRoute } from '@/test/fakes';
 import { type CatalogView } from '@/types/catalog-view';
 import { type RateView } from '@/types/exchange';
 import { type LayawayThanksProps } from '@/types/layaway';
-import { type PaymentAccountView } from '@/types/payment';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
@@ -29,25 +28,7 @@ const CATALOG: CatalogView = {
     showsPlatformBadge: false,
 };
 
-const ACCOUNT: PaymentAccountView = {
-    id: 1,
-    method: 'pago_movil',
-    methodLabel: 'Pago móvil',
-    identifierLabel: 'Teléfono',
-    bank: 'Banesco',
-    holderName: 'Ana Pérez',
-    holderDocument: 'V-12.345.678',
-    identifier: '0414-1234567',
-    instructions: null,
-    isActive: true,
-    position: 1,
-};
-
-function renderPage(
-    overrides: Partial<LayawayThanksProps['layaway']> = {},
-    receiptUrl: string | null = null,
-    follow: LayawayThanksProps['follow'] = null,
-) {
+function renderPage(overrides: Partial<LayawayThanksProps['layaway']> = {}, follow: LayawayThanksProps['follow'] = null) {
     const props: LayawayThanksProps = {
         catalog: CATALOG,
         layaway: {
@@ -70,8 +51,7 @@ function renderPage(
             hasEmail: false,
             ...overrides,
         },
-        paymentAccounts: [ACCOUNT],
-        receiptUrl,
+        payUrl: '/mi-cuenta/acceso?codigo=AP-7K3MQ2XH',
         follow,
     };
 
@@ -87,13 +67,22 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-it('enseña el código bien visible, el plazo de la inicial y dónde pagar', () => {
+it('enseña el código bien visible, el plazo de la inicial y el tercer paso', () => {
     renderPage();
 
     expect(screen.getByLabelText('Código de apartado AP-7K3MQ2XH')).toHaveTextContent('AP-7K3MQ2XH');
     expect(screen.getByText('30 de septiembre a las 10:00 am')).toBeInTheDocument();
-    expect(screen.getByText('0414-1234567')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Cómo pagarle a Ferretería Oriente' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Pasos del apartado' })).toBeInTheDocument();
+    expect(screen.getByText('Paga la inicial').closest('li')).toHaveAttribute('aria-current', 'step');
+});
+
+it('no enseña las cuentas de cobro: lleva a pagar con el código ya puesto', () => {
+    renderPage();
+
+    expect(screen.queryByText(/Cómo pagarle/)).toBeNull();
+    expect(screen.queryByText('0414-1234567')).toBeNull();
+    expect(screen.queryByRole('link', { name: /comprobante/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Continuar al pago/ })).toHaveAttribute('href', '/mi-cuenta/acceso?codigo=AP-7K3MQ2XH');
 });
 
 it('sin inicial, dice que ya está activo y cuándo vence la primera cuota en vez del plazo de la inicial', () => {
@@ -141,16 +130,8 @@ it('con correo, dice que también va por ahí', () => {
     expect(screen.queryByText(/Anota este código ahora/)).toBeNull();
 });
 
-it('no pinta el botón del comprobante hasta que exista su destino', () => {
-    renderPage();
-    expect(screen.queryByRole('link', { name: /comprobante/ })).toBeNull();
-
-    renderPage({}, '/c/ofertas/apartar/AP-7K3MQ2XH/comprobante');
-    expect(screen.getByRole('link', { name: 'Subir el comprobante de pago' })).toBeInTheDocument();
-});
-
 it('con cuenta, avisa de que sigue el catálogo y ofrece dejarlo con un clic', () => {
-    renderPage({}, null, { unfollowUrl: '/c/ofertas/seguir' });
+    renderPage({}, { unfollowUrl: '/c/ofertas/seguir' });
 
     expect(screen.getByText(/Ahora sigues/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Dejar de seguir' }));
