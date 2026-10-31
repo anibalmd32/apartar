@@ -75,7 +75,7 @@ final class SuspendedOrganizationTest extends TestCase
 
         expect($layout)
             ->toContain("=== 'suspended'")
-            ->toContain('/backoffice/suscripcion')
+            ->toContain("bo('/suscripcion')")
             ->toContain('Regularizar el pago');
     }
 

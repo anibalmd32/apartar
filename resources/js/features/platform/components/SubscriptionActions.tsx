@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { DateInput } from '@/components/ui/date-input';
 import { SectionCard } from '@/components/ui/section-card';
 import { shiftIsoDate, todayIso } from '@/lib/iso-date';
+import { pf } from '@/lib/surfaces';
 import { type Method } from '@inertiajs/core';
 import { useForm, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -71,7 +72,7 @@ export function SubscriptionActions({ slug, plans, currentPlan, courtesy = null,
     const plan = useForm({ plan: currentPlan ?? '', reason: '' });
     const grant = useForm({ until: '', reason: '' });
     const tomorrow = shiftIsoDate(todayIso(), 1);
-    const base = `/plataforma/organizaciones/${slug}`;
+    const base = pf(`/organizaciones/${slug}`);
 
     return (
         <div id="suscripcion" className="scroll-mt-24">

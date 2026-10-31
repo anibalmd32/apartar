@@ -44,10 +44,11 @@ use App\Http\Controllers\Backoffice\TagController;
 use App\Http\Controllers\Backoffice\TeamController;
 use App\Http\Controllers\PaymentFileController;
 use App\Http\Controllers\ReceiptFileController;
+use App\Support\Surface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('backoffice')->group(function (): void {
+Surface::backofficeRoutes(function (): void {
     Route::middleware(['guest', 'outside-tenancy'])->group(function (): void {
         Route::get('login', [LoginController::class, 'create'])->name('login');
         Route::post('login', [LoginController::class, 'store']);

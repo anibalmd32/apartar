@@ -10,6 +10,7 @@ import { INVENTORY_FILTER_LABELS, InventoryFilters } from '@/features/products/c
 import { inventoryColumns } from '@/features/products/components/inventoryColumns';
 import { useDraftSelection } from '@/features/products/hooks/useDraftSelection';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type Paginated } from '@/types/data-table';
 import { type ProductFilters, type ProductListItem, type ProductStatus, type ProductStatusDefinition, type TaxonomyOption } from '@/types/product';
 import { cilBasket, cilPlus } from '@coreui/icons';
@@ -31,7 +32,7 @@ function emptyMessage(filters: ProductFilters, narrowed: boolean): ReactNode {
                 icon={cilBasket}
                 title="Aún no tienes productos"
                 action={
-                    <Link className="btn btn-primary" href="/backoffice/productos/crear">
+                    <Link className="btn btn-primary" href={bo('/productos/crear')}>
                         <Icon icon={cilPlus} />
                         Crear mi primer producto
                     </Link>
@@ -66,7 +67,7 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses, 
             actions={
                 <>
                     <ExportButton type="inventory" filters={meta.filters} />
-                    <Link className="btn btn-primary" href="/backoffice/productos/crear">
+                    <Link className="btn btn-primary" href={bo('/productos/crear')}>
                         <Icon icon={cilPlus} />
                         Nuevo producto
                     </Link>

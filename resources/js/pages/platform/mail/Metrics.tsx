@@ -5,6 +5,7 @@ import { BounceReasons, TopLinks } from '@/features/platform/mail/LinksAndBounce
 import { MailTabs } from '@/features/platform/mail/MailTabs';
 import { MetricTiles } from '@/features/platform/mail/MetricTiles';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type MailMetrics } from '@/types/mail';
 import { Link, router } from '@inertiajs/react';
@@ -32,7 +33,7 @@ function isoDaysAgo(to: string, days: number): string {
 export default function MailMetricsPage({ metrics, filters }: MetricsProps) {
     const visit = (desde: string, hasta: string) =>
         router.get(
-            '/plataforma/correos',
+            pf('/correos'),
             { desde: desde === '' ? null : desde, hasta: hasta === '' ? null : hasta },
             { preserveState: true, replace: true },
         );
@@ -50,7 +51,7 @@ export default function MailMetricsPage({ metrics, filters }: MetricsProps) {
                         return (
                             <Link
                                 key={days}
-                                href={`/plataforma/correos?desde=${isoDaysAgo(today, days)}&hasta=${today}`}
+                                href={pf(`/correos?desde=${isoDaysAgo(today, days)}&hasta=${today}`)}
                                 aria-current={active ? 'page' : undefined}
                                 className={cn(
                                     'pointer-coarse:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',

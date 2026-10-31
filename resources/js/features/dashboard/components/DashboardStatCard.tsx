@@ -1,5 +1,6 @@
 import { StatCard } from '@/components/ui/stat-card';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { bo } from '@/lib/surfaces';
 import { type DashboardCard, type DashboardProps } from '@/types/dashboard';
 import { cilAvTimer, cilCash, cilChatBubble, cilDescription, cilTruck, cilWarning } from '@coreui/icons';
 
@@ -84,14 +85,7 @@ export function DashboardStatCard({ id, metrics, links, longOverdueDays }: Dashb
             );
         case 'unreadMessages':
             return (
-                <StatCard
-                    label={label}
-                    icon={cilChatBubble}
-                    tone="primary"
-                    href="/backoffice/chat"
-                    value={metrics.unreadMessages}
-                    className="h-full"
-                />
+                <StatCard label={label} icon={cilChatBubble} tone="primary" href={bo('/chat')} value={metrics.unreadMessages} className="h-full" />
             );
     }
 }

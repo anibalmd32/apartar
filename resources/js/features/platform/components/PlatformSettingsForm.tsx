@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { pf } from '@/lib/surfaces';
 import { type PlatformSettingRow } from '@/types/platform';
 import { useForm } from '@inertiajs/react';
 
@@ -16,7 +17,7 @@ export function PlatformSettingsForm({ settings }: { settings: readonly Platform
                 className="flex flex-col gap-4"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.put('/plataforma/ajustes', { preserveScroll: true });
+                    form.put(pf('/ajustes'), { preserveScroll: true });
                 }}
             >
                 <div className="grid gap-x-5 sm:grid-cols-2">

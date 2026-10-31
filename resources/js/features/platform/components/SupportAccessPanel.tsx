@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
+import { pf } from '@/lib/surfaces';
 import { type SupportGrantRow } from '@/types/platform';
 import { cilShieldAlt } from '@coreui/icons';
 import { Link, router, useForm } from '@inertiajs/react';
@@ -15,7 +16,7 @@ interface SupportAccessPanelProps {
 export function SupportAccessPanel({ slug, myGrant, grants }: SupportAccessPanelProps) {
     const form = useForm({ reason: '' });
     const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
-    const base = `/plataforma/organizaciones/${slug}`;
+    const base = pf(`/organizaciones/${slug}`);
 
     return (
         <SectionCard title="Acceso de soporte" aria-label="Acceso de soporte">

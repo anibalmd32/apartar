@@ -13,6 +13,7 @@ import { PaymentFields } from '@/features/receipts/components/PaymentFields';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
 import { emptyPaymentValues, type PaymentFieldValues, paymentPending } from '@/features/receipts/lib/payment-fields';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type BackofficeLayawayCreateProps, type DownPaymentWindowChoice, type LayawayCustomerOption } from '@/types/layaway-backoffice';
 import { router, useForm } from '@inertiajs/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
@@ -112,7 +113,7 @@ export default function LayawayCreate({ products, selection, plan, customer, win
     return (
         <BackofficeLayout
             title="Nuevo apartado"
-            back={{ href: '/backoffice/cobranza', label: 'Cobranza' }}
+            back={{ href: bo('/cobranza'), label: 'Cobranza' }}
             description="Aparta un producto a nombre de un cliente, con las mismas condiciones de tu catálogo."
         >
             <form onSubmit={submit} noValidate aria-label="Nuevo apartado" className="flex flex-col gap-4">

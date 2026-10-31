@@ -1,4 +1,5 @@
 import { SectionCard } from '@/components/ui/section-card';
+import { pf } from '@/lib/surfaces';
 import { type MailSummary } from '@/types/mail';
 import { Link } from '@inertiajs/react';
 import { count, DASH, percent } from './format';
@@ -19,7 +20,7 @@ export function MailSummaryCard({ summary }: { summary: MailSummary | null }) {
             subtitle="Últimos 30 días."
             aria-label="Correo"
             action={
-                <Link href="/plataforma/correos" className="link-hover">
+                <Link href={pf('/correos')} className="link-hover">
                     Ver métricas
                 </Link>
             }
@@ -33,7 +34,7 @@ export function MailSummaryCard({ summary }: { summary: MailSummary | null }) {
                     <Figure label="Apertura" value={percent(summary.openRate)} />
                     <Figure label="Rebote" value={percent(summary.bounceRate)} />
                     <Link
-                        href="/plataforma/correos/bandeja?filtro=no-leidos"
+                        href={pf('/correos/bandeja?filtro=no-leidos')}
                         className="bg-surface-2 hover:bg-base-300 flex flex-col gap-0.5 rounded-xl px-3.5 py-3"
                     >
                         <span className="text-ink-3 text-xs">Sin leer</span>

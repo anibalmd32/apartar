@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { pf } from '@/lib/surfaces';
 import { type InvoiceRow } from '@/types/platform';
 import { useState } from 'react';
 import { InvoiceStatusBadge } from './labels';
@@ -53,7 +54,7 @@ export function InvoiceList({ invoices }: { invoices: readonly InvoiceRow[] }) {
                 }
                 confirmLabel="Anular factura"
                 method="post"
-                url={voiding !== null ? `/plataforma/facturas/${voiding.id}/anular` : ''}
+                url={voiding !== null ? pf(`/facturas/${voiding.id}/anular`) : ''}
                 data={{ reason: reason.trim() }}
                 confirmDisabled={reason.trim() === ''}
             >

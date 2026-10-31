@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { PasswordRequirements } from '@/layouts/auth/password-requirements';
 import AccessLayout from '@/layouts/backoffice/access-layout';
+import { pf } from '@/lib/surfaces';
 import { cilShieldAlt } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -17,7 +18,7 @@ export default function PlatformChangePassword() {
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
-        put('/plataforma/contrasena', { onFinish: () => reset('password', 'password_confirmation') });
+        put(pf('/contrasena'), { onFinish: () => reset('password', 'password_confirmation') });
     };
 
     return (

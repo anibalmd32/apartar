@@ -3,11 +3,12 @@ import { Icon } from '@/components/ui/icon';
 import { PlansLink } from '@/features/plan/components/PlansLink';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { formatUsage } from '@/lib/plan';
+import { bo } from '@/lib/surfaces';
 import { type UsageMetric } from '@/types/plan';
 import { cilDiamond } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
-const PRODUCTS_URL = '/backoffice/productos';
+const PRODUCTS_URL = bo('/productos');
 
 export function LimitBanner({ metric }: { metric: UsageMetric }) {
     const plan = usePlanLimits();

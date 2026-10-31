@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ThreadMessage } from '@/features/platform/mail/ThreadMessage';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { type ConversationMessage } from '@/types/mail';
 import { cilArrowLeft, cilEnvelopeClosed } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -20,7 +21,7 @@ export default function MailThreadPage({ thread, messages }: ThreadProps) {
             description={`Conversación con ${thread.counterpart}`}
             back={
                 <Link
-                    href="/plataforma/correos/bandeja"
+                    href={pf('/correos/bandeja')}
                     className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]"
                 >
                     <Icon icon={cilArrowLeft} size={14} />
@@ -30,13 +31,13 @@ export default function MailThreadPage({ thread, messages }: ThreadProps) {
             actions={
                 <>
                     {lastInbound ? (
-                        <Button variant="secondary" size="sm" onClick={() => router.post(`/plataforma/correos/bandeja/${thread.id}/no-leido`)}>
+                        <Button variant="secondary" size="sm" onClick={() => router.post(pf(`/correos/bandeja/${thread.id}/no-leido`))}>
                             <Icon icon={cilEnvelopeClosed} size={14} />
                             Marcar como no leída
                         </Button>
                     ) : null}
                     {lastInbound && lastInbound.kind === 'inbound' ? (
-                        <Link href={`/plataforma/correos/redactar?responder=${lastInbound.id}&modo=responder`} className="btn btn-primary btn-sm">
+                        <Link href={pf(`/correos/redactar?responder=${lastInbound.id}&modo=responder`)} className="btn btn-primary btn-sm">
                             Responder
                         </Link>
                     ) : null}

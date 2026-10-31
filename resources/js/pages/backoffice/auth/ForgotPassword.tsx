@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import AccessLayout from '@/layouts/backoffice/access-layout';
+import { bo } from '@/lib/surfaces';
 import { cilArrowLeft, cilEnvelopeClosed, cilLockLocked, cilSend } from '@coreui/icons';
 import { Link, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -22,7 +23,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        post('/backoffice/recuperar');
+        post(bo('/recuperar'));
     };
 
     return (

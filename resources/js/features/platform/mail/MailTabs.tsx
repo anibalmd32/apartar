@@ -1,13 +1,14 @@
 import { Icon } from '@/components/ui/icon';
 import { isCurrentPlatformSection } from '@/layouts/platform/nav';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { cilPencil } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
 export const MAIL_TABS = [
-    { label: 'Métricas', href: '/plataforma/correos', exact: true },
-    { label: 'Enviados', href: '/plataforma/correos/enviados', exact: false },
-    { label: 'Bandeja', href: '/plataforma/correos/bandeja', exact: false },
+    { label: 'Métricas', href: pf('/correos'), exact: true },
+    { label: 'Enviados', href: pf('/correos/enviados'), exact: false },
+    { label: 'Bandeja', href: pf('/correos/bandeja'), exact: false },
 ] as const;
 
 export function isCurrentMailTab(href: string, exact: boolean, url: string): boolean {
@@ -47,7 +48,7 @@ export function MailTabs() {
                     );
                 })}
             </nav>
-            <Link href="/plataforma/correos/redactar" className="btn btn-primary btn-sm">
+            <Link href={pf('/correos/redactar')} className="btn btn-primary btn-sm">
                 <Icon icon={cilPencil} size={14} />
                 Redactar
             </Link>

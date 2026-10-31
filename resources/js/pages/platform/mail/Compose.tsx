@@ -5,6 +5,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { dateTime } from '@/features/platform/mail/format';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { type ComposeSource } from '@/types/mail';
 import { cilArrowLeft, cilPaperclip, cilSend } from '@coreui/icons';
 import { Link, useForm } from '@inertiajs/react';
@@ -19,7 +20,7 @@ interface ComposeProps {
 
 export default function MailCompose({ mode, modeLabel, from, source, defaults }: ComposeProps) {
     const form = useForm({ mode, source: source?.id ?? null, to: defaults.to, cc: defaults.cc, subject: defaults.subject, body: '' });
-    const back = source === null ? '/plataforma/correos/bandeja' : `/plataforma/correos/bandeja/${source.threadId}`;
+    const back = source === null ? pf('/correos/bandeja') : pf(`/correos/bandeja/${source.threadId}`);
 
     return (
         <PlatformLayout
@@ -38,7 +39,7 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
                         className="flex flex-col gap-1"
                         onSubmit={(event) => {
                             event.preventDefault();
-                            form.post('/plataforma/correos/enviar', { preserveScroll: true });
+                            form.post(pf('/correos/enviar'), { preserveScroll: true });
                         }}
                     >
                         <TextField

@@ -6,6 +6,7 @@ import { SortableList } from '@/components/ui/sortable';
 import { CategoryRow } from '@/features/catalog/components/CategoryRow';
 import { TaxonomyForm } from '@/features/catalog/components/TaxonomyForm';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type CategoryView } from '@/types/taxonomy';
 import { cilCheckAlt, cilMenu } from '@coreui/icons';
 import { router, usePage } from '@inertiajs/react';
@@ -42,8 +43,7 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
         });
     };
 
-    const saveOrder = () =>
-        router.patch('/backoffice/categorias/orden', { categories: order.map((category) => category.id) }, { preserveScroll: true });
+    const saveOrder = () => router.patch(bo('/categorias/orden'), { categories: order.map((category) => category.id) }, { preserveScroll: true });
 
     return (
         <BackofficeLayout
@@ -64,8 +64,8 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
             >
                 <TaxonomyForm
                     key={editable?.id ?? 'nueva'}
-                    createUrl="/backoffice/categorias"
-                    editUrl={(id) => `/backoffice/categorias/${id}`}
+                    createUrl={bo('/categorias')}
+                    editUrl={(id) => bo(`/categorias/${id}`)}
                     entry={editable}
                     noun="categoría"
                     maxLength={120}

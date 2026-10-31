@@ -1,5 +1,6 @@
 import { useServerTable, type ServerTable } from '@/features/data-table/hooks/useServerTable';
 import { echo } from '@/lib/echo';
+import { bo } from '@/lib/surfaces';
 import { type DataTableColumn, type TableMeta } from '@/types/data-table';
 import { type ReceiptInboxRow } from '@/types/receipt';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +10,7 @@ export const PENDING_RECEIPTS_POLL_MS = 30_000;
 
 export const SIGNED_URL_REFRESH_MS = 14 * 60_000;
 
-export const PENDING_RECEIPTS_ENDPOINT = '/backoffice/comprobantes/pendientes';
+export const PENDING_RECEIPTS_ENDPOINT = bo('/comprobantes/pendientes');
 
 export const PENDING_RECEIPTS_KEY = ['receipts', 'pending'] as const;
 

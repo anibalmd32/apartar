@@ -8,6 +8,7 @@ import { useDebouncedFilter } from '@/features/data-table/hooks/useDebouncedFilt
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
 import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type CustomerDirectoryFilters, type CustomerIndexProps } from '@/types/customers';
 import { cilPeople, cilPlus } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -50,7 +51,7 @@ export default function CustomerIndex({ rows, meta, options, filterCounts }: Cus
                                     <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
                                         Agregar un cliente
                                     </button>
-                                    <Link className="btn" href="/backoffice/catalogos">
+                                    <Link className="btn" href={bo('/catalogos')}>
                                         Ver mis catálogos
                                     </Link>
                                 </div>

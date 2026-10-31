@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PendingSubscriptionReceipt } from '@/types/platform';
 import { cilCheckAlt, cilX } from '@coreui/icons';
@@ -61,7 +62,7 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
                     className="flex flex-col gap-3"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        approve.post(`/plataforma/comprobantes/${receipt.id}/aprobar`);
+                        approve.post(pf(`/comprobantes/${receipt.id}/aprobar`));
                     }}
                 >
                     <div className="grid grid-cols-[1fr_88px_1fr] gap-2">
@@ -105,7 +106,7 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
                     className="flex flex-col gap-3"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        reject.post(`/plataforma/comprobantes/${receipt.id}/rechazar`);
+                        reject.post(pf(`/comprobantes/${receipt.id}/rechazar`));
                     }}
                 >
                     <label className="flex flex-col gap-1.5">

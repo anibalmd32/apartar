@@ -1,5 +1,6 @@
 import { menuItemClass } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PlatformAlert } from '@/types/platform';
 import { cilBan, cilBell, cilClock, cilDescription, cilShieldAlt, cilWarning } from '@coreui/icons';
@@ -30,7 +31,7 @@ export function PlatformBell({ className }: { className?: string }) {
     const operator = usePage<{ platformOperator?: { pendingReceipts: number; alerts?: readonly PlatformAlert[] } | null }>().props.platformOperator;
     const pending = operator?.pendingReceipts ?? 0;
     const items: readonly PlatformAlert[] = [
-        ...(pending > 0 ? [{ key: 'pendingReceipts', count: pending, tone: 'info', href: '/plataforma/facturas' }] : []),
+        ...(pending > 0 ? [{ key: 'pendingReceipts', count: pending, tone: 'info', href: pf('/facturas') }] : []),
         ...(operator?.alerts ?? []),
     ];
     const urgent = items.filter((item) => item.tone !== 'info').length;

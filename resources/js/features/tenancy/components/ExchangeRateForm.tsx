@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { RateSourceCards } from '@/features/tenancy/components/RateSourceCards';
+import { bo } from '@/lib/surfaces';
 import { type RateSource, type RateView } from '@/types/exchange';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -27,7 +28,7 @@ export function ExchangeRateForm({ source, manualRate, sourceOptions, rateSource
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        put('/backoffice/ajustes/tasa', { preserveScroll: true });
+        put(bo('/ajustes/tasa'), { preserveScroll: true });
     };
 
     return (

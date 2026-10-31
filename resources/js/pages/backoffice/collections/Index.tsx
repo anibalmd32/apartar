@@ -8,6 +8,7 @@ import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import {
     type CollectionDownPaymentRow,
     type CollectionIndexProps,
@@ -27,7 +28,7 @@ export default function CollectionIndex(props: CollectionIndexProps) {
             actions={
                 <>
                     <ExportButton type="collections" filters={props.meta.filters} />
-                    <Link href="/backoffice/apartados/nuevo" className="btn btn-primary">
+                    <Link href={bo('/apartados/nuevo')} className="btn btn-primary">
                         <Icon icon={cilPlus} />
                         Nuevo apartado
                     </Link>
@@ -88,7 +89,7 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
                     {props.summary ? <CollectionSummary summary={props.summary} /> : null}
                     {props.awaitingDownPayment ? (
                         <Link
-                            href="/backoffice/cobranza?preset=awaiting_down_payment"
+                            href={bo('/cobranza?preset=awaiting_down_payment')}
                             className="bg-warning-soft hover:border-line-strong flex flex-wrap items-center justify-between gap-2 rounded-xl border border-transparent px-[18px] py-3 text-sm"
                         >
                             <span>

@@ -4,6 +4,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { SortableHandle, SortableRow } from '@/components/ui/sortable';
 import { DeleteCategoryDialog } from '@/features/catalog/components/DeleteCategoryDialog';
+import { bo } from '@/lib/surfaces';
 import { type CategoryView } from '@/types/taxonomy';
 import { cilPencil, cilTrash } from '@coreui/icons';
 import { useState } from 'react';
@@ -15,7 +16,7 @@ interface CategoryRowProps {
 }
 
 export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
-    const url = `/backoffice/categorias/${category.id}`;
+    const url = bo(`/categorias/${category.id}`);
 
     const [asking, setAsking] = useState(false);
 

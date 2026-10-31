@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { PlatformBell } from '@/features/platform/components/PlatformBell';
 import { useMailActivity } from '@/features/platform/mail/useMailActivity';
+import { pf } from '@/lib/surfaces';
 import { cilSearch, cilShieldAlt } from '@coreui/icons';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -27,11 +28,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
     useMailActivity();
 
     const userMenu = (
-        <UserMenu
-            name={operator?.name ?? 'Operador'}
-            detail={operator?.email ?? 'Plataforma Apartar'}
-            onLogout={() => router.post('/plataforma/logout')}
-        />
+        <UserMenu name={operator?.name ?? 'Operador'} detail={operator?.email ?? 'Plataforma Apartar'} onLogout={() => router.post(pf('/logout'))} />
     );
 
     return (
@@ -39,7 +36,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
             <Head title={`${title} · Plataforma`} />
 
             <aside className="border-line bg-base-100 fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col gap-5 overflow-y-auto border-r px-4 py-5 lg:flex">
-                <Link href="/plataforma" className="self-start">
+                <Link href={pf('')} className="self-start">
                     <Brand />
                 </Link>
 
@@ -62,7 +59,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                         onSubmit={(event) => {
                             event.preventDefault();
                             const term = new FormData(event.currentTarget).get('q');
-                            router.get('/plataforma/organizaciones', typeof term === 'string' && term.trim() !== '' ? { q: term.trim() } : {});
+                            router.get(pf('/organizaciones'), typeof term === 'string' && term.trim() !== '' ? { q: term.trim() } : {});
                         }}
                     >
                         <Icon icon={cilSearch} className="text-ink-3" />

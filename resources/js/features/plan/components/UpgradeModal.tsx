@@ -4,11 +4,12 @@ import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { formatPlanDate } from '@/lib/plan-change';
+import { bo } from '@/lib/surfaces';
 import { type PlanOption } from '@/types/plan';
 import { cilCheckAlt } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 
-const CHANGE_PLAN_URL = '/backoffice/suscripcion/cambiar';
+const CHANGE_PLAN_URL = bo('/suscripcion/cambiar');
 
 export function UpgradeModal({
     option,

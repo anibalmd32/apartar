@@ -6,6 +6,7 @@ import { EventTimeline } from '@/features/platform/mail/EventTimeline';
 import { count, dateTime, statusTone } from '@/features/platform/mail/format';
 import { MailFrame } from '@/features/platform/mail/MailFrame';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { type SentMailDetail } from '@/types/mail';
 import { cilArrowLeft } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -36,7 +37,7 @@ export default function SentMailShow({ mail }: { mail: SentMailDetail }) {
             title={mail.subject === '' ? '(sin asunto)' : mail.subject}
             back={
                 <Link
-                    href="/plataforma/correos/enviados"
+                    href={pf('/correos/enviados')}
                     className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]"
                 >
                     <Icon icon={cilArrowLeft} size={14} />
@@ -59,7 +60,7 @@ export default function SentMailShow({ mail }: { mail: SentMailDetail }) {
                             {mail.organization ? (
                                 <Row label="Negocio">
                                     <Link
-                                        href={`/plataforma/organizaciones/${mail.organization.slug}`}
+                                        href={pf(`/organizaciones/${mail.organization.slug}`)}
                                         className="text-primary font-semibold hover:underline"
                                     >
                                         {mail.organization.name}
@@ -68,10 +69,7 @@ export default function SentMailShow({ mail }: { mail: SentMailDetail }) {
                             ) : null}
                             {mail.threadId ? (
                                 <Row label="Conversación">
-                                    <Link
-                                        href={`/plataforma/correos/bandeja/${mail.threadId}`}
-                                        className="text-primary font-semibold hover:underline"
-                                    >
+                                    <Link href={pf(`/correos/bandeja/${mail.threadId}`)} className="text-primary font-semibold hover:underline">
                                         Ver en la bandeja
                                     </Link>
                                 </Row>

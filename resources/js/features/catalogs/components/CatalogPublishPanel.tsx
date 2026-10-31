@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { CatalogShareRow } from '@/features/catalogs/components/CatalogShareButtons';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
 import { ShareLinkField } from '@/features/catalogs/components/ShareLinkField';
+import { bo } from '@/lib/surfaces';
 import { type CatalogFormValues, type CatalogPublishBlockers } from '@/types/catalog';
 import { Link, useForm } from '@inertiajs/react';
 import { type FormEventHandler, type ReactNode, useState } from 'react';
@@ -21,7 +22,7 @@ function asDateInput(value: string | null): string {
 
 const REMEDIES: Readonly<Record<string, () => ReactNode>> = {
     payment_accounts: () => (
-        <Link className="link" href="/backoffice/cuentas-de-cobro">
+        <Link className="link" href={bo('/cuentas-de-cobro')}>
             Ir a Cuentas de cobro
         </Link>
     ),
@@ -47,7 +48,7 @@ export function CatalogPublishPanel({ catalog, blockers }: CatalogPublishPanelPr
     const publish: FormEventHandler = (event) => {
         event.preventDefault();
 
-        form.post(`/backoffice/catalogos/${catalog.id}/publicar`, { preserveScroll: true });
+        form.post(bo(`/catalogos/${catalog.id}/publicar`), { preserveScroll: true });
     };
 
     const pending = Object.entries(blockers);
@@ -135,7 +136,7 @@ export function CatalogPublishPanel({ catalog, blockers }: CatalogPublishPanelPr
                                     variant="danger"
                                     size="sm"
                                     loading={retire.processing}
-                                    onClick={() => retire.delete(`/backoffice/catalogos/${catalog.id}/publicar`)}
+                                    onClick={() => retire.delete(bo(`/catalogos/${catalog.id}/publicar`))}
                                 >
                                     Sí, despublicar
                                 </Button>

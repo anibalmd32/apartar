@@ -5,6 +5,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { CatalogCard } from '@/features/catalogs/components/CatalogCard';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type CatalogListItem } from '@/types/catalog';
 import { cilPlus } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
@@ -46,7 +47,7 @@ export default function CatalogsIndex({ catalogs }: CatalogsPageProps) {
             title="Catálogos"
             description="Tus campañas. Cada catálogo tiene su propio enlace: lo compartes por WhatsApp y tus clientes entran por ahí."
             actions={
-                <Link className="btn btn-primary" href="/backoffice/catalogos/crear">
+                <Link className="btn btn-primary" href={bo('/catalogos/crear')}>
                     <Icon icon={cilPlus} />
                     Nuevo catálogo
                 </Link>

@@ -1,8 +1,9 @@
 import { JsonRequestError, postForm } from '@/lib/json';
+import { bo } from '@/lib/surfaces';
 import { type CopySuggestion, type CopywritingMode } from '@/types/product';
 import { useState } from 'react';
 
-export const COPYWRITER_URL = '/backoffice/productos/ia/sugerencia';
+export const COPYWRITER_URL = bo('/productos/ia/sugerencia');
 
 export const MAX_COPYWRITER_PHOTOS = 4;
 

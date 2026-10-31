@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { bo } from '@/lib/surfaces';
 import { cilReload, cilTrash } from '@coreui/icons';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -8,7 +9,7 @@ export function ArchiveToggle({ productId, archived }: { productId: number; arch
 
     const send = () =>
         router.post(
-            `/backoffice/productos/${productId}/${archived ? 'restaurar' : 'archivar'}`,
+            bo(`/productos/${productId}/${archived ? 'restaurar' : 'archivar'}`),
             {},
             { onStart: () => setSending(true), onFinish: () => setSending(false) },
         );

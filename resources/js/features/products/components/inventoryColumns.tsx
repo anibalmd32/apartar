@@ -4,6 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { useStoredProductPreview } from '@/features/products/components/StoredProductPreview';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type DataTableColumn } from '@/types/data-table';
 import { type ProductListItem, type ProductStatus } from '@/types/product';
@@ -31,7 +32,7 @@ function StatusBadges({ product, label }: { product: ProductListItem; label: str
 
 function Actions({ product }: { product: ProductListItem }) {
     const preview = useStoredProductPreview(product.id);
-    const step = (path: string) => router.post(`/backoffice/productos/${product.id}/${path}`, {}, { preserveScroll: true });
+    const step = (path: string) => router.post(bo(`/productos/${product.id}/${path}`), {}, { preserveScroll: true });
     const item = (icon: string[], label: string, path: string) => (
         <MenuItem>
             <button type="button" className={menuItemClass} onClick={() => step(path)}>
@@ -52,7 +53,7 @@ function Actions({ product }: { product: ProductListItem }) {
                     className="bg-base-100 border-line shadow-pop z-50 mt-1 w-48 rounded-xl border p-1.5 focus:outline-none"
                 >
                     <MenuItem>
-                        <Link className={menuItemClass} href={`/backoffice/productos/${product.id}/editar`}>
+                        <Link className={menuItemClass} href={bo(`/productos/${product.id}/editar`)}>
                             <Icon icon={cilPencil} />
                             Editar
                         </Link>

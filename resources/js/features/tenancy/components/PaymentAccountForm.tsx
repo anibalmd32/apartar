@@ -5,6 +5,7 @@ import { DocumentField } from '@/components/ui/document-field';
 import { PhoneField } from '@/components/ui/phone-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
+import { bo } from '@/lib/surfaces';
 import { type PaymentAccountView, type PaymentMethodDefinition } from '@/types/payment';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -59,9 +60,9 @@ export function PaymentAccountForm({ methods, account, atLimit = false, onDone }
         };
 
         if (account === undefined) {
-            post('/backoffice/cuentas-de-cobro', options);
+            post(bo('/cuentas-de-cobro'), options);
         } else {
-            put(`/backoffice/cuentas-de-cobro/${account.id}`, options);
+            put(bo(`/cuentas-de-cobro/${account.id}`), options);
         }
     };
 

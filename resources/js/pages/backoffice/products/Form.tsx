@@ -18,6 +18,7 @@ import { useSpecificationRows } from '@/features/products/hooks/useSpecification
 import { type PreviewSource } from '@/features/products/lib/preview';
 import { withSuggestedTags } from '@/features/products/lib/tags';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import {
     type AiAvailability,
     type FinancingPlanView,
@@ -100,7 +101,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
         <BackofficeLayout
             title={product === null ? 'Nuevo producto' : product.name}
             description="Lo que vendes y con qué condiciones lo financias. Tus clientes verán estas cifras tal como quedan aquí."
-            back={{ href: '/backoffice/productos', label: 'Productos' }}
+            back={{ href: bo('/productos'), label: 'Productos' }}
             badge={status === null ? undefined : <Badge tone={status.tone}>{status.label}</Badge>}
             actions={
                 <>
@@ -111,7 +112,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                         </a>
                     ) : null}
                     <ProductPreview source={previewSource} />
-                    <Link className="btn" href="/backoffice/productos">
+                    <Link className="btn" href={bo('/productos')}>
                         Cancelar
                     </Link>
                     <Button type="submit" form={FORM_ID} loading={processing}>

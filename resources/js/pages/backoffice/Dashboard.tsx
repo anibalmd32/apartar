@@ -8,6 +8,7 @@ import { SortableGrid, SortableTile } from '@/features/dashboard/components/Sort
 import { SuspensionCard } from '@/features/dashboard/components/SuspensionCard';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type BackofficeSharedData } from '@/types/backoffice';
 import { type DashboardLayoutView, type DashboardProps, type DashboardSection } from '@/types/dashboard';
@@ -38,7 +39,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
     const save = (next: DashboardLayoutView) => {
         setLayout(next);
         router.put(
-            '/backoffice/panel/disposicion',
+            bo('/panel/disposicion'),
             { mode: next.mode, sections: [...next.sections], cards: [...next.cards] },
             { preserveScroll: true, preserveState: true, only: [] },
         );
@@ -89,7 +90,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
                         {editing ? 'Listo' : 'Organizar'}
                     </button>
                     {teamMember?.capabilities?.includes('products') ? (
-                        <Link href="/backoffice/productos/crear" className="btn btn-primary">
+                        <Link href={bo('/productos/crear')} className="btn btn-primary">
                             <Icon icon={cilPlus} />
                             Nuevo producto
                         </Link>

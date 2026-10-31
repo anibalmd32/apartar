@@ -2,6 +2,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { TagRow } from '@/features/catalog/components/TagRow';
 import { TaxonomyForm } from '@/features/catalog/components/TaxonomyForm';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type TagView } from '@/types/taxonomy';
 import { useState } from 'react';
 
@@ -23,8 +24,8 @@ export default function TagsIndex({ tags }: TagsPageProps) {
             >
                 <TaxonomyForm
                     key={editable?.id ?? 'nueva'}
-                    createUrl="/backoffice/etiquetas"
-                    editUrl={(id) => `/backoffice/etiquetas/${id}`}
+                    createUrl={bo('/etiquetas')}
+                    editUrl={(id) => bo(`/etiquetas/${id}`)}
                     entry={editable}
                     noun="etiqueta"
                     maxLength={80}

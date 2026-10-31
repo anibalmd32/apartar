@@ -15,9 +15,10 @@ use App\Http\Controllers\Platform\SentMailController;
 use App\Http\Controllers\Platform\SettingsController;
 use App\Http\Controllers\Platform\SupportAccessController;
 use App\Http\Controllers\Platform\SupportDataController;
+use App\Support\Surface;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->group(function (): void {
+Surface::platformRoutes(fn () => Route::name('platform.')->middleware('without-tenant')->group(function (): void {
     Route::get('login', [LoginController::class, 'create'])->name('login');
     Route::post('login', [LoginController::class, 'store'])->name('login.store');
 
@@ -68,4 +69,4 @@ Route::prefix('plataforma')->name('platform.')->middleware('without-tenant')->gr
         Route::get('comprobantes/{receipt}/archivo', [InvoiceController::class, 'file'])->whereNumber('receipt')->name('receipts.file');
         Route::post('facturas/{invoice}/anular', [InvoiceController::class, 'void'])->whereNumber('invoice')->name('invoices.void');
     });
-});
+}));

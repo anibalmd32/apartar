@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import AccessLayout from '@/layouts/backoffice/access-layout';
+import { bo } from '@/lib/surfaces';
 import { cilEnvelopeClosed, cilLockLocked } from '@coreui/icons';
 import { Link, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -26,7 +27,7 @@ export default function Login({ status }: LoginProps) {
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        post('/backoffice/login', {
+        post(bo('/login'), {
             onFinish: () => reset('password'),
         });
     };

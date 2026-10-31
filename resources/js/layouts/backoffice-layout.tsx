@@ -24,6 +24,7 @@ import { PlanUsage } from '@/layouts/backoffice/plan-usage';
 import { CHAT_HREF, RECEIPTS_HREF, ROLE_LABELS, SECTIONS, TABS } from '@/layouts/backoffice/sections';
 import { SupportAccessBanner } from '@/layouts/backoffice/support-access-banner';
 import { TabBar } from '@/layouts/backoffice/tab-bar';
+import { bo } from '@/lib/surfaces';
 
 interface BackofficeLayoutProps {
     title: string;
@@ -72,7 +73,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
 
     useEffect(() => router.on('navigate', () => setMenuOpen(false)), []);
 
-    const logout = () => router.post('/backoffice/logout');
+    const logout = () => router.post(bo('/logout'));
 
     const organizationCard = (
         <OrganizationSwitcher
@@ -91,14 +92,14 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
             extra={
                 <>
                     <MenuItem>
-                        <Link href="/backoffice/perfil" className={menuItemClass}>
+                        <Link href={bo('/perfil')} className={menuItemClass}>
                             <Icon icon={cilUser} />
                             Mi perfil
                         </Link>
                     </MenuItem>
                     {capabilities.includes('settings') ? (
                         <MenuItem>
-                            <Link href="/backoffice/ajustes" className={menuItemClass}>
+                            <Link href={bo('/ajustes')} className={menuItemClass}>
                                 <Icon icon={cilSettings} />
                                 Ajustes del negocio
                             </Link>
@@ -114,7 +115,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
             <Head title={title} />
 
             <aside className="border-line bg-base-100 fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col gap-5 overflow-y-auto border-r px-4 py-5 lg:flex">
-                <Link href="/backoffice" className="self-start">
+                <Link href={bo('')} className="self-start">
                     <Brand />
                 </Link>
 
@@ -151,7 +152,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                         <p className="min-w-0 flex-1 text-[13px] font-semibold">
                             Tu suscripción está suspendida por falta de pago. Puedes cobrar y aprobar comprobantes, pero no crear cosas nuevas.
                         </p>
-                        <Link className="btn btn-sm bg-base-100 text-base-content hover:bg-base-200 border-0" href="/backoffice/suscripcion">
+                        <Link className="btn btn-sm bg-base-100 text-base-content hover:bg-base-200 border-0" href={bo('/suscripcion')}>
                             Regularizar el pago
                         </Link>
                     </div>

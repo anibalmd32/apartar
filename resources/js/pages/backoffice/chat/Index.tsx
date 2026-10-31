@@ -8,6 +8,7 @@ import { ConversationList } from '@/features/chat/components/ConversationList';
 import { ThreadContextHeader, ThreadContextPanel } from '@/features/chat/components/ThreadContextHeader';
 import { useChatInbox } from '@/features/chat/hooks/useChatInbox';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type BackofficeSharedData } from '@/types/backoffice';
 import { type BackofficeChatProps } from '@/types/chat';
@@ -21,7 +22,7 @@ export default function ChatIndex({ threads, nextPageUrl, search, active, histor
     const { teamMember } = usePage<BackofficeSharedData>().props;
     const filter = (onlyUnread: boolean) =>
         router.get(
-            '/backoffice/chat',
+            bo('/chat'),
             { ...(search !== '' ? { q: search } : {}), ...(onlyUnread ? { no_leidos: 1 } : {}) },
             { preserveState: true, replace: true },
         );
@@ -43,7 +44,7 @@ export default function ChatIndex({ threads, nextPageUrl, search, active, histor
                         className="p-4"
                         onSubmit={(event) => {
                             event.preventDefault();
-                            router.get('/backoffice/chat', query.trim() === '' ? {} : { q: query.trim() }, { preserveState: true, replace: true });
+                            router.get(bo('/chat'), query.trim() === '' ? {} : { q: query.trim() }, { preserveState: true, replace: true });
                         }}
                     >
                         <label className="bg-surface-2 focus-within:outline-primary flex h-10 items-center gap-2.5 rounded-[10px] px-3 focus-within:outline-2">
@@ -109,7 +110,7 @@ export default function ChatIndex({ threads, nextPageUrl, search, active, histor
                         <>
                             <header className="border-line flex items-center gap-3 border-b px-4 py-3 lg:px-5">
                                 <Link
-                                    href="/backoffice/chat"
+                                    href={bo('/chat')}
                                     className="btn btn-ghost btn-sm btn-square lg:hidden"
                                     aria-label="Volver a las conversaciones"
                                 >

@@ -1,6 +1,7 @@
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { SectionCard } from '@/components/ui/section-card';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type DashboardMetrics } from '@/types/dashboard';
 import { cilBasket, cilCheckAlt, cilCheckCircle, cilDescription } from '@coreui/icons';
@@ -19,21 +20,21 @@ export function SetupChecklist({ setup }: { setup: NonNullable<DashboardMetrics[
             done: setup.paymentAccount,
             label: 'Añade una cuenta de cobro',
             hint: 'Dónde te pagan tus clientes: pago móvil, transferencia o Zelle. Aparece en cada apartado.',
-            href: '/backoffice/cuentas-de-cobro',
+            href: bo('/cuentas-de-cobro'),
             action: 'Agregar cuenta',
         },
         {
             done: setup.product,
             label: 'Carga tu primer producto',
             hint: 'Precio, inicial y número de cuotas. Con uno basta para empezar.',
-            href: '/backoffice/productos/crear',
+            href: bo('/productos/crear'),
             action: 'Crear producto',
         },
         {
             done: setup.publishedCatalog,
             label: 'Publica tu primer catálogo',
             hint: 'Compártelo por WhatsApp o Instagram y tus clientes apartan solos.',
-            href: '/backoffice/catalogos',
+            href: bo('/catalogos'),
             action: 'Crear catálogo',
         },
     ];

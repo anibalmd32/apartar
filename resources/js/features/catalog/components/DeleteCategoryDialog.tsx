@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { SelectField } from '@/components/ui/select-field';
+import { bo } from '@/lib/surfaces';
 import { type CategoryView } from '@/types/taxonomy';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -13,7 +14,7 @@ interface DeleteCategoryDialogProps {
 }
 
 export function DeleteCategoryDialog({ category, others, open, onClose }: DeleteCategoryDialogProps) {
-    const url = `/backoffice/categorias/${category.id}`;
+    const url = bo(`/categorias/${category.id}`);
     const [target, setTarget] = useState('');
     const [sending, setSending] = useState(false);
 

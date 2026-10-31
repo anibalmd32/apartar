@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { PasswordRequirements } from '@/layouts/auth/password-requirements';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { cilEnvelopeClosed, cilInfo, cilLockLocked } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -37,7 +38,7 @@ function ProfileDetails({ profile }: ProfileProps) {
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
-        form.patch('/backoffice/perfil', { preserveScroll: true });
+        form.patch(bo('/perfil'), { preserveScroll: true });
     };
 
     const changingEmail = form.data.email.trim().toLowerCase() !== profile.email;
@@ -89,7 +90,7 @@ function PasswordChange() {
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
-        form.put('/backoffice/perfil/contrasena', {
+        form.put(bo('/perfil/contrasena'), {
             preserveScroll: true,
             onSuccess: () => form.reset(),
             onError: () => form.reset('password', 'password_confirmation'),

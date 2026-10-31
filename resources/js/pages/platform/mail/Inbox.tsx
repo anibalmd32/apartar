@@ -5,6 +5,7 @@ import { Pager } from '@/features/platform/components/Pager';
 import { shortDate } from '@/features/platform/mail/format';
 import { MailTabs } from '@/features/platform/mail/MailTabs';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type MailThreadRow } from '@/types/mail';
 import { cilInbox, cilSearch } from '@coreui/icons';
@@ -27,7 +28,7 @@ interface InboxProps {
 export default function MailInboxPage({ threads, hasMore, page, filters, unreadThreads }: InboxProps) {
     const [search, setSearch] = useState(filters.q ?? '');
     const visit = (changes: Partial<Record<keyof InboxFilters | 'pagina', string | number | null>>) =>
-        router.get('/plataforma/correos/bandeja', { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/correos/bandeja'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
 
     return (
         <PlatformLayout title="Bandeja" description="Lo que llega a cualquier dirección @apartar.app. Las respuestas salen desde info@.">
@@ -82,7 +83,7 @@ export default function MailInboxPage({ threads, hasMore, page, filters, unreadT
                             return (
                                 <li key={thread.id}>
                                     <Link
-                                        href={`/plataforma/correos/bandeja/${thread.id}`}
+                                        href={pf(`/correos/bandeja/${thread.id}`)}
                                         className={cn('hover:bg-surface-2 flex gap-3 px-5 py-3.5 transition-colors', unread && 'bg-primary-soft/40')}
                                     >
                                         <span

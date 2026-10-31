@@ -1,5 +1,6 @@
 import { Modal } from '@/components/ui/modal';
 import { NewCustomerFields, type NewCustomerValues } from '@/features/layaway/components/NewCustomerFields';
+import { bo } from '@/lib/surfaces';
 import { useForm } from '@inertiajs/react';
 
 const EMPTY: NewCustomerValues = { full_name: '', document_number: '', phone: '', email: '', terms_accepted: false };
@@ -19,7 +20,7 @@ export function NewCustomerDialog({ open, onClose }: NewCustomerDialogProps) {
     };
 
     const submit = () => {
-        form.post('/backoffice/clientes', { preserveScroll: true, onSuccess: () => form.reset() });
+        form.post(bo('/clientes'), { preserveScroll: true, onSuccess: () => form.reset() });
     };
 
     return (

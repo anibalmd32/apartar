@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
@@ -11,16 +12,16 @@ export interface PlatformSection {
 }
 
 export const PLATFORM_SECTIONS: readonly PlatformSection[] = [
-    { label: 'Resumen', short: 'Resumen', href: '/plataforma', icon: cilSpeedometer },
-    { label: 'Organizaciones', short: 'Orgs', href: '/plataforma/organizaciones', icon: cilBuilding },
-    { label: 'Comprobantes', short: 'Comprobantes', href: '/plataforma/facturas', icon: cilDescription },
-    { label: 'Correos', short: 'Correos', href: '/plataforma/correos', icon: cilEnvelopeClosed },
+    { label: 'Resumen', short: 'Resumen', href: pf(''), icon: cilSpeedometer },
+    { label: 'Organizaciones', short: 'Orgs', href: pf('/organizaciones'), icon: cilBuilding },
+    { label: 'Comprobantes', short: 'Comprobantes', href: pf('/facturas'), icon: cilDescription },
+    { label: 'Correos', short: 'Correos', href: pf('/correos'), icon: cilEnvelopeClosed },
 ];
 
 export const PLATFORM_SUPPORT_SECTIONS: readonly PlatformSection[] = [
-    { label: 'Accesos de soporte', short: 'Accesos', href: '/plataforma/soporte', icon: cilShieldAlt },
-    { label: 'Auditoría', short: 'Auditoría', href: '/plataforma/auditoria', icon: cilHistory },
-    { label: 'Ajustes', short: 'Ajustes', href: '/plataforma/ajustes', icon: cilSettings },
+    { label: 'Accesos de soporte', short: 'Accesos', href: pf('/soporte'), icon: cilShieldAlt },
+    { label: 'Auditoría', short: 'Auditoría', href: pf('/auditoria'), icon: cilHistory },
+    { label: 'Ajustes', short: 'Ajustes', href: pf('/ajustes'), icon: cilSettings },
 ];
 
 interface OperatorCounts {
@@ -32,7 +33,7 @@ interface OperatorCounts {
 export function isCurrentPlatformSection(href: string, url: string): boolean {
     const path = url.split('?')[0] ?? url;
 
-    return href === '/plataforma' ? path === href : path === href || path.startsWith(`${href}/`);
+    return href === pf('') ? path === href : path === href || path.startsWith(`${href}/`);
 }
 
 function NavList({ sections, counts, current }: { sections: readonly PlatformSection[]; counts: Record<string, number>; current: string }) {
@@ -71,9 +72,9 @@ function NavList({ sections, counts, current }: { sections: readonly PlatformSec
 export function PlatformNav() {
     const { url: current, props } = usePage<{ platformOperator?: OperatorCounts | null }>();
     const counts: Record<string, number> = {
-        '/plataforma/facturas': props.platformOperator?.pendingReceipts ?? 0,
-        '/plataforma/soporte': props.platformOperator?.activeSupportGrants ?? 0,
-        '/plataforma/correos': props.platformOperator?.unreadMail ?? 0,
+        [pf('/facturas')]: props.platformOperator?.pendingReceipts ?? 0,
+        [pf('/soporte')]: props.platformOperator?.activeSupportGrants ?? 0,
+        [pf('/correos')]: props.platformOperator?.unreadMail ?? 0,
     };
 
     return (
@@ -118,7 +119,7 @@ const TAB_BAR_SECTIONS: readonly (PlatformSection & { matches: readonly string[]
     {
         label: 'Soporte',
         short: 'Soporte',
-        href: '/plataforma/soporte',
+        href: pf('/soporte'),
         icon: cilShieldAlt,
         matches: PLATFORM_SUPPORT_SECTIONS.map((section) => section.href),
     },

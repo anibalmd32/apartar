@@ -4,6 +4,7 @@ import { SelectField } from '@/components/ui/select-field';
 import { Pager } from '@/features/platform/components/Pager';
 import PlatformLayout from '@/layouts/platform-layout';
 import { PlatformSupportTabs } from '@/layouts/platform/nav';
+import { pf } from '@/lib/surfaces';
 import { type PlatformAuditEntry } from '@/types/platform';
 import { cilHistory } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -27,7 +28,7 @@ interface AuditIndexProps {
 export default function AuditIndex({ entries, hasMore, page, filters, operators, actions }: AuditIndexProps) {
     const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
     const visit = (changes: Partial<Record<keyof AuditFilters | 'pagina', string | number | null>>) =>
-        router.get('/plataforma/auditoria', { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/auditoria'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
     const filtered = Object.values(filters).some((value) => value !== null);
 
     return (
@@ -75,7 +76,7 @@ export default function AuditIndex({ entries, hasMore, page, filters, operators,
                                     <span className="text-ink-2 text-sm">{entry.label.toLowerCase()}</span>
                                     {entry.organization ? (
                                         <Link
-                                            href={`/plataforma/organizaciones/${entry.organization.slug}`}
+                                            href={pf(`/organizaciones/${entry.organization.slug}`)}
                                             className="text-primary text-sm font-semibold hover:underline"
                                         >
                                             {entry.organization.name}

@@ -11,6 +11,7 @@ import { ReactivateDialog } from '@/features/platform/components/ReactivateDialo
 import { type CourtesyState, SubscriptionActions } from '@/features/platform/components/SubscriptionActions';
 import { SupportAccessPanel } from '@/features/platform/components/SupportAccessPanel';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { type InvoiceRow, type OrganizationRow, type SupportGrantRow } from '@/types/platform';
 import { cilArrowLeft, cilBan, cilCheckCircle, cilSwapHorizontal } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -94,7 +95,7 @@ export default function OrganizationShow({
             }
             back={
                 <Link
-                    href="/plataforma/organizaciones"
+                    href={pf('/organizaciones')}
                     className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]"
                 >
                     <Icon icon={cilArrowLeft} size={14} />
@@ -181,7 +182,7 @@ export default function OrganizationShow({
                         <Button
                             variant="danger"
                             onClick={() =>
-                                router.post(`/plataforma/organizaciones/${organization.slug}/pausar`, {}, { onFinish: () => setConfirming(false) })
+                                router.post(pf(`/organizaciones/${organization.slug}/pausar`), {}, { onFinish: () => setConfirming(false) })
                             }
                         >
                             Suspender

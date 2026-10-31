@@ -1,4 +1,5 @@
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { Link } from '@inertiajs/react';
 
 interface CustomerRow {
@@ -18,7 +19,7 @@ export default function SupportCustomers({
 }) {
     return (
         <PlatformLayout title={`Clientes de ${organization.name}`} description="Acceso de soporte · solo lectura. Este acceso queda registrado.">
-            <Link href="/plataforma/organizaciones" className="text-ink-2 hover:text-base-content self-start text-[13px]">
+            <Link href={pf('/organizaciones')} className="text-ink-2 hover:text-base-content self-start text-[13px]">
                 ← Organizaciones
             </Link>
             <div className="table-frame">

@@ -1,5 +1,6 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
+import { pf } from '@/lib/surfaces';
 import { type OrganizationRow } from '@/types/platform';
 import { Link } from '@inertiajs/react';
 import { OrganizationStatusBadge } from './labels';
@@ -25,7 +26,7 @@ export function OrganizationCard({ row, lastActivity }: { row: OrganizationRow; 
     return (
         <li>
             <Link
-                href={`/plataforma/organizaciones/${row.slug}`}
+                href={pf(`/organizaciones/${row.slug}`)}
                 className="border-line bg-base-100 shadow-card flex flex-col gap-2.5 rounded-2xl border p-3.5"
             >
                 <span className="flex items-center gap-3">

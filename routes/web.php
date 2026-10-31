@@ -7,7 +7,26 @@ use App\Http\Controllers\Marketing\HomeController;
 use App\Http\Controllers\Marketing\LegalController;
 use App\Http\Controllers\Marketing\PricingController;
 use App\Http\Controllers\Marketing\RegisterController;
+use App\Support\Surface;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+require __DIR__.'/platform.php';
+require __DIR__.'/backoffice.php';
+
+foreach ([
+    Surface::BACKOFFICE_PREFIX => [Surface::backofficeDomain(), Surface::backofficeUrl(...)],
+    Surface::PLATFORM_PREFIX => [Surface::platformDomain(), Surface::platformUrl(...)],
+] as $prefix => [$domain, $url]) {
+    if ($domain !== null) {
+        Route::middleware('outside-tenancy')
+            ->get($prefix.'/{path?}', fn (Request $request, ?string $path = null) => redirect()->away(
+                $url('/'.($path ?? '')).($request->getQueryString() !== null ? '?'.$request->getQueryString() : ''),
+                301,
+            ))
+            ->where('path', '.*');
+    }
+}
 
 Route::middleware('outside-tenancy')->group(function (): void {
     Route::get('/', HomeController::class)->name('home');
@@ -36,8 +55,6 @@ Route::middleware(['guest', 'outside-tenancy'])->group(function (): void {
         ->name('team.invitation.store');
 });
 
-require __DIR__.'/platform.php';
-require __DIR__.'/backoffice.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/portal.php';
 require __DIR__.'/catalog.php';

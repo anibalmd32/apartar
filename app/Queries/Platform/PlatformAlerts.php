@@ -7,6 +7,7 @@ namespace App\Queries\Platform;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\SubscriptionStatus;
+use App\Support\Surface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -29,7 +30,7 @@ final class PlatformAlerts
                     ->where('created_at', '<', $now->subHours(SubscriptionReceiptInbox::LATE_HOURS))
                     ->count(),
                 'tone' => 'warning',
-                'href' => '/plataforma/facturas',
+                'href' => Surface::platformPath().'/facturas',
             ],
             [
                 'key' => 'graceEnding',
@@ -38,13 +39,13 @@ final class PlatformAlerts
                     ->whereBetween('grace_ends_at', [$now, $now->addHours(self::GRACE_ENDING_HOURS)])
                     ->count(),
                 'tone' => 'error',
-                'href' => '/plataforma/organizaciones?vencidas=1',
+                'href' => Surface::platformPath().'/organizaciones?vencidas=1',
             ],
             [
                 'key' => 'overdueInvoices',
                 'count' => DB::table('subscription_invoices')->where('status', InvoiceStatus::Overdue->value)->distinct()->count('organization_id'),
                 'tone' => 'warning',
-                'href' => '/plataforma/organizaciones?vencidas=1',
+                'href' => Surface::platformPath().'/organizaciones?vencidas=1',
             ],
             [
                 'key' => 'myOpenSupport',
@@ -54,16 +55,24 @@ final class PlatformAlerts
                     ->where('expires_at', '>', $now)
                     ->count(),
                 'tone' => 'info',
-                'href' => '/plataforma/soporte',
+                'href' => Surface::platformPath().'/soporte',
             ],
             [
                 'key' => 'failedJobs',
                 'count' => DB::table('failed_jobs')->count(),
                 'tone' => 'error',
-                'href' => '/plataforma/salud',
+                'href' => self::monitorUrl(),
             ],
         ];
 
         return array_values(array_filter($alerts, fn (array $alert): bool => $alert['count'] > 0));
+    }
+
+    private static function monitorUrl(): string
+    {
+        $domain = config('monitor.domain');
+        $path = '/'.config('pulse.path', 'pulse');
+
+        return is_string($domain) && $domain !== '' ? 'https://'.$domain.$path : $path;
     }
 }

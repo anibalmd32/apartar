@@ -1,6 +1,7 @@
 import { PreviewDialog } from '@/features/products/components/ProductPreview';
 import { type PreviewSource } from '@/features/products/lib/preview';
 import { getJson } from '@/lib/json';
+import { bo } from '@/lib/surfaces';
 import { type ReactNode, useState } from 'react';
 
 /**
@@ -16,7 +17,7 @@ export function useStoredProductPreview(productId: number): { open: () => void; 
         setSource(null);
         setError(null);
 
-        getJson<PreviewSource>(`/backoffice/productos/${productId}/vista-previa`)
+        getJson<PreviewSource>(bo(`/productos/${productId}/vista-previa`))
             .then(setSource)
             .catch(() => setError('No pudimos cargar la vista previa. Intenta de nuevo.'));
     };

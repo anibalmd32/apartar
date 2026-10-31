@@ -3,6 +3,7 @@ import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { ReminderOffsetsEditor } from '@/features/tenancy/components/ReminderOffsetsEditor';
 import { SettingScopeBadge } from '@/features/tenancy/components/SettingScopeBadge';
+import { bo } from '@/lib/surfaces';
 import { type OrganizationSettings, type SettingDefinition, type SettingValue } from '@/types/backoffice';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -59,7 +60,7 @@ export function OperationSettingsForm({ settings, definitions }: OperationSettin
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        put('/backoffice/ajustes', { preserveScroll: true });
+        put(bo('/ajustes'), { preserveScroll: true });
     };
 
     return (

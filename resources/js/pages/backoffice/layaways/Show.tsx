@@ -12,6 +12,7 @@ import { AllocationEditor } from '@/features/receipts/components/AllocationEdito
 import { ManualPaymentForm } from '@/features/receipts/components/ManualPaymentForm';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type BackofficeLayawayShowProps } from '@/types/layaway-backoffice';
 import { cilPlus } from '@coreui/icons';
 import { useForm, usePage } from '@inertiajs/react';
@@ -34,7 +35,7 @@ export default function LayawayShow({
         <BackofficeLayout
             title={layaway.code}
             badge={<Badge tone={layaway.status === 'cancelled' ? 'neutral' : 'primary'}>{layaway.statusLabel}</Badge>}
-            back={{ href: '/backoffice/cobranza', label: 'Cobranza' }}
+            back={{ href: bo('/cobranza'), label: 'Cobranza' }}
             description={layaway.createdAt !== null ? `Creado el ${layaway.createdAt}` : undefined}
             actions={
                 <>

@@ -6,6 +6,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pager } from '@/features/platform/components/Pager';
 import PlatformLayout from '@/layouts/platform-layout';
 import { PlatformSupportTabs } from '@/layouts/platform/nav';
+import { pf } from '@/lib/surfaces';
 import { type SupportGrantListRow } from '@/types/platform';
 import { cilShieldAlt } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -29,7 +30,7 @@ export default function SupportIndex({ grants, filter, page, hasMore }: SupportI
     const [revoking, setRevoking] = useState<SupportGrantListRow | null>(null);
     const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
     const visit = (changes: Record<string, string | number>) =>
-        router.get('/plataforma/soporte', { estado: filter, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/soporte'), { estado: filter, pagina: 1, ...changes }, { preserveState: true, replace: true });
 
     return (
         <PlatformLayout
@@ -60,7 +61,7 @@ export default function SupportIndex({ grants, filter, page, hasMore }: SupportI
                                         )}
                                         {grant.organization.slug ? (
                                             <Link
-                                                href={`/plataforma/organizaciones/${grant.organization.slug}`}
+                                                href={pf(`/organizaciones/${grant.organization.slug}`)}
                                                 className="text-sm font-semibold hover:underline"
                                             >
                                                 {grant.organization.name}
@@ -95,7 +96,7 @@ export default function SupportIndex({ grants, filter, page, hasMore }: SupportI
                 title="¿Cerrar este acceso de soporte?"
                 description={revoking ? `El operador deja de ver los datos de ${revoking.organization.name} en su siguiente petición.` : undefined}
                 confirmLabel="Cerrar acceso"
-                url={revoking ? `/plataforma/organizaciones/${revoking.organization.slug}/soporte/${revoking.id}` : ''}
+                url={revoking ? pf(`/organizaciones/${revoking.organization.slug}/soporte/${revoking.id}`) : ''}
                 options={{ onSuccess: () => setRevoking(null) }}
             />
         </PlatformLayout>

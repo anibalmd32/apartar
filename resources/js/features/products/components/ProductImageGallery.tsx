@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
 import { TextField } from '@/components/ui/text-field';
 import { ImageUploader } from '@/features/products/components/ImageUploader';
+import { bo } from '@/lib/surfaces';
 import { type ProductImageView } from '@/types/product';
 import { cilTrash } from '@coreui/icons';
 import { router } from '@inertiajs/react';
@@ -25,7 +26,7 @@ interface EditableImage {
 }
 
 export function ProductImageGallery({ productId, images, maxImages, errors }: ProductImageGalleryProps) {
-    const url = `/backoffice/productos/${productId}/imagenes`;
+    const url = bo(`/productos/${productId}/imagenes`);
 
     const [order, setOrder] = useState<EditableImage[]>(() => images.map((image) => ({ id: image.id, alt: image.set.alt })));
 

@@ -1,3 +1,4 @@
+import { bo } from '@/lib/surfaces';
 export type ExportType = 'collections' | 'customers' | 'inventory' | 'payments';
 
 export type ExportStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'expired';
@@ -26,4 +27,4 @@ export interface ExportsPageProps {
     readonly types: readonly { readonly value: ExportType; readonly label: string; readonly allowed: boolean }[];
 }
 
-export const EXPORTS_URL = '/backoffice/exportaciones';
+export const EXPORTS_URL = bo('/exportaciones');

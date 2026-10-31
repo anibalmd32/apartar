@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { PasswordRequirements } from '@/layouts/auth/password-requirements';
 import AccessLayout from '@/layouts/backoffice/access-layout';
+import { bo } from '@/lib/surfaces';
 import { cilShieldAlt } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -21,7 +22,7 @@ export default function ChangePassword() {
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        post('/backoffice/cambiar-contrasena', {
+        post(bo('/cambiar-contrasena'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };

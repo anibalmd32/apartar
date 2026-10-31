@@ -4,6 +4,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { BillingTrend, versusLastMonth } from '@/features/platform/components/BillingTrend';
 import { MailSummaryCard } from '@/features/platform/mail/MailSummaryCard';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type MailSummary } from '@/types/mail';
 import { type PlatformMetrics } from '@/types/platform';
@@ -46,7 +47,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                     {periods.map((option) => (
                         <Link
                             key={option}
-                            href={`/plataforma?periodo=${option}`}
+                            href={pf(`?periodo=${option}`)}
                             aria-current={option === days ? 'page' : undefined}
                             className={cn(
                                 'pointer-coarse:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
@@ -71,7 +72,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                         label="Organizaciones activas"
                         value={organizations === null ? DASH : count(organizations.active)}
                         icon={cilBuilding}
-                        href="/plataforma/organizaciones"
+                        href={pf('/organizaciones')}
                         className="flex-1"
                     >
                         {organizations === null ? null : (
@@ -88,7 +89,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                         value={organizations === null ? DASH : count(organizations.suspended)}
                         icon={cilBan}
                         tone="error"
-                        href="/plataforma/organizaciones?estado=suspended"
+                        href={pf('/organizaciones?estado=suspended')}
                         className="flex-1"
                     >
                         {metrics.suspendedLongOverdue ? `${metrics.suspendedLongOverdue} con factura vencida > 7 d` : null}
@@ -101,7 +102,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                         value={invoices === null ? DASH : count(invoices.pendingReview)}
                         icon={cilDescription}
                         tone="warning"
-                        href="/plataforma/facturas"
+                        href={pf('/facturas')}
                         className="flex-1"
                     >
                         {invoices === null

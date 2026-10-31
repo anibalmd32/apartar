@@ -1,4 +1,5 @@
 import AccessLayout from '@/layouts/backoffice/access-layout';
+import { bo } from '@/lib/surfaces';
 import { cilAvTimer } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 
@@ -24,7 +25,7 @@ export default function InvitationExpired({ organizationName }: InvitationExpire
             footer={
                 <p className="text-ink-3 text-[13px]">
                     ¿Ya tienes cuenta?{' '}
-                    <Link href="/backoffice/login" className="link link-primary link-hover ml-1 font-semibold">
+                    <Link href={bo('/login')} className="link link-primary link-hover ml-1 font-semibold">
                         Entrar
                     </Link>
                 </p>

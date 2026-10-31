@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { pf } from '@/lib/surfaces';
 import { type PlatformOperatorRow } from '@/types/platform';
 import { useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -70,7 +71,7 @@ export function OperatorsPanel({ operators }: { operators: readonly PlatformOper
                 className="border-line flex flex-col gap-1 border-t pt-4"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.post('/plataforma/operadores', { preserveScroll: true, onSuccess: () => form.reset() });
+                    form.post(pf('/operadores'), { preserveScroll: true, onSuccess: () => form.reset() });
                 }}
             >
                 <h3 className="text-[13px] font-semibold">Añadir operador</h3>
@@ -104,7 +105,7 @@ export function OperatorsPanel({ operators }: { operators: readonly PlatformOper
                 confirmLabel={dialog?.label ?? ''}
                 tone={pending?.kind === 'enable' ? 'primary' : 'danger'}
                 method={pending?.kind === 'password' ? 'post' : 'patch'}
-                url={pending ? `/plataforma/operadores/${pending.operator.id}/${pending.kind === 'password' ? 'contrasena' : 'acceso'}` : ''}
+                url={pending ? pf(`/operadores/${pending.operator.id}/${pending.kind === 'password' ? 'contrasena' : 'acceso'}`) : ''}
                 data={pending && pending.kind !== 'password' ? { active: pending.kind === 'enable' } : undefined}
                 options={{ preserveScroll: true }}
             />

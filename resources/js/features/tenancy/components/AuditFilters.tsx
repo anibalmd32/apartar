@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { DateRangeField } from '@/components/ui/date-range-field';
 import { SelectField } from '@/components/ui/select-field';
 import { AUDIT_PERIODS, type AuditPeriod, periodOf, periodRange } from '@/features/tenancy/lib/audit-period';
+import { bo } from '@/lib/surfaces';
 import { type AuditActorOption, type AuditEventGroup, type AuditFilters as Filters } from '@/types/audit';
 import { router } from '@inertiajs/react';
 import { type FormEventHandler, useState } from 'react';
@@ -46,7 +47,7 @@ export function AuditFilters({ filters, events, actors }: AuditFiltersProps) {
 
         const query = Object.fromEntries(Object.entries({ event, actor, from, to }).filter(([, value]) => value !== ANY));
 
-        router.get('/backoffice/auditoria', query, { preserveState: false, preserveScroll: true });
+        router.get(bo('/auditoria'), query, { preserveState: false, preserveScroll: true });
     };
 
     const eventOptions = [
@@ -122,7 +123,7 @@ export function AuditFilters({ filters, events, actors }: AuditFiltersProps) {
                 Filtrar
             </Button>
 
-            <Button type="button" variant="ghost" onClick={() => router.get('/backoffice/auditoria', {}, { preserveState: false })}>
+            <Button type="button" variant="ghost" onClick={() => router.get(bo('/auditoria'), {}, { preserveState: false })}>
                 Limpiar
             </Button>
         </form>

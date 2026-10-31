@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { isPagoMovil, PagoMovilData } from '@/features/catalog/components/PagoMovilData';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
 import { cilBank, cilDollar, cilMobile, cilMoney, cilPencil, cilTrash, cilWallet } from '@coreui/icons';
@@ -27,7 +28,7 @@ interface PaymentAccountRowProps {
 }
 
 export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRowProps) {
-    const url = `/backoffice/cuentas-de-cobro/${account.id}`;
+    const url = bo(`/cuentas-de-cobro/${account.id}`);
     const [toggling, setToggling] = useState(false);
     const [confirming, setConfirming] = useState(false);
 

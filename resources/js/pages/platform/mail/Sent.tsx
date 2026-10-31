@@ -7,6 +7,7 @@ import { Pager } from '@/features/platform/components/Pager';
 import { count, dateTime, statusTone } from '@/features/platform/mail/format';
 import { MailTabs } from '@/features/platform/mail/MailTabs';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { type SentMailRow } from '@/types/mail';
 import { cilEnvelopeClosed, cilSearch } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -32,7 +33,7 @@ interface SentProps {
 export default function SentMails({ mails, hasMore, page, filters, statuses, categories }: SentProps) {
     const [search, setSearch] = useState(filters.q ?? '');
     const visit = (changes: Partial<Record<keyof SentFilters | 'pagina', string | number | null>>) =>
-        router.get('/plataforma/correos/enviados', { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/correos/enviados'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
     const filtered = Object.values(filters).some((value) => value !== null);
 
     return (
@@ -100,7 +101,7 @@ export default function SentMails({ mails, hasMore, page, filters, statuses, cat
                         {mails.map((mail) => (
                             <li key={mail.uuid}>
                                 <Link
-                                    href={`/plataforma/correos/enviados/${mail.uuid}`}
+                                    href={pf(`/correos/enviados/${mail.uuid}`)}
                                     className="hover:bg-surface-2 flex flex-col gap-1 px-5 py-3.5 transition-colors"
                                 >
                                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">

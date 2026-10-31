@@ -4,6 +4,7 @@ import { OrganizationStatusBadge, PlanPill, SubscriptionStatusBadge } from '@/fe
 import { OrganizationFilters } from '@/features/platform/components/OrganizationFilters';
 import { OrganizationCard, RiskBadges } from '@/features/platform/components/OrganizationRowParts';
 import PlatformLayout from '@/layouts/platform-layout';
+import { pf } from '@/lib/surfaces';
 import { type OrganizationRow } from '@/types/platform';
 import { cilChevronLeft, cilChevronRight } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -19,7 +20,7 @@ interface DirectoryProps {
 
 export default function OrganizationsIndex({ rows, hasMore, page, filters, plans, total }: DirectoryProps) {
     const visit = (changes: Record<string, string | boolean | number | null>) =>
-        router.get('/plataforma/organizaciones', { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/organizaciones'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
     const lastActivity = (row: OrganizationRow) => (row.lastActivityAt === null ? 'Nunca' : dateFormat.format(new Date(row.lastActivityAt)));
     const dateFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -56,7 +57,7 @@ export default function OrganizationsIndex({ rows, hasMore, page, filters, plans
                             {rows.map((row) => (
                                 <tr key={row.id}>
                                     <td>
-                                        <Link href={`/plataforma/organizaciones/${row.slug}`} className="group flex items-center gap-3">
+                                        <Link href={pf(`/organizaciones/${row.slug}`)} className="group flex items-center gap-3">
                                             <Avatar name={row.name} size={34} />
                                             <span className="min-w-0">
                                                 <span className="block truncate text-sm font-semibold group-hover:underline">{row.name}</span>

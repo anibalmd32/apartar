@@ -2,6 +2,7 @@ import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
 import { ShareButton } from '@/features/catalogs/components/CatalogShareButtons';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
+import { bo } from '@/lib/surfaces';
 import { type CatalogListItem } from '@/types/catalog';
 import { cilBasket, cilCalendar, cilCheckAlt, cilCopy, cilExternalLink, cilUserFollow } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -44,7 +45,7 @@ export function CatalogCard({ catalog }: { catalog: CatalogListItem }) {
     };
 
     const selling = catalog.visibility === 'listed' || catalog.visibility === 'unlisted';
-    const editUrl = `/backoffice/catalogos/${catalog.id}/editar`;
+    const editUrl = bo(`/catalogos/${catalog.id}/editar`);
 
     return (
         <article className="bg-base-100 border-line shadow-card flex h-full flex-col overflow-hidden rounded-2xl border">

@@ -1,3 +1,4 @@
+import { bo } from '@/lib/surfaces';
 export type PlanLimit = number | null;
 
 export type UsageMetric = 'users' | 'catalogs' | 'products' | 'active_layaways' | 'storage_mb' | 'payment_accounts';
@@ -74,9 +75,9 @@ export interface PlanSharedProps {
     readonly planBlocked: PlanBlockedRejection | null;
 }
 
-export const SUBSCRIPTION_URL = '/backoffice/suscripcion';
+export const SUBSCRIPTION_URL = bo('/suscripcion');
 
-export const CHANGE_PLAN_URL = '/backoffice/suscripcion/cambiar';
+export const CHANGE_PLAN_URL = bo('/suscripcion/cambiar');
 
 export interface PlanExcess {
     readonly metric: UsageMetric;

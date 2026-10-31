@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
+import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type ConversationMessage } from '@/types/mail';
 import { cilActionUndo, cilCloudDownload, cilPaperclip, cilShare } from '@coreui/icons';
@@ -42,7 +43,7 @@ export function ThreadMessage({ message, open }: { message: ConversationMessage;
                         {message.attachments.map((file) => (
                             <li key={file.id}>
                                 {file.stored ? (
-                                    <a href={`/plataforma/correos/adjuntos/${file.id}`} className="btn btn-sm" download>
+                                    <a href={pf(`/correos/adjuntos/${file.id}`)} className="btn btn-sm" download>
                                         <Icon icon={cilCloudDownload} size={14} />
                                         {file.filename}
                                         <span className="text-ink-3 text-xs font-normal">{fileSize(file.size)}</span>
@@ -63,7 +64,7 @@ export function ThreadMessage({ message, open }: { message: ConversationMessage;
                         {REPLY_ACTIONS.map((action) => (
                             <Link
                                 key={action.mode}
-                                href={`/plataforma/correos/redactar?responder=${message.id}&modo=${action.mode}`}
+                                href={pf(`/correos/redactar?responder=${message.id}&modo=${action.mode}`)}
                                 className={cn('btn btn-sm', action.mode === 'responder' && 'btn-primary')}
                             >
                                 <Icon icon={action.icon} size={14} />

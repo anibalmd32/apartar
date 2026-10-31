@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
+import { bo } from '@/lib/surfaces';
 import { type TagView } from '@/types/taxonomy';
 import { cilPencil, cilTag, cilTrash } from '@coreui/icons';
 import { useState } from 'react';
@@ -54,7 +55,7 @@ export function TagRow({ tag, onEdit }: TagRowProps) {
                             : 'No la usa ningún producto.'
                     }
                     confirmLabel="Eliminar etiqueta"
-                    url={`/backoffice/etiquetas/${tag.id}`}
+                    url={bo(`/etiquetas/${tag.id}`)}
                 />
             </td>
         </tr>

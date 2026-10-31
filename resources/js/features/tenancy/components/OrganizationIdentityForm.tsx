@@ -5,6 +5,7 @@ import { DocumentField } from '@/components/ui/document-field';
 import { FileField } from '@/components/ui/file-field';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
+import { bo } from '@/lib/surfaces';
 import { type OrganizationBrand, type OrganizationIdentity } from '@/types/backoffice';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -49,7 +50,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        post('/backoffice/ajustes/identidad', { forceFormData: true, preserveScroll: true });
+        post(bo('/ajustes/identidad'), { forceFormData: true, preserveScroll: true });
     };
 
     return (
@@ -135,7 +136,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                         igualmente —se guardan— y se activarán solos al subir de plan, sin volver a tocar nada.
                     </span>
 
-                    <a className="btn btn-sm btn-info" href="/backoffice/suscripcion">
+                    <a className="btn btn-sm btn-info" href={bo('/suscripcion')}>
                         Ver planes
                     </a>
                 </Alert>

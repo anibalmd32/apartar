@@ -1,4 +1,5 @@
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 
@@ -40,7 +41,7 @@ export function PlanUsage({ className }: { className?: string }) {
     const classes = cn('bg-surface-2 flex flex-col gap-2.5 rounded-xl p-3.5', className);
 
     return plan.canOpenSubscription ? (
-        <Link href="/backoffice/suscripcion" className={cn(classes, 'hover:bg-base-300 transition-colors')}>
+        <Link href={bo('/suscripcion')} className={cn(classes, 'hover:bg-base-300 transition-colors')}>
             {body}
         </Link>
     ) : (

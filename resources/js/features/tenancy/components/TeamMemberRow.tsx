@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SelectField } from '@/components/ui/select-field';
+import { bo } from '@/lib/surfaces';
 import { type OrganizationRole, type TeamMember } from '@/types/backoffice';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -48,7 +49,7 @@ function ago(iso: string): string {
 
 export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
     const act = (path: string, method: 'post' | 'delete' = 'post', data: Record<string, string> = {}) =>
-        router.visit(`/backoffice/equipo/${member.id}${path}`, { method, data, preserveScroll: true });
+        router.visit(bo(`/equipo/${member.id}${path}`), { method, data, preserveScroll: true });
 
     const [confirming, setConfirming] = useState<'revoke' | 'disable' | null>(null);
 
@@ -148,7 +149,7 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                     }
                     confirmLabel={confirming === 'revoke' ? 'Revocar invitación' : 'Desactivar'}
                     method={confirming === 'revoke' ? 'delete' : 'post'}
-                    url={`/backoffice/equipo/${member.id}${confirming === 'revoke' ? '' : '/desactivar'}`}
+                    url={bo(`/equipo/${member.id}${confirming === 'revoke' ? '' : '/desactivar'}`)}
                 />
             </td>
         </tr>

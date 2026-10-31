@@ -8,6 +8,7 @@ import { CatalogProductSorter } from '@/features/catalogs/components/CatalogProd
 import { CatalogPublishPanel } from '@/features/catalogs/components/CatalogPublishPanel';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type CatalogFormValues, type CatalogProductOption, type CatalogPublishBlockers } from '@/types/catalog';
 import { cilCheckAlt, cilExternalLink } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
@@ -36,13 +37,13 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
         event.preventDefault();
 
         if (catalog === null) {
-            form.post('/backoffice/catalogos');
+            form.post(bo('/catalogos'));
 
             return;
         }
 
         form.transform((data) => ({ ...data, _method: 'put' }));
-        form.post(`/backoffice/catalogos/${catalog.id}`);
+        form.post(bo(`/catalogos/${catalog.id}`));
     };
 
     const selling = catalog !== null && (catalog.visibility === 'listed' || catalog.visibility === 'unlisted');
@@ -50,7 +51,7 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
     return (
         <BackofficeLayout
             title={catalog === null ? 'Nuevo catálogo' : catalog.name}
-            back={{ href: '/backoffice/catalogos', label: 'Catálogos' }}
+            back={{ href: bo('/catalogos'), label: 'Catálogos' }}
             badge={catalog === null ? undefined : <CatalogVisibilityBadge visibility={catalog.visibility} />}
             description={
                 catalog?.updatedAt

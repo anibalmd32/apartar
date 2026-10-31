@@ -1,5 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { pf } from '@/lib/surfaces';
 
 interface ReactivateDialogProps {
     open: boolean;
@@ -19,7 +20,7 @@ export function ReactivateDialog({ open, onClose, slug, name, hasOverdueInvoice 
             confirmLabel="Reactivar"
             tone="primary"
             method="post"
-            url={`/plataforma/organizaciones/${slug}/reactivar`}
+            url={pf(`/organizaciones/${slug}/reactivar`)}
         >
             {hasOverdueInvoice ? (
                 <Alert tone="warning" title="Tiene una factura vencida">

@@ -10,6 +10,7 @@ import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { TeamMemberRow } from '@/features/tenancy/components/TeamMemberRow';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatUsage } from '@/lib/plan';
+import { bo } from '@/lib/surfaces';
 import { type TeamMember } from '@/types/backoffice';
 import { type UsageState } from '@/types/plan';
 import { cilEnvelopeClosed } from '@coreui/icons';
@@ -42,7 +43,7 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        post('/backoffice/equipo', {
+        post(bo('/equipo'), {
             preserveScroll: true,
             onSuccess: () => reset(),
         });

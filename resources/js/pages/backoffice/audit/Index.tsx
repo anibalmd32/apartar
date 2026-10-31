@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { AuditEntryRow } from '@/features/tenancy/components/AuditEntryRow';
 import { AuditFilters } from '@/features/tenancy/components/AuditFilters';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type AuditActorOption, type AuditEntry, type AuditEventGroup, type AuditFilters as Filters } from '@/types/audit';
 import { type Paginated } from '@/types/data-table';
 import { router } from '@inertiajs/react';
@@ -16,7 +17,7 @@ export default function AuditIndex({ rows: entries, meta, events, actors, timezo
     const filters = meta.filters as unknown as Filters;
 
     const goToPage = (page: number) =>
-        router.get('/backoffice/auditoria', { ...cleanFilters(filters), page }, { preserveState: false, preserveScroll: true });
+        router.get(bo('/auditoria'), { ...cleanFilters(filters), page }, { preserveState: false, preserveScroll: true });
 
     return (
         <BackofficeLayout

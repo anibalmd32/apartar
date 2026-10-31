@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { bo } from '@/lib/surfaces';
 import { cilArrowCircleTop } from '@coreui/icons';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 
-export const BULK_PUBLISH_URL = '/backoffice/productos/publicar-varios';
+export const BULK_PUBLISH_URL = bo('/productos/publicar-varios');
 
 export function BulkPublishButton({ ids, onDone }: { ids: readonly number[]; onDone: () => void }) {
     const [sending, setSending] = useState(false);

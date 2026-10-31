@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import AccessLayout from '@/layouts/backoffice/access-layout';
+import { pf } from '@/lib/surfaces';
 import { cilEnvelopeClosed, cilLockLocked, cilShieldAlt } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -17,7 +18,7 @@ export default function PlatformLogin({ status }: { status?: string | null }) {
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
-        post('/plataforma/login', { onFinish: () => reset('password') });
+        post(pf('/login'), { onFinish: () => reset('password') });
     };
 
     return (

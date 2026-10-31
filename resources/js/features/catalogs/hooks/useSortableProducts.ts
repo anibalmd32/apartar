@@ -1,3 +1,4 @@
+import { bo } from '@/lib/surfaces';
 import { type CatalogProductOption } from '@/types/catalog';
 import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
@@ -43,7 +44,7 @@ export function useSortableProducts({ catalogId, initial }: SortableProductsOpti
     const save = () => {
         setSaving(true);
 
-        router.patch(`/backoffice/catalogos/${catalogId}/productos`, { products: ids }, { preserveScroll: true, onFinish: () => setSaving(false) });
+        router.patch(bo(`/catalogos/${catalogId}/productos`), { products: ids }, { preserveScroll: true, onFinish: () => setSaving(false) });
     };
 
     return { chosen, ids, isDirty, saving, add, remove, reorder, save };

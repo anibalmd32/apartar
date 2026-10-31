@@ -1,4 +1,5 @@
 import { StatCard } from '@/components/ui/stat-card';
+import { pf } from '@/lib/surfaces';
 import { type MailMetrics } from '@/types/mail';
 import { cilCheckCircle, cilEnvelopeOpen, cilPaperPlane, cilWarning } from '@coreui/icons';
 import { type ReactNode } from 'react';
@@ -21,7 +22,7 @@ export function MetricTiles({ metrics }: { metrics: MailMetrics }) {
         <>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
                 <section aria-label="Enviados" className="flex">
-                    <StatCard label="Enviados" value={count(totals.sent)} icon={cilPaperPlane} href="/plataforma/correos/enviados" className="flex-1">
+                    <StatCard label="Enviados" value={count(totals.sent)} icon={cilPaperPlane} href={pf('/correos/enviados')} className="flex-1">
                         {count(totals.manual)} escritos por el equipo{totals.pending > 0 ? ` · ${count(totals.pending)} en cola` : ''}
                     </StatCard>
                 </section>

@@ -1,6 +1,7 @@
 import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
 import { getJson } from '@/lib/json';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { cilSearch } from '@coreui/icons';
 import { router } from '@inertiajs/react';
@@ -18,7 +19,7 @@ interface SearchGroup {
     readonly items: readonly SearchItem[];
 }
 
-const SEARCH_URL = '/backoffice/buscar';
+const SEARCH_URL = bo('/buscar');
 const DEBOUNCE_MS = 250;
 
 export function GlobalSearch({ className }: { className?: string }) {

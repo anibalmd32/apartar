@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type OrganizationCapability } from '@/types/backoffice';
 import { Link, usePage } from '@inertiajs/react';
@@ -16,7 +17,7 @@ export interface NavSection {
 export function isCurrentSection(href: string, url: string): boolean {
     const path = url.split('?')[0] ?? url;
 
-    return href === '/backoffice' ? path === href : path === href || path.startsWith(`${href}/`);
+    return href === bo('') ? path === href : path === href || path.startsWith(`${href}/`);
 }
 
 interface BackofficeNavProps {

@@ -11,6 +11,7 @@ import { ManageCustomer } from '@/features/customers/components/ManageCustomer';
 import { MergeCustomerDialog } from '@/features/customers/components/MergeCustomerDialog';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { bo } from '@/lib/surfaces';
 import { type CustomerShowProps } from '@/types/customers';
 import { cilBell, cilChatBubble, cilLibrary, cilLink, cilPlus } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
@@ -32,7 +33,7 @@ export default function CustomerShow(props: CustomerShowProps) {
     return (
         <BackofficeLayout
             title={customer.name}
-            back={{ href: '/backoffice/clientes', label: 'Clientes' }}
+            back={{ href: bo('/clientes'), label: 'Clientes' }}
             badge={
                 <>
                     {customer.hasLinkedAccount ? (
@@ -46,16 +47,16 @@ export default function CustomerShow(props: CustomerShowProps) {
             }
             actions={
                 <>
-                    <Link href={`/backoffice/apartados/nuevo?cliente=${customer.id}`} className="btn btn-secondary">
+                    <Link href={bo(`/apartados/nuevo?cliente=${customer.id}`)} className="btn btn-secondary">
                         <Icon icon={cilPlus} />
                         Nuevo apartado
                     </Link>
-                    <Link href={`/backoffice/avisos?cliente=${customer.id}`} className="btn btn-secondary">
+                    <Link href={bo(`/avisos?cliente=${customer.id}`)} className="btn btn-secondary">
                         <Icon icon={cilBell} />
                         Notificar
                     </Link>
                     {props.conversationId !== null ? (
-                        <Link href={`/backoffice/chat/${props.conversationId}`} className="btn btn-primary">
+                        <Link href={bo(`/chat/${props.conversationId}`)} className="btn btn-primary">
                             <Icon icon={cilChatBubble} />
                             Abrir la conversación
                         </Link>

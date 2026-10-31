@@ -1,4 +1,5 @@
 import { suggestSku } from '@/features/products/lib/sku';
+import { bo } from '@/lib/surfaces';
 import { type ProductDefaults, type ProductFormValues } from '@/types/product';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
@@ -76,12 +77,12 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         form.transform((current) => ({ ...current, specifications, ...(images.length > 0 ? { images: [...images] } : {}) }));
 
         if (product) {
-            form.put(`/backoffice/productos/${product.id}`, { preserveScroll: true });
+            form.put(bo(`/productos/${product.id}`), { preserveScroll: true });
 
             return;
         }
 
-        form.post('/backoffice/productos', { preserveScroll: true, forceFormData: images.length > 0 });
+        form.post(bo('/productos'), { preserveScroll: true, forceFormData: images.length > 0 });
     };
 
     return { ...form, submit };
