@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
+use App\Actions\Payment\ReadReceiptAction;
 use App\Actions\Payment\SubmitReceiptAction;
 use App\Domain\Account\PortalContext;
 use App\Domain\Exchange\CurrentRate;
@@ -16,6 +17,7 @@ use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
+use App\Domain\Payment\ReceiptReading;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\CrossTenantRelationException;
@@ -29,8 +31,10 @@ use App\Models\Layaway;
 use App\Models\Receipt;
 use App\Queries\ActivePaymentAccountsQuery;
 use DateTimeZone;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -83,9 +87,28 @@ final class ReceiptController extends Controller
             'paidAt' => ['min' => $min, 'max' => $max],
             'file' => ['maxMb' => ReceiptFile::maxSizeMb(), 'accept' => ReceiptFile::ACCEPT],
             'storeUrl' => route('portal.receipts.store', ['code' => $layaway->code]),
+            'readUrl' => route('portal.receipts.read', ['code' => $layaway->code]),
             'backUrl' => route('portal.layaways.show', ['code' => $layaway->code]),
             'replaces' => $this->rejectedToReplace($layaway, $organization->timezone),
         ]);
+    }
+
+    public function read(Request $request, string $code, PortalContext $portal, ReadReceiptAction $read): JsonResponse
+    {
+        $layaway = $portal->findLayaway($code);
+
+        abort_unless($layaway->status->acceptsPayments(), 403, 'Este apartado ya no recibe pagos.');
+
+        $request->validate([
+            'file' => ['required', 'file', 'max:'.(ReceiptFile::maxSizeMb() * 1024)],
+        ]);
+
+        $file = $request->file('file');
+        [$min, $max] = StoreReceiptRequest::boundsFor($layaway, new DateTimeZone($this->context->organization()->timezone));
+
+        $reading = $file instanceof UploadedFile ? $read->handle($file, $min, $max) : ReceiptReading::nothing();
+
+        return response()->json(['reading' => $reading->toArray()]);
     }
 
     /**

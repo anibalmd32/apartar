@@ -21,12 +21,13 @@ export default function ReceiptCreate({
     paidAt,
     file,
     storeUrl,
+    readUrl,
     backUrl,
     replaces,
 }: ReceiptCreateProps) {
     const { auth } = usePage<{ auth: { portal: PortalSessionView | null } }>().props;
 
-    const form = useReceiptForm({ paymentAccounts, methods, currencies, suggestion, paidAt, file, storeUrl });
+    const form = useReceiptForm({ paymentAccounts, methods, currencies, suggestion, paidAt, file, storeUrl, readUrl });
 
     return (
         <PortalLayout

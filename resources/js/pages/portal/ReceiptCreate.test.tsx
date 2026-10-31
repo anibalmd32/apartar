@@ -4,7 +4,7 @@ import { fakeFile, PAGO_MOVIL, receiptProps, stubObjectUrls, ZELLE } from '@/tes
 import { type ReceiptCreateProps } from '@/types/receipt';
 import { router } from '@inertiajs/core';
 import type * as InertiaReact from '@inertiajs/react';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const { usePage } = vi.hoisted(() => ({ usePage: vi.fn() }));
@@ -138,18 +138,24 @@ it('con parte de la inicial abonada, sugiere lo que falta de la inicial', () => 
     );
 });
 
-it('envía multipart con los nombres del contrato y el archivo', () => {
+it('lee el comprobante, rellena lo que encontró y envía multipart con los nombres del contrato', async () => {
+    const reading = { amount: '1275.00', currency: 'VES', paidAt: '2026-10-05', reference: '00123456', bank: 'Mercantil' };
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ reading }), { status: 200 }));
+    vi.stubGlobal('fetch', fetch);
     renderPage();
 
     const capture = fakeFile('captura.png', 'image/png');
-    const bank = screen.getByLabelText('Banco');
-    fireEvent.change(bank, { target: { value: 'Mercantil' } });
-    fireEvent.keyDown(bank, { key: 'ArrowDown' });
-    fireEvent.keyDown(bank, { key: 'Enter' });
-    fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '00123456' } });
-    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Cuota de octubre' } });
     fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [capture] } });
 
+    expect(screen.getByRole('status')).toHaveTextContent('Estamos validando tu comprobante');
+    expect(screen.getByLabelText('Número de referencia')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Enviar comprobante' })).toBeDisabled();
+
+    await waitFor(() => expect(screen.getByLabelText('Número de referencia')).toHaveValue('00123456'));
+    expect(fetch).toHaveBeenCalledWith('/mi-cuenta/apartados/AP-7K3M9QRT/comprobante/leer', expect.objectContaining({ method: 'POST' }));
+    expect(screen.queryByText(/\bIA\b|inteligencia artificial/)).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Cuota de octubre' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar comprobante' }));
 
     const [url, options] = lastVisit();
@@ -168,6 +174,31 @@ it('envía multipart con los nombres del contrato y el archivo', () => {
         note: 'Cuota de octubre',
         file: capture,
     });
+});
+
+it('lo que no se pudo leer queda vacío para que el cliente lo complete', async () => {
+    const reading = { amount: null, currency: null, paidAt: null, reference: null, bank: null };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ reading }), { status: 200 })));
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '999' } });
+    fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('captura.png', 'image/png')] } });
+
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('completa lo que esté vacío'));
+    expect(screen.getByLabelText('Número de referencia')).toHaveValue('');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Enviar comprobante' })).toBeEnabled();
+});
+
+it('un PDF no se lee: el cliente escribe los datos', () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('pago.pdf', 'application/pdf')] } });
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(screen.queryByText(/validando/)).toBeNull();
 });
 
 it('sin cuentas, envía la cuenta como null', () => {

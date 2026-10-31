@@ -59,6 +59,7 @@ export function receiptProps(overrides: Partial<ReceiptCreateProps> = {}): Recei
         paidAt: { min: '2026-09-10', max: '2026-10-05' },
         file: { maxMb: 5, accept: '.jpg,.jpeg,.png,.webp,.pdf' },
         storeUrl: '/mi-cuenta/apartados/AP-7K3M9QRT/comprobante',
+        readUrl: '/mi-cuenta/apartados/AP-7K3M9QRT/comprobante/leer',
         backUrl: '/mi-cuenta/apartados/AP-7K3M9QRT',
         replaces: null,
         ...overrides,

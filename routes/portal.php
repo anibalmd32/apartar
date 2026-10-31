@@ -70,6 +70,9 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
         Route::get('apartados/{code}', LayawayShowController::class)->name('layaways.show');
 
         Route::get('apartados/{code}/comprobante', [ReceiptController::class, 'create'])->name('receipts.create');
+        Route::post('apartados/{code}/comprobante/leer', [ReceiptController::class, 'read'])
+            ->middleware('throttle:20,1')
+            ->name('receipts.read');
         Route::post('apartados/{code}/comprobante', [ReceiptController::class, 'store'])
             ->middleware('throttle:comprobantes')
             ->name('receipts.store');

@@ -49,30 +49,34 @@ export function ReceiptPaymentFields({ form, paymentAccounts, methods, businessN
                 error={errors.method}
                 required
             />
-
-            {form.requiresReference ? (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <BankField
-                        label="Banco"
-                        name="bank"
-                        hint="Desde el que hiciste el pago."
-                        value={data.bank}
-                        onChange={(value) => form.setData('bank', value)}
-                        error={errors.bank}
-                        required
-                    />
-
-                    <TextField
-                        label="Número de referencia"
-                        name="reference"
-                        value={data.reference}
-                        onChange={(event) => form.setData('reference', event.target.value)}
-                        error={errors.reference}
-                        autoComplete="off"
-                        required
-                    />
-                </div>
-            ) : null}
         </>
     );
+}
+
+export function ReceiptReferenceFields({ form }: { form: ReceiptForm }) {
+    const { data, errors } = form;
+
+    return form.requiresReference ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <BankField
+                label="Banco"
+                name="bank"
+                hint="Desde el que hiciste el pago."
+                value={data.bank}
+                onChange={(value) => form.setData('bank', value)}
+                error={errors.bank}
+                required
+            />
+
+            <TextField
+                label="Número de referencia"
+                name="reference"
+                value={data.reference}
+                onChange={(event) => form.setData('reference', event.target.value)}
+                error={errors.reference}
+                autoComplete="off"
+                required
+            />
+        </div>
+    ) : null;
 }

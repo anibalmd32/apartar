@@ -36,6 +36,7 @@ export interface ReceiptCreateProps {
     readonly paidAt: { readonly min: string; readonly max: string };
     readonly file: { readonly maxMb: number; readonly accept: string };
     readonly storeUrl: string;
+    readonly readUrl: string;
     readonly backUrl: string;
     readonly replaces: { readonly submittedAt: string; readonly reason: string | null } | null;
 }

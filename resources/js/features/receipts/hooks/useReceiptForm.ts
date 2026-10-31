@@ -1,10 +1,14 @@
 import { BYTES_PER_MB } from '@/features/receipts/hooks/useFilePreview';
+import { type ReceiptReading, useReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
 import { type Currency } from '@/types/money';
 import { type ReceiptCreateProps, type ReceiptFormValues, type ReceiptSuggestion } from '@/types/receipt';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 
-type UseReceiptFormOptions = Pick<ReceiptCreateProps, 'paymentAccounts' | 'methods' | 'currencies' | 'suggestion' | 'paidAt' | 'file' | 'storeUrl'>;
+type UseReceiptFormOptions = Pick<
+    ReceiptCreateProps,
+    'paymentAccounts' | 'methods' | 'currencies' | 'suggestion' | 'paidAt' | 'file' | 'storeUrl' | 'readUrl'
+>;
 
 export function suggestedAmount(suggestion: ReceiptSuggestion | null, currency: Currency): string {
     if (suggestion === null) {
@@ -14,7 +18,7 @@ export function suggestedAmount(suggestion: ReceiptSuggestion | null, currency: 
     return currency === 'USD' ? suggestion.amountUsd : (suggestion.amountVes ?? '');
 }
 
-export function useReceiptForm({ paymentAccounts, methods, currencies, suggestion, paidAt, file, storeUrl }: UseReceiptFormOptions) {
+export function useReceiptForm({ paymentAccounts, methods, currencies, suggestion, paidAt, file, storeUrl, readUrl }: UseReceiptFormOptions) {
     const findMethod = (value: string) => methods.find((method) => method.value === value);
 
     const initialAccount = paymentAccounts.length === 1 ? paymentAccounts[0] : undefined;
@@ -79,7 +83,33 @@ export function useReceiptForm({ paymentAccounts, methods, currencies, suggestio
         form.setData('amount', value);
     };
 
-    const setFile = (value: File | null) => form.setData('file', value);
+    const applyReading = (reading: ReceiptReading) => {
+        amountTyped.current = reading.amount !== null;
+
+        if (reading.currency !== null) {
+            currencyChosen.current = true;
+        }
+
+        form.setData((data) => {
+            const takesReference = findMethod(data.method)?.requiresReference ?? false;
+
+            return {
+                ...data,
+                amount: reading.amount ?? '',
+                currency: reading.currency ?? data.currency,
+                paidAt: reading.paidAt ?? data.paidAt,
+                bank: takesReference ? (reading.bank ?? '') : data.bank,
+                reference: takesReference ? (reading.reference ?? '') : data.reference,
+            };
+        });
+    };
+
+    const reading = useReceiptReading(readUrl, applyReading);
+
+    const setFile = (value: File | null) => {
+        form.setData('file', value);
+        reading.read(value !== null && value.size <= file.maxMb * BYTES_PER_MB ? value : null);
+    };
 
     const submit = () => {
         form.post(storeUrl, { forceFormData: true, preserveScroll: true });
@@ -98,6 +128,7 @@ export function useReceiptForm({ paymentAccounts, methods, currencies, suggestio
         selectedAccount: paymentAccounts.find((account) => account.id === data.paymentAccount) ?? null,
         requiresReference: findMethod(data.method)?.requiresReference ?? false,
         fileTooLarge: data.file !== null && data.file.size > file.maxMb * BYTES_PER_MB,
+        reading: reading.state,
     };
 }
 
