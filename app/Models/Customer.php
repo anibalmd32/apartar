@@ -13,6 +13,7 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use LogicException;
 use NotificationChannels\WebPush\HasPushSubscriptions;
@@ -31,6 +32,7 @@ use NotificationChannels\WebPush\HasPushSubscriptions;
  * @property int|null $terms_declared_by_user_id
  * @property \Illuminate\Support\Carbon|null $last_login_at
  * @property string|null $remember_token
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  */
 class Customer extends Model implements AuthenticatableContract
 {
@@ -42,6 +44,7 @@ class Customer extends Model implements AuthenticatableContract
 
     use HasPushSubscriptions, Notifiable;
     use ReferencesMobilePrefix;
+    use SoftDeletes;
 
     protected $hidden = ['remember_token'];
 

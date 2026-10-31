@@ -23,6 +23,8 @@ enum AuditEvent: string
     case CatalogExpirationScheduled = 'catalog.expiration_scheduled';
 
     case CustomerCreated = 'customer.created';
+    case CustomerUpdated = 'customer.updated';
+    case CustomerDeleted = 'customer.deleted';
     case CustomerMerged = 'customer.merged';
     case CustomerIdentityConflict = 'customer.identity_conflict';
     case CustomerContactUpdated = 'customer.contact_updated';
@@ -62,7 +64,7 @@ enum AuditEvent: string
             self::ProductPricingChanged, self::ProductStatusChanged, self::CatalogPublished,
             self::CatalogUnpublished, self::CatalogExpirationScheduled => AuditArea::Catalog,
 
-            self::CustomerCreated, self::CustomerMerged, self::CustomerIdentityConflict,
+            self::CustomerCreated, self::CustomerUpdated, self::CustomerDeleted, self::CustomerMerged, self::CustomerIdentityConflict,
             self::CustomerContactUpdated, self::AccountLinked => AuditArea::Customers,
 
             self::SettingsUpdated, self::IdentityUpdated, self::PaymentAccountCreated,
@@ -98,6 +100,8 @@ enum AuditEvent: string
             self::CatalogUnpublished => 'App\Actions\Catalog\UnpublishCatalogAction',
 
             self::CustomerCreated => 'App\Actions\Customer\CreateCustomerAction',
+            self::CustomerUpdated => 'App\Actions\Customer\UpdateCustomerAction',
+            self::CustomerDeleted => 'App\Actions\Customer\DeleteCustomerAction',
             self::CustomerMerged => 'App\Actions\Customer\MergeCustomersAction',
             self::CustomerIdentityConflict,
             self::CustomerContactUpdated => 'App\Actions\Customer\ResolveCustomerAction',
@@ -148,6 +152,8 @@ enum AuditEvent: string
             self::CatalogExpirationScheduled => 'Fecha de expiración del catálogo cambiada',
 
             self::CustomerCreated => 'Cliente dado de alta por el negocio',
+            self::CustomerUpdated => 'Datos del cliente editados por el negocio',
+            self::CustomerDeleted => 'Cliente eliminado por el negocio',
             self::CustomerMerged => 'Fichas de cliente fusionadas',
             self::CustomerIdentityConflict => 'Conflicto de identidad detectado',
             self::CustomerContactUpdated => 'Ficha de cliente sobrescrita desde el formulario de apartado',

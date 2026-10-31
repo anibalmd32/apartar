@@ -119,6 +119,11 @@ final class CustomerShowController extends Controller
                 'url' => route('customers.merge', $found),
                 'candidatesUrl' => route('customers.merge.candidates', $found),
             ],
+            'manage' => [
+                'updateUrl' => route('customers.update', $found),
+                'deleteUrl' => route('customers.destroy', $found),
+                'liveLayaways' => $layaways->filter(fn (Layaway $layaway): bool => ! $layaway->status->isTerminal())->count(),
+            ],
         ]);
     }
 

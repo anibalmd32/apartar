@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Customer\CreateCustomerAction;
+use App\Actions\Customer\DeleteCustomerAction;
+use App\Actions\Customer\UpdateCustomerAction;
 use App\Domain\Customer\CustomerAlreadyExistsException;
+use App\Domain\Customer\CustomerHasLiveLayawaysException;
 use App\Http\Controllers\Concerns\ResolvesTableState;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\StoreCustomerRequest;
+use App\Http\Requests\Backoffice\UpdateCustomerRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Catalog;
 use App\Models\Customer;
@@ -74,6 +78,38 @@ final class CustomerController extends Controller
         }
 
         return to_route('customers.show', $customer)->with('status', sprintf('Cliente %s agregado.', $customer->full_name));
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function update(UpdateCustomerRequest $request, Customer $customer, UpdateCustomerAction $update): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $update->handle($customer, $request->contact($customer), $actor);
+        } catch (InvalidPhoneNumberException $exception) {
+            throw ValidationException::withMessages(['phone' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Datos del cliente guardados.');
+    }
+
+    public function destroy(Request $request, Customer $customer, DeleteCustomerAction $delete): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $name = $customer->full_name;
+
+        try {
+            $delete->handle($customer, $actor);
+        } catch (CustomerHasLiveLayawaysException $exception) {
+            return back()->withErrors(['customer' => $exception->getMessage()]);
+        }
+
+        return to_route('customers.index')->with('status', sprintf('Cliente %s eliminado.', $name));
     }
 
     /**

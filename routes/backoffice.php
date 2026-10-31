@@ -253,6 +253,8 @@ Route::prefix('backoffice')->group(function (): void {
                 Route::get('clientes', [CustomerController::class, 'index'])->name('customers.index');
                 Route::get('suscriptores', [SubscriberController::class, 'index'])->name('subscribers.index');
                 Route::get('analitica', AnalyticsController::class)->name('analytics.index');
+                Route::put('clientes/{customer}', [CustomerController::class, 'update'])->whereNumber('customer')->name('customers.update');
+                Route::delete('clientes/{customer}', [CustomerController::class, 'destroy'])->whereNumber('customer')->name('customers.destroy');
                 Route::get('clientes/{customer}', CustomerShowController::class)
                     ->whereNumber('customer')
                     ->missing(fn (Request $request) => CustomerShowController::redirectMerged($request))

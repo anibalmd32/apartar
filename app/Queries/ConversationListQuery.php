@@ -28,6 +28,7 @@ final class ConversationListQuery
 
         $query = Conversation::query()
             ->join('customers', 'customers.id', '=', 'conversations.customer_id')
+            ->whereNull('customers.deleted_at')
             ->select([
                 'conversations.*',
                 'customers.full_name as customer_name',

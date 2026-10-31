@@ -7,6 +7,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { CustomerLayaways } from '@/features/customers/components/CustomerLayaways';
 import { BalanceRow, ContactStrip } from '@/features/customers/components/CustomerProfile';
 import { CustomerReceipts } from '@/features/customers/components/CustomerReceipts';
+import { ManageCustomer } from '@/features/customers/components/ManageCustomer';
 import { MergeCustomerDialog } from '@/features/customers/components/MergeCustomerDialog';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -59,9 +60,11 @@ export default function CustomerShow(props: CustomerShowProps) {
                             Abrir la conversación
                         </Link>
                     ) : null}
+                    <ManageCustomer customer={customer} manage={props.manage} />
                 </>
             }
         >
+            {errors.customer !== undefined ? <Alert tone="error">{errors.customer}</Alert> : null}
             {errors.merge !== undefined ? <Alert tone="error">{errors.merge}</Alert> : null}
             {errors.resend !== undefined ? <Alert tone="warning">{errors.resend}</Alert> : null}
 

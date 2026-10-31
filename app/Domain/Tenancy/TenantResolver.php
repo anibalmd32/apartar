@@ -87,7 +87,7 @@ final class TenantResolver
      */
     public function organizationsOfAccount(int $accountId): array
     {
-        $ids = DB::table('customers')->where('account_id', $accountId)->distinct()->pluck(TenantScope::COLUMN)->all();
+        $ids = DB::table('customers')->where('account_id', $accountId)->whereNull('deleted_at')->distinct()->pluck(TenantScope::COLUMN)->all();
 
         return $ids === [] ? [] : Organization::query()->whereIn('id', $ids)->orderBy('id')->get()->all();
     }
@@ -134,6 +134,7 @@ final class TenantResolver
     public function organizationsWithCustomer(string $documentNumber, string $email): array
     {
         $ids = DB::table('customers')
+            ->whereNull('deleted_at')
             ->where('document_number', $documentNumber)
             ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
             ->pluck(TenantScope::COLUMN)

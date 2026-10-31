@@ -111,7 +111,7 @@ final class MergeCustomersAction
                 'merged_by' => $actor->getKey(),
             ])->save();
 
-            $gone->delete();
+            $gone->forceDelete();
 
             $this->audit(
                 AuditEvent::CustomerMerged,

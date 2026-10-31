@@ -81,12 +81,18 @@ final class ResolveCustomerAction
 
     private function exists(DocumentNumber $document): bool
     {
-        return Customer::query()->where('document_number', $document->value)->exists();
+        return Customer::withTrashed()->where('document_number', $document->value)->exists();
     }
 
     private function lockedFind(DocumentNumber $document): ?Customer
     {
-        return Customer::query()->where('document_number', $document->value)->lockForUpdate()->first();
+        $customer = Customer::withTrashed()->where('document_number', $document->value)->lockForUpdate()->first();
+
+        if ($customer instanceof Customer && $customer->trashed()) {
+            $customer->restore();
+        }
+
+        return $customer;
     }
 
     private function create(CustomerContactData $contact, TermsConsent $consent, ?User $declarant = null): Customer

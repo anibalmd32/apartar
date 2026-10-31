@@ -106,6 +106,7 @@ export function profileProps(overrides: Partial<CustomerShowProps> = {}): Custom
         conversationId: null,
         subscriptions: [],
         merge: { url: '/backoffice/clientes/7/fusionar', candidatesUrl: '/backoffice/clientes/7/fusionar/candidatas' },
+        manage: { updateUrl: '/backoffice/clientes/7', deleteUrl: '/backoffice/clientes/7', liveLayaways: 0 },
         ...overrides,
     };
 }

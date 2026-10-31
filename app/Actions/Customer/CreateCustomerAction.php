@@ -29,15 +29,15 @@ final class CreateCustomerAction
         Gate::forUser($actor)->authorize('create', Customer::class);
 
         return DB::transaction(function () use ($contact, $consent, $actor): Customer {
-            $existing = Customer::query()->where('document_number', $contact->documentNumber->value)->first();
+            $existing = Customer::withTrashed()->where('document_number', $contact->documentNumber->value)->lockForUpdate()->first();
 
-            if ($existing instanceof Customer) {
+            if ($existing instanceof Customer && ! $existing->trashed()) {
                 throw new CustomerAlreadyExistsException($existing);
             }
 
-            $customer = $this->customers->declaredBy($contact, $consent, $actor);
+            $customer = $existing instanceof Customer ? $this->reactivate($existing, $contact, $consent, $actor) : $this->customers->declaredBy($contact, $consent, $actor);
 
-            if (! $customer->wasRecentlyCreated) {
+            if (! $customer->wasRecentlyCreated && ! $existing instanceof Customer) {
                 throw new CustomerAlreadyExistsException($customer);
             }
 
@@ -57,5 +57,20 @@ final class CreateCustomerAction
 
             return $customer;
         });
+    }
+
+    private function reactivate(Customer $customer, CustomerContactData $contact, TermsConsent $consent, User $actor): Customer
+    {
+        $customer->restore();
+        $customer->forceFill([
+            'full_name' => $contact->fullName,
+            'phone' => $contact->phone->value,
+            'email' => $contact->email ?? $customer->email,
+            'terms_accepted_at' => $consent->acceptedAt,
+            'terms_ip_address' => $consent->ipAddress,
+            'terms_declared_by_user_id' => $actor->getKey(),
+        ])->save();
+
+        return $customer;
     }
 }

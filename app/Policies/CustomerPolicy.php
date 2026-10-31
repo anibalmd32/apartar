@@ -25,6 +25,16 @@ final class CustomerPolicy
         return $this->viewAny($user) && $user->organization_id === (int) $customer->organization_id;
     }
 
+    public function update(User $user, Customer $customer): bool
+    {
+        return $this->view($user, $customer);
+    }
+
+    public function delete(User $user, Customer $customer): bool
+    {
+        return $this->view($user, $customer);
+    }
+
     public function merge(User $user, Customer $survivor, Customer $absorbed): bool
     {
         return $this->view($user, $survivor) && $user->organization_id === (int) $absorbed->organization_id;

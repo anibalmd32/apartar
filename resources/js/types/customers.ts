@@ -114,4 +114,5 @@ export interface CustomerShowProps {
     readonly conversationId: number | null;
     readonly subscriptions: readonly { readonly name: string; readonly since: string | null; readonly muted: boolean }[];
     readonly merge: { readonly url: string; readonly candidatesUrl: string };
+    readonly manage: { readonly updateUrl: string; readonly deleteUrl: string; readonly liveLayaways: number };
 }
