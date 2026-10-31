@@ -26,7 +26,8 @@ it('fuera del chat, un mensaje del otro lado actualiza el contador y avisa con q
     handler()({ conversationId: 3, sender: 'customer', senderName: 'María González', body: '¿Ya llegó mi pedido?' });
 
     expect(reload).toHaveBeenCalledWith({ only: ['teamMember'] });
-    expect(info).toHaveBeenCalledWith('Nuevo mensaje de María González: ¿Ya llegó mi pedido?');
+    expect(info).toHaveBeenCalledWith('Nuevo mensaje de María González');
+    expect(info.mock.calls[0]?.[0]).not.toContain('pedido');
 });
 
 it('lo que escribe uno mismo no avisa', () => {

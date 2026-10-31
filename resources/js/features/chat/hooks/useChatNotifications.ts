@@ -8,7 +8,6 @@ interface IncomingMessage {
     readonly conversationId: number;
     readonly sender: MessageSenderType;
     readonly senderName: string;
-    readonly body: string;
 }
 
 interface ChatNotificationsOptions {
@@ -17,8 +16,6 @@ interface ChatNotificationsOptions {
     reloadProps: readonly string[];
     chatPath: string;
 }
-
-const PREVIEW_LENGTH = 60;
 
 export function useChatNotifications({ channels, me, reloadProps, chatPath }: ChatNotificationsOptions) {
     const key = channels.join('|');
@@ -38,8 +35,7 @@ export function useChatNotifications({ channels, me, reloadProps, chatPath }: Ch
             router.reload({ only: [...reloadProps] });
 
             if (!window.location.pathname.startsWith(chatPath)) {
-                const preview = message.body.length > PREVIEW_LENGTH ? `${message.body.slice(0, PREVIEW_LENGTH)}…` : message.body;
-                toast.info(`Nuevo mensaje de ${message.senderName}: ${preview}`);
+                toast.info(`Nuevo mensaje de ${message.senderName}`);
             }
         };
 

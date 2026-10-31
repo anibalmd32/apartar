@@ -8,6 +8,7 @@ export interface OutgoingMessage {
     readonly body: string;
     readonly status: 'sending' | 'failed';
     readonly error: string | null;
+    readonly id?: number;
 }
 
 export function useConversation(thread: ChatThread, me: MessageSenderType) {
@@ -29,9 +30,11 @@ export function useConversation(thread: ChatThread, me: MessageSenderType) {
             setOutgoing((current) => [...current.filter((item) => item.key !== key), { key, body, status: 'sending', error: null }]);
 
             try {
-                await postJson<{ id: number }>(thread.sendUrl, { body, idempotencyKey: key });
-                setOutgoing((current) => current.filter((item) => item.key !== key));
-                realtime.add(...(await fetchAfter(lastIdOf(realtime.messages))));
+                const { id } = await postJson<{ id: number }>(thread.sendUrl, { body, idempotencyKey: key });
+                setOutgoing((current) => current.map((item) => (item.key === key ? { ...item, id } : item)));
+                const fresh = await fetchAfter(lastIdOf(realtime.messages));
+                realtime.add(...fresh);
+                setOutgoing((current) => current.filter((item) => item.key !== key || !fresh.some((message) => message.id === id)));
             } catch (error) {
                 const message = error instanceof JsonRequestError ? error.message : 'No se pudo enviar. Revisa tu conexión.';
                 setOutgoing((current) => current.map((item) => (item.key === key ? { ...item, status: 'failed', error: message } : item)));
@@ -40,10 +43,12 @@ export function useConversation(thread: ChatThread, me: MessageSenderType) {
         [fetchAfter, realtime, thread.sendUrl],
     );
 
+    const delivered = new Set(realtime.messages.map((message) => message.id));
+
     return {
         messages: realtime.messages,
         mode: realtime.mode,
-        outgoing,
+        outgoing: outgoing.filter((item) => item.id === undefined || !delivered.has(item.id)),
         mine: (message: ChatMessage) => message.sender === me,
         send: (body: string) => {
             const text = body.trim();
