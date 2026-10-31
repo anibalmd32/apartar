@@ -2,12 +2,18 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
 import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
 import { CollectionSummary } from '@/features/collections/components/CollectionSummary';
-import { installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
+import { downPaymentColumns, installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
 import { useCollectionFilters } from '@/features/collections/hooks/useCollectionFilters';
+import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { ExportButton } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
-import { type CollectionIndexProps, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
+import {
+    type CollectionDownPaymentRow,
+    type CollectionIndexProps,
+    type CollectionInstallmentRow,
+    type CollectionLayawayRow,
+} from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
 import { cilPlus, cilWallet } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -28,7 +34,15 @@ export default function CollectionIndex(props: CollectionIndexProps) {
                 </>
             }
         >
-            {props.kind === 'layaways' ? (
+            {props.kind === 'down_payments' ? (
+                <CollectionTable
+                    key="down_payments"
+                    {...props}
+                    rows={props.rows}
+                    columns={downPaymentColumns}
+                    label="Apartados esperando la inicial"
+                />
+            ) : props.kind === 'layaways' ? (
                 <CollectionTable key="layaways" {...props} rows={props.rows} columns={layawayColumns} label="Apartados pagados sin entregar" />
             ) : (
                 <CollectionTable key="installments" {...props} rows={props.rows} columns={installmentColumns} label="Cuotas por cobrar" />
@@ -50,12 +64,13 @@ function emptyMessage(props: CollectionIndexProps, narrowed: boolean): ReactNode
         'Ninguna cuota cumple estos filtros.'
     ) : (
         <EmptyState icon={cilWallet} title="Nada por cobrar todavía">
-            Cuando apruebes la inicial de un apartado, sus cuotas aparecen aquí con la fecha y el teléfono del cliente para que le recuerdes.
+            Aquí aparecen las cuotas por cobrar, con la fecha y el teléfono del cliente para que le recuerdes. Los apartados que esperan la inicial
+            están en el filtro «Esperando inicial».
         </EmptyState>
     );
 }
 
-function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayawayRow>(
+function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayawayRow | CollectionDownPaymentRow>(
     props: CollectionIndexProps & { rows: readonly TRow[]; columns: readonly DataTableColumn<TRow>[]; label: string },
 ) {
     const { table, filters, change } = useCollectionFilters({ rows: props.rows, meta: props.meta, columns: props.columns });
@@ -71,6 +86,23 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
                 <>
                     <CollectionFilters filters={filters} options={props.options} onChange={change} counts={props.presetCounts} />
                     {props.summary ? <CollectionSummary summary={props.summary} /> : null}
+                    {props.awaitingDownPayment ? (
+                        <Link
+                            href="/backoffice/cobranza?preset=awaiting_down_payment"
+                            className="bg-warning-soft hover:border-line-strong flex flex-wrap items-center justify-between gap-2 rounded-xl border border-transparent px-[18px] py-3 text-sm"
+                        >
+                            <span>
+                                <strong>
+                                    {props.awaitingDownPayment.count === 1
+                                        ? '1 apartado espera la inicial'
+                                        : `${props.awaitingDownPayment.count} apartados esperan la inicial`}
+                                </strong>
+                                {' · '}
+                                <MoneyLabel money={props.awaitingDownPayment.missing} /> por cobrar
+                            </span>
+                            <span className="text-primary-ink font-semibold">Ver cuáles →</span>
+                        </Link>
+                    ) : null}
                 </>
             }
         />

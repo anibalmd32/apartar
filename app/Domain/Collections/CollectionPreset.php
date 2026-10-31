@@ -6,6 +6,7 @@ namespace App\Domain\Collections;
 
 enum CollectionPreset: string
 {
+    case AwaitingDownPayment = 'awaiting_down_payment';
     case DueToday = 'due_today';
     case DueWithin7Days = 'due_within_7_days';
     case LongOverdue = 'overdue_over_15_days';
@@ -18,6 +19,7 @@ enum CollectionPreset: string
     public function label(): string
     {
         return match ($this) {
+            self::AwaitingDownPayment => 'Esperando inicial',
             self::DueToday => 'Vencen hoy',
             self::DueWithin7Days => 'Vencen en 7 días',
             self::LongOverdue => 'Mora prolongada',
@@ -30,6 +32,7 @@ enum CollectionPreset: string
     public function definition(int $longOverdueDays): string
     {
         return match ($this) {
+            self::AwaitingDownPayment => 'Apartados que todavía no completan la inicial: arriba, el que vence primero.',
             self::DueToday => 'Cuotas sin cubrir que vencen hoy.',
             self::DueWithin7Days => 'Cuotas sin cubrir que vencen entre hoy y dentro de 7 días.',
             self::LongOverdue => sprintf('Cuotas sin cubrir con más de %d %s de atraso pasada la gracia de tu negocio.', $longOverdueDays, $longOverdueDays === 1 ? 'día' : 'días'),
@@ -41,6 +44,11 @@ enum CollectionPreset: string
 
     public function listsLayaways(): bool
     {
-        return $this === self::CompletedNotDelivered;
+        return $this === self::CompletedNotDelivered || $this === self::AwaitingDownPayment;
+    }
+
+    public function awaitsDownPayment(): bool
+    {
+        return $this === self::AwaitingDownPayment;
     }
 }

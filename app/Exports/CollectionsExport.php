@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exports;
 
+use App\Domain\Money\Money;
 use App\Exports\Concerns\StreamsRowsById;
 use App\Models\Customer;
 use App\Models\Installment;
@@ -53,9 +54,11 @@ final class CollectionsExport implements FromGenerator, WithCustomValueBinder, W
      */
     public function headings(): array
     {
-        return $this->headingRows('Apartar · Cobranza', $this->meta, $this->listsLayaways()
-            ? ['Cliente', 'Teléfono', 'Apartado', 'Producto', 'Completado el', 'Total (USD)']
-            : ['Cliente', 'Teléfono', 'Apartado', 'Cuota', 'Vence', 'Importe (USD)', 'Pagado (USD)', 'Pendiente (USD)', 'Días de atraso']);
+        return $this->headingRows('Apartar · Cobranza', $this->meta, match (true) {
+            $this->awaitsDownPayment() => ['Cliente', 'Teléfono', 'Apartado', 'Producto', 'Inicial (USD)', 'Falta de la inicial (USD)', 'Vence'],
+            $this->listsLayaways() => ['Cliente', 'Teléfono', 'Apartado', 'Producto', 'Completado el', 'Total (USD)'],
+            default => ['Cliente', 'Teléfono', 'Apartado', 'Cuota', 'Vence', 'Importe (USD)', 'Pagado (USD)', 'Pendiente (USD)', 'Días de atraso'],
+        });
     }
 
     /**
@@ -68,7 +71,7 @@ final class CollectionsExport implements FromGenerator, WithCustomValueBinder, W
 
         if ($this->listsLayaways()) {
             foreach ($this->streamById($this->filters->layaways()->with('customer:id,organization_id,full_name,phone')) as $layaway) {
-                yield $this->layawayRow($layaway, $zone);
+                yield $this->awaitsDownPayment() ? $this->downPaymentRow($layaway, $zone) : $this->layawayRow($layaway, $zone);
             }
 
             return;
@@ -112,6 +115,28 @@ final class CollectionsExport implements FromGenerator, WithCustomValueBinder, W
             $layaway->completed_at?->setTimezone($zone)->toDateString(),
             self::dollars($layaway->total_cents),
         ];
+    }
+
+    /**
+     * @return list<string|int|float|null>
+     */
+    private function downPaymentRow(Layaway $layaway, DateTimeZone $zone): array
+    {
+        $total = $layaway->terms()->totalDownPayment();
+
+        return [
+            ...$this->customerCells($layaway->customer),
+            $layaway->code,
+            $layaway->product_name_snapshot,
+            self::dollars($total),
+            self::dollars(new Money(max(0, $total->cents - $layaway->paid_cents->cents))),
+            $layaway->expires_at?->setTimezone($zone)->format('Y-m-d H:i'),
+        ];
+    }
+
+    private function awaitsDownPayment(): bool
+    {
+        return $this->filters->preset?->awaitsDownPayment() === true;
     }
 
     /**

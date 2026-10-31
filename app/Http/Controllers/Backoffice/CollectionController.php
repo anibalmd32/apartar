@@ -45,10 +45,14 @@ final class CollectionController extends Controller
         $timezone = new DateTimeZone($this->context->organization()->timezone);
         $today = CarbonImmutable::now($timezone)->startOfDay();
         $listsLayaways = $filters->preset?->listsLayaways() === true;
+        $awaiting = $filters->preset?->awaitsDownPayment() === true;
 
         if ($listsLayaways) {
-            $page = $this->paginateTable($filters->layaways()->with('customer:id,organization_id,full_name,phone'), $state, simple: true);
-            $rows = array_map(fn (Layaway $layaway): array => $this->layawayRow($layaway, $timezone), $page->items());
+            $page = $this->paginateTable($filters->layaways()->with([
+                'customer:id,organization_id,full_name,phone',
+                'customer.conversation:id,organization_id,customer_id',
+            ]), $state, simple: true);
+            $rows = array_map(fn (Layaway $layaway): array => $awaiting ? $this->downPaymentRow($layaway) : $this->layawayRow($layaway, $timezone), $page->items());
             $meta = $this->tableMeta($page, $state);
         } else {
             $page = $this->paginateTable($filters->installments()->with([
@@ -61,11 +65,12 @@ final class CollectionController extends Controller
         }
 
         return Inertia::render('backoffice/collections/Index', [
-            'kind' => $listsLayaways ? 'layaways' : 'installments',
+            'kind' => $awaiting ? 'down_payments' : ($listsLayaways ? 'layaways' : 'installments'),
             'rows' => $rows,
             'meta' => $meta,
             'definition' => $filters->preset?->definition(app(Settings::class)->longOverdueDays()),
             'summary' => $listsLayaways ? null : $this->summary($filters),
+            'awaitingDownPayment' => $listsLayaways ? null : $this->awaitingDownPayment(),
             'presetCounts' => fn (): array => $this->presetCounts(),
             'options' => fn (): array => $this->options(),
         ]);
@@ -107,6 +112,40 @@ final class CollectionController extends Controller
             'completedAt' => $layaway->completed_at?->setTimezone($timezone)->toDateString(),
             'total' => $this->money($layaway->total_cents),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function downPaymentRow(Layaway $layaway): array
+    {
+        $total = $layaway->terms()->totalDownPayment();
+
+        return [
+            'id' => (int) $layaway->getKey(),
+            'customer' => $this->customerOf($layaway->customer),
+            'layaway' => ['code' => $layaway->code, 'url' => route('layaways.show', $layaway)],
+            'productName' => $layaway->product_name_snapshot,
+            'downPayment' => $this->money($total),
+            'missing' => $this->money(new Money(max(0, $total->cents - $layaway->paid_cents->cents))),
+            'expiresAt' => $layaway->expires_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @return array{count: int, missing: array<string, mixed>}|null
+     */
+    private function awaitingDownPayment(): ?array
+    {
+        $layaways = (new CollectionFilters(CollectionPreset::AwaitingDownPayment))->layaways()->get();
+
+        if ($layaways->isEmpty()) {
+            return null;
+        }
+
+        $missing = $layaways->sum(fn (Layaway $layaway): int => max(0, $layaway->terms()->totalDownPayment()->cents - $layaway->paid_cents->cents));
+
+        return ['count' => $layaways->count(), 'missing' => $this->money(new Money((int) $missing))];
     }
 
     /**

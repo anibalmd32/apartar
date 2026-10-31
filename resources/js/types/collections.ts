@@ -30,6 +30,16 @@ export interface CollectionLayawayRow {
     readonly total: MoneyView;
 }
 
+export interface CollectionDownPaymentRow {
+    readonly id: number;
+    readonly customer: CollectionCustomer | null;
+    readonly layaway: { readonly code: string; readonly url: string };
+    readonly productName: string;
+    readonly downPayment: MoneyView;
+    readonly missing: MoneyView;
+    readonly expiresAt: string | null;
+}
+
 export interface CollectionFiltersState {
     readonly preset: string | null;
     readonly from: string | null;
@@ -58,8 +68,10 @@ interface CollectionPropsBase {
     readonly options: CollectionOptions;
     readonly summary?: { readonly installments: number; readonly pending: MoneyView; readonly customers: number } | null;
     readonly presetCounts?: Readonly<Record<string, number>>;
+    readonly awaitingDownPayment?: { readonly count: number; readonly missing: MoneyView } | null;
 }
 
 export type CollectionIndexProps =
     | (CollectionPropsBase & { readonly kind: 'installments'; readonly rows: readonly CollectionInstallmentRow[] })
-    | (CollectionPropsBase & { readonly kind: 'layaways'; readonly rows: readonly CollectionLayawayRow[] });
+    | (CollectionPropsBase & { readonly kind: 'layaways'; readonly rows: readonly CollectionLayawayRow[] })
+    | (CollectionPropsBase & { readonly kind: 'down_payments'; readonly rows: readonly CollectionDownPaymentRow[] });

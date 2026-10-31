@@ -73,6 +73,7 @@ final class GenerateExportTest extends TestCase
         $active = $this->layawayIn($this->organization, LayawayStatus::Active);
         $overdue = $this->layawayIn($this->organization, LayawayStatus::Overdue);
         $this->layawayIn($this->organization, LayawayStatus::Completed);
+        $this->layawayIn($this->organization);
 
         foreach (['2026-08-01', '2026-08-20', '2026-09-01', '2026-09-10', '2026-09-15', '2026-09-16', '2026-09-30', '2026-10-05'] as $i => $due) {
             $this->installment($i % 2 === 0 ? $active : $overdue, $i + 1, $due);

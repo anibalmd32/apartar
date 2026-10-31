@@ -46,6 +46,40 @@ final class CollectionPageTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_layaways_awaiting_the_down_payment_are_listed_with_what_is_missing_the_soonest_first(): void
+    {
+        $later = $this->layawayIn($this->organization);
+        $sooner = $this->layawayIn($this->organization);
+        $open = $this->layawayIn($this->organization);
+        $this->layawayIn($this->organization, LayawayStatus::Active);
+        DB::table('layaways')->where('id', $later->getKey())->update(['expires_at' => '2026-09-13 15:00:00']);
+        DB::table('layaways')->where('id', $sooner->getKey())->update(['expires_at' => '2026-09-11 15:00:00', 'paid_cents' => 2_000, 'remaining_cents' => 18_000]);
+        DB::table('layaways')->where('id', $open->getKey())->update(['expires_at' => null]);
+
+        $this->actingAs($this->member)->get(route('collections.index', ['preset' => 'awaiting_down_payment']))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('kind', 'down_payments')
+            ->where('rows', fn (Collection $rows): bool => $rows->pluck('layaway.code')->all() === [$sooner->code, $later->code, $open->code])
+            ->where('rows.0.downPayment.cents', 5_000)
+            ->where('rows.0.missing.cents', 3_000)
+            ->where('rows.1.missing.cents', 5_000)
+            ->where('rows.2.expiresAt', null)
+            ->where('summary', null)
+            ->where('presetCounts.awaiting_down_payment', 3));
+
+        $this->actingAs($this->member)->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('kind', 'installments')
+            ->where('awaitingDownPayment.count', 3)
+            ->where('awaitingDownPayment.missing.cents', 13_000));
+    }
+
+    public function test_without_layaways_awaiting_the_down_payment_there_is_no_notice(): void
+    {
+        $this->layawayIn($this->organization, LayawayStatus::Active);
+
+        $this->actingAs($this->member)->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('awaitingDownPayment', null));
+    }
+
     public function test_each_row_is_an_installment_with_what_collecting_needs(): void
     {
         $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
@@ -69,7 +103,7 @@ final class CollectionPageTest extends TestCase
             ->where('rows.0.amount.cents', 3_000)
             ->where('rows.0.paid.cents', 1_000)
             ->where('rows.0.daysLate', 5)
-            ->has('options.presets', 6));
+            ->has('options.presets', 7));
     }
 
     public function test_the_layaway_preset_lists_layaways_with_its_definition(): void
@@ -106,6 +140,7 @@ final class CollectionPageTest extends TestCase
         $active = $this->layawayIn($this->organization, LayawayStatus::Active);
         $overdue = $this->layawayIn($this->organization, LayawayStatus::Overdue);
         $this->layawayIn($this->organization, LayawayStatus::Completed);
+        $this->layawayIn($this->organization);
 
         foreach (['2026-08-01', '2026-08-20', '2026-09-01', '2026-09-10', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-30', '2026-10-05'] as $i => $due) {
             $this->installment($i % 2 === 0 ? $active : $overdue, $i + 1, $due);

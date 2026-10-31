@@ -68,7 +68,7 @@ final readonly class CollectionFilters
             CollectionPreset::LongOverdue => $query->where('installments.due_date', '<', $today->subDays($grace + $longOverdue)->toDateString()),
             CollectionPreset::FortnightFirstHalf => $query->whereBetween('installments.due_date', [$today->startOfMonth()->toDateString(), $today->startOfMonth()->addDays(14)->toDateString()]),
             CollectionPreset::FortnightSecondHalf => $query->whereBetween('installments.due_date', [$today->startOfMonth()->addDays(15)->toDateString(), $today->endOfMonth()->toDateString()]),
-            CollectionPreset::CompletedNotDelivered, null => null,
+            CollectionPreset::CompletedNotDelivered, CollectionPreset::AwaitingDownPayment, null => null,
         };
 
         if ($this->dueFrom !== null) {
@@ -94,9 +94,13 @@ final readonly class CollectionFilters
      */
     public function layaways(): Builder
     {
-        $query = Layaway::query()->completedNotDelivered();
-
         $appZone = new DateTimeZone((string) config('app.timezone'));
+
+        if ($this->preset === CollectionPreset::AwaitingDownPayment) {
+            return $this->awaitingDownPayment($appZone);
+        }
+
+        $query = Layaway::query()->completedNotDelivered();
 
         if ($this->dueFrom !== null) {
             $query->where('layaways.completed_at', '>=', $this->dueFrom->startOfDay()->setTimezone($appZone));
@@ -107,6 +111,27 @@ final readonly class CollectionFilters
         }
 
         return $this->narrowLayaways($query)->orderBy('layaways.completed_at')->orderBy('layaways.id');
+    }
+
+    /**
+     * @return Builder<Layaway>
+     */
+    private function awaitingDownPayment(DateTimeZone $appZone): Builder
+    {
+        $query = Layaway::query()->where('layaways.status', LayawayStatus::PendingDownPayment);
+
+        if ($this->dueFrom !== null) {
+            $query->where('layaways.expires_at', '>=', $this->dueFrom->startOfDay()->setTimezone($appZone));
+        }
+
+        if ($this->dueTo !== null) {
+            $query->where('layaways.expires_at', '<', $this->dueTo->addDay()->startOfDay()->setTimezone($appZone));
+        }
+
+        return $this->narrowLayaways($query)
+            ->orderByRaw('layaways.expires_at is null')
+            ->orderBy('layaways.expires_at')
+            ->orderBy('layaways.id');
     }
 
     /**

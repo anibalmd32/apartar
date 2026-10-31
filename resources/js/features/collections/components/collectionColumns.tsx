@@ -3,7 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
-import { type CollectionCustomer, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
+import {
+    type CollectionCustomer,
+    type CollectionDownPaymentRow,
+    type CollectionInstallmentRow,
+    type CollectionLayawayRow,
+} from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
 import { cilChatBubble, cilCheckAlt, cilCopy, cilUser } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -135,6 +140,48 @@ export const layawayColumns: DataTableColumn<CollectionLayawayRow>[] = [
             <Link href={row.layaway.url} className="btn btn-secondary btn-sm">
                 Marcar entrega
             </Link>
+        ),
+    },
+];
+
+function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
+    if (expiresAt === null) {
+        return <Badge tone="neutral">Sin vencimiento</Badge>;
+    }
+
+    const hours = Math.round((new Date(expiresAt).getTime() - Date.now()) / 3_600_000);
+    const day = formatDay(expiresAt.slice(0, 10));
+
+    return (
+        <div className="flex flex-col gap-1">
+            <span>{day}</span>
+            {hours <= 0 ? (
+                <Badge tone="error">Plazo vencido</Badge>
+            ) : hours < 24 ? (
+                <Badge tone="warning">{hours === 1 ? 'Queda 1 hora' : `Quedan ${hours} horas`}</Badge>
+            ) : null}
+        </div>
+    );
+}
+
+export const downPaymentColumns: DataTableColumn<CollectionDownPaymentRow>[] = [
+    { id: 'customer', header: 'Cliente', primary: true, cell: (row) => <CustomerCell customer={row.customer} /> },
+    { id: 'layaway', header: 'Apartado', cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'product', header: 'Producto', cell: (row) => row.productName },
+    { id: 'expires', header: 'Vence', cell: (row) => <ExpiryCell expiresAt={row.expiresAt} /> },
+    { id: 'downPayment', header: 'Inicial', align: 'end', cell: (row) => <MoneyLabel money={row.downPayment} className="text-ink-2" compact /> },
+    { id: 'missing', header: 'Falta', align: 'end', cell: (row) => <MoneyLabel money={row.missing} className="font-semibold" compact /> },
+    {
+        id: 'actions',
+        header: 'Acciones',
+        align: 'end',
+        cell: (row) => (
+            <span className="flex items-center justify-end gap-1.5">
+                <Contact customer={row.customer} />
+                <Link href={row.layaway.url} className="btn btn-secondary btn-sm">
+                    Registrar pago
+                </Link>
+            </span>
         ),
     },
 ];
