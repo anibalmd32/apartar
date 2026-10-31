@@ -33,7 +33,7 @@ final readonly class ReceiptReading
     {
         $text = fn (string $key): string => is_string($answer[$key] ?? null) ? trim($answer[$key]) : '';
 
-        $amount = str_replace(',', '.', $text('amount'));
+        $amount = self::decimal($text('amount'));
         $amount = preg_match(self::AMOUNT_PATTERN, $amount) === 1 && (float) $amount > 0 ? $amount : null;
 
         $paidOn = $text('paid_on');
@@ -45,11 +45,35 @@ final readonly class ReceiptReading
 
         return new self(
             amount: $amount,
-            currency: Currency::tryFrom(strtoupper($text('currency'))),
+            currency: self::currency($text('currency')),
             paidOn: $paidOn,
             reference: $reference,
             bank: Bank::matching($text('bank'))?->name,
         );
+    }
+
+    private static function decimal(string $raw): string
+    {
+        $raw = (string) preg_replace('/[^\d.,]/', '', $raw);
+        $lastComma = strrpos($raw, ',');
+        $lastDot = strrpos($raw, '.');
+
+        if ($lastComma !== false && ($lastDot === false || $lastComma > $lastDot)) {
+            return str_replace(',', '.', str_replace('.', '', $raw));
+        }
+
+        return str_replace(',', '', $raw);
+    }
+
+    private static function currency(string $raw): ?Currency
+    {
+        $key = strtoupper((string) preg_replace('/[^A-Za-z$]/', '', $raw));
+
+        return match ($key) {
+            'USD', '$', 'USDT', 'US$' => Currency::USD,
+            'VES', 'BS', 'BSD', 'BSS', 'VEF' => Currency::VES,
+            default => null,
+        };
     }
 
     public function isEmpty(): bool

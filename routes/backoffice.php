@@ -28,6 +28,7 @@ use App\Http\Controllers\Backoffice\OrganizationClosureController;
 use App\Http\Controllers\Backoffice\OrganizationFoundingController;
 use App\Http\Controllers\Backoffice\OrganizationSwitchController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
+use App\Http\Controllers\Backoffice\PaymentReadingController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductCopyController;
@@ -267,6 +268,10 @@ Route::prefix('backoffice')->group(function (): void {
 
                 Route::post('apartados/{layaway:code}/pagos', [ManualPaymentController::class, 'store'])->name('layaways.payments.store');
                 Route::get('apartados/{layaway:code}/pagos/vista-previa', [ManualPaymentController::class, 'preview'])->name('layaways.payments.preview');
+
+                Route::post('pagos/leer-comprobante', PaymentReadingController::class)
+                    ->middleware('throttle:30,1')
+                    ->name('payments.read');
 
                 Route::patch('pagos/{payment}/reasignar', PaymentReallocationController::class)
                     ->whereNumber('payment')

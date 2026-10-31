@@ -34,3 +34,14 @@ it('descarta montos en cero, fechas imposibles o fuera del rango y respuestas qu
     'futuro' => [['amount' => 'abc', 'paid_on' => '2026-10-11']],
     'no es texto' => [['amount' => 25, 'paid_on' => ['2026-10-05']]],
 ]);
+
+it('entiende separadores de miles y los nombres usuales de la moneda', function (string $amount, string $currency, string $expected, Currency $as): void {
+    $reading = ReceiptReading::fromAnswer(['amount' => $amount, 'currency' => $currency], '2026-10-01', '2026-10-10');
+
+    expect($reading->amount)->toBe($expected)
+        ->and($reading->currency)->toBe($as);
+})->with([
+    'bolívares con coma' => ['Bs. 22.231,38', 'Bs.', '22231.38', Currency::VES],
+    'dólares con punto' => ['$1,250.00', 'US$', '1250.00', Currency::USD],
+    'usdt' => ['25', 'USDT', '25', Currency::USD],
+]);

@@ -3,7 +3,7 @@ import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview
 import { emptyPaymentValues, type PaymentFieldValues, paymentPending } from '@/features/receipts/lib/payment-fields';
 import { type ManualPaymentOptions } from '@/types/layaway-backoffice';
 import { useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
+import { type FormEvent, useState } from 'react';
 
 interface ManualPaymentValues extends PaymentFieldValues {
     [key: string]: string | number | File | null;
@@ -20,7 +20,8 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
         form.errors.confirm_stale_rate ?? '',
     );
 
-    const blocked = form.processing || paymentPending(options, form.data, previewState);
+    const [reading, setReading] = useState(false);
+    const blocked = form.processing || reading || paymentPending(options, form.data, previewState);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -43,6 +44,7 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
                 onChange={(patch) => form.setData((data) => ({ ...data, ...patch }))}
                 options={options}
                 preview={previewState}
+                onReadingChange={setReading}
             />
 
             <button type="submit" className="btn btn-primary w-full" disabled={blocked}>

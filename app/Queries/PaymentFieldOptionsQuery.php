@@ -46,6 +46,7 @@ final readonly class PaymentFieldOptionsQuery
             'paidAt' => ['min' => $earliest, 'max' => $latest],
             'rate' => $rate instanceof RateSnapshot ? ['rate' => $rate->rate, 'sourceLabel' => $rate->source->label()] : null,
             'file' => ['maxMb' => ReceiptFile::maxSizeMb(), 'accept' => ReceiptFile::ACCEPT],
+            'readUrl' => route('payments.read', ['desde' => $earliest, 'hasta' => $latest]),
         ];
     }
 }

@@ -1,6 +1,7 @@
 import { ratePending } from '@/features/receipts/components/StaleRateConfirmation';
 import { type ApprovalPreviewState } from '@/features/receipts/hooks/useApprovalPreview';
 import { BYTES_PER_MB } from '@/features/receipts/hooks/useFilePreview';
+import { type ReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
 
 export interface PaymentFieldValues {
@@ -60,4 +61,13 @@ export function paymentPending(options: PaymentFieldOptions, values: PaymentFiel
         excessPending ||
         ratePending(preview, { confirm_stale_rate: values.confirm_stale_rate, confirm_rate_deviation: values.confirm_rate_deviation })
     );
+}
+
+export function patchFromReading(options: PaymentFieldOptions, values: PaymentFieldValues, reading: ReceiptReading): Partial<PaymentFieldValues> {
+    return {
+        amount: reading.amount ?? '',
+        ...(reading.currency === null ? {} : { currency: reading.currency, rate: reading.currency === 'USD' ? '' : values.rate }),
+        paid_at: reading.paidAt ?? values.paid_at,
+        ...(requiresReference(options, values.method) ? { bank: reading.bank ?? '', reference: reading.reference ?? '' } : {}),
+    };
 }

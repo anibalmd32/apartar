@@ -35,6 +35,7 @@ interface CreateLayawayValues extends PaymentFieldValues, NewCustomerValues {
 
 export default function LayawayCreate({ products, selection, plan, customer, window: limits, payment, urls }: BackofficeLayawayCreateProps) {
     const [picked, setPicked] = useState<LayawayCustomerOption | null>(customer);
+    const [reading, setReading] = useState(false);
 
     const form = useForm<CreateLayawayValues>({
         ...emptyPaymentValues(payment),
@@ -96,7 +97,11 @@ export default function LayawayCreate({ products, selection, plan, customer, win
     const windowApplies = plan === null || plan.requiresDownPayment;
     const windowMissing = windowApplies && (data.window === 'hours' || data.window === 'days') && !(Number(data.window_value) > 0);
     const blocked =
-        form.processing || product === null || customerMissing || windowMissing || (data.with_payment && paymentPending(payment, data, previewState));
+        form.processing ||
+        product === null ||
+        customerMissing ||
+        windowMissing ||
+        (data.with_payment && (reading || paymentPending(payment, data, previewState)));
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -196,6 +201,7 @@ export default function LayawayCreate({ products, selection, plan, customer, win
                                     onChange={(patch) => set(patch)}
                                     options={payment}
                                     preview={previewState}
+                                    onReadingChange={setReading}
                                 />
                             ) : null}
                         </SectionCard>
