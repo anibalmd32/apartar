@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 import { type CatalogView } from '@/types/catalog-view';
 import { type CurrencyPageProps } from '@/types/exchange';
 import { cilCalendar, cilLibrary } from '@coreui/icons';
@@ -17,9 +18,24 @@ interface CatalogHeroProps {
 
 export function CatalogHero({ catalog, stats, action }: CatalogHeroProps) {
     const { currency } = usePage<{ currency: CurrencyPageProps }>().props;
+    const cover = catalog.cover;
 
     return (
-        <section className="flex flex-col gap-5 rounded-3xl bg-[#e9e4fb] p-5 lg:flex-row lg:items-center lg:gap-5 lg:px-9 lg:py-8 dark:bg-[#2d273a]">
+        <section
+            className={cn(
+                'relative isolate flex flex-col gap-5 overflow-hidden rounded-3xl p-5 lg:flex-row lg:items-center lg:gap-5 lg:px-9 lg:py-8',
+                cover === null
+                    ? 'bg-[#e9e4fb] dark:bg-[#2d273a]'
+                    : 'bg-neutral min-h-[220px] text-white lg:min-h-[280px] lg:items-end [&_.text-ink-2]:text-white/85',
+            )}
+        >
+            {cover !== null ? (
+                <>
+                    <img src={cover.zoom} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+                    <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/50 to-black/20" />
+                </>
+            ) : null}
+
             <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
                 <span className="bg-primary-soft text-primary-ink inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
                     <Icon icon={cilLibrary} size={12} />
