@@ -6,8 +6,6 @@ export const REALTIME_CONNECT_TIMEOUT_MS = 5_000;
 
 export const REALTIME_POLL_MS = 5_000;
 
-export const LIVE_SAFETY_POLL_MS = 8_000;
-
 export type RealtimeMode = 'connecting' | 'live' | 'polling';
 
 interface Identified {
@@ -45,8 +43,9 @@ export function useRealtimeMessages<T extends Identified>({ channel, event, init
 
         const fallback = window.setTimeout(() => setMode((current) => (current === 'live' ? current : 'polling')), REALTIME_CONNECT_TIMEOUT_MS);
         const subscription = client.private(channel);
+        const onMessage = (message: T) => merge([message]);
 
-        subscription.listen(event, (message: T) => merge([message]));
+        subscription.listen(event, onMessage);
 
         const connection = client.connector.pusher.connection;
         const onState = ({ current }: { current: string }) => {
@@ -72,7 +71,7 @@ export function useRealtimeMessages<T extends Identified>({ channel, event, init
         return () => {
             window.clearTimeout(fallback);
             connection.unbind('state_change', onState);
-            client.leave(channel);
+            subscription.stopListening(event, onMessage);
         };
     }, [channel, event, fetchAfter, merge]);
 
@@ -85,7 +84,7 @@ export function useRealtimeMessages<T extends Identified>({ channel, event, init
             return fresh.length;
         },
         enabled: mode !== 'connecting',
-        refetchInterval: mode === 'polling' ? REALTIME_POLL_MS : LIVE_SAFETY_POLL_MS,
+        refetchInterval: mode === 'polling' ? REALTIME_POLL_MS : false,
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: 'always',
         retry: false,

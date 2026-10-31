@@ -63,7 +63,7 @@ final class ScopedAccessTest extends TestCase
                 ->where('session.displayName', 'María González')
                 ->where('businesses.0.layaways.0.code', $this->layaway->code)
                 ->where('businesses.0.layaways.0.statusLabel', 'Esperando la inicial')
-                ->where('auth.portal', ['mode' => 'scoped', 'fullName' => 'María González', 'businessName' => 'Ferretería Oriente', 'unreadChats' => 0])
+                ->where('auth.portal', ['mode' => 'scoped', 'fullName' => 'María González', 'businessName' => 'Ferretería Oriente', 'unreadChats' => 0, 'chatChannels' => []])
                 ->where('totals', null)
                 ->missing('businesses.0.layaways.0.id'));
     }

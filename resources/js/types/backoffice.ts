@@ -75,6 +75,7 @@ export interface AuthenticatedTeamMember {
     readonly mustChangePassword: boolean;
     readonly pendingReceipts: number | null;
     readonly unreadChats?: number | null;
+    readonly chatChannel?: string | null;
     readonly supportAccess?: readonly { readonly operator: string; readonly reason: string; readonly expiresAt: string }[];
     readonly organization: OrganizationSummary;
     readonly organizations?: readonly TeamOrganization[];

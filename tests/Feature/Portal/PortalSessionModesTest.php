@@ -201,7 +201,7 @@ final class PortalSessionModesTest extends TestCase
     public function test_the_shared_session_says_the_mode_without_ids(): void
     {
         $this->actingAs($this->account, 'account')->get(route('portal.dashboard'))->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('auth.portal', ['mode' => 'account', 'fullName' => 'María Pérez', 'businessName' => null, 'unreadChats' => 0]));
+            ->where('auth.portal', ['mode' => 'account', 'fullName' => 'María Pérez', 'businessName' => null, 'unreadChats' => 0, 'chatChannels' => []]));
     }
 
     public function test_the_access_page_offers_google_and_skips_with_a_session(): void

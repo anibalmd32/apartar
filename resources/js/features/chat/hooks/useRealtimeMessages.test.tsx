@@ -1,4 +1,4 @@
-import { LIVE_SAFETY_POLL_MS, mergeById, REALTIME_POLL_MS, useRealtimeMessages } from '@/features/chat/hooks/useRealtimeMessages';
+import { mergeById, REALTIME_POLL_MS, useRealtimeMessages } from '@/features/chat/hooks/useRealtimeMessages';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { type ReactNode } from 'react';
@@ -26,9 +26,11 @@ afterEach(() => {
     echoClient.current = null;
 });
 
-function silentLiveClient() {
+const subscription = { listen: vi.fn(), stopListening: vi.fn() };
+
+function liveClient() {
     return {
-        private: () => ({ listen: vi.fn() }),
+        private: () => subscription,
         leave: vi.fn(),
         connector: { pusher: { connection: { state: 'connected', bind: vi.fn(), unbind: vi.fn() } } },
     };
@@ -97,30 +99,41 @@ it('lo que se añade a mano y llega luego por el sondeo cuenta una vez', async (
     expect(result.current.messages).toHaveLength(1);
 });
 
-it('conectado en vivo pero sin eventos, los mensajes llegan igual por el sondeo de respaldo', async () => {
-    echoClient.current = silentLiveClient();
-    let replies: readonly Message[] = [];
-    const fetchAfter = vi.fn(async () => replies);
+it('en vivo no sondea: el mensaje llega por el evento y al salir solo deja de escuchar', async () => {
+    echoClient.current = liveClient();
+    subscription.listen.mockClear();
+    subscription.stopListening.mockClear();
+    const fetchAfter = vi.fn(async () => [] as Message[]);
 
-    const { result } = renderHook(
+    const { result, unmount } = renderHook(
         () =>
             useRealtimeMessages<Message>({
                 channel: 'organization.7.conversation.42',
                 event: 'MessageSent',
                 initial: [{ id: 1, body: 'hola' }],
                 fetchAfter,
-                queryKey: ['chat', 'silencioso'],
+                queryKey: ['chat', 'en-vivo'],
             }),
         { wrapper },
     );
 
     expect(result.current.mode).toBe('live');
 
-    replies = [{ id: 2, body: 'respuesta del negocio' }];
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(10);
+    });
+    const calls = fetchAfter.mock.calls.length;
 
     await act(async () => {
-        await vi.advanceTimersByTimeAsync(LIVE_SAFETY_POLL_MS + 10);
+        await vi.advanceTimersByTimeAsync(REALTIME_POLL_MS * 6);
     });
+    expect(fetchAfter.mock.calls.length).toBe(calls);
 
+    const [event, handler] = subscription.listen.mock.calls[0] as [string, (message: Message) => void];
+    expect(event).toBe('MessageSent');
+    act(() => handler({ id: 2, body: 'respuesta del negocio' }));
     expect(result.current.messages.map((message) => message.id)).toEqual([1, 2]);
+
+    unmount();
+    expect(subscription.stopListening).toHaveBeenCalledWith('MessageSent', handler);
 });

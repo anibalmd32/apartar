@@ -13,6 +13,7 @@ use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
+use App\Events\MessageSent;
 use App\Models\Account;
 use App\Models\Bank;
 use App\Models\Conversation;
@@ -183,6 +184,9 @@ class HandleInertiaRequests extends Middleware
             'mustChangePassword' => $user->must_change_password,
             'pendingReceipts' => fn (): ?int => $this->pendingReceipts($user),
             'unreadChats' => fn (): ?int => $this->unreadChats($user),
+            'chatChannel' => $user->disabled_at === null && $user->role->can(OrganizationCapability::Chat)
+                ? MessageSent::chatChannel((int) $organization->getKey())
+                : null,
             'supportAccess' => fn (): array => $this->supportAccess($user),
             'organizations' => fn (): array => $this->organizationsOf($user),
             'foundOrganizationUrl' => fn (): ?string => app(TeamMemberships::class)->mayFound($user->email) ? route('organizations.create') : null,
@@ -244,14 +248,14 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{mode: 'scoped'|'account', fullName: string, businessName: string|null, unreadChats: int}|null
+     * @return array{mode: 'scoped'|'account', fullName: string, businessName: string|null, unreadChats: int, chatChannels: list<string>}|null
      */
     private function portalSession(): ?array
     {
         $account = Auth::guard('account')->user();
 
         if ($account instanceof Account) {
-            return ['mode' => 'account', 'fullName' => $account->display_name, 'businessName' => null, 'unreadChats' => $this->portalUnreadChats()];
+            return ['mode' => 'account', 'fullName' => $account->display_name, 'businessName' => null, 'unreadChats' => $this->portalUnreadChats(), 'chatChannels' => $this->portalChatChannels()];
         }
 
         $customer = Auth::guard('customer')->user();
@@ -265,7 +269,30 @@ class HandleInertiaRequests extends Middleware
             'fullName' => $customer->full_name,
             'businessName' => (string) Organization::query()->whereKey($customer->organization_id)->value('name'),
             'unreadChats' => $this->portalUnreadChats(),
+            'chatChannels' => $this->portalChatChannels(),
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function portalChatChannels(): array
+    {
+        $channels = [];
+
+        foreach (app(PortalContext::class)->customers() as $customer) {
+            $organization = Organization::query()->find($customer->organization_id);
+
+            if ($organization instanceof Organization) {
+                $conversationId = $this->context->runFor($organization, fn (): mixed => Conversation::query()->where('customer_id', $customer->getKey())->value('id'));
+
+                if ($conversationId !== null) {
+                    $channels[] = MessageSent::conversationChannel((int) $organization->getKey(), (int) $conversationId);
+                }
+            }
+        }
+
+        return $channels;
     }
 
     private function portalUnreadChats(): int

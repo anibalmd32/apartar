@@ -58,6 +58,10 @@ final class ChatTest extends TestCase
             ->assertJsonPath('threadUrl', route('portal.chat.show', ['organization' => $this->organization->slug]));
 
         $this->assertSame([(int) $this->organization->getKey()], DB::table('messages')->pluck('organization_id')->map(fn ($id): int => (int) $id)->all());
+
+        $conversationId = (int) DB::table('conversations')->value('id');
+        $this->actingAs($this->customer, 'customer')->get(route('portal.chat.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('auth.portal.chatChannels', [sprintf('organization.%d.conversation.%d', $this->organization->getKey(), $conversationId)]));
     }
 
     public function test_a_subscriber_without_a_record_cannot_write(): void

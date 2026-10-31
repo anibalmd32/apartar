@@ -4,6 +4,7 @@ import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
 import { PortalNav, portalNavItems, PortalTabBar } from '@/features/account/components/PortalNav';
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
+import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { CookieConsent, CookiePreferencesLink } from '@/features/telemetry/components/CookieConsent';
 import { Head, Link, router } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -26,8 +27,18 @@ export default function PortalLayout(props: PortalLayoutProps) {
     );
 }
 
+const PORTAL_CHAT_PROPS = ['auth'];
+
+const NO_CHANNELS: readonly string[] = [];
+
 function PortalFrame({ title, businessName, customerName, children }: PortalLayoutProps) {
     const { isAccount, session } = useAccountSession();
+    useChatNotifications({
+        channels: session?.chatChannels ?? NO_CHANNELS,
+        me: 'customer',
+        reloadProps: PORTAL_CHAT_PROPS,
+        chatPath: '/mi-cuenta/chat',
+    });
     const items = portalNavItems(isAccount, session?.unreadChats ?? 0);
 
     const userMenu = <UserMenu name={customerName} detail={businessName} onLogout={() => router.post(route('portal.logout'))} />;

@@ -7,6 +7,7 @@ import { OrganizationSwitcher } from '@/components/shell/organization-switcher';
 import { RatePill } from '@/components/shell/rate-pill';
 import { menuItemClass, UserMenu } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
+import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { PastDueBanner } from '@/features/plan/components/PastDueBanner';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
@@ -43,8 +44,16 @@ export default function BackofficeLayout(props: BackofficeLayoutProps) {
     );
 }
 
+const TEAM_CHAT_PROPS = ['teamMember'];
+
 function BackofficeFrame({ title, description, actions, back, badge, children }: BackofficeLayoutProps) {
     const { teamMember } = usePage<BackofficeSharedData>().props;
+    useChatNotifications({
+        channels: teamMember?.chatChannel ? [teamMember.chatChannel] : [],
+        me: 'team',
+        reloadProps: TEAM_CHAT_PROPS,
+        chatPath: CHAT_HREF,
+    });
     const pendingReceipts = usePendingReceipts(teamMember?.pendingReceipts ?? null, teamMember?.organization?.id ?? null);
     const plan = usePlanLimits();
     const [menuOpen, setMenuOpen] = useState(false);

@@ -12,6 +12,7 @@ export interface PortalSessionView {
     readonly fullName: string;
     readonly businessName: string | null;
     readonly unreadChats: number;
+    readonly chatChannels?: readonly string[];
 }
 
 export interface PortalAccessProps {

@@ -1,11 +1,11 @@
-import { INBOX_REFRESH_MS, useChatInbox } from '@/features/chat/hooks/useChatInbox';
+import { useChatInbox } from '@/features/chat/hooks/useChatInbox';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-const { reload, listen, leave } = vi.hoisted(() => ({ reload: vi.fn(), listen: vi.fn(), leave: vi.fn() }));
+const { reload, listen, stopListening } = vi.hoisted(() => ({ reload: vi.fn(), listen: vi.fn(), stopListening: vi.fn() }));
 
 vi.mock('@inertiajs/react', () => ({ router: { reload } }));
-vi.mock('@/lib/echo', () => ({ echo: () => ({ private: () => ({ listen }), leave }) }));
+vi.mock('@/lib/echo', () => ({ echo: () => ({ private: () => ({ listen, stopListening }) }) }));
 
 beforeEach(() => {
     vi.useFakeTimers();
@@ -17,10 +17,13 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
-it('un mensaje nuevo en el negocio recarga la lista de conversaciones', () => {
-    renderHook(() => useChatInbox('organization.7.chat'));
+it('un mensaje nuevo en el negocio recarga la lista de conversaciones, sin sondear', () => {
+    const { unmount } = renderHook(() => useChatInbox('organization.7.chat'));
 
-    expect(listen).toHaveBeenCalledWith('MessageSent', expect.any(Function));
+    act(() => {
+        vi.advanceTimersByTime(60_000);
+    });
+    expect(reload).not.toHaveBeenCalled();
 
     act(() => {
         listen.mock.calls[0]?.[1]();
@@ -28,17 +31,7 @@ it('un mensaje nuevo en el negocio recarga la lista de conversaciones', () => {
     });
 
     expect(reload).toHaveBeenCalledWith({ only: ['threads', 'nextPageUrl', 'teamMember'] });
-});
-
-it('sin eventos, la lista se refresca sola cada cierto tiempo y deja el canal al salir', () => {
-    const { unmount } = renderHook(() => useChatInbox('organization.7.chat'));
-
-    act(() => {
-        vi.advanceTimersByTime(INBOX_REFRESH_MS + 500);
-    });
-
-    expect(reload).toHaveBeenCalledTimes(1);
 
     unmount();
-    expect(leave).toHaveBeenCalledWith('organization.7.chat');
+    expect(stopListening).toHaveBeenCalledWith('MessageSent', listen.mock.calls[0]?.[1]);
 });

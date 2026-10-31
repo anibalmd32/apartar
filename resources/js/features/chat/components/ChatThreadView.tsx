@@ -125,6 +125,13 @@ export function ChatThreadView({ thread, me, placeholder, className }: ChatThrea
                             setDraft(event.target.value);
                             indicator.notify();
                         }}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                                event.preventDefault();
+                                event.currentTarget.form?.requestSubmit();
+                            }
+                        }}
+                        enterKeyHint="send"
                     />
                     {remaining < COUNTER_FROM ? (
                         <span className={cn('px-4 text-xs', remaining < 0 ? 'text-error' : 'text-ink-3')}>{remaining}</span>
