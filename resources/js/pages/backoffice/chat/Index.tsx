@@ -6,6 +6,7 @@ import { IconChip } from '@/components/ui/icon-chip';
 import { ChatThreadView } from '@/features/chat/components/ChatThreadView';
 import { ConversationList } from '@/features/chat/components/ConversationList';
 import { ThreadContextHeader, ThreadContextPanel } from '@/features/chat/components/ThreadContextHeader';
+import { useChatInbox } from '@/features/chat/hooks/useChatInbox';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { cn } from '@/lib/utils';
 import { type BackofficeSharedData } from '@/types/backoffice';
@@ -14,8 +15,9 @@ import { cilArrowLeft, cilChatBubble, cilSearch } from '@coreui/icons';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function ChatIndex({ threads, nextPageUrl, search, active, historyDays, unreadOnly = false }: BackofficeChatProps) {
+export default function ChatIndex({ threads, nextPageUrl, search, active, historyDays, unreadOnly = false, inboxChannel = '' }: BackofficeChatProps) {
     const [query, setQuery] = useState(search);
+    useChatInbox(inboxChannel);
     const { teamMember } = usePage<BackofficeSharedData>().props;
     const filter = (onlyUnread: boolean) =>
         router.get(

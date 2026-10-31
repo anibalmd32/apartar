@@ -115,9 +115,10 @@ export function ChatThreadView({ thread, me, placeholder, className }: ChatThrea
             <form className="border-line flex items-end gap-2.5 border-t px-4 py-3 lg:px-5" onSubmit={submit}>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <textarea
-                        className="bg-surface-2 placeholder:text-ink-3 focus:outline-primary min-h-11 w-full resize-none rounded-[22px] px-4 py-2.5 text-sm leading-normal focus:outline-2"
+                        className="bg-surface-2 placeholder:text-ink-3 focus:outline-primary min-h-[88px] w-full resize-y rounded-2xl px-4 py-3 text-[15px] leading-normal focus:outline-2 lg:min-h-[104px]"
+                        style={{ maxHeight: '50dvh' }}
                         aria-label="Mensaje"
-                        rows={1}
+                        rows={3}
                         value={draft}
                         placeholder={placeholder ?? 'Escribe tu mensaje'}
                         onChange={(event) => {

@@ -67,6 +67,7 @@ export interface BackofficeChatProps {
     readonly unreadOnly?: boolean;
     readonly active: (ChatThread & { readonly id: number; readonly hiddenHistory: boolean; readonly context: ThreadContext }) | null;
     readonly historyDays: number | null;
+    readonly inboxChannel?: string;
 }
 
 export interface CatalogChatState {

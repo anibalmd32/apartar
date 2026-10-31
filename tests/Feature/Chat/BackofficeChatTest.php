@@ -58,7 +58,8 @@ final class BackofficeChatTest extends TestCase
         $this->actingAs($this->member)->get(route('chat.index'))->assertInertia(fn (AssertableInertia $page) => $page
             ->where('threads.0.customerName', 'Beto')
             ->where('threads.1.customerName', 'Ana')
-            ->where('threads.2.customerName', 'Carla'));
+            ->where('threads.2.customerName', 'Carla')
+            ->where('inboxChannel', sprintf('organization.%d.chat', $this->member->organization_id)));
     }
 
     public function test_the_unread_filter_keeps_only_unread_threads(): void

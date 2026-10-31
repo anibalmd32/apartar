@@ -37,6 +37,7 @@ final class ChatController extends Controller
         private readonly ConversationListQuery $list,
         private readonly ConversationMessagesQuery $messages,
         private readonly LimitEnforcer $limits,
+        private readonly TenantContext $context,
     ) {}
 
     public function index(Request $request): Response
@@ -102,6 +103,7 @@ final class ChatController extends Controller
                 'url' => route('chat.show', ['conversation' => $row->getKey()]),
             ], $page->items()),
             'nextPageUrl' => $page->nextPageUrl(),
+            'inboxChannel' => MessageSent::chatChannel($this->context->organizationId()),
             'search' => is_string($search) ? $search : '',
             'unreadOnly' => $unreadOnly,
             'active' => $active === null ? null : $this->thread($active, $since),
