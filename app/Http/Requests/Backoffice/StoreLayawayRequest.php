@@ -15,6 +15,7 @@ use App\Models\Layaway;
 use App\Models\Product;
 use App\Rules\ValidDocumentNumber;
 use App\Rules\ValidVenezuelanPhone;
+use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,11 @@ final class StoreLayawayRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->can('create', Layaway::class) === true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount']));
     }
 
     /**

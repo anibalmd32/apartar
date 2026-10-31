@@ -185,6 +185,18 @@ final class ManualPaymentPageTest extends TestCase
         $this->assertSame(1, DB::table('payments')->count());
     }
 
+    public function test_the_amount_can_be_written_the_venezuelan_way_in_the_preview_and_the_payment(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->actingAs($this->member);
+
+        $this->getJson(route('layaways.payments.preview', [$layaway, 'amount' => '80,00', 'currency' => 'USD']))
+            ->assertOk()->assertJsonPath('preview.summary', 'Activará el apartado con la inicial de $50,00; se aplicará a la cuota 1.');
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '80,00']))
+            ->assertSessionHas('status', 'Pago registrado: $80,00 (inicial de $50,00; $30,00 a la cuota 1).');
+    }
+
     public function test_the_preview_says_what_recording_would_do(): void
     {
         $layaway = $this->layawayIn($this->organization);

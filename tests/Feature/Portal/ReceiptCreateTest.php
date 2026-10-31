@@ -154,6 +154,13 @@ final class ReceiptCreateTest extends TestCase
         $this->assertSame([0, 20_000, 'pending_down_payment'], [(int) $row->paid_cents, (int) $row->remaining_cents, $row->status]);
     }
 
+    public function test_the_amount_can_be_written_the_venezuelan_way(): void
+    {
+        $this->post($this->storeUrl(), $this->payload(['amount' => '22.231,38']))->assertSessionHasNoErrors();
+
+        $this->assertSame('22231.38', $this->withinOrganization($this->organization, fn (): string => Receipt::query()->sole()->declared_amount));
+    }
+
     public function test_the_payment_date_is_bounded_in_the_business_calendar(): void
     {
         $this->post($this->storeUrl(), $this->payload(['paidAt' => '2026-10-03']))->assertSessionHasErrors('paidAt');

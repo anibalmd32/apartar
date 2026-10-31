@@ -8,6 +8,7 @@ use App\Actions\Payment\ManualPaymentData;
 use App\Http\Requests\Backoffice\Concerns\ValidatesManualPayment;
 use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Models\Layaway;
+use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,11 @@ final class StoreManualPaymentRequest extends FormRequest
         $layaway = $this->route('layaway');
 
         return $layaway instanceof Layaway && $this->user()?->can('manage', $layaway) === true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount']));
     }
 
     /**

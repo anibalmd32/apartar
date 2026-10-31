@@ -51,7 +51,6 @@ function props(overrides: Partial<PortalLayawayShowProps> = {}, layaway: Partial
             },
         ],
         nextPaymentSuggestion: { kind: 'installment', installmentNumber: 1, amount: money('$30,00'), started: false, payOff: money('$150,00') },
-        paymentAccounts: [],
         catalogUrl: null,
         receiptUrl: null,
         payments: [],
@@ -77,7 +76,7 @@ it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua
     expect(screen.getByRole('list', { name: 'Cronograma de cuotas' })).toBeInTheDocument();
     expect(screen.getByText('Vence en 2 días')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('La cuota 1: $30,00');
-    expect(screen.getByRole('region', { name: 'Dónde pagar' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Dónde pagar' })).toBeNull();
 });
 
 it('ofrece subir el comprobante; el aviso de la acción anterior lo da el Toaster', () => {
@@ -131,7 +130,7 @@ it('esperando la inicial, enseña la inicial y el plazo en lugar del cronograma'
 
     expect(screen.getByRole('region', { name: 'Inicial' })).toHaveTextContent('tienes hasta el 13 de septiembre a las 10:00 am');
     expect(screen.queryByRole('list', { name: 'Cronograma de cuotas' })).toBeNull();
-    expect(screen.getByRole('region', { name: 'Dónde pagar' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Dónde pagar' })).toBeNull();
 });
 
 it('sin inicial, no pide pagar la inicial y la cifra dice que no la lleva', () => {

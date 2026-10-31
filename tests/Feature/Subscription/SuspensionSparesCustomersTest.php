@@ -90,7 +90,7 @@ final class SuspensionSparesCustomersTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('layaway.code', $this->layaway->code)
                 ->where('layaway.statusMessage', null)
-                ->has('paymentAccounts', 1)
+                ->missing('paymentAccounts')
                 ->where('receiptUrl', route('portal.receipts.create', ['code' => $this->layaway->code])));
 
         $this->assertStringNotContainsStringIgnoringCase('suspend', (string) $response->getContent());

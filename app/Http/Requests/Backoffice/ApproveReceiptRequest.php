@@ -8,6 +8,7 @@ use App\Actions\Payment\ApproveReceiptData;
 use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
 use App\Models\Receipt;
+use App\Support\DecimalInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,11 @@ final class ApproveReceiptRequest extends FormRequest
         $receipt = $this->route('receipt');
 
         return $receipt instanceof Receipt && $this->user()?->can('review', $receipt) === true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount']));
     }
 
     /**

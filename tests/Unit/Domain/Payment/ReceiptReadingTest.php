@@ -30,7 +30,7 @@ it('descarta montos en cero, fechas imposibles o fuera del rango y respuestas qu
         ->and($reading->paidOn)->toBeNull();
 })->with([
     'cero' => [['amount' => '0.00', 'paid_on' => '2026-02-30']],
-    'tres decimales' => [['amount' => '1.234', 'paid_on' => '2026-09-30']],
+    'cuatro decimales' => [['amount' => '1.2345', 'paid_on' => '2026-09-30']],
     'futuro' => [['amount' => 'abc', 'paid_on' => '2026-10-11']],
     'no es texto' => [['amount' => 25, 'paid_on' => ['2026-10-05']]],
 ]);

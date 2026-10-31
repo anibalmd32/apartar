@@ -1,4 +1,4 @@
-import { availableLabels, centsUsd, hasVes } from '@/lib/money';
+import { amountInput, availableLabels, centsUsd, hasVes } from '@/lib/money';
 import type { MoneyView } from '@/types/money';
 import { describe, expect, it } from 'vitest';
 
@@ -35,4 +35,12 @@ describe('degradación sin tasa', () => {
     it('da las dos representaciones cuando las hay', () => {
         expect(availableLabels(view('Bs. 850,00'))).toEqual(['$20,00', 'Bs. 850,00']);
     });
+});
+
+it('escribe un monto como se lee en Venezuela: punto de miles y coma decimal', () => {
+    expect(amountInput('90000.00')).toBe('90.000,00');
+    expect(amountInput('30.00')).toBe('30,00');
+    expect(amountInput('1275')).toBe('1.275');
+    expect(amountInput('22231.38')).toBe('22.231,38');
+    expect(amountInput('abc')).toBe('abc');
 });

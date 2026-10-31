@@ -1,5 +1,6 @@
 import { BYTES_PER_MB } from '@/features/receipts/hooks/useFilePreview';
 import { type ReceiptReading, useReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
+import { amountInput } from '@/lib/money';
 import { type Currency } from '@/types/money';
 import { type ReceiptCreateProps, type ReceiptFormValues, type ReceiptSuggestion } from '@/types/receipt';
 import { useForm } from '@inertiajs/react';
@@ -15,7 +16,7 @@ export function suggestedAmount(suggestion: ReceiptSuggestion | null, currency: 
         return '';
     }
 
-    return currency === 'USD' ? suggestion.amountUsd : (suggestion.amountVes ?? '');
+    return amountInput(currency === 'USD' ? suggestion.amountUsd : (suggestion.amountVes ?? ''));
 }
 
 export function useReceiptForm({ paymentAccounts, methods, currencies, suggestion, paidAt, file, storeUrl, readUrl }: UseReceiptFormOptions) {
@@ -95,7 +96,7 @@ export function useReceiptForm({ paymentAccounts, methods, currencies, suggestio
 
             return {
                 ...data,
-                amount: reading.amount ?? '',
+                amount: reading.amount === null ? '' : amountInput(reading.amount),
                 currency: reading.currency ?? data.currency,
                 paidAt: reading.paidAt ?? data.paidAt,
                 bank: takesReference ? (reading.bank ?? '') : data.bank,

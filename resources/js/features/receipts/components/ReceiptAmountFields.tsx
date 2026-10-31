@@ -45,7 +45,7 @@ export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: Re
                     name="amount"
                     inputMode="decimal"
                     autoComplete="off"
-                    placeholder="0.00"
+                    placeholder="0,00"
                     value={data.amount}
                     onChange={(event) => form.setAmount(event.target.value)}
                     error={errors.amount}

@@ -152,7 +152,7 @@ final class ReceiptReviewPageTest extends TestCase
         $receipt = $this->receiptFor($layaway);
         $this->actingAs($this->member)->from(route('receipts.show', $receipt));
 
-        $this->post(route('receipts.approve', $receipt), ['amount' => '30,00', 'currency' => 'USD'])->assertSessionHasErrors('amount');
+        $this->post(route('receipts.approve', $receipt), ['amount' => 'treinta', 'currency' => 'USD'])->assertSessionHasErrors('amount');
         $this->post(route('receipts.approve', $receipt), ['amount' => '1200.00', 'currency' => 'VES', 'rate' => '40.123456789'])->assertSessionHasErrors('rate');
         $this->post(route('receipts.approve', $receipt), ['amount' => '30.00', 'currency' => 'EUR'])->assertSessionHasErrors('currency');
         $this->post(route('receipts.approve', $receipt), ['amount' => '0.00', 'currency' => 'USD'])->assertSessionHasErrors('amount');

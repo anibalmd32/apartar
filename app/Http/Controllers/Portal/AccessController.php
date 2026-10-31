@@ -6,9 +6,13 @@ namespace App\Http\Controllers\Portal;
 
 use App\Actions\Customer\StartScopedSessionAction;
 use App\Auth\AccountSession;
+use App\Domain\Account\PortalContext;
+use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StartScopedSessionRequest;
 use App\Jobs\LinkVisitorEventsToCustomer;
+use App\Models\Layaway;
+use App\Models\Organization;
 use App\Support\LayawayCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,13 +24,18 @@ final class AccessController extends Controller
 {
     public const CODE_PARAMETER = 'codigo';
 
-    public function create(Request $request): Response|RedirectResponse
+    public function create(Request $request, AccountSession $account, TenantContext $context): Response|RedirectResponse
     {
         $code = $this->codeFrom($request);
         $next = $code === null ? 'portal.dashboard' : 'portal.pay';
 
         if (Auth::guard('account')->check() || Auth::guard('customer')->check()) {
-            return redirect()->route($next);
+            if ($code === null || $this->sessionSees(PortalContext::fromSession(), $context, $code)) {
+                return redirect()->route($next);
+            }
+
+            Auth::guard('customer')->logout();
+            $account->close();
         }
 
         if ($code !== null) {
@@ -49,6 +58,22 @@ final class AccessController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('portal.dashboard'));
+    }
+
+    private function sessionSees(PortalContext $portal, TenantContext $context, string $code): bool
+    {
+        foreach ($portal->customers() as $customer) {
+            $organization = Organization::query()->find($customer->organization_id);
+
+            if ($organization instanceof Organization && $context->runFor($organization, fn (): bool => Layaway::query()
+                ->where('code', $code)
+                ->where('customer_id', $customer->getKey())
+                ->exists())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function codeFrom(Request $request): ?string

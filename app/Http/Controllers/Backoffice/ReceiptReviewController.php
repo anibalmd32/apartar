@@ -39,6 +39,7 @@ use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
 use App\Models\User;
+use App\Support\DecimalInput;
 use App\Support\SignedFileUrl;
 use DateTimeZone;
 use Illuminate\Database\DeadlockException;
@@ -137,6 +138,7 @@ final class ReceiptReviewController extends Controller
         Gate::forUser($request->user())->authorize('review', $receipt);
 
         $amount = $request->query('amount');
+        $amount = is_string($amount) ? DecimalInput::normalize($amount) : $amount;
         $rawCurrency = $request->query('currency');
         $currency = Currency::tryFrom(is_string($rawCurrency) ? $rawCurrency : '');
         $rate = $request->query('rate');

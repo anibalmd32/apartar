@@ -1,5 +1,4 @@
 import { Icon } from '@/components/ui/icon';
-import { PaymentAccountList } from '@/features/catalog/components/PaymentAccountList';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { PortalLayawayHero } from '@/features/layaway/components/PortalLayawayHero';
 import { PortalNextPayment } from '@/features/layaway/components/PortalNextPayment';
@@ -9,7 +8,7 @@ import { ReceiptHistory } from '@/features/receipts/components/ReceiptHistory';
 import PortalLayout from '@/layouts/portal-layout';
 import { cn } from '@/lib/utils';
 import { type PortalLayawayShowProps } from '@/types/portal';
-import { cilArrowLeft, cilLibrary, cilWallet } from '@coreui/icons';
+import { cilArrowLeft, cilLibrary } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
 const card = 'border-line bg-base-100 shadow-card rounded-2xl border';
@@ -19,7 +18,6 @@ export default function LayawayShow({
     layaway,
     installments,
     nextPaymentSuggestion,
-    paymentAccounts,
     catalogUrl,
     receiptUrl,
     payments,
@@ -96,18 +94,6 @@ export default function LayawayShow({
                 <aside className="contents lg:sticky lg:top-[92px] lg:flex lg:flex-col lg:gap-4">
                     {nextPaymentSuggestion !== null ? (
                         <PortalNextPayment suggestion={nextPaymentSuggestion} receiptUrl={receiptUrl} className="order-2" />
-                    ) : null}
-
-                    {layaway.acceptsPayments ? (
-                        <section className="bg-surface-2 order-4 flex flex-col gap-2.5 rounded-[14px] p-4" aria-label="Dónde pagar">
-                            <h2 className="flex items-center gap-2 text-[15px] font-bold">
-                                <Icon icon={cilWallet} />
-                                Dónde pagarle a {business.name}
-                            </h2>
-                            <div className="[&_li]:bg-base-100">
-                                <PaymentAccountList accounts={paymentAccounts} businessName={business.name} />
-                            </div>
-                        </section>
                     ) : null}
 
                     {catalogUrl !== null ? (

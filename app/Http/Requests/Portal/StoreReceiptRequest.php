@@ -17,6 +17,7 @@ use App\Models\Layaway;
 use App\Models\PaymentAccount;
 use App\Rules\RealMimeType;
 use App\Rules\UniqueReceiptFingerprint;
+use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeZone;
@@ -33,6 +34,11 @@ final class StoreReceiptRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->layaway()->status->acceptsPayments();
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount']));
     }
 
     /**

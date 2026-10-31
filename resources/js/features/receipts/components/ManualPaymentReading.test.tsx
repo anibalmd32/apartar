@@ -65,7 +65,7 @@ it('al adjuntar la captura la valida, bloquea los datos y rellena lo que leyó',
     expect(screen.getByRole('button', { name: 'Registrar el pago' })).toBeDisabled();
 
     await waitFor(() => expect(screen.getByLabelText('Número de referencia')).toHaveValue('00123456'));
-    expect(screen.getByLabelText('Importe')).toHaveValue('1275.00');
+    expect(screen.getByLabelText('Importe')).toHaveValue('1.275,00');
     expect(screen.getByLabelText('Moneda')).toHaveValue('VES');
     expect(fetch).toHaveBeenCalledWith(READ_URL, expect.objectContaining({ method: 'POST' }));
     expect(screen.queryByText(/\bIA\b|inteligencia artificial/)).toBeNull();

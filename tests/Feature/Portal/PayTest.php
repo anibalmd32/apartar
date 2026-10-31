@@ -92,6 +92,22 @@ final class PayTest extends TestCase
         $this->get(route('portal.access'))->assertRedirect(route('portal.dashboard'));
     }
 
+    public function test_a_session_that_cannot_see_the_new_code_is_closed_and_the_code_is_filled(): void
+    {
+        $elsewhere = $this->layawayIn($this->subscribe(Organization::factory()->create(['name' => 'Boutique Sur'])));
+        DB::table('customers')->where('id', $elsewhere->customer_id)->update(['document_number' => 'V87654321']);
+        $this->withoutOrganization();
+        $this->enter('V-87.654.321', $elsewhere->code);
+        $this->assertAuthenticated('customer');
+
+        $this->get(route('portal.access', ['codigo' => $this->newer->code]))
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('portal/Access')->where('code', $this->newer->code));
+        $this->assertGuest('customer');
+
+        $this->enter('V-12.345.678', $this->newer->code)->assertRedirect(route('portal.pay'));
+    }
+
     public function test_the_list_needs_a_session(): void
     {
         $this->get(route('portal.pay'))->assertRedirect(route('portal.access'));

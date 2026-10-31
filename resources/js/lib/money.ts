@@ -15,3 +15,15 @@ export function hasVes(money: MoneyView): boolean {
 export function availableLabels(money: MoneyView): string[] {
     return hasVes(money) ? [money.usd, money.ves as string] : [money.usd];
 }
+
+export function amountInput(canonical: string): string {
+    const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(canonical.trim());
+
+    if (match === null) {
+        return canonical;
+    }
+
+    const whole = (match[1] ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    return match[2] === undefined ? whole : `${whole},${match[2]}`;
+}

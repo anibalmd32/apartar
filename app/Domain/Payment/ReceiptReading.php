@@ -6,6 +6,7 @@ namespace App\Domain\Payment;
 
 use App\Domain\Money\Currency;
 use App\Models\Bank;
+use App\Support\DecimalInput;
 
 final readonly class ReceiptReading
 {
@@ -33,7 +34,7 @@ final readonly class ReceiptReading
     {
         $text = fn (string $key): string => is_string($answer[$key] ?? null) ? trim($answer[$key]) : '';
 
-        $amount = self::decimal($text('amount'));
+        $amount = DecimalInput::normalize($text('amount'));
         $amount = preg_match(self::AMOUNT_PATTERN, $amount) === 1 && (float) $amount > 0 ? $amount : null;
 
         $paidOn = $text('paid_on');
@@ -50,19 +51,6 @@ final readonly class ReceiptReading
             reference: $reference,
             bank: Bank::matching($text('bank'))?->name,
         );
-    }
-
-    private static function decimal(string $raw): string
-    {
-        $raw = (string) preg_replace('/[^\d.,]/', '', $raw);
-        $lastComma = strrpos($raw, ',');
-        $lastDot = strrpos($raw, '.');
-
-        if ($lastComma !== false && ($lastDot === false || $lastComma > $lastDot)) {
-            return str_replace(',', '.', str_replace('.', '', $raw));
-        }
-
-        return str_replace(',', '', $raw);
     }
 
     private static function currency(string $raw): ?Currency

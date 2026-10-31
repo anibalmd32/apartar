@@ -3,7 +3,6 @@ import { type OrganizationBrand } from '@/types/backoffice';
 import { type RateView } from '@/types/exchange';
 import { type DownPaymentProgressView } from '@/types/layaway';
 import { type MoneyView } from '@/types/money';
-import { type PaymentAccountView } from '@/types/payment';
 import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
 
 export type PortalMode = 'account' | 'scoped';
@@ -141,7 +140,6 @@ export interface PortalLayawayShowProps {
     };
     readonly installments: readonly InstallmentRow[];
     readonly nextPaymentSuggestion: NextPaymentSuggestion | null;
-    readonly paymentAccounts: readonly PaymentAccountView[];
     readonly catalogUrl: string | null;
     readonly receiptUrl: string | null;
     readonly payments: readonly PaymentRow[];

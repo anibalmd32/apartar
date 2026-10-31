@@ -10,7 +10,6 @@ use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\NextPayment;
 use App\Domain\Payment\LayawayReceipts;
-use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
@@ -27,7 +26,6 @@ use App\Models\Installment;
 use App\Models\Layaway;
 use App\Models\Payment;
 use App\Models\Receipt;
-use App\Queries\ActivePaymentAccountsQuery;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
@@ -43,7 +41,6 @@ final class LayawayShowController extends Controller
         private readonly TenantContext $context,
         private readonly Settings $settings,
         private readonly LimitEnforcer $limits,
-        private readonly ActivePaymentAccountsQuery $paymentAccounts,
         private readonly LayawayReceipts $receipts,
     ) {}
 
@@ -74,9 +71,6 @@ final class LayawayShowController extends Controller
                 ->values()
                 ->all(),
             'nextPaymentSuggestion' => $this->suggestion($layaway, $installments->all()),
-            'paymentAccounts' => $layaway->status->acceptsPayments()
-                ? array_map(fn (PaymentAccountView $account): array => $account->toArray(), $this->paymentAccounts->all())
-                : [],
             'catalogUrl' => $this->catalogUrl($layaway),
             'receiptUrl' => $layaway->status->acceptsPayments() && $organization->status->acceptsCustomerReceipts()
                 ? route('portal.receipts.create', ['code' => $layaway->code])

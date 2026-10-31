@@ -77,8 +77,7 @@ final class LayawayShowTest extends TestCase
             ->has('installments', 0)
             ->where('nextPaymentSuggestion.kind', 'down_payment')
             ->where('nextPaymentSuggestion.amount.cents', 5_000)
-            ->has('paymentAccounts', 1)
-            ->where('paymentAccounts.0.holderName', 'Ana Pérez')
+            ->missing('paymentAccounts')
             ->where('receiptUrl', route('portal.receipts.create', ['code' => $this->layaway->code])));
     }
 
@@ -99,7 +98,7 @@ final class LayawayShowTest extends TestCase
             ->where('nextPaymentSuggestion.installmentNumber', 2)
             ->where('nextPaymentSuggestion.amount.cents', 2_000)
             ->where('layaway.expiresAt', null)
-            ->has('paymentAccounts', 1));
+            ->missing('paymentAccounts'));
     }
 
     public function test_days_until_due_follow_the_local_midnight(): void
@@ -127,7 +126,7 @@ final class LayawayShowTest extends TestCase
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->where('layaway.statusMessage', 'Este apartado fue cancelado por el negocio. Si tienes dudas, escríbele.')
             ->where('nextPaymentSuggestion', null)
-            ->has('paymentAccounts', 0)
+            ->missing('paymentAccounts')
             ->where('receiptUrl', null));
     }
 
@@ -179,7 +178,7 @@ final class LayawayShowTest extends TestCase
     {
         $this->organization->forceFill(['status' => OrganizationStatus::Suspended])->save();
 
-        $this->show()->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->has('paymentAccounts', 1));
+        $this->show()->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->missing('paymentAccounts'));
     }
 
     public function test_the_origin_catalog_is_linked_only_while_open(): void

@@ -53,12 +53,12 @@ it('elegir un método sugiere su moneda sin imponerla', () => {
     pick('Moneda', 'USD');
     expect(checkedIn('Moneda')).toBe('USD');
     expect(screen.getByLabelText('Método de pago')).toHaveValue('efectivo_ves');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30.00');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
 
     choose('Método de pago', 'pago_movil');
     pick('Cuenta a la que pagaste', '7');
     expect(checkedIn('Moneda')).toBe('USD');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30.00');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
 });
 
 it('pide banco y referencia solo cuando el método los lleva, y los vacía al pasar a efectivo', () => {
@@ -87,13 +87,13 @@ it('precarga la sugerencia en la moneda elegida, en dólares y en bolívares', (
     renderForm({ paymentAccounts: [] });
 
     expect(checkedIn('Moneda')).toBe('USD');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30.00');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
 
     pick('Moneda', 'VES');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1275.00');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1.275,00');
 
     pick('Moneda', 'USD');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30.00');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
 });
 
 it('no pisa el monto que escribió la persona al cambiar de moneda', () => {

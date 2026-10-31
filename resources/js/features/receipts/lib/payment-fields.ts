@@ -2,6 +2,7 @@ import { ratePending } from '@/features/receipts/components/StaleRateConfirmatio
 import { type ApprovalPreviewState } from '@/features/receipts/hooks/useApprovalPreview';
 import { BYTES_PER_MB } from '@/features/receipts/hooks/useFilePreview';
 import { type ReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
+import { amountInput } from '@/lib/money';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
 
 export interface PaymentFieldValues {
@@ -65,7 +66,7 @@ export function paymentPending(options: PaymentFieldOptions, values: PaymentFiel
 
 export function patchFromReading(options: PaymentFieldOptions, values: PaymentFieldValues, reading: ReceiptReading): Partial<PaymentFieldValues> {
     return {
-        amount: reading.amount ?? '',
+        amount: reading.amount === null ? '' : amountInput(reading.amount),
         ...(reading.currency === null ? {} : { currency: reading.currency, rate: reading.currency === 'USD' ? '' : values.rate }),
         paid_at: reading.paidAt ?? values.paid_at,
         ...(requiresReference(options, values.method) ? { bank: reading.bank ?? '', reference: reading.reference ?? '' } : {}),

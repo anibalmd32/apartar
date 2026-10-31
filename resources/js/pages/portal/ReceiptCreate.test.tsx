@@ -86,7 +86,7 @@ it('preselecciona la única cuenta, su método y la sugerencia en su moneda', ()
     expect(screen.getByRole('radio', { name: 'Pago móvil · Banesco · 0414-1234567' })).toBeChecked();
     expect(screen.getByLabelText('Método de pago')).toHaveValue('pago_movil');
     expect(checkedIn('Moneda')).toBe('VES');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1275.00');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1.275,00');
     expect(screen.getByText('J-12345678-9', { exact: false })).toBeInTheDocument();
 });
 
@@ -169,7 +169,7 @@ it('lee el comprobante, rellena lo que encontró y envía multipart con los nomb
         bank: 'Mercantil',
         reference: '00123456',
         paidAt: '2026-10-05',
-        amount: '1275.00',
+        amount: '1.275,00',
         currency: 'VES',
         note: 'Cuota de octubre',
         file: capture,
@@ -213,7 +213,7 @@ it('sin cuentas, envía la cuenta como null', () => {
         bank: '',
         reference: '',
         currency: 'USD',
-        amount: '30.00',
+        amount: '30,00',
     });
 });
 

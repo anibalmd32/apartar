@@ -39,6 +39,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Queries\CustomerSearch;
 use App\Queries\PaymentFieldOptionsQuery;
+use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\JsonResponse;
@@ -153,6 +154,7 @@ final class LayawayCreationController extends Controller
         $product = Product::query()->published()->find(filter_var($request->query('product'), FILTER_VALIDATE_INT) ?: 0);
         $quantity = filter_var($request->query('quantity'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => CreateLayawayData::MAX_QUANTITY]]);
         $amount = $request->query('amount');
+        $amount = is_string($amount) ? DecimalInput::normalize($amount) : $amount;
         $currency = Currency::tryFrom(is_string($request->query('currency')) ? $request->query('currency') : '');
         $rate = $request->query('rate');
         $rate = is_string($rate) && $rate !== '' && $currency !== Currency::USD ? $rate : null;

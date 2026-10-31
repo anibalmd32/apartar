@@ -28,6 +28,7 @@ use App\Http\Requests\Backoffice\ApproveReceiptRequest;
 use App\Http\Requests\Backoffice\StoreManualPaymentRequest;
 use App\Models\Layaway;
 use App\Models\User;
+use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\DeadlockException;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +74,7 @@ final class ManualPaymentController extends Controller
         Gate::forUser($request->user())->authorize('manage', $layaway);
 
         $amount = $request->query('amount');
+        $amount = is_string($amount) ? DecimalInput::normalize($amount) : $amount;
         $rawCurrency = $request->query('currency');
         $currency = Currency::tryFrom(is_string($rawCurrency) ? $rawCurrency : '');
         $rate = $request->query('rate');
