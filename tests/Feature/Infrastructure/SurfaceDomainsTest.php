@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Infrastructure;
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Support\Surface;
+use Illuminate\Http\Request;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
@@ -60,11 +62,33 @@ final class SurfaceDomainsTest extends TestCase
         $this->get('/plataforma/login')->assertStatus(301)->assertRedirect($this->origin(self::PLATFORM).'/login');
     }
 
+    public function test_an_inertia_visit_redirected_to_another_subdomain_becomes_a_full_page_load(): void
+    {
+        $this->get('/backoffice/cobranza', $this->inertiaHeaders())
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', $this->origin(self::BACKOFFICE).'/cobranza');
+
+        $this->get($this->origin(self::BACKOFFICE).'/', $this->inertiaHeaders())
+            ->assertStatus(302)
+            ->assertRedirect($this->origin(self::BACKOFFICE).'/login');
+    }
+
     public function test_the_main_domain_keeps_its_home_and_the_page_tells_the_client_where_each_surface_lives(): void
     {
         $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->component('marketing/Home'));
 
         $this->get($this->origin(self::BACKOFFICE).'/login')->assertSee('window.apartarSurfaces = {"backoffice":"","platform":""}', false);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function inertiaHeaders(): array
+    {
+        return [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => (string) app(HandleInertiaRequests::class)->version(Request::create('/')),
+        ];
     }
 
     private function origin(string $domain): string

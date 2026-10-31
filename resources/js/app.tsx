@@ -8,6 +8,7 @@ import { AppRoot } from './app-root';
 import { Toaster } from './components/ui/toaster';
 import { initializeTheme } from './hooks/use-appearance';
 import { watchBrokenImages } from './lib/broken-images';
+import { guardCrossOriginVisits } from './lib/cross-origin-visits';
 
 declare global {
     const route: typeof routeFn;
@@ -36,3 +37,4 @@ createInertiaApp({
 
 initializeTheme();
 watchBrokenImages();
+guardCrossOriginVisits();

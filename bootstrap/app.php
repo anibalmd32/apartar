@@ -27,6 +27,7 @@ use App\Http\Middleware\EnsurePortalSession;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\OperatesWithoutTenant;
 use App\Http\Middleware\OutsideTenancy;
+use App\Http\Middleware\RedirectAcrossSurfaces;
 use App\Http\Middleware\RequiresSupportAccess;
 use App\Http\Middleware\ResolveCatalogTenant;
 use App\Http\Middleware\ResolvePortalTenant;
@@ -59,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             HandleInertiaRequests::class,
+            RedirectAcrossSurfaces::class,
             AddLinkHeadersForPreloadedAssets::class,
             AssignVisitorId::class,
         ]);
