@@ -1,3 +1,4 @@
+import { AppRoot } from '@/app-root';
 import { centsUsd } from '@/lib/money';
 import LayawayCreate, { PLAN_DEBOUNCE_MS } from '@/pages/backoffice/layaways/Create';
 import { MANUAL_PAYMENT_OPTIONS } from '@/test/manual-payment-fixtures';
@@ -75,9 +76,9 @@ function props(overrides: Partial<BackofficeLayawayCreateProps> = {}): Backoffic
 
 function renderPage(overrides: Partial<BackofficeLayawayCreateProps> = {}) {
     return render(
-        <QueryClientProvider client={new QueryClient()}>
+        <AppRoot>
             <LayawayCreate {...props(overrides)} />
-        </QueryClientProvider>,
+        </AppRoot>,
     );
 }
 
