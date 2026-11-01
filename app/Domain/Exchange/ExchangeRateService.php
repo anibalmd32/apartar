@@ -21,6 +21,8 @@ final class ExchangeRateService
 
     public const TTL_SECONDS = 2_100;
 
+    public const NEXT_RATE_WITHIN_DAYS = 4;
+
     public function __construct(
         private readonly CacheRepository $cache,
         private readonly TenantContext $context,
@@ -55,12 +57,26 @@ final class ExchangeRateService
         $source = $this->sourceFor($organization);
         $source = $source === RateSource::Manual ? $this->platformSource() : $source;
 
-        $row = ExchangeRate::query()
+        $storage = date_default_timezone_get();
+        $start = $date->startOfDay()->setTimezone($storage);
+        $end = $date->endOfDay()->setTimezone($storage);
+
+        $before = ExchangeRate::query()
             ->where('source', $source->value)
-            ->where('published_at', '<=', $date->endOfDay()->setTimezone(date_default_timezone_get()))
+            ->where('published_at', '<=', $end)
             ->orderByDesc('published_at')
             ->orderByDesc('id')
             ->first();
+
+        $row = $before === null || $before->published_at->greaterThanOrEqualTo($start)
+            ? $before
+            : ExchangeRate::query()
+                ->where('source', $source->value)
+                ->where('published_at', '>', $end)
+                ->where('published_at', '<=', $date->addDays(self::NEXT_RATE_WITHIN_DAYS)->endOfDay()->setTimezone($storage))
+                ->orderBy('published_at')
+                ->orderByDesc('id')
+                ->first() ?? $before;
 
         return $row === null ? null : new RateSnapshot(
             rate: $row->rate,

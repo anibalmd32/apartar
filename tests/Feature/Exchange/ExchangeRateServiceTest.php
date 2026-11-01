@@ -177,7 +177,7 @@ it('fecha la tasa manual con su última edición', function (): void {
     expect($snapshot?->publishedAt->diffInDays(CarbonImmutable::now()))->toBeGreaterThanOrEqual(20);
 });
 
-it('para un día pasado da la última tasa publicada hasta ese día, en el huso del negocio y de su fuente', function (): void {
+it('para un día pasado da la tasa de ese día y, en fin de semana o feriado, la que se publicó para el siguiente hábil', function (): void {
     CarbonImmutable::setTestNow('2026-10-31 12:00:00');
     persistRate(RateSource::Bcv, '36.50000000', '2024-03-01 04:00:00');
     persistRate(RateSource::Bcv, '36.72000000', '2024-03-04 04:00:00');
@@ -190,7 +190,8 @@ it('para un día pasado da la última tasa publicada hasta ese día, en el huso 
     setRateSource($street, RateSource::Parallel);
 
     expect(rates()->on($organization, CarbonImmutable::parse('2024-03-01'))?->rate)->toBe('36.50000000')
-        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-03'))?->rate)->toBe('36.50000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-02'))?->rate)->toBe('36.72000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-03'))?->rate)->toBe('36.72000000')
         ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-04'))?->rate)->toBe('36.72000000')
         ->and(rates()->on($street, CarbonImmutable::parse('2024-03-02'))?->rate)->toBe('39.10000000')
         ->and(rates()->on($organization, CarbonImmutable::parse('2024-02-28')))->toBeNull()

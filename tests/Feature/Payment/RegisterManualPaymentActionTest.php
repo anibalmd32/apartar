@@ -194,14 +194,16 @@ final class RegisterManualPaymentActionTest extends TestCase
 
     public function test_bolivars_paid_on_an_earlier_day_are_converted_at_the_rate_of_that_day(): void
     {
-        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '40.00000000', 'published_at' => CarbonImmutable::parse('2026-08-20 04:00:00')]);
-        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '41.00000000', 'published_at' => CarbonImmutable::parse('2026-08-25 04:00:00')]);
+        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '40.00000000', 'published_at' => CarbonImmutable::parse('2026-08-21 00:00:00', 'America/Caracas')]);
+        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '41.00000000', 'published_at' => CarbonImmutable::parse('2026-08-24 00:00:00', 'America/Caracas')]);
         $layaway = $this->activeLayaway();
 
-        $old = $this->stored($this->register($layaway, '1200.00', Currency::VES, paidAt: '2026-08-22'));
+        $friday = $this->stored($this->register($layaway, '1200.00', Currency::VES, paidAt: '2026-08-21'));
+        $saturday = $this->stored($this->register($layaway, '1230.00', Currency::VES, paidAt: '2026-08-22'));
         $today = $this->stored($this->register($layaway, '850.00', Currency::VES, paidAt: '2026-09-10'));
 
-        $this->assertSame([3_000, '40.00000000', RateSource::Bcv], [$old->amount_cents_usd->cents, $old->rate_applied, $old->rate_source]);
+        $this->assertSame([3_000, '40.00000000', RateSource::Bcv], [$friday->amount_cents_usd->cents, $friday->rate_applied, $friday->rate_source]);
+        $this->assertSame([3_000, '41.00000000'], [$saturday->amount_cents_usd->cents, $saturday->rate_applied], 'el fin de semana rige la que el BCV publicó el viernes para el lunes.');
         $this->assertSame([2_000, '42.50000000'], [$today->amount_cents_usd->cents, $today->rate_applied]);
     }
 
