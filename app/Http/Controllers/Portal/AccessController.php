@@ -57,6 +57,10 @@ final class AccessController extends Controller
 
         $request->session()->regenerate();
 
+        if ($customer->document_number === null && $request->filled('document')) {
+            $request->session()->put(DocumentController::TYPED_DOCUMENT, (string) $request->string('document'));
+        }
+
         return redirect()->intended(route('portal.dashboard'));
     }
 

@@ -34,7 +34,7 @@ class StartScopedSessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'document' => ['required', 'string', 'max:20'],
+            'document' => ['nullable', 'string', 'max:20'],
             'code' => ['required', 'string', 'max:20'],
         ];
     }
@@ -45,7 +45,6 @@ class StartScopedSessionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'document.required' => 'Escribe tu cédula o RIF.',
             'code.required' => 'Escribe el código de tu apartado.',
         ];
     }
@@ -66,7 +65,7 @@ class StartScopedSessionRequest extends FormRequest
 
             Log::warning('portal.access.failed', ['ip' => $this->ip(), 'reason' => $failure->reason]);
 
-            throw ValidationException::withMessages(['code' => $failure->getMessage()]);
+            throw ValidationException::withMessages([$failure->reason === AccessVerificationFailedException::DOCUMENT_MISSING ? 'document' : 'code' => $failure->getMessage()]);
         }
 
         RateLimiter::clear($this->throttleKey());
@@ -78,14 +77,18 @@ class StartScopedSessionRequest extends FormRequest
     {
         $document = DocumentNumber::tryFromInput($this->input('document'));
 
-        return 'portal-access|'.Str::transliterate(($document->value ?? Str::lower((string) $this->string('document'))).'|'.$this->ip());
+        return 'portal-access|'.Str::transliterate(($document->value ?? (Str::lower(trim((string) $this->string('document'))) ?: 'sin-documento')).'|'.$this->ip());
     }
 
     /**
      * @throws ValidationException
      */
-    private function document(): DocumentNumber
+    private function document(): ?DocumentNumber
     {
+        if (trim((string) $this->string('document')) === '') {
+            return null;
+        }
+
         try {
             return DocumentNumber::fromInput((string) $this->string('document'));
         } catch (InvalidDocumentNumberException $invalid) {

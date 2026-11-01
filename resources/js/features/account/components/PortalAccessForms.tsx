@@ -36,8 +36,8 @@ export function CodeAccess({ initialCode = null }: { initialCode?: string | null
                 value={data.document}
                 onChange={(value) => setData('document', value)}
                 error={errors.document}
+                hint="Si el negocio cargó tu apartado sin tu cédula, déjala vacía: te la pedimos al entrar."
                 autoFocus
-                required
             />
 
             <TextField

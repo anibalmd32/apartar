@@ -27,7 +27,7 @@ final class StartScopedSessionAction
     /**
      * @throws AccessVerificationFailedException
      */
-    public function handle(DocumentNumber $document, string $layawayCode): Customer
+    public function handle(?DocumentNumber $document, string $layawayCode): Customer
     {
         $code = LayawayCode::normalize($layawayCode);
 
@@ -43,6 +43,17 @@ final class StartScopedSessionAction
 
         $customer = $this->context->runFor($organization, function () use ($code, $document): Customer {
             $layaway = Layaway::query()->where('code', $code)->first();
+            $holder = $layaway instanceof Layaway ? Customer::query()->find($layaway->customer_id) : null;
+
+            if ($holder instanceof Customer && $holder->document_number === null) {
+                $holder->forceFill(['last_login_at' => CarbonImmutable::now()])->save();
+
+                return $holder;
+            }
+
+            if (! $document instanceof DocumentNumber) {
+                throw new AccessVerificationFailedException(AccessVerificationFailedException::DOCUMENT_MISSING);
+            }
 
             $customer = $layaway instanceof Layaway
                 ? Customer::query()->whereKey($layaway->customer_id)->where('document_number', $document->value)->first()

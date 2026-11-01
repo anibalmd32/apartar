@@ -108,6 +108,13 @@ export interface PortalClaimProps {
     readonly storeUrl: string;
 }
 
+export interface PortalDocumentProps {
+    readonly customerName: string;
+    readonly businessName: string;
+    readonly typed: string;
+    readonly storeUrl: string;
+}
+
 export type InstallmentTone = 'paid' | 'overdue' | 'soon' | 'pending';
 
 export interface InstallmentRow {

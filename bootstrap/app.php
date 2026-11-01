@@ -18,6 +18,7 @@ use App\Http\Middleware\AssignVisitorId;
 use App\Http\Middleware\EnforcePlanLimit;
 use App\Http\Middleware\EnsureAccountSession;
 use App\Http\Middleware\EnsureAdminIsActive;
+use App\Http\Middleware\EnsureCustomerDocument;
 use App\Http\Middleware\EnsureIsOwner;
 use App\Http\Middleware\EnsureMonitorAccess;
 use App\Http\Middleware\EnsureOrganizationIsActive;
@@ -78,6 +79,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'storefront-tenant' => ResolveStorefrontTenant::class,
             'portal-tenant' => ResolvePortalTenant::class,
             'portal' => EnsurePortalSession::class,
+            'portal-document' => EnsureCustomerDocument::class,
             'account-session' => EnsureAccountSession::class,
             'without-tenant' => OperatesWithoutTenant::class,
             'platform-active' => EnsurePlatformUserIsActive::class,

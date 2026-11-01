@@ -9,6 +9,7 @@ use App\Http\Controllers\Portal\Auth\GoogleAccountController;
 use App\Http\Controllers\Portal\ChatController;
 use App\Http\Controllers\Portal\ClaimController;
 use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\DocumentController;
 use App\Http\Controllers\Portal\FeedController;
 use App\Http\Controllers\Portal\LayawayShowController;
 use App\Http\Controllers\Portal\LoginLinkController;
@@ -54,6 +55,11 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
     });
 
     Route::middleware(['portal', 'outside-tenancy'])->group(function (): void {
+        Route::get('cedula', [DocumentController::class, 'create'])->name('document');
+        Route::post('cedula', [DocumentController::class, 'store'])->middleware('throttle:10,60')->name('document.store');
+    });
+
+    Route::middleware(['portal', 'portal-document', 'outside-tenancy'])->group(function (): void {
         Route::get('chat', [ChatController::class, 'index'])->name('chat.index');
         Route::get('chat/{organization:slug}', [ChatController::class, 'show'])->name('chat.show');
         Route::post('chat/{organization:slug}', [ChatController::class, 'store'])->middleware('throttle:mensajes')->name('chat.store');
@@ -64,7 +70,7 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
         Route::delete('push', [PushSubscriptionController::class, 'destroy'])->name('push.destroy');
     });
 
-    Route::middleware(['portal', 'portal-tenant'])->group(function (): void {
+    Route::middleware(['portal', 'portal-document', 'portal-tenant'])->group(function (): void {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('pagar', PayController::class)->name('pay');
         Route::get('apartados/{code}', LayawayShowController::class)->name('layaways.show');
