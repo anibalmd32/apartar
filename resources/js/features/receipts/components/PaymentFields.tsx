@@ -10,7 +10,6 @@ import { ReceiptFilePreview } from '@/features/receipts/components/ReceiptFilePr
 import { RateConfirmations } from '@/features/receipts/components/StaleRateConfirmation';
 import { type ApprovalPreviewState } from '@/features/receipts/hooks/useApprovalPreview';
 import { useReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
-import { formatRate } from '@/features/receipts/lib/inbox-format';
 import {
     fileTooLarge,
     patchFromReading,
@@ -18,9 +17,9 @@ import {
     type PaymentFieldValues,
     requiresReference,
 } from '@/features/receipts/lib/payment-fields';
+import { appliedRateLine, rateHint } from '@/features/receipts/lib/payment-rate';
 import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
-import { type ApprovalPreviewView } from '@/types/receipt';
 import { useEffect, useRef } from 'react';
 
 interface PaymentFieldsProps {
@@ -30,20 +29,6 @@ interface PaymentFieldsProps {
     options: PaymentFieldOptions;
     preview: ApprovalPreviewState;
     onReadingChange?: (reading: boolean) => void;
-}
-
-export function rateHint(options: PaymentFieldOptions, paidAt: string, preview: ApprovalPreviewView | null): string {
-    if (paidAt === '' || paidAt >= options.paidAt.max) {
-        return options.rate === null
-            ? 'No hay tasa vigente: escribe la que usaste.'
-            : `Vacía usa la vigente: ${formatRate(options.rate.rate)} (${options.rate.sourceLabel}).`;
-    }
-
-    const day = `${paidAt.slice(8, 10)}/${paidAt.slice(5, 7)}/${paidAt.slice(0, 4)}`;
-
-    return preview !== null && preview.rateSource !== 'manual'
-        ? `Vacía usa la del ${day}: ${formatRate(preview.rate)} (${preview.rateSourceLabel}).`
-        : `Vacía usa la tasa oficial del ${day}.`;
 }
 
 export function PaymentFields({ values, errors, onChange, options, preview: { preview, error, loading }, onReadingChange }: PaymentFieldsProps) {
@@ -184,7 +169,10 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                 {error !== null ? (
                     <p className="text-error">{error}</p>
                 ) : preview !== null ? (
-                    <p className="font-bold">{preview.summary}</p>
+                    <>
+                        <p className="font-bold">{preview.summary}</p>
+                        {values.currency === 'VES' ? <p className="text-ink-2 mt-1">{appliedRateLine(options, values.paid_at, preview)}</p> : null}
+                    </>
                 ) : (
                     <p className="text-ink-2">Escribe el importe para ver a qué cuotas iría.</p>
                 )}

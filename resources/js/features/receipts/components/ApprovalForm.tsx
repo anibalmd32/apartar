@@ -92,9 +92,11 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
                     onChange={(event) => form.setData('rate', typedAmount(event, RATE_DECIMALS))}
                     error={form.errors.rate}
                     hint={
-                        rate === null
-                            ? 'No hay tasa vigente: escribe la que usaste para aprobar en bolívares.'
-                            : `Vacía usa la vigente: ${formatRate(rate.rate)} (${rate.sourceLabel}). Si escribes otra, queda registrada como manual.`
+                        preview !== null && preview.rateSource !== 'manual' && form.data.currency === 'VES'
+                            ? `Vacía usa la del día del pago: ${formatRate(preview.rate)} (${preview.rateSourceLabel}). Si escribes otra, queda registrada como manual.`
+                            : rate === null
+                              ? 'No hay tasa vigente: escribe la que usaste para aprobar en bolívares.'
+                              : `Vacía usa la del día del pago (${rate.sourceLabel}). Si escribes otra, queda registrada como manual.`
                     }
                 />
             ) : null}

@@ -8,17 +8,21 @@ import { cn } from '@/lib/utils';
 import { type BackofficeInstallmentRow, type BackofficeLayaway } from '@/types/layaway-backoffice';
 import { cilBasket, cilCheckAlt } from '@coreui/icons';
 
-type Tone = 'paid' | 'overdue' | 'pending';
+type Tone = 'paid' | 'overdue' | 'partial' | 'pending';
 
 function toneOf(installment: BackofficeInstallmentRow, today: string): Tone {
     if (Number(installment.paid.cents) >= Number(installment.amount.cents)) {
         return 'paid';
     }
 
-    return installment.dueDate < today ? 'overdue' : 'pending';
+    if (installment.dueDate < today) {
+        return 'overdue';
+    }
+
+    return Number(installment.paid.cents) > 0 ? 'partial' : 'pending';
 }
 
-const BADGE: Record<Tone, BadgeTone> = { paid: 'success', overdue: 'error', pending: 'neutral' };
+const BADGE: Record<Tone, BadgeTone> = { paid: 'success', overdue: 'error', partial: 'info', pending: 'neutral' };
 
 function todayIso(): string {
     return new Date().toISOString().slice(0, 10);
@@ -105,6 +109,7 @@ export function InstallmentPlan({ installments }: { installments: readonly Backo
                                     'flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold',
                                     tone === 'paid' && 'bg-success-soft text-success',
                                     tone === 'overdue' && 'bg-error-soft text-error',
+                                    tone === 'partial' && 'bg-info-soft text-info',
                                     tone === 'pending' && 'bg-surface-2 text-ink-2',
                                 )}
                             >
