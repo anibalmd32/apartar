@@ -3,6 +3,7 @@ import { TextField } from '@/components/ui/text-field';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { CurrencyChoice } from '@/features/receipts/components/ReceiptChoiceFields';
 import { type ReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
+import { typedAmount } from '@/lib/amount-typing';
 import { type ReceiptCurrencyOption, type ReceiptSuggestion } from '@/types/receipt';
 
 interface ReceiptAmountFieldsProps {
@@ -47,7 +48,7 @@ export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: Re
                     autoComplete="off"
                     placeholder="0,00"
                     value={data.amount}
-                    onChange={(event) => form.setAmount(event.target.value)}
+                    onChange={(event) => form.setAmount(typedAmount(event))}
                     error={errors.amount}
                     required
                 />

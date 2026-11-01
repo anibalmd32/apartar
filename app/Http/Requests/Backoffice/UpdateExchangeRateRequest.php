@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Backoffice;
 
 use App\Domain\Exchange\RateSource;
+use App\Support\DecimalInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -43,6 +44,6 @@ final class UpdateExchangeRateRequest extends FormRequest
             return null;
         }
 
-        return is_string($rate) ? trim($rate) : (string) $rate;
+        return is_string($rate) ? (DecimalInput::normalizeKeys(['rate' => $rate], ['rate'])['rate'] ?? trim($rate)) : (string) $rate;
     }
 }

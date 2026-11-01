@@ -1,4 +1,5 @@
 import { suggestSku } from '@/features/products/lib/sku';
+import { amountInput } from '@/lib/money';
 import { bo } from '@/lib/surfaces';
 import { type ProductDefaults, type ProductFormValues } from '@/types/product';
 import { router, useForm } from '@inertiajs/react';
@@ -30,9 +31,9 @@ function initialData(defaults: ProductDefaults, product?: ProductFormValues | nu
         sku: product?.sku ?? suggestSku('', defaults.skuSequence ?? 1),
         slug: product?.slug ?? '',
         description: product?.description ?? '',
-        price: product?.price ?? '',
-        compare_at_price: product?.compareAtPrice ?? '',
-        down_payment: product?.downPayment ?? '0.00',
+        price: amountInput(product?.price ?? ''),
+        compare_at_price: amountInput(product?.compareAtPrice ?? ''),
+        down_payment: amountInput(product?.downPayment ?? '0.00'),
         installments_count: product?.installmentsCount ?? defaults.installmentsCount,
         frequency_days: product?.frequencyDays ?? defaults.frequencyDays,
         stock: product?.stock ?? 0,

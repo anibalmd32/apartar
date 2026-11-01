@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { RateSourceCards } from '@/features/tenancy/components/RateSourceCards';
+import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
+import { amountInput } from '@/lib/money';
 import { bo } from '@/lib/surfaces';
 import { type RateSource, type RateView } from '@/types/exchange';
 import { useForm } from '@inertiajs/react';
@@ -22,7 +24,7 @@ interface ExchangeRateFormData {
 export function ExchangeRateForm({ source, manualRate, sourceOptions, rateSources }: ExchangeRateFormProps) {
     const { data, setData, put, processing, errors } = useForm<ExchangeRateFormData>({
         exchange_rate_source: source,
-        exchange_rate_manual: manualRate,
+        exchange_rate_manual: manualRate === null ? null : amountInput(manualRate),
     });
 
     const submit: FormEventHandler = (event) => {
@@ -46,11 +48,9 @@ export function ExchangeRateForm({ source, manualRate, sourceOptions, rateSource
             <div className="sm:max-w-sm">
                 <TextField
                     label="Tasa manual (Bs. por USD)"
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    inputMode="decimal"
                     value={data.exchange_rate_manual ?? ''}
-                    onChange={(event) => setData('exchange_rate_manual', event.target.value === '' ? null : event.target.value)}
+                    onChange={(event) => setData('exchange_rate_manual', typedAmount(event, RATE_DECIMALS) || null)}
                     error={errors.exchange_rate_manual}
                     hint={
                         data.exchange_rate_source === 'manual'

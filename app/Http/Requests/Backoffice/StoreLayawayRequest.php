@@ -37,7 +37,7 @@ final class StoreLayawayRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount']));
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount', 'rate']));
     }
 
     /**

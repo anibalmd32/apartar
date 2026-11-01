@@ -21,3 +21,8 @@ it('normaliza solo las claves pedidas y que traen texto', function (): void {
     expect(DecimalInput::normalizeKeys(['amount' => '1.275,50', 'rate' => '40,5', 'note' => 'x', 'empty' => ''], ['amount', 'empty', 'missing']))
         ->toBe(['amount' => '1275.50']);
 });
+
+it('en los formularios solo normaliza lo que tiene forma de número, para que la validación rechace el resto', function (): void {
+    expect(DecimalInput::normalizeKeys(['a' => '-42,5', 'b' => 'cuarenta', 'c' => '1.234,56', 'd' => '36,5'], ['a', 'b', 'c', 'd']))
+        ->toBe(['c' => '1234.56', 'd' => '36.5']);
+});

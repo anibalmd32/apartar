@@ -18,6 +18,7 @@ import {
     type PaymentFieldValues,
     requiresReference,
 } from '@/features/receipts/lib/payment-fields';
+import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
 import { useEffect, useRef } from 'react';
 
@@ -129,7 +130,7 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                     name="amount"
                     inputMode="decimal"
                     value={values.amount}
-                    onChange={(event) => onChange({ amount: event.target.value })}
+                    onChange={(event) => onChange({ amount: typedAmount(event) })}
                     error={errors.amount}
                 />
                 <SelectField
@@ -146,7 +147,7 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                         name="rate"
                         inputMode="decimal"
                         value={values.rate}
-                        onChange={(event) => onChange({ rate: event.target.value })}
+                        onChange={(event) => onChange({ rate: typedAmount(event, RATE_DECIMALS) })}
                         error={errors.rate}
                         hint={
                             options.rate === null

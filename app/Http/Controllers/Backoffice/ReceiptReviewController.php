@@ -142,10 +142,10 @@ final class ReceiptReviewController extends Controller
         $rawCurrency = $request->query('currency');
         $currency = Currency::tryFrom(is_string($rawCurrency) ? $rawCurrency : '');
         $rate = $request->query('rate');
-        $rate = is_string($rate) && $rate !== '' ? $rate : null;
+        $rate = is_string($rate) && $rate !== '' ? DecimalInput::normalize($rate) : null;
 
         if (! is_string($amount) || preg_match(ApproveReceiptRequest::AMOUNT_PATTERN, $amount) !== 1) {
-            return response()->json(['message' => 'Escribe el importe recibido con punto decimal y hasta dos decimales.'], 422);
+            return response()->json(['message' => 'Escribe el importe recibido con coma decimal y hasta dos decimales.'], 422);
         }
 
         if (! $currency instanceof Currency) {
@@ -153,7 +153,7 @@ final class ReceiptReviewController extends Controller
         }
 
         if ($rate !== null && preg_match(ApproveReceiptRequest::RATE_PATTERN, $rate) !== 1) {
-            return response()->json(['message' => 'Escribe la tasa con punto decimal y hasta ocho decimales.'], 422);
+            return response()->json(['message' => 'Escribe la tasa con coma decimal y hasta ocho decimales.'], 422);
         }
 
         if (! $receipt->status->awaitsReview()) {

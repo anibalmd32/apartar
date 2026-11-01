@@ -10,6 +10,7 @@ use App\Domain\Money\Money;
 use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
 use App\Rules\RealMimeType;
+use App\Support\DecimalInput;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -18,6 +19,11 @@ use Illuminate\Validation\Validator;
 class StoreProductRequest extends FormRequest
 {
     use ValidatesSpecifications;
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['price', 'compare_at_price', 'down_payment']));
+    }
 
     /**
      * @return array<string, list<mixed>>

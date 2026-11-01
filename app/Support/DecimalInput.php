@@ -37,7 +37,7 @@ final class DecimalInput
         $normalized = [];
 
         foreach ($keys as $key) {
-            if (is_string($input[$key] ?? null) && trim($input[$key]) !== '') {
+            if (is_string($input[$key] ?? null) && preg_match('/^\s*\d[\d.,\s]*$/', $input[$key]) === 1) {
                 $normalized[$key] = self::normalize($input[$key]);
             }
         }

@@ -99,9 +99,9 @@ it('precarga la sugerencia en la moneda elegida, en dólares y en bolívares', (
 it('no pisa el monto que escribió la persona al cambiar de moneda', () => {
     renderForm({ paymentAccounts: [] });
 
-    choose('Monto que pagaste', '45.50');
+    choose('Monto que pagaste', '45,50');
     pick('Moneda', 'VES');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('45.50');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('45,50');
 });
 
 it('con un monto escrito, el método ya no cambia la moneda', () => {
@@ -113,7 +113,7 @@ it('con un monto escrito, el método ya no cambia la moneda', () => {
 
     choose('Método de pago', 'zelle');
     expect(checkedIn('Moneda')).toBe('VES');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1275');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1.275');
 });
 
 it('sin tasa, en bolívares no precarga la cifra en dólares', () => {

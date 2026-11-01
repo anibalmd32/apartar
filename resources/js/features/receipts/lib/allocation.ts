@@ -1,4 +1,4 @@
-const AMOUNT = /^(\d{1,14})(?:\.(\d{1,2}))?$/;
+const AMOUNT = /^(\d{1,3}(?:\.\d{3})+|\d{1,14})(?:,(\d{1,2}))?$/;
 
 export function parseCents(text: string): number | null {
     const trimmed = text.trim();
@@ -13,7 +13,7 @@ export function parseCents(text: string): number | null {
         return null;
     }
 
-    return Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+    return Number((match[1] ?? '').replace(/\./g, '')) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
 }
 
 export function formatCents(cents: number): string {
@@ -24,7 +24,7 @@ export function formatCents(cents: number): string {
 }
 
 export function centsToInput(cents: number): string {
-    return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`;
+    return `${String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${String(cents % 100).padStart(2, '0')}`;
 }
 
 export interface AllocationRow {
@@ -41,7 +41,7 @@ export function allocationProblem(rows: readonly AllocationRow[], expectedCents:
         const cents = parseCents(row.text);
 
         if (cents === null) {
-            return `El importe de la cuota ${row.number} no es válido: usa punto y hasta dos decimales.`;
+            return `El importe de la cuota ${row.number} no es válido: usa coma y hasta dos decimales.`;
         }
 
         if (cents > row.roomCents) {

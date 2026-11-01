@@ -18,6 +18,7 @@ use App\Models\PlatformUser;
 use App\Models\Receipt;
 use App\Queries\Platform\SubscriptionReceiptInbox;
 use App\Support\Auditing\PlatformAudit;
+use App\Support\DecimalInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -37,6 +38,8 @@ final class InvoiceController extends Controller
 
     public function approve(Request $request, int $receipt, SubscriptionReceiptInbox $inbox, ApproveSubscriptionReceiptAction $approve): RedirectResponse
     {
+        $request->merge(DecimalInput::normalizeKeys($request->all(), ['settledAmount', 'rate']));
+
         $data = $request->validate([
             'settledAmount' => ['required', 'string', 'regex:/^\d{1,13}(\.\d{1,2})?$/'],
             'settledCurrency' => ['required', Rule::enum(Currency::class)],

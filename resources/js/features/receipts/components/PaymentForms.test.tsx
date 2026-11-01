@@ -90,14 +90,14 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
     chooseBank('Banesco');
     fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '0123456789' } });
     fireEvent.change(screen.getByLabelText('Moneda'), { target: { value: 'USD' } });
-    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '160.00' } });
+    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '160,00' } });
     fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
 
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
 
-    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe('/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa?amount=160.00&currency=USD');
+    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe('/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa?amount=160%2C00&currency=USD');
     const record = screen.getByRole('button', { name: 'Registrar el pago' });
     expect(record).toBeDisabled();
 
@@ -110,7 +110,7 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
         method: 'pago_movil',
         bank: 'Banesco',
         reference: '0123456789',
-        amount: '160.00',
+        amount: '160,00',
         currency: 'USD',
         paid_at: '2026-09-11',
         confirm_excess: 1_000,

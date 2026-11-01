@@ -88,7 +88,7 @@ final class PaymentReallocationPageTest extends TestCase
         $this->patch(route('payments.reallocate', $payment), [...$this->payload($layaway, [3 => '20.00', 2 => '20.00', 1 => '20.00']), 'reason' => self::REASON])
             ->assertSessionHas('status', 'Pago reasignado: $20,00 a la cuota 1, $20,00 a la cuota 2 y $20,00 a la cuota 3.');
         $this->withoutOrganization();
-        $this->patch(route('payments.reallocate', $payment), $this->payload($layaway, [1 => '30.00', 3 => '30.00']))->assertRedirect(route('layaways.show', $layaway));
+        $this->patch(route('payments.reallocate', $payment), $this->payload($layaway, [1 => '30,00', 3 => '30,00']))->assertRedirect(route('layaways.show', $layaway));
 
         $this->assertSame(['3000', '0', '3000'], DB::table('installments')->where('layaway_id', $layaway->getKey())->orderBy('number')->limit(3)->pluck('paid_cents')->map(fn (mixed $cents): string => (string) $cents)->all());
     }
@@ -105,7 +105,7 @@ final class PaymentReallocationPageTest extends TestCase
             ->assertSessionHasErrors(['allocations' => 'La cuota 1 admite como mucho $30,00 de este pago: no se puede pagar una cuota de más.']);
         $this->patch(route('payments.reallocate', $payment), [...$this->payload($layaway, ['1' => '30.00', '3' => '30.00']), 'reason' => 'Corto'])
             ->assertSessionHasErrors('reason');
-        $this->patch(route('payments.reallocate', $payment), $this->payload($layaway, ['1' => '30,00', '3' => '30.00']))
+        $this->patch(route('payments.reallocate', $payment), $this->payload($layaway, ['1' => '30,505', '3' => '30.00']))
             ->assertSessionHasErrors('allocations.0.amount');
         $repeated = $this->payload($layaway, ['1' => '30.00', '3' => '30.00']);
         $repeated['allocations'][1]['installment'] = $repeated['allocations'][0]['installment'];

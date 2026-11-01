@@ -78,10 +78,10 @@ final class ManualPaymentController extends Controller
         $rawCurrency = $request->query('currency');
         $currency = Currency::tryFrom(is_string($rawCurrency) ? $rawCurrency : '');
         $rate = $request->query('rate');
-        $rate = is_string($rate) && $rate !== '' && $currency !== Currency::USD ? $rate : null;
+        $rate = is_string($rate) && $rate !== '' && $currency !== Currency::USD ? DecimalInput::normalize($rate) : null;
 
         if (! is_string($amount) || preg_match(ApproveReceiptRequest::AMOUNT_PATTERN, $amount) !== 1) {
-            return response()->json(['message' => 'Escribe el importe con punto decimal y hasta dos decimales.'], 422);
+            return response()->json(['message' => 'Escribe el importe con coma decimal y hasta dos decimales.'], 422);
         }
 
         if (! $currency instanceof Currency) {
@@ -89,7 +89,7 @@ final class ManualPaymentController extends Controller
         }
 
         if ($rate !== null && preg_match(ApproveReceiptRequest::RATE_PATTERN, $rate) !== 1) {
-            return response()->json(['message' => 'Escribe la tasa con punto decimal y hasta ocho decimales.'], 422);
+            return response()->json(['message' => 'Escribe la tasa con coma decimal y hasta ocho decimales.'], 422);
         }
 
         /** @var User $actor */

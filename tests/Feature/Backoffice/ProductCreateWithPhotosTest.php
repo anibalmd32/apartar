@@ -60,6 +60,17 @@ final class ProductCreateWithPhotosTest extends TestCase
         $this->assertFalse($this->inTenant(fn (): bool => Product::query()->sole()->hasImages()));
     }
 
+    public function test_prices_written_the_venezuelan_way_are_understood(): void
+    {
+        $this->actingAs($this->owner())
+            ->post('/backoffice/productos', $this->payload(['price' => '1.250,50', 'compare_at_price' => '1.500,00', 'down_payment' => '250,50']))
+            ->assertSessionHasNoErrors();
+
+        $product = $this->inTenant(fn (): Product => Product::query()->sole());
+
+        $this->assertSame([125_050, 150_000, 25_050], [$product->price_cents->cents, $product->compare_at_price_cents?->cents, $product->down_payment_cents->cents]);
+    }
+
     public function test_a_file_that_is_not_an_image_rejects_the_whole_product(): void
     {
         $path = sys_get_temp_dir().'/'.uniqid('apartar-', true).'.png';

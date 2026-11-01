@@ -280,7 +280,7 @@ final class ProductPageTest extends TestCase
     public function test_an_amount_with_more_than_two_decimals_is_rejected(): void
     {
         $this->actingAs($this->owner())
-            ->post('/backoffice/productos', $this->payload(['price' => '19.999']))
+            ->post('/backoffice/productos', $this->payload(['price' => '19,999']))
             ->assertSessionHasErrors('price');
 
         $this->assertSame(0, $this->inTenant(fn (): int => Product::query()->count()));

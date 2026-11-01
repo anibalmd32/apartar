@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Ai\Agents\ReceiptReader;
 use App\Domain\Money\Currency;
 use App\Domain\Payment\ReceiptReading;
 
@@ -44,4 +45,14 @@ it('entiende separadores de miles y los nombres usuales de la moneda', function 
     'bolívares con coma' => ['Bs. 22.231,38', 'Bs.', '22231.38', Currency::VES],
     'dólares con punto' => ['$1,250.00', 'US$', '1250.00', Currency::USD],
     'usdt' => ['25', 'USDT', '25', Currency::USD],
+    'estilo venezolano que pide el lector' => ['1.500,50', 'USDT', '1500.50', Currency::USD],
+    'miles venezolanos con dos decimales' => ['22.231,00', 'VES', '22231.00', Currency::VES],
 ]);
+
+it('pide al lector el monto al estilo venezolano', function (): void {
+    $instructions = (new ReceiptReader)->instructions();
+
+    expect($instructions)->toContain('«Bs. 22.231,38» es «22.231,38»')
+        ->and($instructions)->toContain('coma como separador decimal')
+        ->and($instructions)->not->toContain('con punto decimal');
+});

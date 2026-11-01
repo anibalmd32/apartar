@@ -5,6 +5,8 @@ import { TextField } from '@/components/ui/text-field';
 import { RateConfirmations, ratePending } from '@/features/receipts/components/StaleRateConfirmation';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
+import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
+import { amountInput } from '@/lib/money';
 import { type ReceiptReviewProps } from '@/types/receipt';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
@@ -32,7 +34,7 @@ interface ApprovalFormValues {
 
 export function ApprovalForm({ approval, receipt, rate, initialPreview, initialError }: ApprovalFormProps) {
     const form = useForm<ApprovalFormValues>({
-        amount: receipt.declaredAmount,
+        amount: amountInput(receipt.declaredAmount),
         currency: receipt.declaredCurrency,
         rate: '',
         note: '',
@@ -44,7 +46,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
     const { preview, error, loading } = useApprovalPreview(
         approval.previewUrl,
         { amount: form.data.amount, currency: form.data.currency, rate: form.data.rate },
-        { amount: receipt.declaredAmount, currency: receipt.declaredCurrency, rate: '', preview: initialPreview, error: initialError },
+        { amount: amountInput(receipt.declaredAmount), currency: receipt.declaredCurrency, rate: '', preview: initialPreview, error: initialError },
         form.errors.confirm_stale_rate ?? '',
     );
 
@@ -65,7 +67,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
                     name="amount"
                     inputMode="decimal"
                     value={form.data.amount}
-                    onChange={(event) => form.setData('amount', event.target.value)}
+                    onChange={(event) => form.setData('amount', typedAmount(event))}
                     error={form.errors.amount}
                     hint={`El cliente declaró ${receipt.declared}.`}
                 />
@@ -87,7 +89,7 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
                     name="rate"
                     inputMode="decimal"
                     value={form.data.rate}
-                    onChange={(event) => form.setData('rate', event.target.value)}
+                    onChange={(event) => form.setData('rate', typedAmount(event, RATE_DECIMALS))}
                     error={form.errors.rate}
                     hint={
                         rate === null

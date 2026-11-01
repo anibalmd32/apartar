@@ -125,6 +125,18 @@ final class ExchangeRateSettingsTest extends TestCase
         $this->assertSame('55.00', $this->settingOf(SettingKey::ExchangeRateManual));
     }
 
+    public function test_a_manual_rate_written_the_venezuelan_way_is_understood(): void
+    {
+        $this->actingAs($this->owner())
+            ->put('/backoffice/ajustes/tasa', [
+                'exchange_rate_source' => 'manual',
+                'exchange_rate_manual' => '1.234,56',
+            ])
+            ->assertRedirect('/backoffice/ajustes');
+
+        $this->assertSame('1234.56', $this->settingOf(SettingKey::ExchangeRateManual));
+    }
+
     public function test_a_manual_rate_never_reaches_the_platform_table(): void
     {
         $this->actingAs($this->owner())

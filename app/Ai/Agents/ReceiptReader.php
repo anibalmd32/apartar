@@ -23,7 +23,7 @@ final class ReceiptReader implements Agent, HasStructuredOutput
             Lees capturas de comprobantes de pago hechos en Venezuela: pago móvil, transferencia bancaria, Zelle, Binance o depósitos.
             Extrae solo lo que se lea con claridad en la imagen. Si un dato no aparece o no se lee bien, devuelve una cadena vacía; nunca lo adivines.
 
-            - amount: el monto pagado, con punto decimal y hasta dos decimales, sin separador de miles ni símbolo. «Bs. 22.231,38» es «22231.38»; «$25,00» es «25.00».
+            - amount: el monto pagado al estilo venezolano, sin símbolo ni moneda: punto como separador de miles, coma como separador decimal y siempre dos decimales. «Bs. 22.231,38» es «22.231,38»; «$25» es «25,00»; «1500.5 USDT» es «1.500,50». Si el comprobante usa el estilo estadounidense (coma para miles, punto para decimales), conviértelo: «$1,234.56» es «1.234,56».
             - currency: «VES» si el monto está en bolívares (Bs., VES, Bs.D) y «USD» si está en dólares ($, USD, USDT). Vacío si no se sabe.
             - paid_on: la fecha de la operación en formato AAAA-MM-DD. Las fechas venezolanas suelen escribirse día/mes/año.
             - reference: el número de referencia, operación o confirmación, tal como aparece, sin espacios.
@@ -39,7 +39,7 @@ final class ReceiptReader implements Agent, HasStructuredOutput
     public function schema(JsonSchema $schema): array
     {
         return [
-            'amount' => $schema->string()->description('Monto con punto decimal, o vacío.')->required(),
+            'amount' => $schema->string()->description('Monto al estilo venezolano (1.234,56), o vacío.')->required(),
             'currency' => $schema->string()->description('USD, VES o vacío.')->required(),
             'paid_on' => $schema->string()->description('Fecha AAAA-MM-DD, o vacío.')->required(),
             'reference' => $schema->string()->description('Referencia de la operación, o vacío.')->required(),

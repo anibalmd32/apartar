@@ -17,7 +17,7 @@ export function availableLabels(money: MoneyView): string[] {
 }
 
 export function amountInput(canonical: string): string {
-    const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(canonical.trim());
+    const match = /^(\d+)(?:\.(\d{1,8}))?$/.exec(canonical.trim());
 
     if (match === null) {
         return canonical;

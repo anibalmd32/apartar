@@ -36,6 +36,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Queries\InventoryFilters;
 use App\Support\CatalogShareLink;
+use App\Support\DecimalInput;
 use App\Support\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -271,7 +272,7 @@ final class ProductController extends Controller
         $value = $request->query('compare_at_price');
 
         try {
-            return is_string($value) && trim($value) !== '' ? Money::fromDecimalString(trim($value)) : null;
+            return is_string($value) && trim($value) !== '' ? Money::fromDecimalString(DecimalInput::normalize(trim($value))) : null;
         } catch (InvalidArgumentException) {
             return null;
         }
@@ -283,7 +284,7 @@ final class ProductController extends Controller
 
         if (is_string($value) && trim($value) !== '') {
             try {
-                return Money::fromDecimalString(trim($value));
+                return Money::fromDecimalString(DecimalInput::normalize(trim($value)));
             } catch (InvalidArgumentException) {
                 return new Money(0);
             }

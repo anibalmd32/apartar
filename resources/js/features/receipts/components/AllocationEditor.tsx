@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { SelectField } from '@/components/ui/select-field';
 import { type AllocationRow, allocationProblem, centsToInput, formatCents } from '@/features/receipts/lib/allocation';
+import { typedAmount } from '@/lib/amount-typing';
 import { type ReallocationOptions } from '@/types/layaway-backoffice';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent, useId, useState } from 'react';
@@ -90,7 +91,7 @@ export function AllocationEditor({ options }: { options: ReallocationOptions }) 
                                         form.setData(
                                             'allocations',
                                             form.data.allocations.map((allocation, at) =>
-                                                at === index ? { ...allocation, amount: event.target.value } : allocation,
+                                                at === index ? { ...allocation, amount: typedAmount(event) } : allocation,
                                             ),
                                         )
                                     }

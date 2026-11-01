@@ -4,6 +4,8 @@ import { DateField } from '@/components/ui/date-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { ReceiptDropzone } from '@/features/subscription/components/ReceiptDropzone';
+import { typedAmount } from '@/lib/amount-typing';
+import { amountInput } from '@/lib/money';
 import { type InvoiceRow, type InvoicesPageProps } from '@/types/invoice';
 import { useForm } from '@inertiajs/react';
 
@@ -30,7 +32,7 @@ export function PayInvoiceForm({
         bank: '',
         reference: '',
         paidAt: new Date().toISOString().slice(0, 10),
-        amount: (pending.cents / 100).toFixed(2),
+        amount: amountInput((pending.cents / 100).toFixed(2)),
         currency: 'USD',
         file: null,
     });
@@ -74,7 +76,7 @@ export function PayInvoiceForm({
                     label="Importe"
                     inputMode="decimal"
                     value={data.amount}
-                    onChange={(event) => setData('amount', event.target.value)}
+                    onChange={(event) => setData('amount', typedAmount(event))}
                     error={errors.amount}
                 />
                 <SelectField

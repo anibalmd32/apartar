@@ -12,6 +12,7 @@ use App\Models\Bank;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Rules\RealMimeType;
+use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -23,6 +24,11 @@ final class SubmitSubscriptionReceiptRequest extends FormRequest
     public function authorize(): bool
     {
         return Gate::allows('uploadPaymentProof', Subscription::query()->firstOrFail());
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(DecimalInput::normalizeKeys($this->all(), ['amount']));
     }
 
     /**

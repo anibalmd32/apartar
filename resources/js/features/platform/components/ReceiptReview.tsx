@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { formatAmountTyping, RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PendingSubscriptionReceipt } from '@/types/platform';
@@ -18,7 +19,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt }) {
     const [mode, setMode] = useState<'approve' | 'reject'>('approve');
-    const approve = useForm({ settledAmount: receipt.outstanding.usd.replace(/[^\d.]/g, ''), settledCurrency: 'USD', rate: '' });
+    const approve = useForm({ settledAmount: formatAmountTyping(receipt.outstanding.usd), settledCurrency: 'USD', rate: '' });
     const reject = useForm({ reason: '' });
 
     const tab = (value: typeof mode, label: string) => (
@@ -71,7 +72,7 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
                             aria-label="Importe conciliado"
                             inputMode="decimal"
                             value={approve.data.settledAmount}
-                            onChange={(event) => approve.setData('settledAmount', event.target.value)}
+                            onChange={(event) => approve.setData('settledAmount', typedAmount(event))}
                         />
                         <select
                             className="select w-full"
@@ -88,7 +89,7 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
                             placeholder="Tasa"
                             inputMode="decimal"
                             value={approve.data.rate}
-                            onChange={(event) => approve.setData('rate', event.target.value)}
+                            onChange={(event) => approve.setData('rate', typedAmount(event, RATE_DECIMALS))}
                         />
                     </div>
                     {Object.values(approve.errors).map((error) => (

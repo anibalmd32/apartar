@@ -9,6 +9,7 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Models\Layaway;
 use App\Models\Payment;
+use App\Support\DecimalInput;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class ReallocatePaymentRequest extends FormRequest
@@ -19,6 +20,18 @@ final class ReallocatePaymentRequest extends FormRequest
         $layaway = $payment instanceof Payment ? Layaway::query()->find($payment->layaway_id) : null;
 
         return $layaway instanceof Layaway && $this->user()?->can('manage', $layaway) === true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $allocations = $this->input('allocations');
+
+        if (is_array($allocations)) {
+            $this->merge(['allocations' => array_map(
+                fn (mixed $row): mixed => is_array($row) ? [...$row, ...DecimalInput::normalizeKeys($row, ['amount'])] : $row,
+                $allocations,
+            )]);
+        }
     }
 
     /**

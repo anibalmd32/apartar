@@ -3,6 +3,7 @@ import { TextField } from '@/components/ui/text-field';
 import { FinancingPlanPreview } from '@/features/products/components/FinancingPlanPreview';
 import { FrequencyField } from '@/features/products/components/FrequencyField';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
+import { typedAmount } from '@/lib/amount-typing';
 import { type FinancingPlanView } from '@/types/product';
 
 interface ProductPricingFieldsProps extends ProductFieldsProps {
@@ -19,7 +20,7 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     prefix="$"
                     inputMode="decimal"
                     value={data.price}
-                    onChange={(event) => setData('price', event.target.value)}
+                    onChange={(event) => setData('price', typedAmount(event))}
                     error={errors.price}
                     autoComplete="off"
                     required
@@ -31,7 +32,7 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     prefix="$"
                     inputMode="decimal"
                     value={data.compare_at_price}
-                    onChange={(event) => setData('compare_at_price', event.target.value)}
+                    onChange={(event) => setData('compare_at_price', typedAmount(event))}
                     error={errors.compare_at_price}
                     hint="Tiene que ser mayor que el precio de venta, o la oferta sería falsa."
                     autoComplete="off"
@@ -45,7 +46,7 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     prefix="$"
                     inputMode="decimal"
                     value={data.down_payment}
-                    onChange={(event) => setData('down_payment', event.target.value)}
+                    onChange={(event) => setData('down_payment', typedAmount(event))}
                     error={errors.down_payment}
                     hint={
                         plan !== null && Number(plan.downPayment.cents) === 0
