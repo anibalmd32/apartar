@@ -66,7 +66,9 @@ final class CreateCustomerAction
         $customer->restore();
         $customer->forceFill([
             'full_name' => $contact->fullName,
-            'phone' => $contact->phone->value,
+            'first_name' => $contact->firstName,
+            'last_name' => $contact->lastName,
+            'phone' => $contact->phone?->value,
             'email' => $contact->email ?? $customer->email,
             'terms_accepted_at' => $consent->acceptedAt,
             'terms_ip_address' => $consent->ipAddress,

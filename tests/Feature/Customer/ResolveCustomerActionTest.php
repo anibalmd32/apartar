@@ -93,11 +93,13 @@ final class ResolveCustomerActionTest extends TestCase
         $this->assertSame(2, Customer::query()->where('email', 'casa@ejemplo.test')->count());
     }
 
-    public function test_the_phone_is_mandatory(): void
+    public function test_the_phone_is_optional_but_a_written_one_must_be_valid(): void
     {
+        $this->assertNull(CustomerContactData::fromInput('V12345678', 'María González', '', null)->phone);
+
         try {
-            CustomerContactData::fromInput('V12345678', 'María González', '', null);
-            $this->fail('Se construyó un contacto sin teléfono.');
+            CustomerContactData::fromInput('V12345678', 'María González', '12345', null);
+            $this->fail('Se construyó un contacto con un teléfono inválido.');
         } catch (InvalidPhoneNumberException) {
         }
 
@@ -107,7 +109,7 @@ final class ResolveCustomerActionTest extends TestCase
         $this->assertSame('phone', $phone->getName());
         $this->assertInstanceOf(ReflectionNamedType::class, $type);
         $this->assertSame(PhoneNumber::class, $type->getName());
-        $this->assertFalse($type->allowsNull(), 'El teléfono del contacto admite null, y es obligatorio.');
+        $this->assertTrue($type->allowsNull(), 'El negocio puede cargar clientes sin teléfono.');
 
         $this->assertSame(0, Customer::query()->count());
     }

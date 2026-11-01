@@ -3,7 +3,7 @@ import { NewCustomerFields, type NewCustomerValues } from '@/features/layaway/co
 import { bo } from '@/lib/surfaces';
 import { useForm } from '@inertiajs/react';
 
-const EMPTY: NewCustomerValues = { full_name: '', document_number: '', phone: '', email: '', terms_accepted: false };
+const EMPTY: NewCustomerValues = { first_name: '', last_name: '', document_number: '', phone: '', email: '', terms_accepted: false };
 
 interface NewCustomerDialogProps {
     open: boolean;

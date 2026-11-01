@@ -6,6 +6,8 @@ const PHONE_SEPARATORS = /[\s.()\p{Pd}]+/gu;
 
 export const NO_DOCUMENT = 'Sin cédula';
 
+export const NO_PHONE = 'Sin teléfono';
+
 export function formatDocumentNumber(raw: string | null): string {
     if (raw === null) {
         return NO_DOCUMENT;
@@ -30,7 +32,11 @@ export function formatDocumentNumber(raw: string | null): string {
     return letter === '' ? body : `${letter}-${body}`;
 }
 
-export function formatPhone(raw: string): string {
+export function formatPhone(raw: string | null): string {
+    if (raw === null) {
+        return NO_PHONE;
+    }
+
     const compact = raw.replace(PHONE_SEPARATORS, '');
     const match = /^(\+?)(\d*)$/.exec(compact);
 

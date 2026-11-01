@@ -3,8 +3,8 @@ import { type MoneyView } from '@/types/money';
 
 export interface CollectionCustomer {
     readonly name: string;
-    readonly phone: string;
-    readonly phoneLabel: string;
+    readonly phone: string | null;
+    readonly phoneLabel: string | null;
     readonly url?: string;
     readonly chatUrl?: string | null;
 }

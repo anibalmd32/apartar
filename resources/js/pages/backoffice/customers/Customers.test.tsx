@@ -165,8 +165,12 @@ it('«Nuevo cliente» abre el alta y la envía al directorio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Agregar un cliente' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Nuevo cliente' });
-    fireEvent.change(within(dialog).getByLabelText(/Nombre y apellido/), { target: { value: 'Luis Rojas' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Nombre/), { target: { value: 'Luis' } });
+    fireEvent.change(within(dialog).getByLabelText(/Apellido/), { target: { value: 'Rojas' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Agregar cliente' }));
 
-    expect(post).toHaveBeenCalledWith('/backoffice/clientes', expect.objectContaining({ full_name: 'Luis Rojas', terms_accepted: false }));
+    expect(post).toHaveBeenCalledWith(
+        '/backoffice/clientes',
+        expect.objectContaining({ first_name: 'Luis', last_name: 'Rojas', terms_accepted: false }),
+    );
 });

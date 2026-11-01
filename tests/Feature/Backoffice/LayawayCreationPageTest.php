@@ -165,6 +165,18 @@ final class LayawayCreationPageTest extends TestCase
         $this->get(route('layaways.show', $layaway))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('customer.documentNumber', null));
     }
 
+    public function test_a_word_of_mouth_customer_needs_only_a_first_name(): void
+    {
+        $this->actingAs($this->member)->from(route('layaways.create'))
+            ->post(route('layaways.store'), $this->newCustomer(['first_name' => 'Auris', 'last_name' => '', 'document_number' => '', 'phone' => '']))
+            ->assertSessionHasNoErrors();
+
+        $customer = $this->withinOrganization($this->organization, fn (): Customer => Customer::query()->where('full_name', 'Auris')->sole());
+        $this->assertSame(['Auris', null, null, null], [$customer->first_name, $customer->last_name, $customer->phone, $customer->document_number]);
+
+        $this->post(route('layaways.store'), $this->newCustomer(['first_name' => '', 'idempotency_key' => (string) Str::uuid()]))->assertSessionHasErrors('first_name');
+    }
+
     public function test_a_payment_at_creation_activates_it_and_is_summarised(): void
     {
         $this->actingAs($this->member)->post(route('layaways.store'), $this->payload($this->payment('80.00')))
@@ -324,7 +336,8 @@ final class LayawayCreationPageTest extends TestCase
         return $this->payload([
             'customer_mode' => 'new',
             'customer' => '',
-            'full_name' => 'Pedro Rojas',
+            'first_name' => 'Pedro',
+            'last_name' => 'Rojas',
             'document_number' => 'V-23456789',
             'phone' => '0424-7654321',
             'email' => '',

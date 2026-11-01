@@ -149,7 +149,7 @@ final class CollectionController extends Controller
     }
 
     /**
-     * @return array{name: string, phone: string, phoneLabel: string}|null
+     * @return array{name: string, phone: string|null, phoneLabel: string|null}|null
      */
     private function customerOf(?Customer $customer): ?array
     {

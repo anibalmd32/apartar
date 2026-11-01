@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { NO_PHONE } from '@/lib/identity-format';
 import {
     type CollectionCustomer,
     type CollectionDownPaymentRow,
@@ -22,7 +23,7 @@ function CustomerCell({ customer }: { customer: CollectionCustomer | null }) {
     }
 
     const copy = () => {
-        void navigator.clipboard?.writeText(customer.phone).then(() => setCopied(true));
+        void navigator.clipboard?.writeText(customer.phone ?? '').then(() => setCopied(true));
     };
 
     return (
@@ -30,20 +31,24 @@ function CustomerCell({ customer }: { customer: CollectionCustomer | null }) {
             <Avatar name={customer.name} size={32} tone="accent" />
             <div className="flex min-w-0 flex-col">
                 <span className="font-semibold">{customer.name}</span>
-                <span className="text-ink-3 flex items-center gap-1.5 text-xs">
-                    <a href={`tel:${customer.phone}`} className="hover:text-base-content">
-                        {customer.phoneLabel}
-                    </a>
-                    <button
-                        type="button"
-                        className="hit-area hover:text-base-content rounded p-0.5"
-                        onClick={copy}
-                        aria-label={`Copiar el teléfono de ${customer.name}`}
-                        title={copied ? 'Copiado' : 'Copiar'}
-                    >
-                        <Icon icon={copied ? cilCheckAlt : cilCopy} size={12} />
-                    </button>
-                </span>
+                {customer.phone === null ? (
+                    <span className="text-ink-3 text-xs">{NO_PHONE}</span>
+                ) : (
+                    <span className="text-ink-3 flex items-center gap-1.5 text-xs">
+                        <a href={`tel:${customer.phone}`} className="hover:text-base-content">
+                            {customer.phoneLabel}
+                        </a>
+                        <button
+                            type="button"
+                            className="hit-area hover:text-base-content rounded p-0.5"
+                            onClick={copy}
+                            aria-label={`Copiar el teléfono de ${customer.name}`}
+                            title={copied ? 'Copiado' : 'Copiar'}
+                        >
+                            <Icon icon={copied ? cilCheckAlt : cilCopy} size={12} />
+                        </button>
+                    </span>
+                )}
             </div>
         </div>
     );

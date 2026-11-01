@@ -103,7 +103,8 @@ final class DeleteCustomerActionTest extends TestCase
         $this->actingAs($this->member)->delete(route('customers.destroy', $cancelled->customer_id));
 
         $this->actingAs($this->member)->post(route('customers.store'), [
-            'full_name' => 'Luis Rojas',
+            'first_name' => 'Luis',
+            'last_name' => 'Rojas',
             'document_number' => 'V-23456789',
             'phone' => '0414-1112233',
             'terms_accepted' => true,
@@ -118,7 +119,7 @@ final class DeleteCustomerActionTest extends TestCase
         $foreign = $this->withinOrganization($this->neighbourOrganization(), fn (): Customer => Customer::factory()->create());
         $this->withoutOrganization();
 
-        $this->actingAs($this->member)->put(route('customers.update', $foreign), ['full_name' => 'X', 'phone' => '0414-1112233'])->assertNotFound();
+        $this->actingAs($this->member)->put(route('customers.update', $foreign), ['first_name' => 'X', 'phone' => '0414-1112233'])->assertNotFound();
         $this->actingAs($this->member)->delete(route('customers.destroy', $foreign))->assertNotFound();
     }
 

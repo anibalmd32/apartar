@@ -1,7 +1,7 @@
 import { IconChip } from '@/components/ui/icon-chip';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
-import { NO_DOCUMENT } from '@/lib/identity-format';
+import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
 import { cn } from '@/lib/utils';
 import { type CustomerShowProps } from '@/types/customers';
 import { type MoneyView } from '@/types/money';
@@ -30,9 +30,13 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
                 {customer.document ?? NO_DOCUMENT}
             </Contact>
             <Contact icon={cilPhone} label="Teléfono">
-                <a href={`tel:${customer.phone}`} className="hover:underline">
-                    {customer.phoneLabel}
-                </a>
+                {customer.phone === null ? (
+                    NO_PHONE
+                ) : (
+                    <a href={`tel:${customer.phone}`} className="hover:underline">
+                        {customer.phoneLabel}
+                    </a>
+                )}
             </Contact>
             <Contact icon={cilEnvelopeClosed} label="Correo">
                 {customer.email ?? 'Sin correo'}

@@ -4,7 +4,8 @@ import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 
 export type NewCustomerValues = {
-    full_name: string;
+    first_name: string;
+    last_name: string;
     document_number: string;
     phone: string;
     email: string;
@@ -28,14 +29,23 @@ export function NewCustomerFields({
 }: NewCustomerFieldsProps) {
     return (
         <div className="flex flex-col gap-1">
-            <TextField
-                label="Nombre y apellido"
-                name="full_name"
-                value={values.full_name}
-                onChange={(event) => onChange({ full_name: event.target.value })}
-                error={errors.full_name}
-                required
-            />
+            <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+                <TextField
+                    label="Nombre"
+                    name="first_name"
+                    value={values.first_name}
+                    onChange={(event) => onChange({ first_name: event.target.value })}
+                    error={errors.first_name}
+                    required
+                />
+                <TextField
+                    label="Apellido (opcional)"
+                    name="last_name"
+                    value={values.last_name}
+                    onChange={(event) => onChange({ last_name: event.target.value })}
+                    error={errors.last_name}
+                />
+            </div>
             <DocumentField
                 label="Cédula o RIF (opcional)"
                 name="document_number"
@@ -45,12 +55,11 @@ export function NewCustomerFields({
                 hint={documentHint}
             />
             <PhoneField
-                label="Teléfono celular"
+                label="Teléfono celular (opcional)"
                 name="phone"
                 value={values.phone}
                 onChange={(value) => onChange({ phone: value })}
                 error={errors.phone}
-                required
             />
             <TextField
                 label="Correo (opcional)"

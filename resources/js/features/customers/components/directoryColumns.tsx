@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
-import { NO_DOCUMENT } from '@/lib/identity-format';
+import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
 import { type CustomerDirectoryRow } from '@/types/customers';
 import { type DataTableColumn } from '@/types/data-table';
 import { cilLink } from '@coreui/icons';
@@ -38,11 +38,14 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
     {
         id: 'phone',
         header: 'Teléfono',
-        cell: (row) => (
-            <a href={`tel:${row.phone}`} className="text-ink-2 whitespace-nowrap hover:underline">
-                {row.phoneLabel}
-            </a>
-        ),
+        cell: (row) =>
+            row.phone === null ? (
+                <span className="text-ink-3 whitespace-nowrap">{NO_PHONE}</span>
+            ) : (
+                <a href={`tel:${row.phone}`} className="text-ink-2 whitespace-nowrap hover:underline">
+                    {row.phoneLabel}
+                </a>
+            ),
     },
     { id: 'active', header: 'Activos', align: 'end', cell: (row) => row.activeLayaways },
     { id: 'committed', header: 'Comprometido', align: 'end', cell: (row) => <MoneyLabel money={row.committed} className="text-ink-2" compact /> },

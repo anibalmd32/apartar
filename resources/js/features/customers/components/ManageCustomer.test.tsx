@@ -27,19 +27,21 @@ vi.mock('@inertiajs/react', async () => {
     };
 });
 
-it('edita nombre, cédula, teléfono y correo', () => {
+it('edita nombre y apellido por separado, cédula, teléfono y correo', () => {
     const { customer, manage } = profileProps();
     render(<ManageCustomer customer={customer} manage={manage} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Editar cliente' });
-    fireEvent.change(within(dialog).getByLabelText(/Nombre y apellido/), { target: { value: 'María G. González' } });
+    expect(within(dialog).getByLabelText(/^Nombre/)).toHaveValue('María');
+    expect(within(dialog).getByLabelText(/Apellido/)).toHaveValue('González');
+    fireEvent.change(within(dialog).getByLabelText(/^Nombre/), { target: { value: 'María G.' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Guardar' }));
 
     expect(put).toHaveBeenCalledWith(
         '/backoffice/clientes/7',
-        expect.objectContaining({ full_name: 'María G. González', document_number: customer.document, phone: customer.phone }),
+        expect.objectContaining({ first_name: 'María G.', last_name: 'González', document_number: customer.document, phone: customer.phone }),
     );
 });
 

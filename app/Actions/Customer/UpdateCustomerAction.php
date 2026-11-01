@@ -18,7 +18,7 @@ final class UpdateCustomerAction
 
     public const PROCESS = 'ficha del cliente en el backoffice';
 
-    private const FIELDS = ['full_name', 'document_number', 'phone', 'email'];
+    private const FIELDS = ['full_name', 'first_name', 'last_name', 'document_number', 'phone', 'email'];
 
     /**
      * @throws CustomerAlreadyExistsException
@@ -43,9 +43,11 @@ final class UpdateCustomerAction
 
             $locked->forceFill([
                 'full_name' => $contact->fullName,
+                'first_name' => $contact->firstName,
+                'last_name' => $contact->lastName,
                 'document_number' => $document->value ?? $locked->document_number,
                 'document_kind' => $document->kind ?? $locked->document_kind,
-                'phone' => $contact->phone->value,
+                'phone' => $contact->phone?->value,
                 'email' => $contact->email,
             ])->save();
 

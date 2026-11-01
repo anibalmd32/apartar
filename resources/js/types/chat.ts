@@ -44,7 +44,7 @@ export interface ConversationRow {
 
 export interface ThreadContext {
     readonly customerName: string;
-    readonly phone: string;
+    readonly phone: string | null;
     readonly activeLayaways: number;
     readonly remaining: string;
     readonly overdueInstallments: number;

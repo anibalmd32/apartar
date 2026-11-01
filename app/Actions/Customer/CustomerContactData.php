@@ -14,9 +14,15 @@ final readonly class CustomerContactData
 {
     public const MAX_NAME_LENGTH = 200;
 
+    public const MAX_NAME_PART_LENGTH = 100;
+
     public const MAX_EMAIL_LENGTH = 255;
 
     public string $fullName;
+
+    public ?string $firstName;
+
+    public ?string $lastName;
 
     public ?string $email;
 
@@ -26,10 +32,14 @@ final readonly class CustomerContactData
     public function __construct(
         public ?DocumentNumber $documentNumber,
         string $fullName,
-        public PhoneNumber $phone,
+        public ?PhoneNumber $phone,
         ?string $email,
+        ?string $firstName = null,
+        ?string $lastName = null,
     ) {
         $this->fullName = self::normaliseName($fullName);
+        $this->firstName = $firstName === null ? null : self::normaliseName($firstName);
+        $this->lastName = self::optionalName($lastName);
         $this->email = self::normaliseEmail($email);
     }
 
@@ -38,16 +48,47 @@ final readonly class CustomerContactData
      * @throws InvalidPhoneNumberException
      * @throws InvalidArgumentException
      */
-    public static function fromInput(?string $documentNumber, string $fullName, string $phone, ?string $email): self
+    public static function fromInput(?string $documentNumber, string $fullName, ?string $phone, ?string $email): self
+    {
+        return new self(self::document($documentNumber), $fullName, self::phone($phone), $email);
+    }
+
+    /**
+     * @throws InvalidDocumentNumberException
+     * @throws InvalidPhoneNumberException
+     * @throws InvalidArgumentException
+     */
+    public static function fromParts(?string $documentNumber, string $firstName, ?string $lastName, ?string $phone, ?string $email): self
+    {
+        return new self(
+            self::document($documentNumber),
+            trim($firstName.' '.($lastName ?? '')),
+            self::phone($phone),
+            $email,
+            $firstName,
+            $lastName,
+        );
+    }
+
+    private static function document(?string $documentNumber): ?DocumentNumber
     {
         $documentNumber = $documentNumber === null ? '' : trim($documentNumber);
 
-        return new self(
-            $documentNumber === '' ? null : DocumentNumber::fromInput($documentNumber),
-            $fullName,
-            PhoneNumber::fromInput($phone),
-            $email,
-        );
+        return $documentNumber === '' ? null : DocumentNumber::fromInput($documentNumber);
+    }
+
+    private static function phone(?string $phone): ?PhoneNumber
+    {
+        $phone = $phone === null ? '' : trim($phone);
+
+        return $phone === '' ? null : PhoneNumber::fromInput($phone);
+    }
+
+    private static function optionalName(?string $name): ?string
+    {
+        $name = $name === null ? '' : trim($name);
+
+        return $name === '' ? null : self::normaliseName($name);
     }
 
     private static function normaliseName(string $fullName): string

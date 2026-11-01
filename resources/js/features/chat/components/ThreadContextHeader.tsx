@@ -1,5 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
+import { NO_PHONE } from '@/lib/identity-format';
 import { cn } from '@/lib/utils';
 import { type ThreadContext } from '@/types/chat';
 import { cilChevronRight, cilWallet } from '@coreui/icons';
@@ -21,7 +22,7 @@ export function ThreadContextPanel({ context, className }: { context: ThreadCont
         ...(context.nextDueDate
             ? [{ label: 'Próximo vencimiento', value: `${context.nextDueDate.slice(8, 10)}/${context.nextDueDate.slice(5, 7)}` }]
             : []),
-        { label: 'Teléfono', value: context.phone },
+        { label: 'Teléfono', value: context.phone ?? NO_PHONE },
     ];
 
     return (
@@ -78,7 +79,8 @@ export function ThreadContextHeader({ context, className }: { context: ThreadCon
                     {plural(context.activeLayaways, 'apartado', 'apartados')} · resta {context.remaining}
                 </span>
                 <span className={cn('truncate text-xs', context.overdueInstallments > 0 ? 'text-error' : 'text-ink-3')}>
-                    {plural(context.overdueInstallments, 'cuota vencida', 'cuotas vencidas')} · {context.phone}
+                    {plural(context.overdueInstallments, 'cuota vencida', 'cuotas vencidas')}
+                    {context.phone === null ? null : ` · ${context.phone}`}
                 </span>
             </span>
             <Icon icon={cilChevronRight} size={14} className="text-ink-3" />

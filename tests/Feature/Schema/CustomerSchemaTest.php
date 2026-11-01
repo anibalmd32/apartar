@@ -51,10 +51,12 @@ it('declara customers según §4 bloque 4', function (): void {
     );
 });
 
-it('exige teléfono y deja el correo opcional', function (): void {
+it('deja opcionales el teléfono, el apellido y el correo, porque el negocio a veces solo anota el nombre', function (): void {
     $columns = SchemaInspector::columns('customers');
 
-    expect($columns['phone']['nullable'])->toBeFalse();
+    expect($columns['phone']['nullable'])->toBeTrue();
+    expect($columns['first_name']['nullable'])->toBeTrue();
+    expect($columns['last_name']['nullable'])->toBeTrue();
     expect($columns['email']['nullable'])->toBeTrue();
     expect($columns['account_id']['nullable'])->toBeTrue();
 });

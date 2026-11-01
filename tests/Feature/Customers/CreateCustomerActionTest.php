@@ -57,11 +57,26 @@ final class CreateCustomerActionTest extends TestCase
     public function test_the_document_is_optional_and_several_customers_can_lack_it(): void
     {
         $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => ''])->assertSessionHasNoErrors();
-        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => '', 'full_name' => 'Carla Rojas'])->assertSessionHasNoErrors();
+        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => '', 'first_name' => 'Carla'])->assertSessionHasNoErrors();
 
         $documents = $this->withinOrganization($this->organization, fn (): array => Customer::query()->orderBy('id')->get()->map(fn (Customer $customer): array => [$customer->full_name, $customer->document_number, $customer->document_kind])->all());
 
         $this->assertSame([['Luis Rojas', null, null], ['Carla Rojas', null, null]], $documents);
+    }
+
+    public function test_phone_and_last_name_are_optional_and_a_phone_may_repeat(): void
+    {
+        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => '', 'last_name' => '', 'phone' => ''])->assertSessionHasNoErrors();
+        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => '', 'first_name' => 'Ana'])->assertSessionHasNoErrors();
+        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => '', 'first_name' => 'Pedro'])->assertSessionHasNoErrors();
+
+        $rows = $this->withinOrganization($this->organization, fn (): array => Customer::query()->orderBy('id')->get()->map(fn (Customer $customer): array => [$customer->full_name, $customer->first_name, $customer->last_name, $customer->phone])->all());
+
+        $this->assertSame([
+            ['Luis', 'Luis', null, null],
+            ['Ana Rojas', 'Ana', 'Rojas', '+584141112233'],
+            ['Pedro Rojas', 'Pedro', 'Rojas', '+584141112233'],
+        ], $rows);
     }
 
     public function test_a_document_already_in_the_directory_is_refused_without_touching_the_existing_customer(): void
@@ -93,8 +108,8 @@ final class CreateCustomerActionTest extends TestCase
     public function test_the_consent_must_be_declared_and_the_contact_valid(): void
     {
         $this->actingAs($this->member)
-            ->post(route('customers.store'), [...$this->payload(), 'terms_accepted' => false, 'document_number' => 'X1', 'phone' => '123', 'full_name' => ''])
-            ->assertSessionHasErrors(['terms_accepted', 'document_number', 'phone', 'full_name']);
+            ->post(route('customers.store'), [...$this->payload(), 'terms_accepted' => false, 'document_number' => 'X1', 'phone' => '123', 'first_name' => ''])
+            ->assertSessionHasErrors(['terms_accepted', 'document_number', 'phone', 'first_name']);
 
         $this->assertSame(0, $this->withinOrganization($this->organization, fn (): int => Customer::query()->count()));
     }
@@ -123,7 +138,8 @@ final class CreateCustomerActionTest extends TestCase
     private function payload(): array
     {
         return [
-            'full_name' => 'Luis Rojas',
+            'first_name' => 'Luis',
+            'last_name' => 'Rojas',
             'document_number' => 'V-23456789',
             'phone' => '0414-1112233',
             'email' => 'luis@ejemplo.test',

@@ -82,6 +82,8 @@ export function profileProps(overrides: Partial<CustomerShowProps> = {}): Custom
         customer: {
             id: 7,
             name: 'María González',
+            firstName: 'María',
+            lastName: 'González',
             document: 'V-12.345.678',
             phone: '+584141234567',
             phoneLabel: '0414-1234567',

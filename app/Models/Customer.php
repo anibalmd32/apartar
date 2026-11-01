@@ -24,7 +24,9 @@ use NotificationChannels\WebPush\HasPushSubscriptions;
  * @property string|null $document_number
  * @property DocumentKind|null $document_kind
  * @property string $full_name
- * @property string $phone
+ * @property string|null $first_name
+ * @property string|null $last_name
+ * @property string|null $phone
  * @property string|null $email
  * @property int|null $account_id
  * @property \Illuminate\Support\Carbon|null $terms_accepted_at

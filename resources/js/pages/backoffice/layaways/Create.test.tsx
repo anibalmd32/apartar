@@ -121,7 +121,7 @@ it('no deja crear sin cliente y pide el consentimiento declarado para uno nuevo'
     expect(submit).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cliente nuevo' }));
-    fireEvent.change(screen.getByLabelText('Nombre y apellido'), { target: { value: 'Pedro Rojas' } });
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Pedro' } });
     expect(submit).toBeDisabled();
 
     fireEvent.click(screen.getByLabelText('El cliente aceptó las condiciones del apartado'));

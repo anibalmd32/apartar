@@ -30,9 +30,17 @@ it('usa las puertas que lanzan para documento y teléfono', function (string $do
     expect(fn () => CustomerContactData::fromInput($document, 'María González', $phone, null))->toThrow($exception);
 })->with([
     'documento inválido' => ['X-123', '04141234567', InvalidDocumentNumberException::class],
-    'teléfono vacío' => ['V12345678', '', InvalidPhoneNumberException::class],
     'teléfono inválido' => ['V12345678', '12345', InvalidPhoneNumberException::class],
 ]);
+
+it('arma el nombre completo con nombre y apellido, ambos opcionales menos el nombre, y deja vacíos el teléfono y la cédula', function (): void {
+    $alone = CustomerContactData::fromParts('', '  Auris ', '  ', '', null);
+    $both = CustomerContactData::fromParts(null, 'María  José', 'Pérez', '0414-1234567', null);
+
+    expect([$alone->fullName, $alone->firstName, $alone->lastName, $alone->phone, $alone->documentNumber])->toBe(['Auris', 'Auris', null, null, null]);
+    expect([$both->fullName, $both->firstName, $both->lastName, $both->phone?->value])->toBe(['María José Pérez', 'María José', 'Pérez', '+584141234567']);
+    expect(fn () => CustomerContactData::fromParts(null, ' ', 'Pérez', null, null))->toThrow(InvalidArgumentException::class);
+});
 
 it('rechaza un nombre vacío, uno que no cabe y un correo sin forma de correo', function (string $name, ?string $email): void {
     CustomerContactData::fromInput('V12345678', $name, '04141234567', $email);

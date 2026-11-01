@@ -27,9 +27,10 @@ final class UpdateCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name' => ['required', 'string', 'max:'.CustomerContactData::MAX_NAME_LENGTH],
+            'first_name' => ['required', 'string', 'max:'.CustomerContactData::MAX_NAME_PART_LENGTH],
+            'last_name' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_NAME_PART_LENGTH],
             'document_number' => ['nullable', 'string', new ValidDocumentNumber],
-            'phone' => ['required', 'string', new ValidVenezuelanPhone],
+            'phone' => ['nullable', 'string', new ValidVenezuelanPhone],
             'email' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_EMAIL_LENGTH, 'email:filter'],
         ];
     }
@@ -40,14 +41,15 @@ final class UpdateCustomerRequest extends FormRequest
     public function contact(Customer $customer): CustomerContactData
     {
         try {
-            return CustomerContactData::fromInput(
+            return CustomerContactData::fromParts(
                 $this->filled('document_number') ? $this->string('document_number')->toString() : $customer->document_number,
-                $this->string('full_name')->toString(),
+                $this->string('first_name')->toString(),
+                $this->string('last_name')->toString(),
                 $this->string('phone')->toString(),
                 $this->filled('email') ? $this->string('email')->toString() : null,
             );
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages(['full_name' => $exception->getMessage()]);
+            throw ValidationException::withMessages(['first_name' => $exception->getMessage()]);
         }
     }
 }

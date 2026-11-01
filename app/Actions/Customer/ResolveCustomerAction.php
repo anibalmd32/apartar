@@ -161,7 +161,9 @@ final class ResolveCustomerAction
     {
         $attributes = [
             'full_name' => $contact->fullName,
-            'phone' => $contact->phone->value,
+            'first_name' => $contact->firstName,
+            'last_name' => $contact->lastName,
+            'phone' => $contact->phone?->value,
             'terms_accepted_at' => $consent->acceptedAt,
             'terms_ip_address' => $consent->ipAddress,
             'terms_declared_by_user_id' => null,

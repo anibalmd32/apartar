@@ -7,8 +7,8 @@ export interface CustomerDirectoryRow {
     readonly url: string;
     readonly name: string;
     readonly document: string | null;
-    readonly phone: string;
-    readonly phoneLabel: string;
+    readonly phone: string | null;
+    readonly phoneLabel: string | null;
     readonly hasLinkedAccount: boolean;
     readonly activeLayaways: number;
     readonly committed: MoneyView;
@@ -70,7 +70,7 @@ export interface MergeCandidate {
     readonly id: number;
     readonly name: string;
     readonly document: string | null;
-    readonly phone: string;
+    readonly phone: string | null;
     readonly moves: {
         readonly layaways: number;
         readonly receipts: number;
@@ -86,9 +86,11 @@ export interface CustomerShowProps {
     readonly customer: {
         readonly id: number;
         readonly name: string;
+        readonly firstName: string;
+        readonly lastName: string | null;
         readonly document: string | null;
-        readonly phone: string;
-        readonly phoneLabel: string;
+        readonly phone: string | null;
+        readonly phoneLabel: string | null;
         readonly email: string | null;
         readonly createdAt: string | null;
         readonly termsAcceptedAt: string | null;

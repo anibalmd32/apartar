@@ -53,9 +53,10 @@ final class StoreLayawayRequest extends FormRequest
             'quantity' => ['required', 'integer', 'min:1', 'max:'.CreateLayawayData::MAX_QUANTITY],
             'customer_mode' => ['required', 'string', Rule::in(self::CUSTOMER_MODES)],
             'customer' => [Rule::requiredIf(! $new), 'nullable', 'integer'],
-            'full_name' => [Rule::requiredIf($new), 'nullable', 'string', 'max:'.CustomerContactData::MAX_NAME_LENGTH],
+            'first_name' => [Rule::requiredIf($new), 'nullable', 'string', 'max:'.CustomerContactData::MAX_NAME_PART_LENGTH],
+            'last_name' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_NAME_PART_LENGTH],
             'document_number' => ['nullable', 'string', ...($new ? [new ValidDocumentNumber] : [])],
-            'phone' => [Rule::requiredIf($new), 'nullable', 'string', ...($new ? [new ValidVenezuelanPhone] : [])],
+            'phone' => ['nullable', 'string', ...($new ? [new ValidVenezuelanPhone] : [])],
             'email' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_EMAIL_LENGTH, 'email:filter'],
             'terms_accepted' => $new ? ['accepted'] : ['nullable'],
             'window' => ['required', 'string', Rule::in(self::WINDOWS)],
@@ -86,7 +87,8 @@ final class StoreLayawayRequest extends FormRequest
             'product' => 'producto',
             'quantity' => 'cantidad',
             'customer' => 'cliente',
-            'full_name' => 'nombre',
+            'first_name' => 'nombre',
+            'last_name' => 'apellido',
             'document_number' => 'documento',
             'phone' => 'teléfono',
             'email' => 'correo',
@@ -166,14 +168,15 @@ final class StoreLayawayRequest extends FormRequest
     private function contact(): CustomerContactData
     {
         try {
-            return CustomerContactData::fromInput(
+            return CustomerContactData::fromParts(
                 $this->string('document_number')->toString(),
-                $this->string('full_name')->toString(),
+                $this->string('first_name')->toString(),
+                $this->string('last_name')->toString(),
                 $this->string('phone')->toString(),
                 $this->nullableString('email'),
             );
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages(['full_name' => $exception->getMessage()]);
+            throw ValidationException::withMessages(['first_name' => $exception->getMessage()]);
         }
     }
 

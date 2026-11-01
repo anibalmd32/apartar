@@ -155,6 +155,8 @@ final class CustomerShowController extends Controller
         return [
             'id' => (int) $customer->getKey(),
             'name' => $customer->full_name,
+            'firstName' => $customer->first_name ?? $customer->full_name,
+            'lastName' => $customer->last_name,
             'document' => $document instanceof DocumentNumber ? $document->formatted() : $customer->document_number,
             'phone' => $customer->phone,
             'phoneLabel' => $phone instanceof PhoneNumber ? $phone->formatted() : $customer->phone,

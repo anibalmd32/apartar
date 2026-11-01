@@ -44,7 +44,8 @@ export default function LayawayCreate({ products, selection, plan, customer, win
         quantity: selection.quantity,
         customer_mode: 'existing',
         customer: customer === null ? '' : String(customer.id),
-        full_name: '',
+        first_name: '',
+        last_name: '',
         document_number: '',
         phone: '',
         email: '',
@@ -94,7 +95,7 @@ export default function LayawayCreate({ products, selection, plan, customer, win
         set({ customer: option === null ? '' : String(option.id) });
     };
 
-    const customerMissing = data.customer_mode === 'existing' ? data.customer === '' : data.full_name.trim() === '' || !data.terms_accepted;
+    const customerMissing = data.customer_mode === 'existing' ? data.customer === '' : data.first_name.trim() === '' || !data.terms_accepted;
     const windowApplies = plan === null || plan.requiresDownPayment;
     const windowMissing = windowApplies && (data.window === 'hours' || data.window === 'days') && !(Number(data.window_value) > 0);
     const blocked =

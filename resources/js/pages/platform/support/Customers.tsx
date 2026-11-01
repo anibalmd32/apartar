@@ -1,5 +1,5 @@
 import PlatformLayout from '@/layouts/platform-layout';
-import { NO_DOCUMENT } from '@/lib/identity-format';
+import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
 import { pf } from '@/lib/surfaces';
 import { Link } from '@inertiajs/react';
 
@@ -38,7 +38,7 @@ export default function SupportCustomers({
                             <tr key={`${row.documentNumber}:${row.phone}`}>
                                 <td>{row.fullName}</td>
                                 <td>{row.documentNumber ?? NO_DOCUMENT}</td>
-                                <td>{row.phone}</td>
+                                <td>{row.phone ?? NO_PHONE}</td>
                                 <td>{row.email ?? '—'}</td>
                             </tr>
                         ))}

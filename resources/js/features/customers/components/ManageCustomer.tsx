@@ -9,7 +9,7 @@ import { cilPencil, cilTrash } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-type EditValues = { full_name: string; document_number: string; phone: string; email: string };
+type EditValues = { first_name: string; last_name: string; document_number: string; phone: string; email: string };
 
 interface ManageCustomerProps {
     customer: CustomerShowProps['customer'];
@@ -20,9 +20,10 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
     const [editing, setEditing] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const form = useForm<EditValues>({
-        full_name: customer.name,
+        first_name: customer.firstName,
+        last_name: customer.lastName ?? '',
         document_number: customer.document ?? '',
-        phone: customer.phone,
+        phone: customer.phone ?? '',
         email: customer.email ?? '',
     });
     const blocked = manage.liveLayaways > 0;
@@ -71,14 +72,23 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
                         save();
                     }}
                 >
-                    <TextField
-                        label="Nombre y apellido"
-                        name="full_name"
-                        value={form.data.full_name}
-                        onChange={(event) => form.setData('full_name', event.target.value)}
-                        error={form.errors.full_name}
-                        required
-                    />
+                    <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+                        <TextField
+                            label="Nombre"
+                            name="first_name"
+                            value={form.data.first_name}
+                            onChange={(event) => form.setData('first_name', event.target.value)}
+                            error={form.errors.first_name}
+                            required
+                        />
+                        <TextField
+                            label="Apellido (opcional)"
+                            name="last_name"
+                            value={form.data.last_name}
+                            onChange={(event) => form.setData('last_name', event.target.value)}
+                            error={form.errors.last_name}
+                        />
+                    </div>
                     <DocumentField
                         label="Cédula o RIF"
                         name="document_number"
@@ -92,12 +102,11 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
                         }
                     />
                     <PhoneField
-                        label="Teléfono celular"
+                        label="Teléfono celular (opcional)"
                         name="phone"
                         value={form.data.phone}
                         onChange={(value) => form.setData('phone', value)}
                         error={form.errors.phone}
-                        required
                     />
                     <TextField
                         label="Correo (opcional)"
