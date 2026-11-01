@@ -1,10 +1,11 @@
 import PlatformLayout from '@/layouts/platform-layout';
+import { NO_DOCUMENT } from '@/lib/identity-format';
 import { pf } from '@/lib/surfaces';
 import { Link } from '@inertiajs/react';
 
 interface CustomerRow {
     fullName: string;
-    documentNumber: string;
+    documentNumber: string | null;
     phone: string;
     email: string | null;
     createdAt: string | null;
@@ -36,7 +37,7 @@ export default function SupportCustomers({
                         {customers.map((row) => (
                             <tr key={`${row.documentNumber}:${row.phone}`}>
                                 <td>{row.fullName}</td>
-                                <td>{row.documentNumber}</td>
+                                <td>{row.documentNumber ?? NO_DOCUMENT}</td>
                                 <td>{row.phone}</td>
                                 <td>{row.email ?? '—'}</td>
                             </tr>

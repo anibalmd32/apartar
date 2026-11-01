@@ -65,7 +65,7 @@ export interface ReceiptInboxRow {
     readonly submittedAt: string;
     readonly paidAt: string;
     readonly layaway: { readonly code: string; readonly url: string; readonly cancelled: boolean } | null;
-    readonly customer: { readonly fullName: string; readonly documentNumber: string } | null;
+    readonly customer: { readonly fullName: string; readonly documentNumber: string | null } | null;
     readonly method: PaymentMethod;
     readonly methodLabel: string;
     readonly bank: string | null;
@@ -165,7 +165,7 @@ export interface ReceiptReviewProps {
         readonly replacedBy: { readonly url: string; readonly submittedAt: string | null } | null;
         readonly replaces: { readonly url: string; readonly submittedAt: string | null; readonly rejectionReason: string | null } | null;
     };
-    readonly customer: { readonly fullName: string; readonly documentNumber: string; readonly phone: string } | null;
+    readonly customer: { readonly fullName: string; readonly documentNumber: string | null; readonly phone: string } | null;
     readonly layaway: {
         readonly code: string;
         readonly url: string;

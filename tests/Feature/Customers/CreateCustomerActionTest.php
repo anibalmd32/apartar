@@ -54,6 +54,16 @@ final class CreateCustomerActionTest extends TestCase
         $this->assertNull($this->withinOrganization($this->organization, fn (): ?string => Customer::query()->sole()->email));
     }
 
+    public function test_the_document_is_optional_and_several_customers_can_lack_it(): void
+    {
+        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => ''])->assertSessionHasNoErrors();
+        $this->actingAs($this->member)->post(route('customers.store'), [...$this->payload(), 'document_number' => '', 'full_name' => 'Carla Rojas'])->assertSessionHasNoErrors();
+
+        $documents = $this->withinOrganization($this->organization, fn (): array => Customer::query()->orderBy('id')->get()->map(fn (Customer $customer): array => [$customer->full_name, $customer->document_number, $customer->document_kind])->all());
+
+        $this->assertSame([['Luis Rojas', null, null], ['Carla Rojas', null, null]], $documents);
+    }
+
     public function test_a_document_already_in_the_directory_is_refused_without_touching_the_existing_customer(): void
     {
         $existing = $this->withinOrganization($this->organization, fn (): Customer => Customer::factory()->create([

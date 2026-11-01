@@ -75,11 +75,12 @@ it('indexa las fichas por organización y teléfono', function (): void {
     expect(SchemaInspector::hasIndexOn('customers', 'organization_id', 'phone'))->toBeTrue();
 });
 
-it('persiste el tipo de documento como varchar sin valor por defecto', function (): void {
+it('persiste el documento y su tipo como varchar opcional, para las fichas que llegan sin cédula', function (): void {
     $column = SchemaInspector::columns('customers')['document_kind'];
 
     expect($column['type_name'])->toBe('varchar');
-    expect($column['nullable'])->toBeFalse();
+    expect($column['nullable'])->toBeTrue();
+    expect(SchemaInspector::columns('customers')['document_number']['nullable'])->toBeTrue();
     expect($column['default'])->toBeNull();
 });
 

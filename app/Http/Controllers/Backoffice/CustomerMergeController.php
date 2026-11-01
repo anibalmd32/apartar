@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backoffice;
 
+use App\Actions\Customer\CustomerContactData;
 use App\Actions\Customer\MergeCustomersAction;
 use App\Domain\Customer\CannotMergeCustomerException;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 final class CustomerMergeController extends Controller
 {
@@ -56,7 +58,7 @@ final class CustomerMergeController extends Controller
         $actor = $request->user();
         $validated = $request->validate([
             'absorbed' => ['required', 'integer'],
-            'confirmation' => ['required', 'string', 'max:30'],
+            'confirmation' => ['required', 'string', 'max:'.CustomerContactData::MAX_NAME_LENGTH],
         ]);
 
         $absorbed = Customer::query()->find((int) $validated['absorbed']);
@@ -68,9 +70,7 @@ final class CustomerMergeController extends Controller
 
             Gate::forUser($actor)->authorize('merge', [Customer::class, $customer, $absorbed]);
 
-            $typed = DocumentNumber::tryFromInput($validated['confirmation']);
-
-            if (! $typed instanceof DocumentNumber || $typed->value !== $absorbed->document_number) {
+            if (! $this->confirms((string) $validated['confirmation'], $absorbed)) {
                 throw CannotMergeCustomerException::unconfirmed();
             }
 
@@ -86,5 +86,19 @@ final class CustomerMergeController extends Controller
             $summary->receipts,
             $summary->receipts === 1 ? 'comprobante' : 'comprobantes',
         ));
+    }
+
+    private function confirms(string $typed, Customer $absorbed): bool
+    {
+        if ($absorbed->document_number === null) {
+            return self::comparableName($typed) === self::comparableName($absorbed->full_name);
+        }
+
+        return DocumentNumber::tryFromInput($typed)?->value === $absorbed->document_number;
+    }
+
+    private static function comparableName(string $name): string
+    {
+        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', Str::ascii($name))));
     }
 }

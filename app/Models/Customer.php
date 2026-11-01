@@ -21,8 +21,8 @@ use NotificationChannels\WebPush\HasPushSubscriptions;
 /**
  * @property int $id
  * @property int $organization_id
- * @property string $document_number
- * @property DocumentKind $document_kind
+ * @property string|null $document_number
+ * @property DocumentKind|null $document_kind
  * @property string $full_name
  * @property string $phone
  * @property string|null $email

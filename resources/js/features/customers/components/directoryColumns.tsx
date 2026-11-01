@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { NO_DOCUMENT } from '@/lib/identity-format';
 import { type CustomerDirectoryRow } from '@/types/customers';
 import { type DataTableColumn } from '@/types/data-table';
 import { cilLink } from '@coreui/icons';
@@ -28,7 +29,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
                             </span>
                         ) : null}
                     </span>
-                    <span className="text-ink-3 text-xs">{row.document}</span>
+                    <span className="text-ink-3 text-xs">{row.document ?? NO_DOCUMENT}</span>
                     {row.inArrears ? <Badge tone="error">En mora</Badge> : null}
                 </div>
             </div>

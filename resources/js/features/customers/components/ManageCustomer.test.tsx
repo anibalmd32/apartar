@@ -27,18 +27,20 @@ vi.mock('@inertiajs/react', async () => {
     };
 });
 
-it('edita nombre, teléfono y correo, sin tocar la cédula', () => {
+it('edita nombre, cédula, teléfono y correo', () => {
     const { customer, manage } = profileProps();
     render(<ManageCustomer customer={customer} manage={manage} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Editar cliente' });
-    expect(dialog).toHaveTextContent(customer.document);
     fireEvent.change(within(dialog).getByLabelText(/Nombre y apellido/), { target: { value: 'María G. González' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Guardar' }));
 
-    expect(put).toHaveBeenCalledWith('/backoffice/clientes/7', expect.objectContaining({ full_name: 'María G. González', phone: customer.phone }));
+    expect(put).toHaveBeenCalledWith(
+        '/backoffice/clientes/7',
+        expect.objectContaining({ full_name: 'María G. González', document_number: customer.document, phone: customer.phone }),
+    );
 });
 
 it('no deja eliminar a un cliente con apartados en curso', () => {

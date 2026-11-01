@@ -6,6 +6,7 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Customer\CustomerContactData;
 use App\Models\Customer;
+use App\Rules\ValidDocumentNumber;
 use App\Rules\ValidVenezuelanPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +28,7 @@ final class UpdateCustomerRequest extends FormRequest
     {
         return [
             'full_name' => ['required', 'string', 'max:'.CustomerContactData::MAX_NAME_LENGTH],
+            'document_number' => ['nullable', 'string', new ValidDocumentNumber],
             'phone' => ['required', 'string', new ValidVenezuelanPhone],
             'email' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_EMAIL_LENGTH, 'email:filter'],
         ];
@@ -39,7 +41,7 @@ final class UpdateCustomerRequest extends FormRequest
     {
         try {
             return CustomerContactData::fromInput(
-                $customer->document_number,
+                $this->filled('document_number') ? $this->string('document_number')->toString() : $customer->document_number,
                 $this->string('full_name')->toString(),
                 $this->string('phone')->toString(),
                 $this->filled('email') ? $this->string('email')->toString() : null,

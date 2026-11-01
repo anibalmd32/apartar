@@ -51,7 +51,7 @@ export function NewCustomerDialog({ open, onClose }: NewCustomerDialogProps) {
                     values={form.data}
                     onChange={(patch) => form.setData({ ...form.data, ...patch })}
                     errors={form.errors}
-                    documentHint="Una cédula o RIF no puede estar en dos fichas: si ya existe, te lo avisamos."
+                    documentHint="Una cédula o RIF no puede estar en dos fichas: si ya existe, te lo avisamos. Si no la tienes, déjala vacía: el cliente la escribe al entrar con su código."
                     emailHint="Si lo dejas, le llegan sus códigos de apartado y los avisos de pago."
                 />
             </form>

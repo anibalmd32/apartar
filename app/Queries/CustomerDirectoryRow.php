@@ -14,7 +14,7 @@ final readonly class CustomerDirectoryRow
     public function __construct(
         public int $id,
         public string $name,
-        public string $document,
+        public ?string $document,
         public string $phone,
         public string $phoneLabel,
         public bool $hasLinkedAccount,

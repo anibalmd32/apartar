@@ -4,7 +4,13 @@ const DOCUMENT_SEPARATORS = /[\s.\p{Pd}]+/gu;
 
 const PHONE_SEPARATORS = /[\s.()\p{Pd}]+/gu;
 
-export function formatDocumentNumber(raw: string): string {
+export const NO_DOCUMENT = 'Sin cédula';
+
+export function formatDocumentNumber(raw: string | null): string {
+    if (raw === null) {
+        return NO_DOCUMENT;
+    }
+
     const compact = raw.replace(DOCUMENT_SEPARATORS, '').toUpperCase();
     const match = /^([A-Z]?)(\d*)$/.exec(compact);
 

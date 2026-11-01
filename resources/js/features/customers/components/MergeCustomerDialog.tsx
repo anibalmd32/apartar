@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { TextField } from '@/components/ui/text-field';
 import { FILTER_DEBOUNCE_MS } from '@/features/data-table/hooks/useDebouncedFilter';
+import { NO_DOCUMENT } from '@/lib/identity-format';
 import { type CustomerShowProps, type MergeCandidate } from '@/types/customers';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -61,7 +62,7 @@ export function MergeCustomerDialog({ merge }: { merge: CustomerShowProps['merge
                         >
                             <span className="flex flex-col">
                                 <span>
-                                    {candidate.name} · {candidate.document}
+                                    {candidate.name} · {candidate.document ?? NO_DOCUMENT}
                                 </span>
                                 <span className="text-xs opacity-80">
                                     {candidate.blocked
@@ -78,7 +79,11 @@ export function MergeCustomerDialog({ merge }: { merge: CustomerShowProps['merge
                 <form onSubmit={submit} className="flex flex-col gap-2" aria-label="Confirmar la fusión">
                     <Alert tone="warning">La ficha de {chosen.name} desaparecerá y todo lo suyo pasará a esta. No se puede deshacer.</Alert>
                     <TextField
-                        label={`Para confirmar, escribe el documento ${chosen.document}`}
+                        label={
+                            chosen.document === null
+                                ? `Para confirmar, escribe el nombre ${chosen.name}`
+                                : `Para confirmar, escribe el documento ${chosen.document}`
+                        }
                         name="confirmation"
                         value={form.data.confirmation}
                         onChange={(event) => form.setData('confirmation', event.target.value)}

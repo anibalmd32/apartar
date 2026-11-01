@@ -27,7 +27,7 @@ final class StoreCustomerRequest extends FormRequest
     {
         return [
             'full_name' => ['required', 'string', 'max:'.CustomerContactData::MAX_NAME_LENGTH],
-            'document_number' => ['required', 'string', new ValidDocumentNumber],
+            'document_number' => ['nullable', 'string', new ValidDocumentNumber],
             'phone' => ['required', 'string', new ValidVenezuelanPhone],
             'email' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_EMAIL_LENGTH, 'email:filter'],
             'terms_accepted' => ['accepted'],

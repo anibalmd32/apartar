@@ -24,7 +24,7 @@ final readonly class CustomerContactData
      * @throws InvalidArgumentException
      */
     public function __construct(
-        public DocumentNumber $documentNumber,
+        public ?DocumentNumber $documentNumber,
         string $fullName,
         public PhoneNumber $phone,
         ?string $email,
@@ -38,10 +38,12 @@ final readonly class CustomerContactData
      * @throws InvalidPhoneNumberException
      * @throws InvalidArgumentException
      */
-    public static function fromInput(string $documentNumber, string $fullName, string $phone, ?string $email): self
+    public static function fromInput(?string $documentNumber, string $fullName, string $phone, ?string $email): self
     {
+        $documentNumber = $documentNumber === null ? '' : trim($documentNumber);
+
         return new self(
-            DocumentNumber::fromInput($documentNumber),
+            $documentNumber === '' ? null : DocumentNumber::fromInput($documentNumber),
             $fullName,
             PhoneNumber::fromInput($phone),
             $email,

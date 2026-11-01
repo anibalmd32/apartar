@@ -23,7 +23,7 @@ export function NewCustomerFields({
     values,
     onChange,
     errors,
-    documentHint = 'Si ya tienes una ficha con este documento, el apartado va a esa ficha y no se cambian sus datos.',
+    documentHint = 'Opcional. Si ya tienes una ficha con este documento, el apartado va a esa ficha y no se cambian sus datos. Si no la tienes, el cliente la escribe al entrar con su código.',
     emailHint = 'Si lo dejas, le enviamos su código de apartado y cómo pagar.',
 }: NewCustomerFieldsProps) {
     return (
@@ -37,13 +37,12 @@ export function NewCustomerFields({
                 required
             />
             <DocumentField
-                label="Cédula o RIF"
+                label="Cédula o RIF (opcional)"
                 name="document_number"
                 value={values.document_number}
                 onChange={(value) => onChange({ document_number: value })}
                 error={errors.document_number}
                 hint={documentHint}
-                required
             />
             <PhoneField
                 label="Teléfono celular"

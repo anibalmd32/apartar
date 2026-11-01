@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { DocumentField } from '@/components/ui/document-field';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
 import { PhoneField } from '@/components/ui/phone-field';
@@ -8,7 +9,7 @@ import { cilPencil, cilTrash } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-type EditValues = { full_name: string; phone: string; email: string };
+type EditValues = { full_name: string; document_number: string; phone: string; email: string };
 
 interface ManageCustomerProps {
     customer: CustomerShowProps['customer'];
@@ -18,7 +19,12 @@ interface ManageCustomerProps {
 export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
     const [editing, setEditing] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const form = useForm<EditValues>({ full_name: customer.name, phone: customer.phone, email: customer.email ?? '' });
+    const form = useForm<EditValues>({
+        full_name: customer.name,
+        document_number: customer.document ?? '',
+        phone: customer.phone,
+        email: customer.email ?? '',
+    });
     const blocked = manage.liveLayaways > 0;
 
     const save = () => {
@@ -47,7 +53,6 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
                 onClose={() => setEditing(false)}
                 size="md"
                 title="Editar cliente"
-                description={`Cédula o RIF ${customer.document}: no se cambia, es lo que identifica la ficha.`}
                 actions={
                     <>
                         <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>
@@ -73,6 +78,18 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
                         onChange={(event) => form.setData('full_name', event.target.value)}
                         error={form.errors.full_name}
                         required
+                    />
+                    <DocumentField
+                        label="Cédula o RIF"
+                        name="document_number"
+                        value={form.data.document_number}
+                        onChange={(value) => form.setData('document_number', value)}
+                        error={form.errors.document_number}
+                        hint={
+                            customer.document === null
+                                ? 'Opcional. Si la dejas vacía, el cliente la escribe la primera vez que entre con su código de apartado.'
+                                : 'Con ella entra el cliente a ver sus apartados. Cámbiala solo para corregirla.'
+                        }
                     />
                     <PhoneField
                         label="Teléfono celular"

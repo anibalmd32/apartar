@@ -29,7 +29,9 @@ final class CreateCustomerAction
         Gate::forUser($actor)->authorize('create', Customer::class);
 
         return DB::transaction(function () use ($contact, $consent, $actor): Customer {
-            $existing = Customer::withTrashed()->where('document_number', $contact->documentNumber->value)->lockForUpdate()->first();
+            $existing = $contact->documentNumber === null
+                ? null
+                : Customer::withTrashed()->where('document_number', $contact->documentNumber->value)->lockForUpdate()->first();
 
             if ($existing instanceof Customer && ! $existing->trashed()) {
                 throw new CustomerAlreadyExistsException($existing);

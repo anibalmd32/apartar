@@ -33,7 +33,7 @@ export function ConversationList({ threads, activeId }: { threads: readonly Conv
                             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                                 <span className={cn('truncate text-sm', unread ? 'font-bold' : 'font-semibold')}>{thread.customerName}</span>
                                 <span className={cn('truncate text-xs', unread ? 'text-ink-2' : 'text-ink-3')}>
-                                    {thread.customerDocument} · {thread.excerpt}
+                                    {thread.customerDocument === '' ? thread.excerpt : `${thread.customerDocument} · ${thread.excerpt}`}
                                 </span>
                             </span>
                             <span className="flex shrink-0 flex-col items-end gap-1">

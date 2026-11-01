@@ -1,4 +1,4 @@
-import { formatDocumentNumber, formatPhone, phoneAreaCode } from '@/lib/identity-format';
+import { formatDocumentNumber, formatPhone, NO_DOCUMENT, phoneAreaCode } from '@/lib/identity-format';
 import { describe, expect, it } from 'vitest';
 import cases from './identity-format.cases.json';
 
@@ -63,5 +63,12 @@ describe('código del teléfono', () => {
 
     it.each(['0414', '041412345', '+1 305 555 0199', 'llámame', '', '0414123456789'])('no inventa un código para %j', (raw) => {
         expect(phoneAreaCode(raw)).toBeNull();
+    });
+});
+
+describe('una ficha sin documento', () => {
+    it('se muestra como sin cédula', () => {
+        expect(formatDocumentNumber(null)).toBe(NO_DOCUMENT);
+        expect(NO_DOCUMENT).toBe('Sin cédula');
     });
 });

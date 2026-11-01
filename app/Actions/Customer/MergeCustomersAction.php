@@ -113,6 +113,10 @@ final class MergeCustomersAction
 
             $gone->forceDelete();
 
+            if ($keeper->document_number === null && $gone->document_number !== null) {
+                $keeper->forceFill(['document_number' => $gone->document_number, 'document_kind' => $gone->document_kind])->save();
+            }
+
             $this->audit(
                 AuditEvent::CustomerMerged,
                 subject: $keeper,

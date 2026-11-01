@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $organization_id
  * @property int $absorbed_customer_id
- * @property string $absorbed_document_number
+ * @property string|null $absorbed_document_number
  * @property string|null $absorbed_remember_token
  * @property int $survivor_customer_id
  * @property int|null $merged_by

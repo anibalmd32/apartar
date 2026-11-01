@@ -90,8 +90,8 @@ final class CustomerController extends Controller
 
         try {
             $update->handle($customer, $request->contact($customer), $actor);
-        } catch (InvalidPhoneNumberException $exception) {
-            throw ValidationException::withMessages(['phone' => $exception->getMessage()]);
+        } catch (CustomerAlreadyExistsException $exception) {
+            throw ValidationException::withMessages(['document_number' => $exception->getMessage().' Si es la misma persona, fusiona las fichas.']);
         }
 
         return back()->with('status', 'Datos del cliente guardados.');

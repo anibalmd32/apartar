@@ -151,6 +151,20 @@ final class LayawayCreationPageTest extends TestCase
         $this->assertSame([(int) $this->member->getKey(), '127.0.0.1'], [$customer->terms_declared_by_user_id, $customer->terms_ip_address]);
     }
 
+    public function test_a_customer_from_a_paper_ledger_can_be_loaded_without_document_and_with_a_payment(): void
+    {
+        $this->actingAs($this->member)->from(route('layaways.create'))
+            ->post(route('layaways.store'), $this->newCustomer(['document_number' => '', ...$this->payment('80.00')]))
+            ->assertSessionHasNoErrors();
+
+        $customer = $this->withinOrganization($this->organization, fn (): Customer => Customer::query()->where('full_name', 'Pedro Rojas')->sole());
+        $layaway = $this->withinOrganization($this->organization, fn (): Layaway => Layaway::query()->where('customer_id', $customer->getKey())->sole());
+
+        $this->assertNull($customer->document_number);
+        $this->assertSame([LayawayStatus::Active, 1], [$layaway->status, DB::table('payments')->where('layaway_id', $layaway->getKey())->count()]);
+        $this->get(route('layaways.show', $layaway))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('customer.documentNumber', null));
+    }
+
     public function test_a_payment_at_creation_activates_it_and_is_summarised(): void
     {
         $this->actingAs($this->member)->post(route('layaways.store'), $this->payload($this->payment('80.00')))

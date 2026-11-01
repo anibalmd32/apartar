@@ -54,7 +54,7 @@ final class StoreLayawayRequest extends FormRequest
             'customer_mode' => ['required', 'string', Rule::in(self::CUSTOMER_MODES)],
             'customer' => [Rule::requiredIf(! $new), 'nullable', 'integer'],
             'full_name' => [Rule::requiredIf($new), 'nullable', 'string', 'max:'.CustomerContactData::MAX_NAME_LENGTH],
-            'document_number' => [Rule::requiredIf($new), 'nullable', 'string', ...($new ? [new ValidDocumentNumber] : [])],
+            'document_number' => ['nullable', 'string', ...($new ? [new ValidDocumentNumber] : [])],
             'phone' => [Rule::requiredIf($new), 'nullable', 'string', ...($new ? [new ValidVenezuelanPhone] : [])],
             'email' => ['nullable', 'string', 'max:'.CustomerContactData::MAX_EMAIL_LENGTH, 'email:filter'],
             'terms_accepted' => $new ? ['accepted'] : ['nullable'],

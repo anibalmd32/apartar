@@ -33,9 +33,15 @@ final class ResolveCustomerAction
     public function handle(CustomerContactData $contact, TermsConsent $consent): Customer
     {
         return DB::transaction(function () use ($contact, $consent): Customer {
+            $document = $contact->documentNumber;
+
+            if (! $document instanceof DocumentNumber) {
+                return $this->create($contact, $consent);
+            }
+
             $collision = null;
 
-            if (! $this->exists($contact->documentNumber)) {
+            if (! $this->exists($document)) {
                 try {
                     return $this->create($contact, $consent);
                 } catch (UniqueConstraintViolationException $exception) {
@@ -43,12 +49,12 @@ final class ResolveCustomerAction
                 }
             }
 
-            $customer = $this->lockedFind($contact->documentNumber);
+            $customer = $this->lockedFind($document);
 
             if (! $customer instanceof Customer) {
                 throw $collision ?? new LogicException(sprintf(
                     'La ficha %s existía al leerla y había desaparecido al bloquearla.',
-                    $contact->documentNumber->value,
+                    $document->value,
                 ));
             }
 
@@ -62,9 +68,15 @@ final class ResolveCustomerAction
     public function declaredBy(CustomerContactData $contact, TermsConsent $consent, User $declarant): Customer
     {
         return DB::transaction(function () use ($contact, $consent, $declarant): Customer {
+            $document = $contact->documentNumber;
+
+            if (! $document instanceof DocumentNumber) {
+                return $this->create($contact, $consent, $declarant);
+            }
+
             $collision = null;
 
-            if (! $this->exists($contact->documentNumber)) {
+            if (! $this->exists($document)) {
                 try {
                     return $this->create($contact, $consent, $declarant);
                 } catch (UniqueConstraintViolationException $exception) {
@@ -72,9 +84,9 @@ final class ResolveCustomerAction
                 }
             }
 
-            return $this->lockedFind($contact->documentNumber) ?? throw $collision ?? new LogicException(sprintf(
+            return $this->lockedFind($document) ?? throw $collision ?? new LogicException(sprintf(
                 'La ficha %s existía al leerla y había desaparecido al bloquearla.',
-                $contact->documentNumber->value,
+                $document->value,
             ));
         });
     }
@@ -101,8 +113,8 @@ final class ResolveCustomerAction
             $customer = new Customer;
 
             $customer->forceFill([
-                'document_number' => $contact->documentNumber->value,
-                'document_kind' => $contact->documentNumber->kind,
+                'document_number' => $contact->documentNumber?->value,
+                'document_kind' => $contact->documentNumber?->kind,
                 ...$this->contactAttributes($contact, $consent),
                 'terms_declared_by_user_id' => $declarant?->getKey(),
             ])->save();

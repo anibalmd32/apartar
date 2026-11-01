@@ -67,6 +67,22 @@ final class CustomerMergePageTest extends TestCase
         $this->assertNull(DB::table('customers')->where('id', $absorbed->getKey())->first());
     }
 
+    public function test_a_record_without_document_is_confirmed_by_name_and_the_survivor_inherits_the_document(): void
+    {
+        $survivor = $this->customer(null, 'María González');
+        $absorbed = $this->customer('V22222222', 'María Gonzales');
+        $paper = $this->customer(null, 'Maria  Gonzalez Pérez');
+        $this->actingAs($this->member)->from(route('customers.show', $survivor));
+
+        $this->post(route('customers.merge', $survivor), ['absorbed' => $paper->getKey(), 'confirmation' => 'V22222222'])->assertSessionHasErrors('merge');
+        $this->post(route('customers.merge', $survivor), ['absorbed' => $paper->getKey(), 'confirmation' => 'maría gonzález pérez'])->assertSessionHasNoErrors();
+        $this->assertNull(DB::table('customers')->where('id', $survivor->getKey())->value('document_number'));
+
+        $this->post(route('customers.merge', $survivor), ['absorbed' => $absorbed->getKey(), 'confirmation' => 'V22222222'])->assertSessionHasNoErrors();
+        $this->assertSame('V22222222', DB::table('customers')->where('id', $survivor->getKey())->value('document_number'));
+        $this->assertNull(DB::table('customer_merges')->where('absorbed_customer_id', $paper->getKey())->value('absorbed_document_number'));
+    }
+
     public function test_a_neighbours_record_cannot_be_merged(): void
     {
         $ours = $this->customer('V11111111', 'María González');
@@ -152,9 +168,13 @@ final class CustomerMergePageTest extends TestCase
         $this->assertNotNull(DB::table('customers')->where('id', $absorbed->getKey())->first());
     }
 
-    private function customer(string $document, string $name): Customer
+    private function customer(?string $document, string $name): Customer
     {
-        $customer = $this->withinOrganization($this->organization, fn (): Customer => Customer::factory()->create(['document_number' => $document, 'full_name' => $name]));
+        $customer = $this->withinOrganization($this->organization, fn (): Customer => Customer::factory()->create([
+            'document_number' => $document,
+            'document_kind' => $document === null ? null : 'cedula',
+            'full_name' => $name,
+        ]));
         $this->withoutOrganization();
 
         return $customer;

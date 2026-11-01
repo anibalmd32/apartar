@@ -87,7 +87,7 @@ export interface BackofficeLayawayShowProps {
     readonly layaway: BackofficeLayaway;
     readonly customer: {
         readonly fullName: string;
-        readonly documentNumber: string;
+        readonly documentNumber: string | null;
         readonly phone: string;
         readonly email?: string | null;
         readonly url?: string;
