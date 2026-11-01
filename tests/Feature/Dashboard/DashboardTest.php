@@ -96,6 +96,17 @@ final class DashboardTest extends TestCase
         $this->assertSame(4_000, $this->metrics()['collectedThisMonthCents']);
     }
 
+    public function test_collected_this_month_follows_the_day_of_the_payment_not_the_day_it_was_loaded(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $now = CarbonImmutable::now($this->organization->timezone);
+        $this->payment($layaway, 1_000, $now, $now->subMonth()->startOfMonth());
+        $this->payment($layaway, 2_000, $now, $now->startOfMonth());
+        $this->payment($layaway, 4_000, $now->subMonth(), $now->startOfMonth());
+
+        $this->assertSame(6_000, $this->metrics()['collectedThisMonthCents']);
+    }
+
     public function test_each_warning_fires_only_in_its_condition(): void
     {
         $this->assertSame([], $this->warnings());
@@ -325,12 +336,13 @@ final class DashboardTest extends TestCase
         ]);
     }
 
-    private function payment(Layaway $layaway, int $cents, CarbonImmutable $settledAt): void
+    private function payment(Layaway $layaway, int $cents, CarbonImmutable $settledAt, ?CarbonImmutable $paidOn = null): void
     {
         $this->within(fn () => Payment::factory()->createOne([
             'layaway_id' => $layaway->getKey(),
             'amount_cents_usd' => new Money($cents),
             'settled_at' => $settledAt->setTimezone((string) config('app.timezone')),
+            'paid_on' => $paidOn?->toDateString(),
         ]));
     }
 

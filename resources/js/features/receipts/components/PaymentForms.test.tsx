@@ -80,8 +80,8 @@ it('rechaza con un motivo y una explicación de al menos diez caracteres', () =>
 });
 
 it('registra el pago con su clave, tras confirmar el sobrante', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-        new Response(JSON.stringify({ preview: { ...PREVIEW, unallocated: '$10,00', unallocatedCents: 1_000 } }), { status: 200 }),
+    vi.mocked(fetch).mockImplementation(
+        async () => new Response(JSON.stringify({ preview: { ...PREVIEW, unallocated: '$10,00', unallocatedCents: 1_000 } }), { status: 200 }),
     );
     withQueries(<ManualPaymentForm options={OPTIONS} />);
 
@@ -97,9 +97,13 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
 
-    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe(
-        '/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa?paid_at=2026-09-11&amount=160%2C00&currency=USD',
-    );
+    expect(
+        vi
+            .mocked(fetch)
+            .mock.calls.map(([url]) => String(url))
+            .filter((url) => url.includes('vista-previa'))
+            .at(-1),
+    ).toBe('/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa?paid_at=2026-09-11&amount=160%2C00&currency=USD');
     const record = screen.getByRole('button', { name: 'Registrar el pago' });
     expect(record).toBeDisabled();
 
@@ -146,7 +150,11 @@ it('tras registrar, el formulario vuelve a empezar con otra clave', async () => 
 
 it('pide confirmar una tasa de más de 30 días y manda su publicación', async () => {
     const staleRate = { token: 'bcv@40.00000000@1753000000', days: 45, sourceLabel: 'BCV' };
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ preview: { ...PREVIEW, staleRate } }), { status: 200 }));
+    vi.mocked(fetch).mockImplementation(async (url) =>
+        String(url).includes('tasa-del-dia')
+            ? new Response(JSON.stringify({ rate: null }), { status: 200 })
+            : new Response(JSON.stringify({ preview: { ...PREVIEW, staleRate } }), { status: 200 }),
+    );
     withQueries(<ManualPaymentForm options={OPTIONS} />);
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });

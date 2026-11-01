@@ -27,16 +27,16 @@ export function FileField({ label, hint, error, preview, id, className, buttonLa
     };
 
     return (
-        <fieldset className="fieldset w-full">
+        <fieldset className="fieldset w-full min-w-0">
             <span className="fieldset-legend">{label}</span>
 
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
                 {preview}
 
                 <label
                     htmlFor={fieldId}
                     className={cn(
-                        'input focus-within:outline-primary min-h-11 w-full cursor-pointer gap-3 focus-within:outline-2 focus-within:outline-offset-2',
+                        'input focus-within:outline-primary min-h-11 w-full min-w-0 cursor-pointer gap-3 focus-within:outline-2 focus-within:outline-offset-2',
                         error && 'input-error',
                         className,
                     )}

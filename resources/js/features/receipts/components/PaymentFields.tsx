@@ -6,9 +6,11 @@ import { FileField } from '@/components/ui/file-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { PaymentNoteField, ReadingStatus } from '@/features/receipts/components/PaymentFieldsExtras';
+import { RateField } from '@/features/receipts/components/RateField';
 import { ReceiptFilePreview } from '@/features/receipts/components/ReceiptFilePreview';
 import { RateConfirmations } from '@/features/receipts/components/StaleRateConfirmation';
 import { type ApprovalPreviewState } from '@/features/receipts/hooks/useApprovalPreview';
+import { useRateOfDay } from '@/features/receipts/hooks/useRateOfDay';
 import { useReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
 import {
     fileTooLarge,
@@ -17,10 +19,10 @@ import {
     type PaymentFieldValues,
     requiresReference,
 } from '@/features/receipts/lib/payment-fields';
-import { appliedRateLine, rateHint } from '@/features/receipts/lib/payment-rate';
-import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
+import { appliedRateLine } from '@/features/receipts/lib/payment-rate';
+import { typedAmount } from '@/lib/amount-typing';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface PaymentFieldsProps {
     values: PaymentFieldValues;
@@ -32,6 +34,8 @@ interface PaymentFieldsProps {
 }
 
 export function PaymentFields({ values, errors, onChange, options, preview: { preview, error, loading }, onReadingChange }: PaymentFieldsProps) {
+    const [manualRate, setManualRate] = useState(values.rate !== '');
+    const rateOfDay = useRateOfDay(options.rateOfDayUrl, values.paid_at, values.currency === 'VES');
     const excess = preview?.unallocated ?? null;
     const confirmed = preview !== null && excess !== null && values.confirm_excess === preview.unallocatedCents;
     const withReference = requiresReference(options, values.method);
@@ -151,14 +155,15 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                     error={errors.paid_at}
                 />
                 {values.currency === 'VES' ? (
-                    <TextField
-                        label="Tasa (opcional)"
-                        name="rate"
-                        inputMode="decimal"
+                    <RateField
                         value={values.rate}
-                        onChange={(event) => onChange({ rate: typedAmount(event, RATE_DECIMALS) })}
+                        onChange={(rate) => onChange({ rate })}
+                        manual={manualRate}
+                        onManualChange={setManualRate}
+                        day={values.paid_at}
+                        today={options.paidAt.max}
+                        ofDay={rateOfDay}
                         error={errors.rate}
-                        hint={rateHint(options, values.paid_at, preview)}
                     />
                 ) : null}
             </fieldset>

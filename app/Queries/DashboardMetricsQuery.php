@@ -89,8 +89,12 @@ final class DashboardMetricsQuery
                 ->where('created_at', '<', CarbonImmutable::now()->subHours(ReceiptInboxController::OVERDUE_AFTER_HOURS))
                 ->count()),
             'collectedThisMonthCents' => $this->metric(fn (): int => (int) Payment::query()
-                ->where('settled_at', '>=', $now->startOfMonth()->setTimezone($appZone))
-                ->where('settled_at', '<', $now->startOfMonth()->addMonth()->setTimezone($appZone))
+                ->where(fn ($query) => $query
+                    ->whereBetween('paid_on', [$now->startOfMonth()->toDateString(), $now->endOfMonth()->toDateString()])
+                    ->orWhere(fn ($undated) => $undated
+                        ->whereNull('paid_on')
+                        ->where('settled_at', '>=', $now->startOfMonth()->setTimezone($appZone))
+                        ->where('settled_at', '<', $now->startOfMonth()->addMonth()->setTimezone($appZone))))
                 ->sum('amount_cents_usd')),
             'customersOverdue' => $this->metric(fn (): int => $this->directory->search(new CustomerDirectoryFilters(overdue: true))->reorder()->count()),
             'longOverdueLayaways' => $this->metric(fn (): int => (new CollectionFilters(CollectionPreset::LongOverdue))->installments()->reorder()->distinct()->count('installments.layaway_id')),

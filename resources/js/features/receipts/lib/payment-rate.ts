@@ -10,20 +10,6 @@ export function appliedRateLine(options: PaymentFieldOptions, paidAt: string, pr
     const when = paidAt !== '' && paidAt < options.paidAt.max ? `, la del ${dayLabel(paidAt)}` : ', la vigente';
 
     return preview.rateSource === 'manual'
-        ? `Se registra a ${formatRate(preview.rate)} Bs por dólar, la tasa que escribiste.`
-        : `Se registra a ${formatRate(preview.rate)} Bs por dólar (${preview.rateSourceLabel}${when}).`;
-}
-
-export function rateHint(options: PaymentFieldOptions, paidAt: string, preview: ApprovalPreviewView | null): string {
-    if (paidAt === '' || paidAt >= options.paidAt.max) {
-        return options.rate === null
-            ? 'No hay tasa vigente: escribe la que usaste.'
-            : `Vacía usa la vigente: ${formatRate(options.rate.rate)} (${options.rate.sourceLabel}).`;
-    }
-
-    const day = dayLabel(paidAt);
-
-    return preview !== null && preview.rateSource !== 'manual'
-        ? `Vacía usa la del ${day}: ${formatRate(preview.rate)} (${preview.rateSourceLabel}).`
-        : `Vacía usa la tasa oficial del ${day}.`;
+        ? `Equivale a ${preview.amount}: a ${formatRate(preview.rate)} Bs por dólar, la tasa que escribiste.`
+        : `Equivale a ${preview.amount}: a ${formatRate(preview.rate)} Bs por dólar (${preview.rateSourceLabel}${when}).`;
 }

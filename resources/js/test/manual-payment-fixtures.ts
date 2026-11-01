@@ -17,6 +17,7 @@ export const MANUAL_PAYMENT_OPTIONS: ManualPaymentOptions = {
     rate: { rate: '42.50000000', sourceLabel: 'BCV' },
     file: { accept: '.jpg,.jpeg,.png,.webp,.pdf', maxMb: 5 },
     readUrl: '/backoffice/pagos/leer-comprobante?desde=2026-09-01&hasta=2026-10-05',
+    rateOfDayUrl: '/backoffice/pagos/tasa-del-dia',
 };
 
 export function chooseBank(name: string) {

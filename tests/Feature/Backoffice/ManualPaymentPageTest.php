@@ -117,6 +117,18 @@ final class ManualPaymentPageTest extends TestCase
         $this->assertSame('2026-08-17', $this->withinOrganization($this->organization, fn (): ?string => Payment::query()->latest('id')->first()?->paid_on?->toDateString()));
     }
 
+    public function test_the_form_asks_for_the_rate_of_the_day_of_the_payment(): void
+    {
+        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '40.00000000', 'published_at' => CarbonImmutable::parse('2026-08-20 04:00:00')]);
+        $this->actingAs($this->member);
+
+        $this->getJson(route('payments.rate-of-day', ['paid_at' => '2026-08-22']))
+            ->assertOk()
+            ->assertExactJson(['rate' => ['rate' => '40.00000000', 'sourceLabel' => 'BCV', 'date' => '2026-08-22']]);
+        $this->getJson(route('payments.rate-of-day', ['paid_at' => '2026-01-02']))->assertExactJson(['rate' => null]);
+        $this->getJson(route('payments.rate-of-day'))->assertJsonPath('rate.rate', '42.50000000');
+    }
+
     public function test_each_refusal_comes_back_in_its_field(): void
     {
         $layaway = $this->layawayIn($this->organization);

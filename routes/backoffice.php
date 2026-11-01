@@ -34,6 +34,7 @@ use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductCopyController;
 use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\ProfileController;
+use App\Http\Controllers\Backoffice\RateOfDayController;
 use App\Http\Controllers\Backoffice\ReceiptInboxController;
 use App\Http\Controllers\Backoffice\ReceiptReviewController;
 use App\Http\Controllers\Backoffice\SettingsController;
@@ -271,6 +272,8 @@ Surface::backofficeRoutes(function (): void {
 
                 Route::post('apartados/{layaway:code}/pagos', [ManualPaymentController::class, 'store'])->name('layaways.payments.store');
                 Route::get('apartados/{layaway:code}/pagos/vista-previa', [ManualPaymentController::class, 'preview'])->name('layaways.payments.preview');
+
+                Route::get('pagos/tasa-del-dia', RateOfDayController::class)->name('payments.rate-of-day');
 
                 Route::post('pagos/leer-comprobante', PaymentReadingController::class)
                     ->middleware('throttle:30,1')
