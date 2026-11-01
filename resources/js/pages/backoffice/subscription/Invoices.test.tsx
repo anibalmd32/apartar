@@ -90,7 +90,7 @@ it('enseña el importe en las dos monedas y pide referencia solo cuando hace fal
     fireEvent.click(screen.getByRole('button', { name: 'Enviar comprobante' }));
 
     expect(post).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'efectivo_usd', amount: '15.00' }),
+        expect.objectContaining({ method: 'efectivo_usd', amount: '15,00' }),
         '/backoffice/suscripcion/facturas/1/comprobante',
         {
             forceFormData: true,
@@ -137,7 +137,7 @@ it('precarga lo que falta tras un pago parcial', () => {
     render(<SubscriptionInvoices {...props([invoice({ status: 'pending', outstanding: { cents: centsUsd(500), usd: '$5,00', ves: null } })])} />);
 
     expect(screen.getByText('Falta por pagar: $5,00')).toBeInTheDocument();
-    expect(screen.getByLabelText('Importe')).toHaveValue('5.00');
+    expect(screen.getByLabelText('Importe')).toHaveValue('5,00');
 });
 
 it('dice que en el plan Gratis no hay facturas', () => {

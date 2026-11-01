@@ -14,7 +14,7 @@ export function ManualPaymentForm({ options }: { options: ManualPaymentOptions }
     const form = useForm<ManualPaymentValues>({ ...emptyPaymentValues(options), idempotency_key: crypto.randomUUID() });
 
     const previewState = useApprovalPreview(
-        options.previewUrl,
+        `${options.previewUrl}${options.previewUrl.includes('?') ? '&' : '?'}${new URLSearchParams({ paid_at: form.data.paid_at }).toString()}`,
         { amount: form.data.amount, currency: form.data.currency, rate: form.data.rate },
         { amount: '', currency: 'USD', rate: '', preview: null, error: null },
         form.errors.confirm_stale_rate ?? '',

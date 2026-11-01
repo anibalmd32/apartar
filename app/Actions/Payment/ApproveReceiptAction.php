@@ -65,9 +65,10 @@ final class ApproveReceiptAction
                 throw ReceiptAlreadyProcessedException::of($locked);
             }
 
-            $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
-            StaleRate::in($rate, $data->settledCurrency)?->assertConfirmedBy($data->confirmedStaleRate);
-            RateDeviation::in($rate, $this->rates->current($this->context->organization()), $data->settledCurrency)?->assertConfirmedBy($data->confirmedRateDeviation);
+            $rateOfTheDay = $this->rates->on($this->context->organization(), $locked->paid_at);
+            $rate = $data->manualRate() ?? $rateOfTheDay;
+            StaleRate::in($rate, $data->settledCurrency, $locked->paid_at)?->assertConfirmedBy($data->confirmedStaleRate);
+            RateDeviation::in($rate, $rateOfTheDay, $data->settledCurrency)?->assertConfirmedBy($data->confirmedRateDeviation);
 
             $applied = $this->applier->apply(
                 $layaway,

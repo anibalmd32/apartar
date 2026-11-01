@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\DolarApiProvider;
 use App\Domain\Exchange\ExchangeRateProvider;
+use App\Domain\Exchange\HistoricalRateImporter;
 use App\Domain\Exchange\ManualRateProvider;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory as HttpClient;
@@ -36,6 +37,17 @@ class ExchangeServiceProvider extends ServiceProvider
                     $this->fieldPriorityOf($config),
                 ),
             };
+        });
+
+        $this->app->bind(HistoricalRateImporter::class, function (Application $app): HistoricalRateImporter {
+            /** @var array{history_url?: mixed, timeout?: mixed} $config */
+            $config = $app->make('config')->get('services.exchange_rate', []);
+
+            return new HistoricalRateImporter(
+                $app->make(HttpClient::class),
+                is_string($config['history_url'] ?? null) ? $config['history_url'] : '',
+                max(20, is_int($config['timeout'] ?? null) ? $config['timeout'] : 8),
+            );
         });
 
         $this->app->singleton(ManualRateProvider::class);

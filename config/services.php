@@ -40,6 +40,7 @@ return [
     'exchange_rate' => [
         'driver' => env('EXCHANGE_RATE_DRIVER', 'dolarapi'),
         'url' => env('EXCHANGE_RATE_URL', 'https://ve.dolarapi.com/v1/dolares'),
+        'history_url' => env('EXCHANGE_RATE_HISTORY_URL', 'https://ve.dolarapi.com/v1/historicos/dolares'),
         'timeout' => (int) env('EXCHANGE_RATE_TIMEOUT', 8),
         'field_priority' => ['promedio', 'venta', 'compra'],
     ],

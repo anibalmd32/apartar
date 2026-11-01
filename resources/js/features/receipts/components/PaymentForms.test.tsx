@@ -97,7 +97,7 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
 
-    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe('/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa?amount=160%2C00&currency=USD');
+    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe('/backoffice/apartados/AP-7K3M9QRT/pagos/vista-previa?paid_at=2026-09-11&amount=160%2C00&currency=USD');
     const record = screen.getByRole('button', { name: 'Registrar el pago' });
     expect(record).toBeDisabled();
 

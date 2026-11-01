@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
-use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateDeviation;
@@ -18,6 +17,7 @@ use App\Domain\Layaway\ScheduleGenerator;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use DateTimeZone;
 
 final class OpeningPaymentPreview
@@ -25,7 +25,6 @@ final class OpeningPaymentPreview
     public function __construct(
         private readonly PaymentApplier $applier,
         private readonly ScheduleGenerator $generator,
-        private readonly ExchangeRateService $rates,
         private readonly TenantContext $context,
     ) {}
 
@@ -33,7 +32,7 @@ final class OpeningPaymentPreview
      * @throws PaymentNotApplicableException
      * @throws MissingExchangeRateException
      */
-    public function for(LayawayTerms $terms, Money $settled, RateSnapshot|ManualRate|null $rate): ApprovalPreview
+    public function for(LayawayTerms $terms, Money $settled, RateSnapshot|ManualRate|null $rate, ?CarbonInterface $paidOn = null): ApprovalPreview
     {
         [$dollars, $snapshot] = $this->applier->toDollars($settled, $rate);
         $statusBefore = $terms->requiresDownPayment() ? LayawayStatus::PendingDownPayment : LayawayStatus::Active;
@@ -69,8 +68,8 @@ final class OpeningPaymentPreview
                 $dollars->cents >= $terms->total()->cents => LayawayStatus::Completed,
                 default => LayawayStatus::Active,
             },
-            staleRate: StaleRate::in($rate, $settled->currency),
-            rateDeviation: RateDeviation::in($rate, $this->rates->current($this->context->organization()), $settled->currency),
+            staleRate: StaleRate::in($rate, $settled->currency, $paidOn),
+            rateDeviation: RateDeviation::in($rate, $this->applier->referenceRate($paidOn), $settled->currency),
             downPaymentMissingCents: $missing,
         );
     }

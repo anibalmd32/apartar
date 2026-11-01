@@ -28,6 +28,7 @@ final class SystemHealthQuery
      */
     public const SCHEDULE = [
         'exchange-rate:fetch' => '*/30 * * * *',
+        'exchange-rate:history' => '15 7 * * *',
         'layaways:expire' => '0 * * * *',
         'layaways:detect-overdue' => '0 * * * *',
         'layaways:reconcile' => '30 5 * * *',

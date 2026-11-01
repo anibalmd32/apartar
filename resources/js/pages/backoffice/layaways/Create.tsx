@@ -76,7 +76,7 @@ export default function LayawayCreate({ products, selection, plan, customer, win
     }, [data.product, data.quantity]);
 
     const previewState = useApprovalPreview(
-        `${urls.paymentPreview}?${new URLSearchParams({ product: data.product, quantity: String(data.quantity) }).toString()}`,
+        `${urls.paymentPreview}?${new URLSearchParams({ product: data.product, quantity: String(data.quantity), paid_at: data.paid_at }).toString()}`,
         { amount: data.with_payment ? data.amount : '', currency: data.currency, rate: data.rate },
         { amount: '', currency: 'USD', rate: '', preview: null, error: null },
         errors.confirm_stale_rate ?? '',

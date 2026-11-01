@@ -214,5 +214,5 @@ it('ofrece reasignar un pago solo cuando hay reparto que editar', () => {
         />,
     );
     expect(screen.getByRole('form', { name: 'Reasignar un pago' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Importe para la cuota 1')).toHaveValue('30.00');
+    expect(screen.getByLabelText('Importe para la cuota 1')).toHaveValue('30,00');
 });

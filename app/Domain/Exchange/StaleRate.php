@@ -6,6 +6,7 @@ namespace App\Domain\Exchange;
 
 use App\Domain\Money\Currency;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 
 final readonly class StaleRate
 {
@@ -15,13 +16,15 @@ final readonly class StaleRate
         public RateSnapshot $snapshot,
     ) {}
 
-    public static function in(RateSnapshot|ManualRate|null $rate, Currency $currency): ?self
+    public static function in(RateSnapshot|ManualRate|null $rate, Currency $currency, ?CarbonInterface $paidOn = null): ?self
     {
         if ($currency === Currency::USD || ! $rate instanceof RateSnapshot) {
             return null;
         }
 
-        return $rate->publishedAt->addDays(self::MAX_AGE_DAYS)->isPast() ? new self($rate) : null;
+        $reference = $paidOn === null ? CarbonImmutable::now() : CarbonImmutable::parse($paidOn->format('Y-m-d'))->endOfDay();
+
+        return $rate->publishedAt->addDays(self::MAX_AGE_DAYS)->lessThan(min($reference, CarbonImmutable::now())) ? new self($rate) : null;
     }
 
     public function token(): string

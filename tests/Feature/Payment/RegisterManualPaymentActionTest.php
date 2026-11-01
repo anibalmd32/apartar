@@ -192,6 +192,27 @@ final class RegisterManualPaymentActionTest extends TestCase
         $this->assertSame([null, '40.00', null], $overrides);
     }
 
+    public function test_bolivars_paid_on_an_earlier_day_are_converted_at_the_rate_of_that_day(): void
+    {
+        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '40.00000000', 'published_at' => CarbonImmutable::parse('2026-08-20 04:00:00')]);
+        ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '41.00000000', 'published_at' => CarbonImmutable::parse('2026-08-25 04:00:00')]);
+        $layaway = $this->activeLayaway();
+
+        $old = $this->stored($this->register($layaway, '1200.00', Currency::VES, paidAt: '2026-08-22'));
+        $today = $this->stored($this->register($layaway, '850.00', Currency::VES, paidAt: '2026-09-10'));
+
+        $this->assertSame([3_000, '40.00000000', RateSource::Bcv], [$old->amount_cents_usd->cents, $old->rate_applied, $old->rate_source]);
+        $this->assertSame([2_000, '42.50000000'], [$today->amount_cents_usd->cents, $today->rate_applied]);
+    }
+
+    public function test_a_day_without_any_known_rate_asks_for_one_by_hand(): void
+    {
+        $layaway = $this->activeLayaway();
+
+        $this->assertInstanceOf(MissingExchangeRateException::class, $this->refused(fn () => $this->register($layaway, '1200.00', Currency::VES, paidAt: '2026-01-15')));
+        $this->assertSame(3_000, $this->stored($this->register($layaway, '1200.00', Currency::VES, paidAt: '2026-01-15', rate: '40.00'))->amount_cents_usd->cents);
+    }
+
     public function test_it_leaves_the_same_result_as_approving_a_receipt(): void
     {
         $approved = $this->activeLayaway();

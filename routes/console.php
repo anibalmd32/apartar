@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Subscription\ApplyDowngradeAction;
+use App\Domain\Exchange\HistoricalRateImporter;
 use App\Domain\Subscription\UsageMetric;
 use App\Jobs\ApplyScheduledDowngrades;
 use App\Jobs\DetectOverdueLayawaysJob;
@@ -14,12 +15,24 @@ use App\Jobs\PurgeExpiredExports;
 use App\Jobs\PurgeStalePushSubscriptions;
 use App\Jobs\RecalculateUsage;
 use App\Jobs\ReconcileLayaways;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::job(new FetchExchangeRate)
     ->everyThirtyMinutes()
     ->withoutOverlapping()
     ->name('exchange-rate:fetch');
+
+Artisan::command('exchange-rate:history', function (HistoricalRateImporter $importer): void {
+    foreach ($importer->import() as $source => $count) {
+        $this->info(sprintf('%s: %d tasas históricas nuevas.', $source, $count));
+    }
+})->purpose('Trae de DolarApi las tasas históricas que falten para convertir pagos de fechas pasadas.');
+
+Schedule::command('exchange-rate:history')
+    ->dailyAt('07:15')
+    ->withoutOverlapping()
+    ->name('exchange-rate:history');
 
 Schedule::job(new ExpireLayawaysJob)
     ->hourly()

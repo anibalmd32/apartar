@@ -29,6 +29,7 @@ use App\Http\Requests\Backoffice\StoreManualPaymentRequest;
 use App\Models\Layaway;
 use App\Models\User;
 use App\Support\DecimalInput;
+use App\Support\PaymentDay;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\DeadlockException;
 use Illuminate\Http\JsonResponse;
@@ -79,6 +80,7 @@ final class ManualPaymentController extends Controller
         $currency = Currency::tryFrom(is_string($rawCurrency) ? $rawCurrency : '');
         $rate = $request->query('rate');
         $rate = is_string($rate) && $rate !== '' && $currency !== Currency::USD ? DecimalInput::normalize($rate) : null;
+        $paidOn = PaymentDay::fromQuery($request, $this->context->organization()->timezone);
 
         if (! is_string($amount) || preg_match(ApproveReceiptRequest::AMOUNT_PATTERN, $amount) !== 1) {
             return response()->json(['message' => 'Escribe el importe con coma decimal y hasta dos decimales.'], 422);
@@ -98,7 +100,7 @@ final class ManualPaymentController extends Controller
         try {
             PaymentAmounts::assertPositive($amount, $currency, 'del pago');
             $settled = Money::fromDecimalString($amount, $currency);
-            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->current($this->context->organization());
+            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->on($this->context->organization(), $paidOn);
         } catch (InvalidArgumentException|InvalidRateException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
@@ -113,6 +115,7 @@ final class ManualPaymentController extends Controller
                 null,
                 $actor,
                 new PaymentOrigin(PaymentMethod::EfectivoUsd, null, CarbonImmutable::now()),
+                $paidOn,
             );
         } catch (PaymentNotApplicableException|MissingExchangeRateException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);

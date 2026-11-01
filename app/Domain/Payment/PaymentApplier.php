@@ -28,6 +28,7 @@ use App\Models\Receipt;
 use App\Models\User;
 use App\Support\ModelState;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use LogicException;
@@ -137,6 +138,7 @@ final class PaymentApplier
         ?Receipt $receipt,
         ?User $registeredBy = null,
         ?PaymentOrigin $origin = null,
+        ?CarbonInterface $paidOn = null,
     ): ApprovalPreview {
         DB::beginTransaction();
 
@@ -159,14 +161,21 @@ final class PaymentApplier
                 unallocatedCents: $applied->plan->unallocatedCents,
                 statusBefore: $applied->statusBefore,
                 statusAfter: $applied->statusAfter,
-                staleRate: StaleRate::in($rate, $settled->currency),
-                rateDeviation: RateDeviation::in($rate, $this->rates->current($this->context->organization()), $settled->currency),
+                staleRate: StaleRate::in($rate, $settled->currency, $paidOn),
+                rateDeviation: RateDeviation::in($rate, $this->referenceRate($paidOn), $settled->currency),
                 downPaymentPaidBeforeCents: $applied->downPaymentPaidBeforeCents,
                 downPaymentMissingCents: $applied->downPaymentMissingCents,
             );
         } finally {
             DB::rollBack();
         }
+    }
+
+    public function referenceRate(?CarbonInterface $paidOn): ?RateSnapshot
+    {
+        $organization = $this->context->organization();
+
+        return $paidOn === null ? $this->rates->current($organization) : $this->rates->on($organization, $paidOn);
     }
 
     /**

@@ -132,9 +132,10 @@ final class RegisterManualPaymentAction
             throw DuplicateReceiptException::recordedByBusiness($criterion);
         }
 
-        $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
-        StaleRate::in($rate, $data->currency)?->assertConfirmedBy($data->confirmedStaleRate);
-        RateDeviation::in($rate, $this->rates->current($this->context->organization()), $data->currency)?->assertConfirmedBy($data->confirmedRateDeviation);
+        $rateOfTheDay = $this->rates->on($this->context->organization(), $data->paidAt);
+        $rate = $data->manualRate() ?? $rateOfTheDay;
+        StaleRate::in($rate, $data->currency, $data->paidAt)?->assertConfirmedBy($data->confirmedStaleRate);
+        RateDeviation::in($rate, $rateOfTheDay, $data->currency)?->assertConfirmedBy($data->confirmedRateDeviation);
 
         $attachment = $data->file instanceof UploadedFile && $hash !== null
             ? $this->store($data->file, $hash, (int) $layaway->organization_id, $stored)

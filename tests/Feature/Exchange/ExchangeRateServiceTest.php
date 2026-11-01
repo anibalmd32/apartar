@@ -177,6 +177,40 @@ it('fecha la tasa manual con su última edición', function (): void {
     expect($snapshot?->publishedAt->diffInDays(CarbonImmutable::now()))->toBeGreaterThanOrEqual(20);
 });
 
+it('para un día pasado da la última tasa publicada hasta ese día, en el huso del negocio y de su fuente', function (): void {
+    CarbonImmutable::setTestNow('2026-10-31 12:00:00');
+    persistRate(RateSource::Bcv, '36.50000000', '2024-03-01 04:00:00');
+    persistRate(RateSource::Bcv, '36.72000000', '2024-03-04 04:00:00');
+    persistRate(RateSource::Parallel, '39.10000000', '2024-03-01 04:00:00');
+    persistRate(RateSource::Bcv, '889.00000000', '2026-10-31 04:00:00');
+    Cache::flush();
+
+    $organization = Organization::factory()->create(['timezone' => 'America/Caracas']);
+    $street = Organization::factory()->create(['timezone' => 'America/Caracas']);
+    setRateSource($street, RateSource::Parallel);
+
+    expect(rates()->on($organization, CarbonImmutable::parse('2024-03-01'))?->rate)->toBe('36.50000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-03'))?->rate)->toBe('36.50000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-04'))?->rate)->toBe('36.72000000')
+        ->and(rates()->on($street, CarbonImmutable::parse('2024-03-02'))?->rate)->toBe('39.10000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-02-28')))->toBeNull()
+        ->and(rates()->on($organization, CarbonImmutable::parse('2026-10-31'))?->rate)->toBe('889.00000000');
+
+    CarbonImmutable::setTestNow();
+});
+
+it('un negocio con tasa manual usa la oficial para los días pasados', function (): void {
+    CarbonImmutable::setTestNow('2026-10-31 12:00:00');
+    persistRate(RateSource::Bcv, '36.50000000', '2024-03-01 04:00:00');
+    $organization = Organization::factory()->create(['timezone' => 'America/Caracas']);
+    setRateSource($organization, RateSource::Manual);
+    setSetting($organization, SettingKey::ExchangeRateManual, '900.00');
+
+    expect(rates()->on($organization, CarbonImmutable::parse('2024-03-02'))?->rate)->toBe('36.50000000');
+
+    CarbonImmutable::setTestNow();
+});
+
 function setRateSource(Organization $organization, RateSource $source): void
 {
     setSetting($organization, SettingKey::ExchangeRateSource, $source->value);

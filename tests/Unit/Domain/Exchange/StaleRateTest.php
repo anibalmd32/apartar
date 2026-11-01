@@ -23,6 +23,14 @@ it('a los 30 días exactos todavía no es vieja; un segundo después, sí', func
         ->and(StaleRate::in(publishedAgo('2026-09-07 11:59:59'), Currency::VES))->toBeInstanceOf(StaleRate::class);
 });
 
+it('para un pago de otro día mide la antigüedad contra ese día, no contra hoy', function (): void {
+    $march = publishedAgo('2024-03-01 00:00:00');
+
+    expect(StaleRate::in($march, Currency::VES, CarbonImmutable::parse('2024-03-02')))->toBeNull()
+        ->and(StaleRate::in($march, Currency::VES, CarbonImmutable::parse('2024-04-15')))->toBeInstanceOf(StaleRate::class)
+        ->and(StaleRate::in($march, Currency::VES))->toBeInstanceOf(StaleRate::class);
+});
+
 it('no pide nada en dólares, con la tasa escrita a mano ni sin tasa', function (): void {
     expect(StaleRate::in(publishedAgo('2026-08-01 12:00:00'), Currency::USD))->toBeNull()
         ->and(StaleRate::in(new ManualRate('40.00'), Currency::VES))->toBeNull()

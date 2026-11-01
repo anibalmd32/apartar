@@ -92,12 +92,12 @@ it('al cambiar el importe pide la vista previa al servidor', async () => {
     );
     render(<ReceiptReview {...props()} />);
 
-    fireEvent.change(screen.getByLabelText('Importe recibido'), { target: { value: '1275.00' } });
+    fireEvent.change(screen.getByLabelText('Importe recibido'), { target: { value: '1275,00' } });
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
 
-    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/backoffice/comprobantes/9/vista-previa?amount=1275.00&currency=VES');
+    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/backoffice/comprobantes/9/vista-previa?amount=1.275%2C00&currency=VES');
     expect(await screen.findByText('Se aplicará a la cuota 1.')).toBeInTheDocument();
 });
 
@@ -155,7 +155,7 @@ it('pide la vista previa con la tasa escrita', async () => {
     fireEvent.change(screen.getByLabelText('Tasa (opcional)'), { target: { value: '40' } });
     await settle();
 
-    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/backoffice/comprobantes/9/vista-previa?amount=2550.00&currency=VES&rate=40');
+    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/backoffice/comprobantes/9/vista-previa?amount=2.550%2C00&currency=VES&rate=40');
     expect(await screen.findByText('Con la manual.')).toBeInTheDocument();
 });
 
@@ -168,7 +168,7 @@ it('al pasar a dólares olvida la tasa escrita', async () => {
     await settle();
 
     expect(screen.queryByLabelText('Tasa (opcional)')).not.toBeInTheDocument();
-    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe('/backoffice/comprobantes/9/vista-previa?amount=2550.00&currency=USD');
+    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0]).toBe('/backoffice/comprobantes/9/vista-previa?amount=2.550%2C00&currency=USD');
 });
 
 it('enseña el rechazo del sobrante aunque la vista previa no lo tenga', () => {

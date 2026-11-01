@@ -223,13 +223,13 @@ final class ReceiptReviewController extends Controller
     {
         try {
             $data = new ApproveReceiptData($amount, $currency, $rateOverride, null);
-            $rate = $data->manualRate() ?? $this->rates->current($this->context->organization());
+            $rate = $data->manualRate() ?? $this->rates->on($this->context->organization(), $receipt->paid_at);
         } catch (InvalidArgumentException|InvalidRateException $exception) {
             return [null, $exception->getMessage()];
         }
 
         try {
-            return [$this->applier->preview($layaway, $data->settled(), $rate, $data->settledAmount, $data->settledCurrency, $receipt), null];
+            return [$this->applier->preview($layaway, $data->settled(), $rate, $data->settledAmount, $data->settledCurrency, $receipt, paidOn: $receipt->paid_at), null];
         } catch (PaymentNotApplicableException|MissingExchangeRateException $exception) {
             return [null, $exception->getMessage()];
         } catch (UniqueConstraintViolationException) {

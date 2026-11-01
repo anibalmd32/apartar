@@ -10,6 +10,7 @@ use App\Models\ExchangeRate;
 use App\Models\Organization;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Closure;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Throwable;
@@ -40,6 +41,33 @@ final class ExchangeRateService
         }
 
         return $this->forSource($source);
+    }
+
+    public function on(Organization $organization, CarbonInterface $day): ?RateSnapshot
+    {
+        $timezone = $organization->timezone;
+        $date = CarbonImmutable::parse($day->format('Y-m-d'), $timezone);
+
+        if ($date->greaterThanOrEqualTo(CarbonImmutable::now($timezone)->startOfDay())) {
+            return $this->current($organization);
+        }
+
+        $source = $this->sourceFor($organization);
+        $source = $source === RateSource::Manual ? $this->platformSource() : $source;
+
+        $row = ExchangeRate::query()
+            ->where('source', $source->value)
+            ->where('published_at', '<=', $date->endOfDay()->setTimezone(date_default_timezone_get()))
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return $row === null ? null : new RateSnapshot(
+            rate: $row->rate,
+            source: $row->source,
+            publishedAt: $row->published_at,
+            fetchedAt: $row->fetched_at,
+        );
     }
 
     public function forSource(RateSource $source): ?RateSnapshot

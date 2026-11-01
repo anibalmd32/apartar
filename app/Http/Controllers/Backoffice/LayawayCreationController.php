@@ -40,6 +40,7 @@ use App\Models\User;
 use App\Queries\CustomerSearch;
 use App\Queries\PaymentFieldOptionsQuery;
 use App\Support\DecimalInput;
+use App\Support\PaymentDay;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\JsonResponse;
@@ -158,6 +159,7 @@ final class LayawayCreationController extends Controller
         $currency = Currency::tryFrom(is_string($request->query('currency')) ? $request->query('currency') : '');
         $rate = $request->query('rate');
         $rate = is_string($rate) && $rate !== '' && $currency !== Currency::USD ? DecimalInput::normalize($rate) : null;
+        $paidOn = PaymentDay::fromQuery($request, $this->context->organization()->timezone);
 
         if (! $product instanceof Product || ! is_int($quantity)) {
             return response()->json(['message' => 'Elige primero el producto y la cantidad.'], 422);
@@ -178,8 +180,8 @@ final class LayawayCreationController extends Controller
         try {
             PaymentAmounts::assertPositive($amount, $currency, 'del pago');
             $settled = Money::fromDecimalString($amount, $currency);
-            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->current($this->context->organization());
-            $preview = app(OpeningPaymentPreview::class)->for($this->termsOf($product, $quantity), $settled, $snapshot);
+            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->on($this->context->organization(), $paidOn);
+            $preview = app(OpeningPaymentPreview::class)->for($this->termsOf($product, $quantity), $settled, $snapshot, $paidOn);
         } catch (InvalidArgumentException|InvalidRateException|PaymentNotApplicableException|MissingExchangeRateException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
