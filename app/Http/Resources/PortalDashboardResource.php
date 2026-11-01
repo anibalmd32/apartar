@@ -12,6 +12,7 @@ use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationBrand;
 use App\Domain\Tenancy\TenantContext;
+use App\Domain\Tenancy\TenantResolver;
 use App\Http\Controllers\Portal\PushSubscriptionController;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Account;
@@ -67,6 +68,9 @@ final class PortalDashboardResource extends JsonResource
                 : route('account.google.redirect', ['luego' => route('portal.dashboard', absolute: false)]),
             'subscriptionsUrl' => $account instanceof Account ? route('portal.subscriptions') : null,
             'claimUrl' => $account instanceof Account ? route('portal.claim') : null,
+            'unclaimedBusinesses' => $account instanceof Account && $account->document_number !== null
+                ? app(TenantResolver::class)->unclaimedBusinessesFor($account->document_number, (int) $account->getKey())
+                : 0,
             'feedPreview' => $account instanceof Account ? $this->feedPreview($account, $request) : null,
             'push' => [
                 'publicKey' => PushSubscriptionController::isConfigured() ? (string) config('webpush.vapid.public_key') : null,

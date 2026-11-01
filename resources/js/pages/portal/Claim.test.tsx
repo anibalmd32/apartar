@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 it('pide cédula y código y envía al reclamo', () => {
-    render(<Claim storeUrl="/mi-cuenta/reclamar" />);
+    render(<Claim storeUrl="/mi-cuenta/reclamar" document={null} />);
 
     expect(screen.getByLabelText('Cédula o RIF')).toBeInTheDocument();
     expect(screen.getByLabelText('Código de apartado')).toBeInTheDocument();
@@ -27,6 +27,12 @@ it('pide cédula y código y envía al reclamo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Recuperar' }));
 
     expect(post).toHaveBeenCalledWith('/mi-cuenta/reclamar');
+});
+
+it('trae la cédula de la cuenta ya escrita', () => {
+    render(<Claim storeUrl="/mi-cuenta/reclamar" document="V20111222" />);
+
+    expect(useForm).toHaveBeenCalledWith({ document: 'V20111222', code: '' });
 });
 
 it('enseña el error genérico junto al código', () => {
@@ -38,7 +44,7 @@ it('enseña el error genérico junto al código', () => {
         errors: { code: 'No encontramos un apartado con esa cédula y ese código.' },
     });
 
-    render(<Claim storeUrl="/mi-cuenta/reclamar" />);
+    render(<Claim storeUrl="/mi-cuenta/reclamar" document={null} />);
 
     expect(screen.getByText('No encontramos un apartado con esa cédula y ese código.')).toBeInTheDocument();
 });

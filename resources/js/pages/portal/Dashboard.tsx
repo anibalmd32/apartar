@@ -20,6 +20,7 @@ export default function Dashboard({
     connectGoogleUrl,
     subscriptionsUrl,
     claimUrl,
+    unclaimedBusinesses,
     feedPreview,
     push,
 }: PortalDashboardProps) {
@@ -38,6 +39,17 @@ export default function Dashboard({
             </h1>
 
             <PortalAlerts alerts={alerts} />
+
+            {claimUrl !== null && unclaimedBusinesses > 0 ? (
+                <Alert tone="info">
+                    {unclaimedBusinesses === 1
+                        ? 'Un negocio tiene apartados a tu cédula que aún no están en tu cuenta.'
+                        : `${unclaimedBusinesses} negocios tienen apartados a tu cédula que aún no están en tu cuenta.`}{' '}
+                    <Link href={claimUrl} className="font-semibold underline">
+                        Agrégalos con el código de cualquiera de ellos
+                    </Link>
+                </Alert>
+            ) : null}
 
             <PushOptIn publicKey={push.publicKey} subscribeUrl={push.subscribeUrl} hasEmail={push.hasEmail} />
 

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Portal;
 
+use App\Actions\Account\CompleteAccountDocumentAction;
 use App\Actions\Customer\CompleteCustomerDocumentAction;
 use App\Domain\Customer\CustomerAlreadyExistsException;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Customer;
 use App\Models\Organization;
 use App\Rules\ValidDocumentNumber;
@@ -27,17 +29,18 @@ final class DocumentController extends Controller
 
     public function create(Request $request): Response|RedirectResponse
     {
-        $customer = $this->customer();
+        $holder = $this->holder();
 
-        if ($customer === null || $customer->document_number !== null) {
+        if ($holder === null || $holder->document_number !== null) {
             return redirect()->intended(route('portal.dashboard'));
         }
 
         $typed = $request->session()->get(self::TYPED_DOCUMENT);
 
         return Inertia::render('portal/Document', [
-            'customerName' => $customer->full_name,
-            'businessName' => $this->businessName($customer),
+            'mode' => $holder instanceof Account ? 'account' : 'scoped',
+            'customerName' => $holder instanceof Account ? $holder->display_name : $holder->full_name,
+            'businessName' => $holder instanceof Account ? 'Mi cuenta' : $this->businessName($holder),
             'typed' => is_string($typed) ? $typed : '',
             'storeUrl' => route('portal.document.store'),
         ]);
@@ -46,11 +49,11 @@ final class DocumentController extends Controller
     /**
      * @throws ValidationException
      */
-    public function store(Request $request, CompleteCustomerDocumentAction $complete): RedirectResponse
+    public function store(Request $request, CompleteCustomerDocumentAction $customers, CompleteAccountDocumentAction $accounts): RedirectResponse
     {
-        $customer = $this->customer();
+        $holder = $this->holder();
 
-        if ($customer === null) {
+        if ($holder === null) {
             return redirect()->route('portal.access');
         }
 
@@ -58,13 +61,18 @@ final class DocumentController extends Controller
             ['document' => ['required', 'string', 'max:20', new ValidDocumentNumber]],
             ['document.required' => 'Escribe tu cédula o RIF para continuar.'],
         );
+        $document = DocumentNumber::fromInput((string) $validated['document']);
 
-        try {
-            Auth::guard('customer')->setUser($complete->handle($customer, DocumentNumber::fromInput((string) $validated['document'])));
-        } catch (CustomerAlreadyExistsException) {
-            Log::notice('portal.document.taken', ['customer' => $customer->getKey()]);
+        if ($holder instanceof Account) {
+            Auth::guard('account')->setUser($accounts->handle($holder, $document));
+        } else {
+            try {
+                Auth::guard('customer')->setUser($customers->handle($holder, $document));
+            } catch (CustomerAlreadyExistsException) {
+                Log::notice('portal.document.taken', ['customer' => $holder->getKey()]);
 
-            throw ValidationException::withMessages(['document' => sprintf(self::TAKEN_MESSAGE, $this->businessName($customer))]);
+                throw ValidationException::withMessages(['document' => sprintf(self::TAKEN_MESSAGE, $this->businessName($holder))]);
+            }
         }
 
         $request->session()->forget(self::TYPED_DOCUMENT);
@@ -72,8 +80,14 @@ final class DocumentController extends Controller
         return redirect()->intended(route('portal.dashboard'));
     }
 
-    private function customer(): ?Customer
+    private function holder(): Account|Customer|null
     {
+        $account = Auth::guard('account')->user();
+
+        if ($account instanceof Account) {
+            return $account;
+        }
+
         $customer = Auth::guard('customer')->user();
 
         return $customer instanceof Customer ? $customer : null;

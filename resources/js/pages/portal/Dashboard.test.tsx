@@ -68,6 +68,7 @@ const PROPS: PortalDashboardProps = {
     connectGoogleUrl: '/cuenta/google/redirect?luego=%2Fmi-cuenta',
     subscriptionsUrl: null,
     claimUrl: null,
+    unclaimedBusinesses: 0,
     feedPreview: null,
     push: { publicKey: null, subscribeUrl: '/mi-cuenta/push', hasEmail: false },
 };
@@ -160,6 +161,18 @@ it('con la cuenta y sin fichas, explica el vacío y enlaza lo que sigue', () => 
     expect(screen.getByRole('link', { name: 'Ver los catálogos que sigues' })).toHaveAttribute('href', '/mi-cuenta/suscripciones');
     expect(screen.getByRole('link', { name: 'Recuperar mi historial' })).toHaveAttribute('href', '/mi-cuenta/reclamar');
     expect(screen.queryByRole('link', { name: 'Conectar Google' })).toBeNull();
+});
+
+it('avisa de los negocios con apartados a su cédula sin unir y enlaza al reclamo', () => {
+    const account = { session: { mode: 'account' as const, displayName: 'María Pérez' }, connectGoogleUrl: null, claimUrl: '/mi-cuenta/reclamar' };
+    const { rerender } = render(<Dashboard {...PROPS} {...account} unclaimedBusinesses={2} />);
+
+    expect(screen.getByText(/2 negocios tienen apartados a tu cédula/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Agrégalos con el código de cualquiera de ellos' })).toHaveAttribute('href', '/mi-cuenta/reclamar');
+
+    rerender(<Dashboard {...PROPS} {...account} unclaimedBusinesses={0} />);
+
+    expect(screen.queryByText(/tienen apartados a tu cédula/)).toBeNull();
 });
 
 it('con más de cinco negocios enseña cinco y ofrece ver todos', () => {

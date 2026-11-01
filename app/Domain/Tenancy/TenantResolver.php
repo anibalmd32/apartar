@@ -146,6 +146,17 @@ final class TenantResolver
         return $ids === [] ? [] : Organization::query()->whereKey($ids)->orderBy('id')->get()->all();
     }
 
+    public function unclaimedBusinessesFor(string $documentNumber, int $accountId): int
+    {
+        return DB::table('customers')
+            ->whereNull('deleted_at')
+            ->whereNull('account_id')
+            ->where('document_number', $documentNumber)
+            ->whereNotIn(TenantScope::COLUMN, DB::table('customers')->select(TenantScope::COLUMN)->where('account_id', $accountId))
+            ->distinct()
+            ->count(TenantScope::COLUMN);
+    }
+
     /**
      * @throws ModelNotFoundException<Organization>
      */

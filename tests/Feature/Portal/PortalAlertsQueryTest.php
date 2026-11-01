@@ -255,7 +255,7 @@ final class PortalAlertsQueryTest extends TestCase
 
         $documentQueries = 0;
         DB::listen(function (QueryExecuted $query) use (&$documentQueries): void {
-            $documentQueries += str_contains($query->sql, 'document_number') ? 1 : 0;
+            $documentQueries += str_contains($query->sql, 'document_number') && ! str_contains($query->sql, '`account_id` is null') ? 1 : 0;
         });
 
         $this->actingAs($account, 'account')->get(route('portal.dashboard'))->assertInertia(fn (AssertableInertia $page) => $page

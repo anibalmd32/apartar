@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\Account;
 use App\Models\Customer;
 use Closure;
 use Illuminate\Http\Request;
@@ -17,20 +18,16 @@ final class EnsureCustomerDocument
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::guard('account')->check()) {
+        $holder = Auth::guard('account')->check() ? Auth::guard('account')->user() : Auth::guard('customer')->user();
+
+        if (! ($holder instanceof Account || $holder instanceof Customer) || $holder->document_number !== null) {
             return $next($request);
         }
 
-        $customer = Auth::guard('customer')->user();
-
-        if ($customer instanceof Customer && $customer->document_number === null) {
-            if (! $request->isMethod('GET')) {
-                abort(Response::HTTP_CONFLICT, 'Escribe tu cédula para continuar.');
-            }
-
-            return redirect()->guest(route('portal.document'));
+        if (! $request->isMethod('GET')) {
+            abort(Response::HTTP_CONFLICT, 'Escribe tu cédula para continuar.');
         }
 
-        return $next($request);
+        return redirect()->guest(route('portal.document'));
     }
 }

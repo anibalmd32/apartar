@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Account;
 
+use App\Actions\Customer\CompleteCustomerDocumentAction;
 use App\Domain\Account\ClaimVerificationFailedException;
 use App\Domain\Account\CustomerAlreadyLinkedException;
 use App\Domain\Account\LinkOrigin;
+use App\Domain\Customer\CustomerAlreadyExistsException;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use App\Models\Account;
@@ -22,6 +24,7 @@ final class ClaimCustomerAction
         private readonly TenantContext $context,
         private readonly TenantResolver $resolver,
         private readonly LinkAccountAction $link,
+        private readonly CompleteCustomerDocumentAction $documents,
     ) {}
 
     /**
@@ -45,7 +48,10 @@ final class ClaimCustomerAction
         return $this->context->runFor($organization, function () use ($account, $document, $code): Customer {
             $layaway = Layaway::query()->where('code', $code)->first();
             $customer = $layaway instanceof Layaway
-                ? Customer::query()->whereKey($layaway->customer_id)->where('document_number', $document->value)->first()
+                ? Customer::query()
+                    ->whereKey($layaway->customer_id)
+                    ->where(fn ($query) => $query->where('document_number', $document->value)->orWhereNull('document_number'))
+                    ->first()
                 : null;
 
             if (! $customer instanceof Customer) {
@@ -53,6 +59,14 @@ final class ClaimCustomerAction
             }
 
             $this->link->handle($customer, $account, LinkOrigin::VerifiedClaim);
+
+            if ($customer->document_number === null) {
+                try {
+                    return $this->documents->handle($customer, $document);
+                } catch (CustomerAlreadyExistsException) {
+                    return $customer;
+                }
+            }
 
             return $customer;
         });

@@ -43,7 +43,7 @@ Route::prefix('mi-cuenta')->name('portal.')->group(function (): void {
         ->post('salir', [AccessController::class, 'destroy'])
         ->name('logout');
 
-    Route::middleware(['account-session', 'outside-tenancy'])->group(function (): void {
+    Route::middleware(['account-session', 'portal-document', 'outside-tenancy'])->group(function (): void {
         Route::get('suscripciones', [SubscriptionsController::class, 'index'])->name('subscriptions');
         Route::get('novedades', FeedController::class)->name('feed');
         Route::patch('suscripciones/{catalog}', [SubscriptionsController::class, 'update'])

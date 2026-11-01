@@ -7,8 +7,10 @@ namespace App\Http\Controllers\Portal;
 use App\Actions\Account\ClaimCustomerAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\ClaimCustomerRequest;
+use App\Models\Account;
 use App\Models\Organization;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,8 +20,11 @@ final class ClaimController extends Controller
 
     public function create(): Response
     {
+        $account = Auth::guard('account')->user();
+
         return Inertia::render('portal/Claim', [
             'storeUrl' => route('portal.claim.store'),
+            'document' => $account instanceof Account ? $account->document_number : null,
         ]);
     }
 

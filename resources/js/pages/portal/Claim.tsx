@@ -15,8 +15,8 @@ interface ClaimForm {
     code: string;
 }
 
-export default function Claim({ storeUrl }: PortalClaimProps) {
-    const { data, setData, post, processing, errors } = useForm<ClaimForm>({ document: '', code: '' });
+export default function Claim({ storeUrl, document }: PortalClaimProps) {
+    const { data, setData, post, processing, errors } = useForm<ClaimForm>({ document: document ?? '', code: '' });
     const { session } = useAccountSession();
 
     const submit: FormEventHandler = (event) => {

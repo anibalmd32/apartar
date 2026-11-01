@@ -87,8 +87,8 @@ it('indexa exchange_rates por fuente y fecha de publicación', function (): void
     expect(SchemaInspector::hasIndexOn('exchange_rates', 'source', 'fetched_at'))->toBeFalse();
 });
 
-it('no guarda documento ni teléfono en accounts', function (): void {
-    $columns = array_keys(SchemaInspector::columns('accounts'));
+it('en accounts solo guarda la cédula para avisar de fichas por unir, sin teléfono ni otros documentos', function (): void {
+    $columns = array_values(array_diff(array_keys(SchemaInspector::columns('accounts')), ['document_number']));
 
     $forbidden = array_values(array_filter(
         $columns,

@@ -23,6 +23,7 @@ class AccountFactory extends Factory
         return [
             'display_name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'document_number' => 'V'.fake()->unique()->numerify('########'),
             'avatar_url' => null,
             'locale' => 'es',
             'last_login_at' => null,

@@ -100,15 +100,18 @@ export interface PortalDashboardProps {
     readonly connectGoogleUrl: string | null;
     readonly subscriptionsUrl: string | null;
     readonly claimUrl: string | null;
+    readonly unclaimedBusinesses: number;
     readonly feedPreview: FeedPreview | null;
     readonly push: { readonly publicKey: string | null; readonly subscribeUrl: string; readonly hasEmail: boolean };
 }
 
 export interface PortalClaimProps {
     readonly storeUrl: string;
+    readonly document: string | null;
 }
 
 export interface PortalDocumentProps {
+    readonly mode: 'scoped' | 'account';
     readonly customerName: string;
     readonly businessName: string;
     readonly typed: string;

@@ -12,7 +12,7 @@ vi.mock('@inertiajs/react', async () => ({
     Link: (await import('@/test/fakes')).FakeLink,
 }));
 
-const props = { customerName: 'Rosa Díaz', businessName: 'Bodega La Fe', typed: '', storeUrl: '/mi-cuenta/cedula' };
+const props = { mode: 'scoped' as const, customerName: 'Rosa Díaz', businessName: 'Bodega La Fe', typed: '', storeUrl: '/mi-cuenta/cedula' };
 
 beforeEach(() => {
     vi.stubGlobal('route', fakeRoute);
@@ -26,6 +26,12 @@ it('explica por qué pide la cédula y no deja seguir sin escribirla', () => {
     expect(screen.getByText(/Bodega La Fe cargó tu apartado sin tu cédula/)).toBeInTheDocument();
     expect(screen.getByLabelText('Cédula o RIF')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Guardar y continuar' })).toBeDisabled();
+});
+
+it('con la cuenta de Google explica que la cédula solo sirve para avisar', () => {
+    render(<Document {...props} mode="account" businessName="Mi cuenta" />);
+
+    expect(screen.getByText(/te pediremos el código de uno de ellos/)).toBeInTheDocument();
 });
 
 it('trae la cédula que escribió al entrar y la envía', () => {
