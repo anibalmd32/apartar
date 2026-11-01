@@ -40,6 +40,7 @@ use App\Models\User;
 use App\Queries\CustomerSearch;
 use App\Queries\PaymentFieldOptionsQuery;
 use App\Support\DecimalInput;
+use App\Support\ManualPaymentDates;
 use App\Support\PaymentDay;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
@@ -90,7 +91,7 @@ final class LayawayCreationController extends Controller
                 'maxHours' => DownPaymentWindow::MAX_HOURS,
                 'maxDays' => DownPaymentWindow::MAX_DAYS,
             ],
-            'payment' => $this->paymentFields->for($today, $today),
+            'payment' => $this->paymentFields->for(...ManualPaymentDates::bounds($this->timezone())),
             'urls' => [
                 'store' => route('layaways.store'),
                 'customers' => route('layaways.create.customers'),

@@ -100,7 +100,7 @@ final class LayawayCreationPageTest extends TestCase
                 ->where('customer.id', $this->customer->getKey())
                 ->where('customer.name', 'María González')
                 ->where('window.defaultHours', 72)
-                ->where('payment.paidAt.min', '2026-09-10')
+                ->where('payment.paidAt.min', '2023-09-10')
                 ->where('payment.paidAt.max', '2026-09-10')
                 ->where('urls.store', route('layaways.store')));
     }

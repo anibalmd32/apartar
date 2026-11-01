@@ -18,6 +18,7 @@ use App\Models\Bank;
 use App\Models\PaymentAccount;
 use App\Rules\RealMimeType;
 use App\Rules\UniqueReceiptFingerprint;
+use App\Support\ManualPaymentDates;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\UploadedFile;
@@ -95,7 +96,7 @@ trait ValidatesManualPayment
     {
         return [
             'paid_at.before_or_equal' => 'La fecha del pago no puede ser futura.',
-            'paid_at.after_or_equal' => 'La fecha del pago no puede ser anterior a la creación del apartado.',
+            'paid_at.after_or_equal' => sprintf('La fecha del pago no puede ser de hace más de %d años.', ManualPaymentDates::YEARS_BACK),
             'bank.prohibited' => 'Un pago en efectivo no lleva banco ni referencia.',
             'reference.prohibited' => 'Un pago en efectivo no lleva banco ni referencia.',
             'file.max' => sprintf('El comprobante pesa más de %d MB. Si es un PDF, sube mejor una captura.', ReceiptFile::maxSizeMb()),

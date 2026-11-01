@@ -20,6 +20,7 @@ import {
 } from '@/features/receipts/lib/payment-fields';
 import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
+import { type ApprovalPreviewView } from '@/types/receipt';
 import { useEffect, useRef } from 'react';
 
 interface PaymentFieldsProps {
@@ -29,6 +30,20 @@ interface PaymentFieldsProps {
     options: PaymentFieldOptions;
     preview: ApprovalPreviewState;
     onReadingChange?: (reading: boolean) => void;
+}
+
+export function rateHint(options: PaymentFieldOptions, paidAt: string, preview: ApprovalPreviewView | null): string {
+    if (paidAt === '' || paidAt >= options.paidAt.max) {
+        return options.rate === null
+            ? 'No hay tasa vigente: escribe la que usaste.'
+            : `Vacía usa la vigente: ${formatRate(options.rate.rate)} (${options.rate.sourceLabel}).`;
+    }
+
+    const day = `${paidAt.slice(8, 10)}/${paidAt.slice(5, 7)}/${paidAt.slice(0, 4)}`;
+
+    return preview !== null && preview.rateSource !== 'manual'
+        ? `Vacía usa la del ${day}: ${formatRate(preview.rate)} (${preview.rateSourceLabel}).`
+        : `Vacía usa la tasa oficial del ${day}.`;
 }
 
 export function PaymentFields({ values, errors, onChange, options, preview: { preview, error, loading }, onReadingChange }: PaymentFieldsProps) {
@@ -141,21 +156,6 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                     onChange={(event) => onChange({ currency: event.target.value, rate: event.target.value === 'USD' ? '' : values.rate })}
                     error={errors.currency}
                 />
-                {values.currency === 'VES' ? (
-                    <TextField
-                        label="Tasa (opcional)"
-                        name="rate"
-                        inputMode="decimal"
-                        value={values.rate}
-                        onChange={(event) => onChange({ rate: typedAmount(event, RATE_DECIMALS) })}
-                        error={errors.rate}
-                        hint={
-                            options.rate === null
-                                ? 'No hay tasa vigente: escribe la que usaste.'
-                                : `Vacía usa la vigente: ${formatRate(options.rate.rate)} (${options.rate.sourceLabel}).`
-                        }
-                    />
-                ) : null}
                 <DateField
                     label="Fecha del pago"
                     name="paid_at"
@@ -165,6 +165,17 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                     onChange={(value) => onChange({ paid_at: value })}
                     error={errors.paid_at}
                 />
+                {values.currency === 'VES' ? (
+                    <TextField
+                        label="Tasa (opcional)"
+                        name="rate"
+                        inputMode="decimal"
+                        value={values.rate}
+                        onChange={(event) => onChange({ rate: typedAmount(event, RATE_DECIMALS) })}
+                        error={errors.rate}
+                        hint={rateHint(options, values.paid_at, preview)}
+                    />
+                ) : null}
             </fieldset>
 
             <PaymentNoteField value={values.note} error={errors.note} onChange={(note) => onChange({ note })} />

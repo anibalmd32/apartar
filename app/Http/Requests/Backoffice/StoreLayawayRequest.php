@@ -16,7 +16,7 @@ use App\Models\Product;
 use App\Rules\ValidDocumentNumber;
 use App\Rules\ValidVenezuelanPhone;
 use App\Support\DecimalInput;
-use Carbon\CarbonImmutable;
+use App\Support\ManualPaymentDates;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -73,9 +73,9 @@ final class StoreLayawayRequest extends FormRequest
             return $rules;
         }
 
-        $today = CarbonImmutable::now($this->organizationTimezone())->toDateString();
+        [$earliest, $today] = ManualPaymentDates::bounds($this->organizationTimezone());
 
-        return [...$rules, ...$this->paymentRules($today, $today)];
+        return [...$rules, ...$this->paymentRules($earliest, $today)];
     }
 
     /**

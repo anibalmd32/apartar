@@ -13,7 +13,6 @@ use App\Domain\Money\MoneyFormatter;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\CancelLayawayRequest;
-use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Http\Resources\PaymentRowResource;
 use App\Models\Conversation;
@@ -25,6 +24,7 @@ use App\Models\PaymentAllocation;
 use App\Models\User;
 use App\Queries\LayawayActivityQuery;
 use App\Queries\PaymentFieldOptionsQuery;
+use App\Support\ManualPaymentDates;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use DateTimeZone;
@@ -124,7 +124,7 @@ final class LayawayController extends Controller
      */
     private function manualPaymentOptions(Layaway $layaway, DateTimeZone $timezone): array
     {
-        [$min, $max] = StoreReceiptRequest::boundsFor($layaway, $timezone);
+        [$min, $max] = ManualPaymentDates::bounds($timezone);
 
         return [
             'storeUrl' => route('layaways.payments.store', $layaway),

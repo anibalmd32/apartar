@@ -6,10 +6,9 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Payment\ManualPaymentData;
 use App\Http\Requests\Backoffice\Concerns\ValidatesManualPayment;
-use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Models\Layaway;
 use App\Support\DecimalInput;
-use Carbon\CarbonImmutable;
+use App\Support\ManualPaymentDates;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
 
@@ -68,10 +67,6 @@ final class StoreManualPaymentRequest extends FormRequest
      */
     private function paidAtBounds(): array
     {
-        $layaway = $this->route('layaway');
-
-        return $layaway instanceof Layaway
-            ? StoreReceiptRequest::boundsFor($layaway, $this->organizationTimezone())
-            : [CarbonImmutable::now()->toDateString(), CarbonImmutable::now()->toDateString()];
+        return ManualPaymentDates::bounds($this->organizationTimezone());
     }
 }

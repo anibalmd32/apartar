@@ -102,6 +102,21 @@ final class ManualPaymentPageTest extends TestCase
         $this->assertSame('active', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
     }
 
+    public function test_a_payment_older_than_the_layaway_in_the_system_is_accepted_for_businesses_coming_from_paper(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->withoutOrganization();
+
+        $this->actingAs($this->member)->get(route('layaways.show', $layaway))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('manualPayment.paidAt', [
+                'min' => CarbonImmutable::now($this->organization->timezone)->subYears(3)->toDateString(),
+                'max' => CarbonImmutable::now($this->organization->timezone)->toDateString(),
+            ]));
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2026-08-17']))->assertSessionHasNoErrors();
+        $this->assertSame('2026-08-17', $this->withinOrganization($this->organization, fn (): ?string => Payment::query()->latest('id')->first()?->paid_on?->toDateString()));
+    }
+
     public function test_each_refusal_comes_back_in_its_field(): void
     {
         $layaway = $this->layawayIn($this->organization);
@@ -113,8 +128,8 @@ final class ManualPaymentPageTest extends TestCase
         $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '0.00']))->assertSessionHasErrors('amount');
         $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2026-09-12']))
             ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser futura.']);
-        $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2026-09-09']))
-            ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser anterior a la creación del apartado.']);
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2023-09-09']))
+            ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser de hace más de 3 años.']);
         $this->post(route('layaways.payments.store', $layaway), $this->payload(['payment_account' => (string) $foreign->getKey()]))
             ->assertSessionHasErrors(['payment_account' => 'Esa cuenta de cobro no es de tu negocio.']);
 
