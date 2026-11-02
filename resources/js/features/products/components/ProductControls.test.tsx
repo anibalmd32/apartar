@@ -19,7 +19,7 @@ it('«Personalizada» deja el campo de días, y una cifra guardada fuera de los 
     const { rerender } = render(<FrequencyField value={15} onChange={onChange} />);
 
     fireEvent.change(screen.getByLabelText('Frecuencia'), { target: { value: 'custom' } });
-    expect(screen.getByLabelText(/Días entre cuotas/)).toHaveValue(15);
+    expect(screen.getByLabelText(/Días entre cuotas/)).toHaveValue('15');
     expect(onChange).not.toHaveBeenCalled();
 
     rerender(<FrequencyField value={10} onChange={onChange} error="Demasiado" />);

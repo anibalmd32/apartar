@@ -1,18 +1,18 @@
+import { NumberField } from '@/components/ui/number-field';
 import { SelectField } from '@/components/ui/select-field';
-import { TextField } from '@/components/ui/text-field';
 import { useState } from 'react';
 
 const PRESETS = [7, 15, 30] as const;
 const CUSTOM = 'custom';
 
 interface FrequencyFieldProps {
-    value: number;
-    onChange: (days: number) => void;
+    value: number | null;
+    onChange: (days: number | null) => void;
     error?: string;
 }
 
 export function FrequencyField({ value, onChange, error }: FrequencyFieldProps) {
-    const isPreset = (PRESETS as readonly number[]).includes(value);
+    const isPreset = value !== null && (PRESETS as readonly number[]).includes(value);
     const [custom, setCustom] = useState(!isPreset);
     const showDays = custom || !isPreset;
 
@@ -35,16 +35,14 @@ export function FrequencyField({ value, onChange, error }: FrequencyFieldProps) 
             />
 
             {showDays ? (
-                <TextField
+                <NumberField
                     label="Días entre cuotas"
                     name="frequency_days"
-                    type="number"
                     min={1}
                     max={90}
                     value={value}
-                    onChange={(event) => onChange(Number(event.target.value))}
+                    onChange={onChange}
                     error={error}
-                    autoComplete="off"
                     required
                 />
             ) : null}

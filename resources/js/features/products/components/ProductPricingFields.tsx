@@ -1,3 +1,4 @@
+import { NumberField } from '@/components/ui/number-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { FinancingPlanPreview } from '@/features/products/components/FinancingPlanPreview';
@@ -57,16 +58,14 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     required
                 />
 
-                <TextField
+                <NumberField
                     label="Número de cuotas"
                     name="installments_count"
-                    type="number"
                     min={1}
                     max={36}
                     value={data.installments_count}
-                    onChange={(event) => setData('installments_count', Number(event.target.value))}
+                    onChange={(count) => setData('installments_count', count)}
                     error={errors.installments_count}
-                    autoComplete="off"
                     required
                 />
 

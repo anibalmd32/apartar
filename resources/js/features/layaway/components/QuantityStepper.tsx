@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { useNumberDraft } from '@/hooks/use-number-draft';
 import { cn } from '@/lib/utils';
 import { cilMinus, cilPlus } from '@coreui/icons';
 import { useId } from 'react';
@@ -14,6 +15,7 @@ interface QuantityStepperProps {
 export function QuantityStepper({ value, max, onChange, hint, error }: QuantityStepperProps) {
     const id = useId();
     const describedBy = [error ? `${id}-error` : null, `${id}-hint`].filter(Boolean).join(' ');
+    const draft = useNumberDraft({ value, onChange: (next) => next !== null && onChange(next), min: 1, max });
     const step = 'flex h-full w-11 cursor-pointer items-center justify-center disabled:cursor-not-allowed disabled:opacity-40';
 
     return (
@@ -34,13 +36,10 @@ export function QuantityStepper({ value, max, onChange, hint, error }: QuantityS
                 <input
                     id={id}
                     name="quantity"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={max}
-                    value={value}
-                    onChange={(event) => onChange(Number(event.target.value))}
-                    className="w-11 [appearance:textfield] bg-transparent text-center text-base font-bold outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    type="text"
+                    autoComplete="off"
+                    {...draft}
+                    className="w-11 bg-transparent text-center text-base font-bold outline-none"
                     aria-invalid={error ? true : undefined}
                     aria-describedby={describedBy}
                     required

@@ -6,7 +6,7 @@ import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 
 export interface ProductFormData {
-    [key: string]: string | number | number[] | string[];
+    [key: string]: string | number | null | number[] | string[];
     name: string;
     sku: string;
     slug: string;
@@ -14,9 +14,9 @@ export interface ProductFormData {
     price: string;
     compare_at_price: string;
     down_payment: string;
-    installments_count: number;
-    frequency_days: number;
-    stock: number;
+    installments_count: number | null;
+    frequency_days: number | null;
+    stock: number | null;
     category_id: string;
     category_name: string;
     tag_ids: number[];

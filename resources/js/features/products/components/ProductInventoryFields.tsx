@@ -1,5 +1,5 @@
+import { NumberField } from '@/components/ui/number-field';
 import { SectionCard } from '@/components/ui/section-card';
-import { TextField } from '@/components/ui/text-field';
 import { StockBreakdown } from '@/features/products/components/StockBreakdown';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
 import { type ProductFormValues } from '@/types/product';
@@ -11,16 +11,14 @@ interface ProductInventoryFieldsProps extends ProductFieldsProps {
 export function ProductInventoryFields({ data, setData, errors, saved }: ProductInventoryFieldsProps) {
     return (
         <SectionCard title="Inventario">
-            <TextField
+            <NumberField
                 label="Existencias"
                 name="stock"
-                type="number"
                 min={0}
                 value={data.stock}
-                onChange={(event) => setData('stock', Number(event.target.value))}
+                onChange={(stock) => setData('stock', stock)}
                 error={errors.stock}
                 hint="Las que tienes en la tienda, apartadas incluidas. Cero no despublica el producto: se muestra agotado y no se puede apartar."
-                autoComplete="off"
                 required
             />
 

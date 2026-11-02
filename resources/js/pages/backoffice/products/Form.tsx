@@ -78,7 +78,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
         name: data.name,
         sku: data.sku,
         description: data.description,
-        stock: data.stock,
+        stock: data.stock ?? 0,
         categoryName,
         specifications: sheet.payload(),
         images:

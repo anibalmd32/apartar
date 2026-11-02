@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { NumberField } from '@/components/ui/number-field';
 import { SelectField } from '@/components/ui/select-field';
-import { TextField } from '@/components/ui/text-field';
 import { ReminderOffsetsEditor } from '@/features/tenancy/components/ReminderOffsetsEditor';
 import { SettingScopeBadge } from '@/features/tenancy/components/SettingScopeBadge';
 import { bo } from '@/lib/surfaces';
@@ -76,12 +76,11 @@ export function OperationSettingsForm({ settings, definitions }: OperationSettin
                 />
 
                 {NUMERIC_KEYS.map((key) => (
-                    <TextField
+                    <NumberField
                         key={key}
                         label={labelOf(key)}
-                        type="number"
-                        value={value(key)}
-                        onChange={(event) => change(key, event.target.value === '' ? '' : Number(event.target.value))}
+                        value={value(key) === '' ? null : Number(value(key))}
+                        onChange={(next) => change(key, next)}
                         error={errors[`settings.${key}`]}
                         hint={scopeOf(key)}
                     />
