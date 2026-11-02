@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/SKILL.md",
+      "computedHash": "8ef1b537ca4f374a1aa57b363b47f2c015d3bf0e76fcb44fa168a0917df47586"
+    },
     "daisyui": {
       "source": "saadeghi/daisyui",
       "sourceType": "github",
