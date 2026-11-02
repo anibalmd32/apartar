@@ -14,6 +14,7 @@ use App\Http\Resources\ProductDetailResource;
 use App\Models\Catalog;
 use App\Models\Product;
 use App\Queries\CatalogProductsQuery;
+use App\Support\CatalogChat;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -45,6 +46,7 @@ final class ProductShowController extends Controller
                 fn (Product $related): array => (new ProductCardResource($related, $catalog))->resolve($request),
                 $this->related($catalog, $product),
             ),
+            'chat' => fn (): array => CatalogChat::state($catalog),
         ]);
     }
 

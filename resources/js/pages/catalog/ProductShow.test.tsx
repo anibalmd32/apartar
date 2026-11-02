@@ -204,3 +204,34 @@ it('dice cuánto se ahorra y cuántas quedan', () => {
     expect(screen.getByText('Ahorras 17%')).toBeInTheDocument();
     expect(screen.getByText(/quedan 6 unidades/)).toBeInTheDocument();
 });
+
+it('fija abajo el precio, la inicial y «Apartar» para no tener que bajar', () => {
+    renderPage();
+
+    const bar = screen.getByRole('region', { name: 'Apartar este producto' });
+    expect(bar).toHaveAttribute('data-bottom-bar');
+    expect(bar).toHaveTextContent('$250,00');
+    expect(bar).toHaveTextContent('Inicial $50,00');
+    expect(within(bar).getByRole('link', { name: 'Apartar' })).toHaveAttribute('href', '/c/ofertas/apartar/taladro');
+});
+
+it('sin poder apartar no fija la barra', () => {
+    renderPage(detail({ canBeReserved: false, unavailableReason: 'Agotado.' }));
+
+    expect(screen.queryByRole('region', { name: 'Apartar este producto' })).toBeNull();
+});
+
+it('ofrece escribir al negocio como en el catálogo y la foto llena su marco', () => {
+    const image = { thumb: '/t.jpg', card: '/c.jpg', zoom: '/z.jpg', alt: 'Taladro' };
+    render(
+        <ProductShow
+            catalog={CATALOG}
+            product={detail({ images: [image] })}
+            related={[]}
+            chat={{ canWrite: false, sendUrl: '/c/ofertas/chat', threadUrl: '/mi-cuenta/chat/ferreteria' }}
+        />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Escribir al negocio' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Taladro' })).toHaveClass('object-cover');
+});

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Catalog;
 
-use App\Domain\Account\PortalContext;
 use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Catalog\CatalogFilters;
 use App\Domain\Catalog\PublicCatalogAccess;
@@ -18,6 +17,7 @@ use App\Models\CatalogSubscription;
 use App\Models\Product;
 use App\Queries\CatalogFacetsQuery;
 use App\Queries\CatalogProductsQuery;
+use App\Support\CatalogChat;
 use App\Support\CatalogCursor;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -66,11 +66,7 @@ final class CatalogShowController extends Controller
                 'products' => $this->products->visible($catalog)->count(),
                 'followers' => CatalogSubscription::query()->where('catalog_id', $catalog->getKey())->count(),
             ]),
-            'chat' => fn (): array => [
-                'canWrite' => app(PortalContext::class)->customerIn((int) $catalog->organization_id) !== null,
-                'sendUrl' => route('catalog.chat', ['catalog' => $catalog->slug]),
-                'threadUrl' => route('portal.chat.show', ['organization' => $catalog->organization->slug]),
-            ],
+            'chat' => fn (): array => CatalogChat::state($catalog),
         ]);
 
         return $request->header('X-Inertia') === null

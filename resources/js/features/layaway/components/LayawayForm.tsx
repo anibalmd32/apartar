@@ -6,7 +6,7 @@ import { TextField } from '@/components/ui/text-field';
 import { QuantityStepper } from '@/features/layaway/components/QuantityStepper';
 import { TermsConsentField } from '@/features/layaway/components/TermsConsentField';
 import { type LayawayForm as LayawayFormState } from '@/features/layaway/hooks/useLayawayForm';
-import { type LayawayConsentView } from '@/types/layaway';
+import { type LayawayConsentView, type LayawayFormValues } from '@/types/layaway';
 import { type FormEventHandler } from 'react';
 
 interface LayawayFormProps {
@@ -21,6 +21,14 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
 
     const errors = form.errors as Partial<Record<string, string>>;
 
+    const change = <K extends keyof LayawayFormValues>(field: K, value: LayawayFormValues[K]) => {
+        setData(field, value);
+
+        if (errors[field as string] !== undefined) {
+            form.clearErrors(field);
+        }
+    };
+
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
         form.submit();
@@ -34,7 +42,10 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
             <QuantityStepper
                 value={data.quantity}
                 max={maxQuantity}
-                onChange={form.setQuantity}
+                onChange={(value) => {
+                    form.setQuantity(value);
+                    form.clearErrors('quantity');
+                }}
                 error={errors.quantity}
                 hint={maxQuantity > 1 ? `Hasta ${maxQuantity} unidades.` : 'Queda una unidad.'}
             />
@@ -43,7 +54,7 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
                 label="Nombre y apellido"
                 name="fullName"
                 value={data.fullName}
-                onChange={(event) => setData('fullName', event.target.value)}
+                onChange={(event) => change('fullName', event.target.value)}
                 error={errors.fullName}
                 autoComplete="name"
                 required
@@ -53,7 +64,7 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
                 label="Cédula o RIF"
                 name="documentNumber"
                 value={data.documentNumber}
-                onChange={(value) => setData('documentNumber', value)}
+                onChange={(value) => change('documentNumber', value)}
                 error={errors.documentNumber}
                 hint="Con ella, y con tu código de apartado, podrás consultar tu apartado."
                 required
@@ -63,7 +74,7 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
                 label="Teléfono celular"
                 name="phone"
                 value={data.phone}
-                onChange={(value) => setData('phone', value)}
+                onChange={(value) => change('phone', value)}
                 error={errors.phone}
                 hint="Es el número con el que el negocio te contactará."
                 required
@@ -74,7 +85,7 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
                 name="email"
                 type="email"
                 value={data.email}
-                onChange={(event) => setData('email', event.target.value)}
+                onChange={(event) => change('email', event.target.value)}
                 error={errors.email}
                 readOnly={emailLocked}
                 hint={
@@ -87,7 +98,7 @@ export function LayawayForm({ form, maxQuantity, consent, emailLocked = false }:
 
             <TermsConsentField
                 checked={data.termsAccepted}
-                onChange={(checked) => setData('termsAccepted', checked)}
+                onChange={(checked) => change('termsAccepted', checked)}
                 consent={consent}
                 error={errors.termsAccepted}
             />

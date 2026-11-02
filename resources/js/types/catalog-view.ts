@@ -50,6 +50,7 @@ export interface ProductShowProps {
     readonly catalog: CatalogView;
     readonly product: ProductDetail;
     readonly related: readonly ProductCard[];
+    readonly chat?: CatalogChatState;
 }
 
 export interface CursorPage<T> {

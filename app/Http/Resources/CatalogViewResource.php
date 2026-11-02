@@ -65,10 +65,10 @@ final class CatalogViewResource extends JsonResource
             'name' => $catalog->name,
             'description' => $catalog->description,
             'cover' => $this->cover($catalog)?->toArray(),
-            'business' => OrganizationBrand::of(
-                $catalog->organization,
-                $this->plan->hasFeature(PlanFeature::Branding),
-            )->toArray(),
+            'business' => [
+                ...OrganizationBrand::of($catalog->organization, $this->plan->hasFeature(PlanFeature::Branding))->toArray(),
+                'storefrontUrl' => $catalog->organization->storefront_enabled ? CatalogShareLink::storefrontOf($catalog->organization->slug) : null,
+            ],
             'shareUrl' => CatalogShareLink::of($catalog->slug),
             'expiresAt' => $catalog->expires_at?->toIso8601String(),
             'showsPlatformBadge' => $this->plan->showsPlatformBadge(),

@@ -14,6 +14,7 @@ use App\Models\Catalog;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Support\CatalogShareLink;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -24,14 +25,19 @@ final class OrganizationStorefrontController extends Controller
 
     public function __construct(private readonly LimitEnforcer $limits) {}
 
-    public function __invoke(Organization $organization): Response
+    public function __invoke(Organization $organization): Response|RedirectResponse
     {
         $plan = $this->limits->plan();
+        $catalogs = $this->listedCatalogs();
+
+        if (count($catalogs) === 1) {
+            return redirect()->to($catalogs[0]['url']);
+        }
 
         return Inertia::render('catalog/OrganizationStorefront', [
             'business' => OrganizationBrand::of($organization, $plan->hasFeature(PlanFeature::Branding))->toArray(),
             'showsPlatformBadge' => $plan->showsPlatformBadge(),
-            'catalogs' => $this->listedCatalogs(),
+            'catalogs' => $catalogs,
             'profile' => [
                 'description' => $organization->description,
                 'address' => $organization->address,

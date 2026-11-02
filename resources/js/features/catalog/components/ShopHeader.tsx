@@ -27,7 +27,13 @@ export function ShopHeader({ business, live, timezone }: ShopHeaderProps) {
                 )}
 
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-bold lg:text-base">{business.name}</p>
+                    {business.storefrontUrl ? (
+                        <a href={business.storefrontUrl} className="flex min-h-11 items-center hover:underline lg:min-h-0">
+                            <span className="truncate text-[15px] font-bold lg:text-base">{business.name}</span>
+                        </a>
+                    ) : (
+                        <p className="truncate text-[15px] font-bold lg:text-base">{business.name}</p>
+                    )}
                     {business.tagline ? <p className="text-ink-3 truncate text-xs max-sm:hidden">{business.tagline}</p> : null}
                 </div>
 

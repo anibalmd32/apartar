@@ -70,6 +70,23 @@ final class ProductShowTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_el_producto_ofrece_escribir_al_negocio_y_el_nombre_lleva_a_la_tienda(): void
+    {
+        $this->stock([$this->product('Taladro percutor')]);
+        $this->organization->update(['storefront_enabled' => true]);
+
+        $this->visit('taladro-percutor')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('chat.canWrite', false)
+            ->where('chat.sendUrl', route('catalog.chat', ['catalog' => $this->catalog->slug]))
+            ->where('chat.threadUrl', route('portal.chat.show', ['organization' => $this->organization->slug]))
+            ->where('catalog.business.storefrontUrl', route('storefront', ['organization' => $this->organization->slug])));
+
+        $this->organization->update(['storefront_enabled' => false]);
+
+        $this->visit('taladro-percutor')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('catalog.business.storefrontUrl', null));
+    }
+
     public function test_the_four_reasons_for_not_found_are_indistinguishable(): void
     {
         $this->stock([$this->product('Visible')]);

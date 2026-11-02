@@ -94,3 +94,30 @@ it('la campaña terminada dice hasta qué día estuvo disponible', () => {
 
     expect(screen.getByText(/estuvo disponible hasta el 10\/05/)).toBeInTheDocument();
 });
+
+it('la cabecera de la tienda no repite las iniciales y ofrece escribir por WhatsApp', () => {
+    render(
+        <OrganizationStorefront
+            business={FREE}
+            showsPlatformBadge
+            catalogs={[CATALOG, { ...CATALOG, slug: 'otras', name: 'Otras' }]}
+            profile={{ description: null, address: null, phone: '0414-555-1234' }}
+        />,
+    );
+
+    expect(screen.getAllByText('FO')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: 'Escribir por WhatsApp' })).toHaveAttribute('href', 'https://wa.me/584145551234');
+});
+
+it('un teléfono fijo no ofrece WhatsApp', () => {
+    render(
+        <OrganizationStorefront
+            business={FREE}
+            showsPlatformBadge
+            catalogs={[]}
+            profile={{ description: null, address: null, phone: '0212-555-1234' }}
+        />,
+    );
+
+    expect(screen.queryByRole('link', { name: 'Escribir por WhatsApp' })).toBeNull();
+});

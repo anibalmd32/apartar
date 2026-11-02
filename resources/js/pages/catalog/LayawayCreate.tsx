@@ -64,7 +64,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                         <LayawayForm form={form} maxQuantity={product.maxQuantity} consent={consent} emailLocked={account !== null} />
                     </section>
 
-                    <div className="flex flex-col gap-4 max-lg:row-start-1">
+                    <div className="flex flex-col gap-4 lg:sticky lg:top-6">
                         <LayawaySummaryCard
                             productName={product.name}
                             image={product.images[0] ?? null}

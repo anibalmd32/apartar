@@ -85,6 +85,16 @@ final class StorefrontTest extends TestCase
         $this->assertSame((string) $unknown->getContent(), (string) $off->getContent());
     }
 
+    public function test_con_un_solo_catalogo_la_tienda_lleva_directo_a_el(): void
+    {
+        $this->withinOrganization($this->organization, function (): void {
+            Catalog::factory()->published()->create(['slug' => 'unico']);
+            Catalog::factory()->published()->create(['is_listed' => false]);
+        });
+
+        $this->visit($this->organization)->assertRedirect(CatalogShareLink::of('unico'));
+    }
+
     public function test_a_storefront_that_is_on_but_empty_is_a_page(): void
     {
         $this->visit($this->organization)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
@@ -106,6 +116,7 @@ final class StorefrontTest extends TestCase
             $catalog = Catalog::factory()->published()->create(['name' => 'Otoño']);
             $catalog->products()->attach(Product::factory()->published()->create(), ['position' => 1]);
             $catalog->products()->attach(Product::factory()->create(['published_at' => null]), ['position' => 2]);
+            Catalog::factory()->published()->create(['name' => 'Verano', 'published_at' => now()->subWeek()]);
         });
 
         $this->visit($this->organization)->assertInertia(fn (AssertableInertia $page) => $page
@@ -135,7 +146,7 @@ final class StorefrontTest extends TestCase
 
     public function test_the_storefront_does_not_count_nor_query_per_catalog(): void
     {
-        $this->withinOrganization($this->organization, fn () => Catalog::factory()->published()->create());
+        $this->withinOrganization($this->organization, fn () => Catalog::factory()->published()->count(2)->create());
         $this->visit($this->organization);
 
         $few = $this->queries();

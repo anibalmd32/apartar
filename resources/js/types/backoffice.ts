@@ -39,6 +39,7 @@ export interface OrganizationBrand {
     readonly brandColor: string | null;
     readonly brandingEnabled: boolean;
     readonly tagline?: string | null;
+    readonly storefrontUrl?: string | null;
 }
 
 export type SettingScope = 'immediate' | 'daily' | 'future_only';

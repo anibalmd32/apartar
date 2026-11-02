@@ -4,8 +4,9 @@ import { fakeRoute } from '@/test/fakes';
 import { type CatalogView, type ProductDetail } from '@/types/catalog-view';
 import { type RateView } from '@/types/exchange';
 import { type LayawayCreateProps, type LayawayPlanView } from '@/types/layaway';
+import { router } from '@inertiajs/core';
 import type * as InertiaReact from '@inertiajs/react';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const { usePage } = vi.hoisted(() => ({ usePage: vi.fn() }));
@@ -109,6 +110,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
 });
 
@@ -131,4 +133,34 @@ it('sin cuenta deja los cuatro campos libres', () => {
 
     expect(screen.getByLabelText('Nombre y apellido')).toHaveValue('');
     expect(screen.getByLabelText('Correo (opcional)')).not.toHaveAttribute('readonly');
+});
+
+it('borra el error de cada campo en cuanto se vuelve a escribir en él', () => {
+    const visit = vi.spyOn(router, 'visit').mockImplementation(() => undefined);
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apartar' }));
+    const options = visit.mock.calls[0]?.[1] as { onError?: (errors: Record<string, string>) => void };
+    act(() => options.onError?.({ fullName: 'Escribe tu nombre.', email: 'Revisa el correo.' }));
+
+    expect(screen.getByText('Escribe tu nombre.')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Nombre y apellido'), { target: { value: 'M' } });
+
+    expect(screen.queryByText('Escribe tu nombre.')).toBeNull();
+    expect(screen.getByText('Revisa el correo.')).toBeInTheDocument();
+});
+
+it('el formulario va primero y las cuotas se abren con «Ver tus cuotas»', () => {
+    renderPage();
+
+    const form = screen.getByRole('heading', { name: 'Tus datos' });
+    const summary = screen.getByRole('region', { name: 'Tu plan de pago' });
+    expect(form.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(summary.parentElement).not.toHaveClass('max-lg:row-start-1');
+
+    const toggle = screen.getByText(/Ver tus cuotas/).closest('details');
+    expect(toggle).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByText(/Ver tus cuotas/));
+    expect(toggle).toHaveAttribute('open');
 });

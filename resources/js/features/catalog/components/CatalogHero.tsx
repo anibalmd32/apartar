@@ -24,16 +24,16 @@ export function CatalogHero({ catalog, stats, action }: CatalogHeroProps) {
     return (
         <section
             className={cn(
-                'relative isolate flex flex-col gap-5 overflow-hidden rounded-3xl p-5 lg:flex-row lg:items-center lg:gap-5 lg:px-9 lg:py-8',
+                'relative isolate flex flex-col gap-4 overflow-hidden rounded-3xl p-5 lg:flex-row lg:items-center lg:gap-5 lg:px-9 lg:py-8',
                 cover === null
                     ? 'bg-[#e9e4fb] dark:bg-[#2d273a]'
-                    : 'bg-neutral min-h-[220px] text-white lg:min-h-[280px] lg:items-end [&_.text-ink-2]:text-white/85',
+                    : 'bg-neutral min-h-[176px] justify-end text-white lg:min-h-[280px] lg:items-end [&_.text-ink-2]:text-white/90',
             )}
         >
             {cover !== null ? (
                 <>
                     <img src={cover.zoom} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
-                    <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/50 to-black/20" />
+                    <span aria-hidden="true" data-scrim className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/70 to-black/45" />
                 </>
             ) : null}
 
@@ -43,9 +43,11 @@ export function CatalogHero({ catalog, stats, action }: CatalogHeroProps) {
                     Catálogo
                 </span>
 
-                <h1 className="tracking-heading text-[30px] leading-[1.4] font-extrabold lg:text-[40px]">{catalog.name}</h1>
+                <h1 className="tracking-heading text-[26px] leading-[1.25] font-extrabold lg:text-[40px] lg:leading-[1.3]">{catalog.name}</h1>
 
-                {catalog.description !== null ? <p className="text-ink-2 text-[15px] leading-normal">{catalog.description}</p> : null}
+                {catalog.description !== null ? (
+                    <p className="text-ink-2 line-clamp-3 text-[15px] leading-normal lg:line-clamp-none">{catalog.description}</p>
+                ) : null}
 
                 {stats !== undefined ? (
                     <p className="text-ink-2 text-[13px] font-semibold">

@@ -33,7 +33,7 @@ function CatalogFrame({ title, business, showsPlatformBadge, width = 'wide', chi
     const live = useLiveRate(currency.rate);
 
     return (
-        <div className="bg-base-200 flex min-h-screen flex-col">
+        <div className="bg-base-200 flex min-h-screen flex-col has-[[data-chat-dock]]:pb-[calc(var(--overlay-bottom)+var(--consent-height)+4.5rem)]">
             <Head title={title} />
 
             <ShopHeader business={business} live={live} timezone={currency.timezone} />

@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ProductDetailView } from '@/features/catalog/components/ProductDetailView';
 import { ProductGridCard } from '@/features/catalog/components/ProductGridCard';
+import { ReserveBar } from '@/features/catalog/components/ReserveBar';
+import { ChatDock } from '@/features/chat/components/ChatWidget';
 import { useDwellTime } from '@/features/telemetry/hooks/useDwellTime';
 import { track } from '@/features/telemetry/hooks/useTelemetry';
 import CatalogLayout from '@/layouts/catalog-layout';
@@ -10,7 +12,9 @@ import { cilCart, cilChevronRight } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { useEffect } from 'react';
 
-export default function ProductShow({ catalog, product, related }: ProductShowProps) {
+export default function ProductShow({ catalog, product, related, chat }: ProductShowProps) {
+    const reserveUrl = route('catalog.layaway.create', { catalog: catalog.slug, product: product.slug });
+
     useEffect(() => {
         track('product_viewed', { catalogSlug: catalog.slug, subjectSlug: product.slug, payload: { source: 'catalog' } });
     }, [catalog.slug, product.slug]);
@@ -41,10 +45,7 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                 reserve={
                     <div className="flex flex-col gap-2">
                         {product.canBeReserved ? (
-                            <Link
-                                href={route('catalog.layaway.create', { catalog: catalog.slug, product: product.slug })}
-                                className="btn btn-primary btn-lg btn-block"
-                            >
+                            <Link href={reserveUrl} className="btn btn-primary btn-lg btn-block">
                                 <Icon icon={cilCart} />
                                 Apartar ahora
                             </Link>
@@ -83,6 +84,9 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
                     </ul>
                 </section>
             ) : null}
+
+            {product.canBeReserved ? <ReserveBar product={product} href={reserveUrl} /> : null}
+            {chat !== undefined ? <ChatDock chat={chat} /> : null}
         </CatalogLayout>
     );
 }

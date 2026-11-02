@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { useCurrencyDisplay } from '@/features/currency/hooks/useCurrencyDisplay';
@@ -6,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { type LayawayPlanView } from '@/types/layaway';
 import { type MoneyView } from '@/types/money';
 import { type ImageSet } from '@/types/product';
+import { cilChevronBottom } from '@coreui/icons';
 
 interface LayawaySummaryCardProps {
     productName: string;
@@ -67,8 +69,13 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
             </dl>
 
             {plan.installments.length > 0 ? (
-                <div className="flex flex-col gap-1">
-                    <h3 className="text-label text-ink-3">Tus cuotas</h3>
+                <details className="group border-line flex flex-col gap-1 border-t pt-2">
+                    <summary className="text-primary-ink flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                        <span>
+                            Ver tus cuotas <span className="text-ink-3 font-normal">({plan.installments.length})</span>
+                        </span>
+                        <Icon icon={cilChevronBottom} size={14} className="transition-transform group-open:rotate-180" />
+                    </summary>
                     <ol className="flex flex-col">
                         {plan.installments.map((installment) => (
                             <li key={installment.number} className="flex items-baseline justify-between gap-4 py-1.5 text-[13px]">
@@ -88,7 +95,7 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
                             ? 'Las fechas cuentan desde que el negocio apruebe tu inicial; si la pagas otro día, se corren.'
                             : 'Sin inicial: el apartado arranca activo hoy y las fechas cuentan desde hoy.'}
                     </p>
-                </div>
+                </details>
             ) : null}
         </section>
     );
