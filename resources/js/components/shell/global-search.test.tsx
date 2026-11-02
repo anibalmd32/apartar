@@ -58,3 +58,14 @@ it('con una letra no busca', async () => {
 
     expect(getJson).not.toHaveBeenCalled();
 });
+
+it('Ctrl K deja el cursor en el campo de búsqueda', async () => {
+    vi.useRealTimers();
+    render(<GlobalSearch />);
+
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+
+    const input = screen.getByRole('searchbox', { name: 'Buscar cliente, código o producto' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(input).toHaveFocus();
+});

@@ -12,15 +12,15 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ organizationName, pendingReceipts, userMenu }: MobileHeaderProps) {
     return (
-        <header className="bg-base-200 flex h-14 items-center gap-2 px-4 lg:hidden">
+        <header className="bg-base-200 flex h-14 items-center gap-1.5 pr-2 pl-3 lg:hidden">
             <Avatar name={organizationName} size={34} tone="accent" />
             <p className="line-clamp-2 min-w-0 flex-1 text-[13px] leading-[1.2] font-bold break-words">{organizationName}</p>
             <div className="flex items-center">
                 <MobileSearch />
                 <AttentionBell pendingReceipts={pendingReceipts} plain />
             </div>
-            <CurrencySwitch />
-            <div className="ml-1 flex">{userMenu}</div>
+            <CurrencySwitch touch />
+            <div className="flex">{userMenu}</div>
         </header>
     );
 }

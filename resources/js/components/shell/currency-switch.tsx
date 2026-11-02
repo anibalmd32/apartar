@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { type CurrencyPageProps } from '@/types/exchange';
 import { usePage } from '@inertiajs/react';
 
-export function CurrencySwitch({ className }: { className?: string }) {
+export function CurrencySwitch({ className, touch = false }: { className?: string; touch?: boolean }) {
     const { currency } = usePage<{ currency?: CurrencyPageProps }>().props;
     const { isVesPrimary, setDisplay } = useCurrencyDisplay();
 
@@ -16,7 +16,8 @@ export function CurrencySwitch({ className }: { className?: string }) {
             disabled={!available}
             aria-pressed={active}
             className={cn(
-                'pointer-coarse:h-10 pointer-coarse:min-w-11 h-[30px] rounded-lg px-2.5 text-[13px] transition-colors disabled:cursor-not-allowed',
+                'rounded-lg px-2.5 text-[13px] transition-colors disabled:cursor-not-allowed',
+                touch ? 'hit-area h-[38px] min-w-11' : 'pointer-coarse:h-10 pointer-coarse:min-w-11 h-[30px]',
                 active ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
             )}
         >

@@ -46,6 +46,7 @@ export function GlobalSearch({ className }: { className?: string }) {
             <Modal open={open} onClose={close} title="Buscar" size="md">
                 <input
                     autoFocus
+                    data-autofocus
                     type="search"
                     enterKeyHint="search"
                     aria-label="Buscar cliente, código o producto"

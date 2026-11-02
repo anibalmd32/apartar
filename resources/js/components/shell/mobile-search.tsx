@@ -39,7 +39,7 @@ export function MobileSearch({ className }: { className?: string }) {
                                 enterKeyHint="search"
                                 aria-label="Buscar cliente, código o producto"
                                 placeholder="Cliente, código o producto"
-                                className="min-w-0 flex-1 bg-transparent text-base outline-none"
+                                className="min-w-0 flex-1 bg-transparent text-base outline-none [&::-webkit-search-cancel-button]:appearance-none"
                                 value={search.term}
                                 onChange={(event) => search.setTerm(event.target.value)}
                                 onKeyDown={search.onKeyDown}

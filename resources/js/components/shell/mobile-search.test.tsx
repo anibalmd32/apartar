@@ -62,3 +62,11 @@ it('Cancelar cierra la búsqueda y olvida lo escrito', async () => {
 
     expect(await screen.findByRole('searchbox')).toHaveValue('');
 });
+
+it('el campo oculta la X del navegador porque Cancelar ya limpia la búsqueda', () => {
+    render(<MobileSearch />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(screen.getByRole('searchbox')).toHaveClass('[&::-webkit-search-cancel-button]:appearance-none');
+});

@@ -21,3 +21,11 @@ it('en el celular la cabecera trae la búsqueda y los pendientes', () => {
     expect(screen.getByRole('button', { name: 'Pendientes: 3' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Moneda que se muestra primero' })).toBeInTheDocument();
 });
+
+it('en el celular cada botón de moneda tiene un área táctil de 44px', () => {
+    render(<MobileHeader organizationName="Moda Valentina" pendingReceipts={1} userMenu={null} />);
+
+    for (const name of ['USD', 'Bs.']) {
+        expect(screen.getByRole('button', { name })).toHaveClass('hit-area', 'h-[38px]', 'min-w-11');
+    }
+});
