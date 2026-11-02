@@ -93,3 +93,22 @@ it('desde el tercer paso llega con el código puesto y promete el pago', () => {
     expect(screen.getByText(/el código AP-7K3M9QRT ya va puesto/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continuar al pago' })).toBeInTheDocument();
 });
+
+it('al venir a pagar un apartado recién hecho, dice de qué negocio es y deja Google en segundo plano', () => {
+    render(<Access googleUrl={GOOGLE} code="AP-7K3M9QRT" businessName="Ferretería Oriente" />);
+
+    expect(screen.getByText('Tu apartado en Ferretería Oriente')).toBeInTheDocument();
+
+    const google = screen.getByRole('link', { name: /Entrar con Google/ });
+    const submit = screen.getByRole('button', { name: 'Continuar al pago' });
+    expect(submit.compareDocumentPosition(google) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(google).not.toHaveClass('btn-lg');
+});
+
+it('sin código, Google sigue siendo la primera opción', () => {
+    render(<Access googleUrl={GOOGLE} />);
+
+    const google = screen.getByRole('link', { name: /Entrar con Google/ });
+    const submit = screen.getByRole('button', { name: 'Ver mi apartado' });
+    expect(google.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});

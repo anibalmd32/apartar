@@ -3,6 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CopyButton } from '@/features/catalog/components/CopyButton';
 import { LayawaySteps } from '@/features/catalog/components/LayawaySteps';
+import { catalogMention, towardsCatalog } from '@/features/catalog/lib/catalog-name';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { LayawayPlanSummary } from '@/features/layaway/components/LayawayPlanSummary';
 import CatalogLayout from '@/layouts/catalog-layout';
@@ -38,7 +39,12 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                         >
                             {layaway.code}
                         </p>
-                        <CopyButton value={layaway.code} label="el código" size={18} className="text-primary-ink hover:bg-base-100" />
+                        <CopyButton
+                            value={layaway.code}
+                            label="el código"
+                            size={18}
+                            className="text-primary-ink hover:bg-base-100 inline-flex size-11 items-center justify-center rounded-xl"
+                        />
                     </div>
                 </div>
 
@@ -56,15 +62,15 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                 )}
 
                 {layaway.plan.requiresDownPayment ? (
-                    <section aria-labelledby="next-heading" className="bg-warning-soft flex items-start gap-3 rounded-2xl px-4 py-3.5">
-                        <Icon icon={cilClock} size={20} className="text-warning mt-0.5" />
+                    <section aria-labelledby="next-heading" className="border-line bg-base-100 flex items-start gap-3 rounded-2xl border px-4 py-3.5">
+                        <IconChip icon={cilClock} tone="warning" size={36} className="shrink-0" />
                         <div className="flex flex-col gap-0.5">
                             <h2 id="next-heading" className="text-sm font-bold">
                                 Para confirmarlo, paga la inicial de <MoneyLabel money={layaway.plan.downPayment} />
                             </h2>
                             {layaway.expiresAt !== null ? (
                                 <p className="text-ink-2 text-xs">
-                                    Tienes hasta el <strong>{layaway.expiresAt}</strong>. Si no llega el pago de la inicial, el apartado se cancela y
+                                    Tienes hasta el <strong>{layaway.expiresAt}</strong> para pagarla; si no llega a tiempo, el apartado se cancela y
                                     la unidad vuelve a estar a la venta.
                                 </p>
                             ) : null}
@@ -100,7 +106,7 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                     <Icon icon={cilArrowRight} />
                 </Link>
                 <p className="text-ink-3 -mt-2 text-center text-xs">
-                    Ahí ves las cuentas de {catalog.business.name} y subes tu comprobante. El código ya va puesto: solo escribe tu cédula.
+                    Entras directo a tu apartado: ahí ves las cuentas de {catalog.business.name} y subes tu comprobante.
                 </p>
 
                 {layaway.hasEmail ? <Alert tone="info">También te lo enviamos por correo, con las formas de pago.</Alert> : null}
@@ -108,7 +114,7 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                 {follow !== null ? (
                     <Alert tone="info">
                         <span className="flex flex-wrap items-center gap-2">
-                            Ahora sigues {catalog.name}: verás sus novedades en tu cuenta.
+                            Ahora sigues {catalogMention(catalog.name)}: verás sus novedades en tu cuenta.
                             <button
                                 type="button"
                                 className="btn btn-ghost btn-xs"
@@ -122,7 +128,7 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
 
                 <p className="text-center text-sm">
                     <Link href={route('catalog.show', { catalog: catalog.slug })} className="hit-area text-primary-ink font-semibold hover:underline">
-                        Volver a {catalog.name}
+                        Volver {towardsCatalog(catalog.name)}
                     </Link>
                 </p>
             </div>

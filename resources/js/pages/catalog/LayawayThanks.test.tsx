@@ -143,3 +143,57 @@ it('sin cuenta, no habla de seguir', () => {
 
     expect(screen.queryByText(/Ahora sigues/)).toBeNull();
 });
+
+it('el plazo de la inicial no deja dos puntos seguidos tras «a. m.»', () => {
+    renderPage({ expiresAt: '30 de septiembre a las 10:00 a. m.' });
+
+    const deadline = screen.getByText('30 de septiembre a las 10:00 a. m.').closest('p');
+    expect(deadline?.textContent).not.toContain('..');
+});
+
+it('el botón de copiar el código mide 44px y los dos avisos no se pintan igual', () => {
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Copiar el código' })).toHaveClass('size-11');
+    const notice = screen.getByRole('heading', { name: /Para confirmarlo/ }).closest('section');
+    expect(notice).not.toHaveClass('bg-warning-soft');
+});
+
+it('continuar al pago no vuelve a pedir la cédula', () => {
+    renderPage();
+
+    expect(screen.queryByText(/escribe tu cédula/)).toBeNull();
+    expect(screen.getByText(/Entras directo a tu apartado/)).toBeInTheDocument();
+});
+
+it('escribe «catálogo» en minúscula en mitad de la frase', () => {
+    render(
+        <LayawayThanks
+            catalog={{ ...CATALOG, name: 'Catálogo de temporada' }}
+            layaway={{
+                code: 'AP-7K3MQ2XH',
+                productName: 'Nevera Mabe',
+                plan: {
+                    quantity: 1,
+                    total: money('$1'),
+                    downPayment: money('$0'),
+                    requiresDownPayment: false,
+                    financedAmount: money('$1'),
+                    installmentsCount: 1,
+                    frequencyDays: 15,
+                    installmentAmount: money('$1'),
+                    lastInstallmentAmount: null,
+                    installments: [],
+                },
+                expiresAt: null,
+                firstDueDate: null,
+                hasEmail: true,
+            }}
+            payUrl="/c/temporada/apartar/AP-7K3MQ2XH/continuar"
+            follow={{ unfollowUrl: '/c/temporada/seguir' }}
+        />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Volver al catálogo de temporada' })).toBeInTheDocument();
+    expect(screen.getByText(/Ahora sigues el catálogo de temporada/)).toBeInTheDocument();
+});

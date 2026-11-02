@@ -18,6 +18,7 @@ export interface PortalSessionView {
 export interface PortalAccessProps {
     readonly status?: string | null;
     readonly code?: string | null;
+    readonly businessName?: string | null;
     readonly googleUrl: string;
 }
 

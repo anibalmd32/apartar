@@ -17,7 +17,6 @@ use App\Domain\Notification\LayawayConfirmationMailer;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Portal\AccessController;
 use App\Http\Requests\Catalog\StoreLayawayRequest;
 use App\Http\Resources\CatalogViewResource;
 use App\Http\Resources\LayawayPlanResource;
@@ -32,6 +31,7 @@ use App\Models\Product;
 use App\Queries\CatalogProductsQuery;
 use App\Support\InvalidDocumentNumberException;
 use App\Support\InvalidPhoneNumberException;
+use App\Support\LayawayHandoff;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -108,6 +108,7 @@ final class LayawayController extends Controller
         }
 
         $request->session()->push(self::SESSION_KEY, $layaway->code);
+        LayawayHandoff::grant($request->session(), $layaway->code);
 
         if ($layaway->wasRecentlyCreated) {
             $this->mailer->send($layaway);
@@ -144,7 +145,7 @@ final class LayawayController extends Controller
                 'firstDueDate' => $this->firstInstallment($layaway)?->due_date->locale('es')->isoFormat('D [de] MMMM'),
                 'hasEmail' => $customer?->email !== null,
             ],
-            'payUrl' => route('portal.access', [AccessController::CODE_PARAMETER => $layaway->code]),
+            'payUrl' => route('catalog.layaway.continue', ['catalog' => $catalog->slug, 'code' => $layaway->code]),
             'follow' => $this->followState($catalog),
         ]);
     }

@@ -267,7 +267,7 @@ final class LayawayPageTest extends TestCase
             ->where('layaway.hasEmail', true)
             ->missing('paymentAccounts')
             ->missing('receiptUrl')
-            ->where('payUrl', route('portal.access', ['codigo' => $layaway->code])));
+            ->where('payUrl', route('catalog.layaway.continue', ['catalog' => $this->catalog->slug, 'code' => $layaway->code])));
     }
 
     public function test_without_down_payment_the_form_says_so_and_the_plan_counts_from_today(): void

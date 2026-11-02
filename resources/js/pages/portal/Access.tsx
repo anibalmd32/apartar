@@ -15,8 +15,23 @@ const WAYS: { value: Way; label: string }[] = [
     { value: 'link', label: 'Por correo' },
 ];
 
-export default function Access({ status, code = null, googleUrl }: PortalAccessProps) {
+function GoogleAccess({ googleUrl, secondary }: { googleUrl: string; secondary: boolean }) {
+    return (
+        <div className="flex flex-col gap-2">
+            <a href={googleUrl} className={cn('btn btn-block', secondary ? 'btn-ghost border-line border' : 'btn-lg')}>
+                <span aria-hidden="true" className="text-base font-extrabold text-[#4285f4]">
+                    G
+                </span>
+                Entrar con Google
+            </a>
+            <p className="text-ink-3 text-xs">Ves juntos tus apartados de todos los negocios y lo nuevo de los catálogos que sigues.</p>
+        </div>
+    );
+}
+
+export default function Access({ status, code = null, businessName = null, googleUrl }: PortalAccessProps) {
     const [way, setWay] = useState<Way>(status ? 'link' : 'code');
+    const paying = code !== null && code !== '';
 
     return (
         <main className="bg-base-200 flex min-h-screen flex-col items-center px-4 pt-6 pb-10 sm:pt-14">
@@ -29,6 +44,9 @@ export default function Access({ status, code = null, googleUrl }: PortalAccessP
                 </span>
 
                 <header className="flex flex-col gap-2">
+                    {paying && businessName !== null ? (
+                        <p className="text-primary-ink text-[13px] font-semibold">Tu apartado en {businessName}</p>
+                    ) : null}
                     <h1 className="tracking-heading text-[26px] leading-tight font-extrabold sm:text-[32px]">
                         {code ? 'Paga tu apartado' : 'Mira tus apartados'}
                     </h1>
@@ -41,17 +59,12 @@ export default function Access({ status, code = null, googleUrl }: PortalAccessP
 
                 {status ? <Alert tone="success">{status}</Alert> : null}
 
-                <div className="flex flex-col gap-2">
-                    <a href={googleUrl} className="btn btn-lg btn-block">
-                        <span aria-hidden="true" className="text-base font-extrabold text-[#4285f4]">
-                            G
-                        </span>
-                        Entrar con Google
-                    </a>
-                    <p className="text-ink-3 text-xs">Ves juntos tus apartados de todos los negocios y lo nuevo de los catálogos que sigues.</p>
-                </div>
-
-                <div className="divider text-ink-3 my-0 text-xs">o entra sin cuenta</div>
+                {paying ? null : (
+                    <>
+                        <GoogleAccess googleUrl={googleUrl} secondary={false} />
+                        <div className="divider text-ink-3 my-0 text-xs">o entra sin cuenta</div>
+                    </>
+                )}
 
                 <section className="border-line bg-base-100 shadow-card flex flex-col gap-3.5 rounded-2xl border p-5">
                     <div role="tablist" aria-label="Cómo quieres entrar" className="bg-surface-2 grid grid-cols-2 gap-0.5 rounded-[10px] p-[3px]">
@@ -83,6 +96,13 @@ export default function Access({ status, code = null, googleUrl }: PortalAccessP
                         <LinkAccess />
                     </div>
                 </section>
+
+                {paying ? (
+                    <>
+                        <div className="divider text-ink-3 my-0 text-xs">o, si tienes cuenta</div>
+                        <GoogleAccess googleUrl={googleUrl} secondary />
+                    </>
+                ) : null}
 
                 <p className="bg-surface-2 text-ink-2 flex gap-2 rounded-xl p-3.5 text-xs leading-normal">
                     <Icon icon={cilLifeRing} className="mt-px" />

@@ -6,6 +6,7 @@ use App\Http\Controllers\Catalog\CatalogShowController;
 use App\Http\Controllers\Catalog\CatalogSubscriptionController;
 use App\Http\Controllers\Catalog\ChatController as CatalogChatController;
 use App\Http\Controllers\Catalog\LayawayController;
+use App\Http\Controllers\Catalog\LayawayHandoffController;
 use App\Http\Controllers\Catalog\OrganizationStorefrontController;
 use App\Http\Controllers\Catalog\ProductShowController;
 use App\Support\CatalogShareLink;
@@ -25,6 +26,9 @@ Route::middleware('catalog-tenant')
             ->middleware('throttle:apartados')
             ->name('catalog.layaway.store');
         Route::get('{catalog:slug}/apartar/{code}/gracias', [LayawayController::class, 'thanks'])->name('catalog.layaway.thanks');
+        Route::get('{catalog:slug}/apartar/{code}/continuar', LayawayHandoffController::class)
+            ->middleware('throttle:20,1')
+            ->name('catalog.layaway.continue');
 
         Route::post('{catalog:slug}/seguir', [CatalogSubscriptionController::class, 'store'])->name('catalog.follow');
         Route::delete('{catalog:slug}/seguir', [CatalogSubscriptionController::class, 'destroy'])->name('catalog.unfollow');

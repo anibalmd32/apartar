@@ -8,12 +8,15 @@ use App\Actions\Customer\StartScopedSessionAction;
 use App\Auth\AccountSession;
 use App\Domain\Account\PortalContext;
 use App\Domain\Tenancy\TenantContext;
+use App\Domain\Tenancy\TenantResolver;
+use App\Http\Controllers\Catalog\LayawayController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StartScopedSessionRequest;
 use App\Jobs\LinkVisitorEventsToCustomer;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Support\LayawayCode;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +27,7 @@ final class AccessController extends Controller
 {
     public const CODE_PARAMETER = 'codigo';
 
-    public function create(Request $request, AccountSession $account, TenantContext $context): Response|RedirectResponse
+    public function create(Request $request, AccountSession $account, TenantContext $context, TenantResolver $resolver): Response|RedirectResponse
     {
         $code = $this->codeFrom($request);
         $next = $code === null ? route('portal.dashboard', absolute: false) : route('portal.pay', [self::CODE_PARAMETER => $code], absolute: false);
@@ -45,8 +48,24 @@ final class AccessController extends Controller
         return Inertia::render('portal/Access', [
             'status' => $request->session()->get('status'),
             'code' => $code,
+            'businessName' => $code === null ? null : $this->businessJustReserved($request, $resolver, $code),
             'googleUrl' => route('account.google.redirect', ['luego' => $next]),
         ]);
+    }
+
+    private function businessJustReserved(Request $request, TenantResolver $resolver, string $code): ?string
+    {
+        $confirmed = $request->session()->get(LayawayController::SESSION_KEY, []);
+
+        if (! is_array($confirmed) || ! in_array($code, $confirmed, true)) {
+            return null;
+        }
+
+        try {
+            return $resolver->forLayawayCode($code)->name;
+        } catch (ModelNotFoundException) {
+            return null;
+        }
     }
 
     public function storeCode(StartScopedSessionRequest $request, StartScopedSessionAction $start): RedirectResponse
