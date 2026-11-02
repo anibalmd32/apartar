@@ -6,7 +6,7 @@ import { type PaymentAccountView, type PaymentEvidence, type PaymentMethod } fro
 import { type LayawaySummary, type NextPaymentSuggestion } from '@/types/portal';
 import { type RateChecks } from '@/types/rate-deviation';
 
-export type ReceiptLayawaySummary = Pick<LayawaySummary, 'code' | 'productName' | 'statusLabel' | 'remaining'>;
+export type ReceiptLayawaySummary = Pick<LayawaySummary, 'code' | 'productName' | 'status' | 'statusLabel' | 'remaining'>;
 
 export interface ReceiptSuggestion extends Omit<NextPaymentSuggestion, 'payOff'> {
     readonly amountUsd: string;

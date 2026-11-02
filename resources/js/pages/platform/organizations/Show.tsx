@@ -11,6 +11,7 @@ import { type CourtesyState, SubscriptionActions } from '@/features/platform/com
 import { SupportAccessPanel } from '@/features/platform/components/SupportAccessPanel';
 import { SuspendDialog } from '@/features/platform/components/SuspendDialog';
 import PlatformLayout from '@/layouts/platform-layout';
+import { formatDate } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { type InvoiceRow, type OrganizationRow, type SupportGrantRow } from '@/types/platform';
 import { cilBan, cilCheckCircle, cilSwapHorizontal } from '@coreui/icons';
@@ -73,7 +74,7 @@ export default function OrganizationShow({
     const counts = organization.counts;
     const volume = organization.volume;
     const overdue = invoices.find((invoice) => invoice.status === 'overdue');
-    const created = new Intl.DateTimeFormat('es', { dateStyle: 'medium' }).format(new Date(organization.createdAt));
+    const created = formatDate(organization.createdAt);
 
     return (
         <PlatformLayout
@@ -116,11 +117,9 @@ export default function OrganizationShow({
             }
         >
             {overdue ? (
-                <Alert tone="error" title={`Factura vencida el ${overdue.dueDate} · ${overdue.amount.usd}`}>
+                <Alert tone="error" title={`Factura vencida el ${formatDate(overdue.dueDate)} · ${overdue.amount.usd}`}>
                     Pagado {overdue.paid.usd} hasta ahora.
-                    {autoSuspendOn
-                        ? ` Se suspende automáticamente el ${autoSuspendOn.slice(8, 10)}/${autoSuspendOn.slice(5, 7)} si no hay comprobante en revisión.`
-                        : ''}
+                    {autoSuspendOn ? ` Se suspende automáticamente el ${formatDate(autoSuspendOn, 'long')} si no hay comprobante en revisión.` : ''}
                 </Alert>
             ) : null}
 

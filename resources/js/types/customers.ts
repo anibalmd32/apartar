@@ -1,6 +1,6 @@
 import { type TableMeta } from '@/types/data-table';
 import { type MoneyView } from '@/types/money';
-import { type PaymentRow } from '@/types/receipt';
+import { type PaymentRow, type ReceiptStatus } from '@/types/receipt';
 
 export interface CustomerDirectoryRow {
     readonly id: number;
@@ -58,6 +58,7 @@ export interface CustomerReceiptRow {
     readonly url: string;
     readonly submittedAt: string | null;
     readonly layawayCode: string | null;
+    readonly status: ReceiptStatus;
     readonly statusLabel: string;
     readonly declared: string;
     readonly paidToAccount: string | null;

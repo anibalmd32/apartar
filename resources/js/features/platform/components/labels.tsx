@@ -1,38 +1,39 @@
 import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { INVOICE_TONES, ORGANIZATION_TONES, SUBSCRIPTION_TONES, toneOf } from '@/lib/status-tones';
 
-type Entry = readonly [label: string, tone: BadgeTone];
-
-const ORGANIZATION: Record<string, Entry> = {
-    active: ['Activa', 'success'],
-    suspended: ['Suspendida', 'error'],
-    closed: ['Cerrada', 'neutral'],
+const ORGANIZATION: Record<string, string> = {
+    active: 'Activa',
+    suspended: 'Suspendida',
+    closed: 'Cerrada',
 };
 
-const SUBSCRIPTION: Record<string, Entry> = {
-    active: ['Al día', 'success'],
-    past_due: ['Vencida', 'warning'],
-    grace: ['En gracia', 'warning'],
-    suspended: ['Suspendida', 'error'],
-    cancelled: ['Cancelada', 'neutral'],
+const SUBSCRIPTION: Record<string, string> = {
+    active: 'Al día',
+    past_due: 'Vencida',
+    grace: 'En gracia',
+    suspended: 'Suspendida',
+    cancelled: 'Cancelada',
 };
 
-const INVOICE: Record<string, Entry> = {
-    pending: ['Pendiente', 'info'],
-    under_review: ['En revisión', 'warning'],
-    overdue: ['Vencida', 'error'],
-    paid: ['Pagada', 'success'],
-    void: ['Anulada', 'neutral'],
+const INVOICE: Record<string, string> = {
+    pending: 'Pendiente',
+    under_review: 'En revisión',
+    overdue: 'Vencida',
+    paid: 'Pagada',
+    void: 'Anulada',
 };
 
-function StatusBadge({ map, value }: { map: Record<string, Entry>; value: string }) {
-    const [label, tone] = map[value] ?? [value, 'neutral'];
-
-    return <Badge tone={tone}>{label}</Badge>;
+function StatusBadge({ labels, tones, value }: { labels: Record<string, string>; tones: Readonly<Record<string, BadgeTone>>; value: string }) {
+    return <Badge tone={toneOf(tones, value)}>{labels[value] ?? value}</Badge>;
 }
 
-export const OrganizationStatusBadge = ({ status }: { status: string }) => <StatusBadge map={ORGANIZATION} value={status} />;
-export const SubscriptionStatusBadge = ({ status }: { status: string }) => <StatusBadge map={SUBSCRIPTION} value={status} />;
-export const InvoiceStatusBadge = ({ status }: { status: string }) => <StatusBadge map={INVOICE} value={status} />;
+export const OrganizationStatusBadge = ({ status }: { status: string }) => (
+    <StatusBadge labels={ORGANIZATION} tones={ORGANIZATION_TONES} value={status} />
+);
+export const SubscriptionStatusBadge = ({ status }: { status: string }) => (
+    <StatusBadge labels={SUBSCRIPTION} tones={SUBSCRIPTION_TONES} value={status} />
+);
+export const InvoiceStatusBadge = ({ status }: { status: string }) => <StatusBadge labels={INVOICE} tones={INVOICE_TONES} value={status} />;
 
 export function PlanPill({ code }: { code: string | null }) {
     return code === null ? (

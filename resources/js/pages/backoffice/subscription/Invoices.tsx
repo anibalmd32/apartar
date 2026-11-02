@@ -1,7 +1,8 @@
 import { Alert } from '@/components/ui/alert';
 import { InvoicePayPanel } from '@/features/subscription/components/InvoicePayPanel';
-import { formatDay, InvoiceTable, isPayable } from '@/features/subscription/components/InvoiceTable';
+import { InvoiceTable, isPayable } from '@/features/subscription/components/InvoiceTable';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { formatDate } from '@/lib/dates';
 import { type InvoicesPageProps } from '@/types/invoice';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -27,7 +28,7 @@ export default function SubscriptionInvoices({ invoices, methods, currencies, fi
                     {open !== null ? (
                         <Alert tone={open.status === 'overdue' ? 'error' : 'warning'} title="Tienes una factura por pagar">
                             {open.number} · {(open.outstanding ?? open.amount).usd} · {open.status === 'overdue' ? 'venció' : 'vence'} el{' '}
-                            {formatDay(open.dueDate)}.{open.receiptStatus === 'pending_review' ? ' Tu comprobante está en revisión.' : null}
+                            {formatDate(open.dueDate)}.{open.receiptStatus === 'pending_review' ? ' Tu comprobante está en revisión.' : null}
                         </Alert>
                     ) : null}
 

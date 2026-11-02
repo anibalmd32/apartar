@@ -3,6 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { formatAmountTyping, RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
+import { formatDate } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PendingSubscriptionReceipt } from '@/types/platform';
@@ -57,7 +58,7 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
                 {receipt.reference || receipt.bank ? (
                     <Row label="Referencia">{[receipt.reference, receipt.bank].filter(Boolean).join(' · ')}</Row>
                 ) : null}
-                <Row label="Pagado el">{receipt.paidAt}</Row>
+                <Row label="Pagado el">{formatDate(receipt.paidAt)}</Row>
             </dl>
 
             <div className="bg-surface-2 flex gap-0.5 rounded-[10px] p-[3px]">

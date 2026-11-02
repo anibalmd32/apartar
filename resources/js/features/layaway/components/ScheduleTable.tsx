@@ -1,15 +1,16 @@
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { INSTALLMENT_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type InstallmentRow, type InstallmentTone } from '@/types/portal';
 import { cilCheckAlt } from '@coreui/icons';
 
-const TONES: Record<InstallmentTone, { badge: BadgeTone; chip: string }> = {
-    paid: { badge: 'success', chip: 'bg-success-soft text-success' },
-    overdue: { badge: 'error', chip: 'bg-error-soft text-error' },
-    soon: { badge: 'warning', chip: 'bg-warning-soft text-warning' },
-    pending: { badge: 'neutral', chip: 'bg-surface-2 text-ink-2' },
+const CHIPS: Record<InstallmentTone, string> = {
+    paid: 'bg-success-soft text-success',
+    overdue: 'bg-error-soft text-error',
+    soon: 'bg-warning-soft text-warning',
+    pending: 'bg-surface-2 text-ink-2',
 };
 
 function dueText(row: InstallmentRow): string {
@@ -38,8 +39,6 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
     return (
         <ol className="divide-line flex flex-col divide-y" aria-label="Cronograma de cuotas">
             {installments.map((row) => {
-                const tone = TONES[row.tone];
-
                 return (
                     <li
                         key={row.number}
@@ -49,7 +48,7 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
                             aria-hidden="true"
                             className={cn(
                                 'row-span-2 flex size-[34px] items-center justify-center rounded-full text-[13px] font-bold sm:row-span-1',
-                                tone.chip,
+                                CHIPS[row.tone],
                             )}
                         >
                             {row.tone === 'paid' ? <Icon icon={cilCheckAlt} size={14} /> : row.number}
@@ -66,7 +65,10 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
                         <span className="row-span-2 text-right text-[15px] font-bold sm:row-span-1">
                             <MoneyLabel money={row.amount} stacked />
                         </span>
-                        <Badge tone={tone.badge} className="col-start-2 row-start-2 justify-self-start sm:col-start-4 sm:row-start-1">
+                        <Badge
+                            tone={INSTALLMENT_TONES[row.tone]}
+                            className="col-start-2 row-start-2 justify-self-start sm:col-start-4 sm:row-start-1"
+                        >
                             {dueText(row)}
                         </Badge>
                     </li>

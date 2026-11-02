@@ -5,8 +5,9 @@ import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { ReceiptForm } from '@/features/receipts/components/ReceiptForm';
 import { useReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
 import PortalLayout from '@/layouts/portal-layout';
+import { formatDate } from '@/lib/dates';
+import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { type PortalSessionView } from '@/types/portal';
 import { type ReceiptCreateProps } from '@/types/receipt';
 import { cilBasket } from '@coreui/icons';
@@ -52,19 +53,21 @@ export default function ReceiptCreate({
                     </span>
                     <div className="flex min-w-0 flex-1 basis-48 flex-col gap-px">
                         <p className="line-clamp-2 text-sm font-bold">
-                            {layaway.productName} · {layaway.code}
+                            {layaway.productName} · <span className="whitespace-nowrap">{layaway.code}</span>
                         </p>
                         <p className="text-ink-3 text-xs">
                             Te falta: <MoneyLabel money={layaway.remaining} className="text-base-content font-semibold" />
                         </p>
                     </div>
-                    <Badge className="shrink-0 max-sm:ml-14">{layaway.statusLabel}</Badge>
+                    <Badge tone={LAYAWAY_TONES[layaway.status]} className="shrink-0 max-sm:ml-14">
+                        {layaway.statusLabel}
+                    </Badge>
                 </section>
 
                 {replaces !== null ? (
                     <Alert
                         tone="warning"
-                        title={`Este comprobante sustituye al que enviaste el ${formatDay(replaces.submittedAt)}, que fue rechazado.`}
+                        title={`Este comprobante sustituye al que enviaste el ${formatDate(replaces.submittedAt)}, que fue rechazado.`}
                     >
                         <span className="flex flex-col gap-1 text-[13px]">
                             {replaces.reason !== null ? <span>Motivo: {replaces.reason}</span> : null}

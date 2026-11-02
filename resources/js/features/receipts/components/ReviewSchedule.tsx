@@ -1,15 +1,9 @@
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { CompactRow } from '@/components/ui/compact-list';
 import { SectionCard } from '@/components/ui/section-card';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { INSTALLMENT_TONES, toneOf } from '@/lib/status-tones';
 import { type ReceiptReviewProps } from '@/types/receipt';
-
-const TONES: Readonly<Record<string, BadgeTone>> = {
-    pending: 'neutral',
-    partially_paid: 'warning',
-    paid: 'success',
-    overdue: 'error',
-};
 
 export function ReviewSchedule({ layaway, installments }: Pick<ReceiptReviewProps, 'layaway' | 'installments'>) {
     return (
@@ -35,7 +29,7 @@ export function ReviewSchedule({ layaway, installments }: Pick<ReceiptReviewProp
                                 className="px-5"
                                 title={`Cuota ${installment.number}`}
                                 amount={<MoneyLabel money={installment.amount} compact />}
-                                status={<Badge tone={TONES[installment.status] ?? 'neutral'}>{installment.statusLabel}</Badge>}
+                                status={<Badge tone={toneOf(INSTALLMENT_TONES, installment.status)}>{installment.statusLabel}</Badge>}
                                 meta={
                                     <>
                                         <span>Vence el {installment.dueDateLabel}</span>

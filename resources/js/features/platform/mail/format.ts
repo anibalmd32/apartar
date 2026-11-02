@@ -1,8 +1,6 @@
 const NUMBER = new Intl.NumberFormat('es-VE');
 const PERCENT = new Intl.NumberFormat('es-VE', { style: 'percent', maximumFractionDigits: 1 });
-const DATE_TIME = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
-const SHORT = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' });
-const TIME = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' });
+export { formatDateTime as dateTime, formatMoment as shortDate } from '@/lib/dates';
 
 export const DASH = '—';
 
@@ -12,16 +10,6 @@ export function count(value: number): string {
 
 export function percent(rate: number | null): string {
     return rate === null ? DASH : PERCENT.format(rate);
-}
-
-export function dateTime(iso: string): string {
-    return DATE_TIME.format(new Date(iso));
-}
-
-export function shortDate(iso: string, now: Date = new Date()): string {
-    const date = new Date(iso);
-
-    return date.toDateString() === now.toDateString() ? TIME.format(date) : SHORT.format(date);
 }
 
 export function fileSize(bytes: number | null): string {

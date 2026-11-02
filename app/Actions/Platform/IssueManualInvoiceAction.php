@@ -15,6 +15,7 @@ use App\Models\PlatformUser;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Support\Auditing\PlatformAudit;
+use App\Support\HumanDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -80,7 +81,7 @@ final class IssueManualInvoiceAction
 
         $number = $this->context->runFor($organization, fn (): string => $invoice->number());
 
-        PlatformAudit::record(PlatformAudit::INVOICE_ISSUED, sprintf('Emitió la factura %s, del %s al %s: %s', $number, $invoice->period_start->toDateString(), $invoice->period_end->toDateString(), $reason), $operator, (int) $organization->getKey(), [
+        PlatformAudit::record(PlatformAudit::INVOICE_ISSUED, sprintf('Emitió la factura %s, del %s al %s: %s', $number, HumanDate::short($invoice->period_start), HumanDate::short($invoice->period_end), $reason), $operator, (int) $organization->getKey(), [
             'invoice_id' => $invoice->getKey(),
         ]);
 

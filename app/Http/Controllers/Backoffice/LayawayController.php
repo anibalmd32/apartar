@@ -24,6 +24,7 @@ use App\Models\PaymentAllocation;
 use App\Models\User;
 use App\Queries\LayawayActivityQuery;
 use App\Queries\PaymentFieldOptionsQuery;
+use App\Support\HumanDate;
 use App\Support\ManualPaymentDates;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -197,6 +198,6 @@ final class LayawayController extends Controller
 
     private function moment(?DateTimeInterface $at, DateTimeZone $timezone): ?string
     {
-        return $at === null ? null : CarbonImmutable::instance($at)->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY, h:mm a');
+        return $at === null ? null : HumanDate::longDateTime(CarbonImmutable::instance($at)->setTimezone($timezone));
     }
 }

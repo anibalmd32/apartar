@@ -112,7 +112,7 @@ it('dice el motivo del rechazo, encadena el reintento y enlaza el archivo', () =
     render(<ReceiptHistory receipts={[retry, rejected]} />);
 
     const [first, second] = screen.getAllByRole('listitem');
-    expect(within(first!).getByText('Reintento del comprobante del 05/09/2026')).toBeInTheDocument();
+    expect(within(first!).getByText('Reintento del comprobante del 5 sept 2026')).toBeInTheDocument();
     expect(within(first!).getByText('Pagado a Pago móvil · Banesco · 0414-1234567')).toBeInTheDocument();
     expect(within(first!).getByRole('link', { name: 'Ver el comprobante' })).toHaveAttribute('href', '/mi-cuenta/comprobantes/9/archivo?signature=x');
     expect(within(second!).getByText('Motivo: La referencia no coincide con el banco.')).toBeInTheDocument();

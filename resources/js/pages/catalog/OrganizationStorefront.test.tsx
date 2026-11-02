@@ -85,7 +85,7 @@ it('cuenta lo que el negocio dice de sí y cuántos productos tiene cada catálo
 
     expect(screen.getByText('Aparta con una inicial.')).toBeInTheDocument();
     expect(screen.getByText('C.C. Sambil, Caracas')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '0414-555-1234' })).toHaveAttribute('href', 'tel:0414-555-1234');
+    expect(screen.getByRole('link', { name: '0414-5551234' })).toHaveAttribute('href', 'tel:0414-555-1234');
     expect(screen.getByText('24 productos')).toBeInTheDocument();
 });
 

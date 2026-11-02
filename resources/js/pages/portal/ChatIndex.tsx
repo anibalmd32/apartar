@@ -1,8 +1,8 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { IconChip } from '@/components/ui/icon-chip';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
 import PortalLayout from '@/layouts/portal-layout';
+import { formatMoment } from '@/lib/dates';
 import { type PortalChatIndexProps } from '@/types/chat';
 import { cilChatBubble } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
@@ -28,7 +28,7 @@ export default function ChatIndex({ threads }: PortalChatIndexProps) {
                                     <span className="min-w-0 flex-1 truncate text-sm font-bold">{thread.businessName}</span>
                                     <span className="flex shrink-0 flex-col items-end gap-1">
                                         {thread.lastMessageAt !== null ? (
-                                            <span className="text-ink-3 text-[11px]">{formatDay(thread.lastMessageAt.slice(0, 10))}</span>
+                                            <span className="text-ink-3 text-[11px]">{formatMoment(thread.lastMessageAt)}</span>
                                         ) : null}
                                         {thread.unread > 0 ? (
                                             <Badge tone="primary" count>

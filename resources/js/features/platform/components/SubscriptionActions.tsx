@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { DateInput } from '@/components/ui/date-input';
 import { SectionCard } from '@/components/ui/section-card';
+import { formatDate } from '@/lib/dates';
 import { shiftIsoDate, todayIso } from '@/lib/iso-date';
 import { pf } from '@/lib/surfaces';
 import { type Method } from '@inertiajs/core';
@@ -21,7 +22,7 @@ interface SubscriptionActionsProps {
 }
 
 function dayMonthYear(date: string | null): string {
-    return date === null ? 'sin fecha de fin' : `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+    return date === null ? 'sin fecha de fin' : formatDate(date.slice(0, 10), 'long');
 }
 
 function ReasonForm({

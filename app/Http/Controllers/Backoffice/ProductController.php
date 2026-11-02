@@ -37,6 +37,7 @@ use App\Models\User;
 use App\Queries\InventoryFilters;
 use App\Support\CatalogShareLink;
 use App\Support\DecimalInput;
+use App\Support\HumanDate;
 use App\Support\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -461,9 +462,7 @@ final class ProductController extends Controller
                 'installments' => $product->installments_count,
                 'frequencyDays' => $product->frequency_days,
             ],
-            'updatedAt' => $product->updated_at
-                ?->setTimezone($this->context->organization()->timezone)
-                ->isoFormat('lll'),
+            'updatedAt' => $product->updated_at === null ? null : HumanDate::dateTime($product->updated_at->setTimezone($this->context->organization()->timezone)),
             'updatedBy' => $product->editor?->name,
         ];
     }
@@ -538,9 +537,7 @@ final class ProductController extends Controller
             return null;
         }
 
-        return $product->published_at
-            ?->setTimezone($this->context->organization()->timezone)
-            ->isoFormat('LLL');
+        return $product->published_at === null ? null : HumanDate::longDateTime($product->published_at->setTimezone($this->context->organization()->timezone));
     }
 
     private function decimals(Money $amount): string

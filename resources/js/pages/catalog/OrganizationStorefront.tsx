@@ -3,6 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { StorefrontCatalogCard } from '@/features/catalog/components/StorefrontCatalogCard';
 import CatalogLayout from '@/layouts/catalog-layout';
+import { formatPhone } from '@/lib/identity-format';
 import { type OrganizationStorefrontProps } from '@/types/catalog-view';
 import { cilLibrary, cilLocationPin, cilPhone } from '@coreui/icons';
 
@@ -31,7 +32,7 @@ export default function OrganizationStorefront({ business, showsPlatformBadge, c
                             {profile.phone ? (
                                 <a href={`tel:${profile.phone}`} className="inline-flex items-center gap-1.5 hover:underline">
                                     <Icon icon={cilPhone} size={14} />
-                                    {profile.phone}
+                                    <span className="whitespace-nowrap">{formatPhone(profile.phone)}</span>
                                 </a>
                             ) : null}
                         </p>

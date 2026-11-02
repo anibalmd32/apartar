@@ -11,6 +11,7 @@ use App\Models\PlatformUser;
 use App\Models\Subscription;
 use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\Auditing\PlatformAudit;
+use App\Support\HumanDate;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -53,7 +54,7 @@ final class RevokeCourtesyAction
             return $locked;
         }));
 
-        $restored = $subscription->current_period_end?->setTimezone($organization->timezone)->toDateString();
+        $restored = $subscription->current_period_end === null ? null : HumanDate::long($subscription->current_period_end->setTimezone($organization->timezone));
         PlatformAudit::record(
             PlatformAudit::COURTESY_REVOKED,
             sprintf('Revocó la cortesía; el período vuelve a %s: %s', $restored === null ? 'no tener fin' : 'terminar el '.$restored, $reason),

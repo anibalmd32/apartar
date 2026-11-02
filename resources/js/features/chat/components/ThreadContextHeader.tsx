@@ -1,6 +1,7 @@
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
-import { NO_PHONE } from '@/lib/identity-format';
+import { formatDate } from '@/lib/dates';
+import { formatPhone } from '@/lib/identity-format';
 import { cn } from '@/lib/utils';
 import { type ThreadContext } from '@/types/chat';
 import { cilChevronRight, cilWallet } from '@coreui/icons';
@@ -19,10 +20,8 @@ export function ThreadContextPanel({ context, className }: { context: ThreadCont
             value: plural(context.overdueInstallments, 'cuota', 'cuotas') + (context.overdueAmount ? ` · ${context.overdueAmount}` : ''),
             danger: context.overdueInstallments > 0,
         },
-        ...(context.nextDueDate
-            ? [{ label: 'Próximo vencimiento', value: `${context.nextDueDate.slice(8, 10)}/${context.nextDueDate.slice(5, 7)}` }]
-            : []),
-        { label: 'Teléfono', value: context.phone ?? NO_PHONE },
+        ...(context.nextDueDate ? [{ label: 'Próximo vencimiento', value: formatDate(context.nextDueDate) }] : []),
+        { label: 'Teléfono', value: formatPhone(context.phone) },
     ];
 
     return (
@@ -47,7 +46,7 @@ export function ThreadContextPanel({ context, className }: { context: ThreadCont
                                     className="bg-base-100 border-line hover:border-line-strong flex flex-col gap-0.5 rounded-xl border px-3 py-2"
                                 >
                                     <span className="flex items-center justify-between gap-2 text-xs">
-                                        <span className="font-bold">{layaway.code}</span>
+                                        <span className="font-bold whitespace-nowrap">{layaway.code}</span>
                                         <span className={cn('font-semibold', layaway.status === 'overdue' ? 'text-error' : 'text-success')}>
                                             {layaway.statusLabel}
                                         </span>
@@ -80,7 +79,7 @@ export function ThreadContextHeader({ context, className }: { context: ThreadCon
                 </span>
                 <span className={cn('truncate text-xs', context.overdueInstallments > 0 ? 'text-error' : 'text-ink-3')}>
                     {plural(context.overdueInstallments, 'cuota vencida', 'cuotas vencidas')}
-                    {context.phone === null ? null : ` · ${context.phone}`}
+                    {context.phone === null ? null : ` · ${formatPhone(context.phone)}`}
                 </span>
             </span>
             <Icon icon={cilChevronRight} size={14} className="text-ink-3" />

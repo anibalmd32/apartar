@@ -1,12 +1,13 @@
 import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
+import { formatDate } from '@/lib/dates';
 import { type StorefrontCatalog } from '@/types/catalog-view';
 import { type CurrencyPageProps } from '@/types/exchange';
 import { cilArrowRight, cilClock } from '@coreui/icons';
 import { usePage } from '@inertiajs/react';
 
 function closing(iso: string, timeZone: string): string {
-    return new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit', timeZone }).format(new Date(iso));
+    return formatDate(iso, 'dayMonth', timeZone);
 }
 
 export function StorefrontCatalogCard({ catalog }: { catalog: StorefrontCatalog }) {

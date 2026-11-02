@@ -1,6 +1,6 @@
 import { IconChip } from '@/components/ui/icon-chip';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
 import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
 import { cn } from '@/lib/utils';
 import { type CustomerShowProps } from '@/types/customers';
@@ -27,13 +27,13 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
             className="bg-base-100 border-line shadow-card grid grid-cols-1 gap-4 rounded-2xl border p-4 sm:grid-cols-2 xl:grid-cols-4"
         >
             <Contact icon={cilUser} label="Documento">
-                {customer.document ?? NO_DOCUMENT}
+                <span className="whitespace-nowrap">{customer.document ?? NO_DOCUMENT}</span>
             </Contact>
             <Contact icon={cilPhone} label="Teléfono">
                 {customer.phone === null ? (
                     NO_PHONE
                 ) : (
-                    <a href={`tel:${customer.phone}`} className="hit-area hover:underline">
+                    <a href={`tel:${customer.phone}`} className="hit-area whitespace-nowrap hover:underline">
                         {customer.phoneLabel}
                     </a>
                 )}
@@ -42,12 +42,12 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
                 {customer.email ?? 'Sin correo'}
             </Contact>
             <Contact icon={cilCalendar} label="Cliente desde">
-                {customer.createdAt !== null ? formatDay(customer.createdAt) : '—'}
+                {customer.createdAt !== null ? formatDate(customer.createdAt) : '—'}
                 {customer.termsAcceptedAt !== null ? (
                     <span className="text-ink-3 block text-xs font-normal">
                         {customer.termsDeclaredBy !== null
-                            ? `Condiciones aceptadas el ${formatDay(customer.termsAcceptedAt)}, declaradas por ${customer.termsDeclaredBy}`
-                            : `Términos aceptados el ${formatDay(customer.termsAcceptedAt)}`}
+                            ? `Condiciones aceptadas el ${formatDate(customer.termsAcceptedAt)}, declaradas por ${customer.termsDeclaredBy}`
+                            : `Términos aceptados el ${formatDate(customer.termsAcceptedAt)}`}
                     </span>
                 ) : null}
             </Contact>
@@ -94,7 +94,7 @@ export function BalanceRow({ totals }: Pick<CustomerShowProps, 'totals'>) {
                         </span>
                     ) : null}
                 </Figure>
-                <Figure label="Próximo vencimiento">{totals.nextDueDate !== null ? formatDay(totals.nextDueDate) : '—'}</Figure>
+                <Figure label="Próximo vencimiento">{totals.nextDueDate !== null ? formatDate(totals.nextDueDate) : '—'}</Figure>
             </dl>
         </section>
     );

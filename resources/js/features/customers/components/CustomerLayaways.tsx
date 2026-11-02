@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { IconChip } from '@/components/ui/icon-chip';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
+import { LAYAWAY_TONES, toneOf } from '@/lib/status-tones';
 import { type CustomerLayawayRow } from '@/types/customers';
 import { cilBasket } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
@@ -24,11 +25,14 @@ export function CustomerLayaways({ layaways, empty }: { layaways: readonly Custo
                             <IconChip icon={cilBasket} tone="neutral" size={40} />
                             <div className="flex min-w-0 flex-1 flex-col">
                                 <span className="truncate text-sm font-bold">{layaway.productName}</span>
-                                <Link href={layaway.url} className="hit-area text-primary-ink self-start text-xs font-semibold hover:underline">
+                                <Link
+                                    href={layaway.url}
+                                    className="hit-area text-primary-ink self-start text-xs font-semibold whitespace-nowrap hover:underline"
+                                >
                                     {layaway.code}
                                 </Link>
                             </div>
-                            <Badge tone="neutral">{layaway.statusLabel}</Badge>
+                            <Badge tone={toneOf(LAYAWAY_TONES, layaway.status)}>{layaway.statusLabel}</Badge>
                         </div>
 
                         <span className="bg-base-300 block h-1.5 overflow-hidden rounded-full" aria-hidden="true">
@@ -46,7 +50,7 @@ export function CustomerLayaways({ layaways, empty }: { layaways: readonly Custo
 
                         {layaway.catalogName !== null ? <span className="text-ink-3 text-xs">Del catálogo {layaway.catalogName}</span> : null}
                         {layaway.nextDueDate !== null ? (
-                            <span className="text-ink-2 text-xs">Próximo vencimiento: {formatDay(layaway.nextDueDate)}</span>
+                            <span className="text-ink-2 text-xs">Próximo vencimiento: {formatDate(layaway.nextDueDate)}</span>
                         ) : null}
                         {layaway.cancellationReason !== null ? (
                             <span className="text-ink-2 text-xs">

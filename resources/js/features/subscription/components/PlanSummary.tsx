@@ -1,7 +1,6 @@
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { IconChip } from '@/components/ui/icon-chip';
-import { formatDay } from '@/features/subscription/components/InvoiceTable';
-import { formatPlanDate } from '@/lib/plan-change';
+import { formatDate, formatPeriod } from '@/lib/dates';
 import { type PlanState } from '@/types/plan';
 import { cilDiamond } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -61,8 +60,7 @@ export function PlanSummary({
                 </p>
                 {period !== null ? (
                     <p className="text-ink-2 text-[13px]">
-                        Periodo actual: {formatPlanDate(period.start, timeZone).slice(0, 5)} – {formatPlanDate(period.end, timeZone)} · {period.price}{' '}
-                        al mes
+                        Periodo actual: {formatPeriod(period.start, period.end, timeZone)} · {period.price} al mes
                     </p>
                 ) : null}
                 {pricingUrl !== null ? (
@@ -76,7 +74,7 @@ export function PlanSummary({
                     <div className="flex flex-col">
                         <span className="text-ink-3 text-xs font-semibold">Próxima factura</span>
                         <span className="text-[15px] font-bold">
-                            {nextInvoice.amount} · vence el {formatDay(nextInvoice.dueDate)}
+                            {nextInvoice.amount} · vence el {formatDate(nextInvoice.dueDate)}
                         </span>
                     </div>
                     <Link className="btn btn-primary btn-sm" href={nextInvoice.payUrl}>

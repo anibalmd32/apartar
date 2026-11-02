@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { formatDate } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { type CatalogView } from '@/types/catalog-view';
 import { type CurrencyPageProps } from '@/types/exchange';
@@ -7,7 +8,7 @@ import { usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
 function closingDate(iso: string, timeZone: string): string {
-    return new Intl.DateTimeFormat('es-VE', { day: 'numeric', month: 'long', timeZone }).format(new Date(iso));
+    return formatDate(iso, 'long', timeZone);
 }
 
 interface CatalogHeroProps {

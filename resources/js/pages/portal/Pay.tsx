@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { LAYAWAY_TONES } from '@/features/layaway/components/PortalLayawayHero';
 import PortalLayout from '@/layouts/portal-layout';
+import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { type PayableLayaway, type PortalPayProps, type PortalSessionView } from '@/types/portal';
 import { cilArrowRight, cilBasket } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
@@ -68,7 +68,7 @@ function PayableRow({ layaway }: { layaway: PayableLayaway }) {
                         {layaway.productName}
                     </span>
                     <span className="text-ink-3 text-xs">
-                        {layaway.code} · {layaway.businessName}
+                        <span className="whitespace-nowrap">{layaway.code}</span> · {layaway.businessName}
                     </span>
                     {layaway.nextAmount ? (
                         <span className="text-ink-2 text-xs">

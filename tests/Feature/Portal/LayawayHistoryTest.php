@@ -122,7 +122,7 @@ final class LayawayHistoryTest extends TestCase
         $this->show()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('receipts', 3)
             ->where('receipts.1.status', 'pending_review')
-            ->where('receipts.1.statusLabel', 'En revisión desde el 07/09')
+            ->where('receipts.1.statusLabel', 'En revisión desde el 7 sept')
             ->where('receipts.1.replacesReceiptId', pathinfo($rejected->file_path, PATHINFO_FILENAME))
             ->where('receipts.1.paidToAccount', 'Pago móvil · Banesco · 0414-1234567')
             ->where('receipts.1.id', pathinfo($retry->file_path, PATHINFO_FILENAME))
@@ -194,7 +194,7 @@ final class LayawayHistoryTest extends TestCase
         $this->show()->assertInertia(fn (AssertableInertia $page) => $page
             ->where('receipts.0.statusLabel', 'Aprobado')
             ->where('receipts.1.statusLabel', 'En revisión')
-            ->where('receipts.2.statusLabel', 'En revisión desde el 08/09')
+            ->where('receipts.2.statusLabel', 'En revisión desde el 8 sept')
             ->where('receipts.3.statusLabel', 'Rechazado')
             ->where('receipts.3.rejectionReason', RejectionReasonCode::LayawayCancelled->label()));
     }

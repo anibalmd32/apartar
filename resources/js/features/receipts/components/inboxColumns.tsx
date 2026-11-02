@@ -1,15 +1,11 @@
-import { Badge, type BadgeTone } from '@/components/ui/badge';
-import { formatAge, formatDay, formatDeclaredAmount } from '@/features/receipts/lib/inbox-format';
+import { Badge } from '@/components/ui/badge';
+import { formatAge, formatDeclaredAmount } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
 import { formatDocumentNumber } from '@/lib/identity-format';
+import { RECEIPT_TONES as STATUS_TONES } from '@/lib/status-tones';
 import { type DataTableColumn } from '@/types/data-table';
-import { type ReceiptInboxRow, type ReceiptStatus } from '@/types/receipt';
+import { type ReceiptInboxRow } from '@/types/receipt';
 import { Link } from '@inertiajs/react';
-
-const STATUS_TONES: Readonly<Record<ReceiptStatus, BadgeTone>> = {
-    pending_review: 'info',
-    approved: 'success',
-    rejected: 'neutral',
-};
 
 function Arrival({ row, now }: { row: ReceiptInboxRow; now: number }) {
     const age = formatAge(row.submittedAt, now);
@@ -54,7 +50,7 @@ function CustomerCell({ row }: { row: ReceiptInboxRow }) {
     return (
         <div className="flex flex-col gap-0.5">
             <span className="font-medium">{row.customer.fullName}</span>
-            <span className="text-ink-3 text-xs">{formatDocumentNumber(row.customer.documentNumber)}</span>
+            <span className="text-ink-3 text-xs whitespace-nowrap">{formatDocumentNumber(row.customer.documentNumber)}</span>
         </div>
     );
 }
@@ -157,7 +153,7 @@ export function inboxColumns(now: number): DataTableColumn<ReceiptInboxRow>[] {
         {
             id: 'paidAt',
             header: 'Pagado el',
-            cell: (row) => <span className="whitespace-nowrap">{formatDay(row.paidAt)}</span>,
+            cell: (row) => <span className="whitespace-nowrap">{formatDate(row.paidAt)}</span>,
             sortKey: 'paid_at',
             mobile: 'hidden',
         },

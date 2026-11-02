@@ -22,6 +22,7 @@ import { withSuggestedTags } from '@/features/products/lib/tags';
 import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import { useSubmitDock } from '@/hooks/use-submit-dock';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { formatDateTime } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
 import {
     type AiAvailability,
@@ -179,9 +180,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                         <ProductTaxonomyFields {...fields} categories={categories} tags={tags} />
                         <ProductInventoryFields {...fields} saved={product} />
 
-                        {product?.updatedAt ? (
-                            <p className="text-ink-3 text-xs">Última modificación: {new Date(product.updatedAt).toLocaleString('es-VE')}</p>
-                        ) : null}
+                        {product?.updatedAt ? <p className="text-ink-3 text-xs">Última modificación: {formatDateTime(product.updatedAt)}</p> : null}
 
                         {product !== null ? <ArchiveToggle productId={product.id} archived={product.status === 'archived'} /> : null}
                     </div>

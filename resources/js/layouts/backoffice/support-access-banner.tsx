@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { formatDateTime } from '@/lib/dates';
 
 export interface SupportAccessNotice {
     readonly operator: string;
@@ -11,14 +12,12 @@ export function SupportAccessBanner({ grants }: { grants: readonly SupportAccess
         return null;
     }
 
-    const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
-
     return (
         <Alert tone="info" className="flex-col items-start gap-1">
             {grants.map((grant) => (
                 <span key={`${grant.operator}:${grant.expiresAt}`}>
                     El soporte de Apartar ({grant.operator}) puede ver los datos de tu negocio, solo leyendo, hasta el{' '}
-                    {time.format(new Date(grant.expiresAt))}. Motivo: {grant.reason}
+                    {formatDateTime(grant.expiresAt)}. Motivo: {grant.reason}
                 </span>
             ))}
         </Alert>

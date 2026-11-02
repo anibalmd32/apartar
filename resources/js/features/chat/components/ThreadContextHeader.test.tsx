@@ -37,6 +37,6 @@ it('dice la mora con su importe, el próximo vencimiento y enlaza cada apartado'
     );
 
     expect(screen.getByText('1 cuota · $30,00')).toBeInTheDocument();
-    expect(screen.getByText('28/10')).toBeInTheDocument();
+    expect(screen.getByText('28 oct 2026')).toBeInTheDocument();
     expect(screen.getByText('AP-7K3M9QRT').closest('a')).toHaveAttribute('href', '/backoffice/apartados/AP-7K3M9QRT');
 });

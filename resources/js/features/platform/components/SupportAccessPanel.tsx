@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
+import { formatDateTime } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { type SupportGrantRow } from '@/types/platform';
 import { cilShieldAlt } from '@coreui/icons';
@@ -15,14 +16,13 @@ interface SupportAccessPanelProps {
 
 export function SupportAccessPanel({ slug, myGrant, grants }: SupportAccessPanelProps) {
     const form = useForm({ reason: '' });
-    const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
     const base = pf(`/organizaciones/${slug}`);
 
     return (
         <SectionCard title="Acceso de soporte" aria-label="Acceso de soporte">
             {myGrant !== null ? (
                 <div className="flex flex-col gap-3 text-sm">
-                    <p className="text-ink-2">Tienes acceso de lectura hasta el {time.format(new Date(myGrant.expiresAt))}.</p>
+                    <p className="text-ink-2">Tienes acceso de lectura hasta el {formatDateTime(myGrant.expiresAt)}.</p>
                     <div className="flex flex-wrap gap-2">
                         <Link href={`${base}/datos/apartados`} className="btn btn-sm">
                             Ver apartados
@@ -71,7 +71,7 @@ export function SupportAccessPanel({ slug, myGrant, grants }: SupportAccessPanel
                             <span className="flex flex-wrap items-center gap-2">
                                 {grant.active ? <Badge tone="warning">Vigente</Badge> : <Badge>Cerrado</Badge>}
                                 <span className="font-semibold">{grant.operator}</span>
-                                <span className="text-ink-3 text-xs">{time.format(new Date(grant.grantedAt))}</span>
+                                <span className="text-ink-3 text-xs">{formatDateTime(grant.grantedAt)}</span>
                             </span>
                             <span className="text-ink-2">{grant.reason}</span>
                         </li>

@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { SectionCard } from '@/components/ui/section-card';
-import { formatMoment } from '@/features/exports/lib/export-format';
+import { formatRelative } from '@/lib/dates';
 
 export interface PushHistoryEntry {
     readonly id: number;
@@ -26,7 +26,7 @@ export function PushHistory({ history }: { history: readonly PushHistoryEntry[] 
                             <div className="flex min-w-0 flex-col">
                                 <span className="truncate text-sm font-semibold">{entry.title}</span>
                                 <span className="text-ink-3 text-xs">
-                                    {MODES[entry.mode]} · {entry.queued} de {entry.recipients} · {formatMoment(entry.sentAt)}
+                                    {MODES[entry.mode]} · {entry.queued} de {entry.recipients} · {formatRelative(entry.sentAt)}
                                     {entry.sender !== null ? ` · ${entry.sender}` : ''}
                                 </span>
                             </div>

@@ -6,6 +6,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pager } from '@/features/platform/components/Pager';
 import PlatformLayout from '@/layouts/platform-layout';
 import { PlatformSupportTabs } from '@/layouts/platform/nav';
+import { formatDateTime } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { type SupportGrantListRow } from '@/types/platform';
 import { cilShieldAlt } from '@coreui/icons';
@@ -28,7 +29,6 @@ const TABS = [
 
 export default function SupportIndex({ grants, filter, page, hasMore }: SupportIndexProps) {
     const [revoking, setRevoking] = useState<SupportGrantListRow | null>(null);
-    const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
     const visit = (changes: Record<string, string | number>) =>
         router.get(pf('/soporte'), { estado: filter, pagina: 1, ...changes }, { preserveState: true, replace: true });
 
@@ -72,10 +72,10 @@ export default function SupportIndex({ grants, filter, page, hasMore }: SupportI
                                     </span>
                                     <p className="text-ink-2 text-sm">{grant.reason}</p>
                                     <p className="text-ink-3 text-xs">
-                                        {grant.operator} · abierto el {time.format(new Date(grant.grantedAt))} ·{' '}
+                                        {grant.operator} · abierto el {formatDateTime(grant.grantedAt)} ·{' '}
                                         {grant.revokedAt
-                                            ? `cerrado el ${time.format(new Date(grant.revokedAt))}`
-                                            : `${grant.active ? 'caduca' : 'caducó'} el ${time.format(new Date(grant.expiresAt))}`}
+                                            ? `cerrado el ${formatDateTime(grant.revokedAt)}`
+                                            : `${grant.active ? 'caduca' : 'caducó'} el ${formatDateTime(grant.expiresAt)}`}
                                     </p>
                                 </div>
                                 {grant.active && grant.organization.slug ? (

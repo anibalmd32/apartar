@@ -14,6 +14,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Models\ExportJob;
 use App\Models\User;
+use App\Support\HumanDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -100,7 +101,7 @@ final class ExportController extends Controller
             'typeLabel' => $export->type->label(),
             'status' => $export->status->value,
             'statusLabel' => $export->status->label(),
-            'requestedAt' => $export->created_at->setTimezone($timezone)->format('d/m/Y H:i'),
+            'requestedAt' => HumanDate::dateTime($export->created_at->setTimezone($timezone)),
             'requestedIso' => $export->created_at->toIso8601String(),
             'expiresIso' => $export->expires_at?->toIso8601String(),
             'retryFilters' => $export->status === ExportStatus::Failed ? (object) $export->filters : null,
@@ -108,7 +109,7 @@ final class ExportController extends Controller
             'rowCount' => $export->row_count,
             'fileSize' => $export->file_size,
             'errorMessage' => $export->error_message,
-            'expiresAt' => $export->expires_at?->setTimezone($timezone)->format('d/m/Y'),
+            'expiresAt' => $export->expires_at === null ? null : HumanDate::short($export->expires_at->setTimezone($timezone)),
             'downloadUrl' => $export->status->isDownloadable() && $export->expires_at?->isFuture() !== false ? $export->downloadUrl() : null,
         ];
     }

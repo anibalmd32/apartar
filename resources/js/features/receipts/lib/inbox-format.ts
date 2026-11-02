@@ -30,12 +30,6 @@ export function formatAge(submittedAt: string, now: number): string {
     return `hace ${Math.floor(elapsed / DAY)} d`;
 }
 
-export function formatDay(day: string): string {
-    const [year, month, date] = day.split('-');
-
-    return `${date}/${month}/${year}`;
-}
-
 export function formatRate(rate: string): string {
     const [whole = '0', fraction = ''] = rate.split('.');
     const trimmed = fraction.replace(/0+$/, '').padEnd(2, '0');

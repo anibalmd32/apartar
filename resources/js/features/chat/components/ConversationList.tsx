@@ -1,17 +1,11 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
+import { formatMoment } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { type ConversationRow } from '@/types/chat';
 import { Link } from '@inertiajs/react';
 
-const TIME = new Intl.DateTimeFormat('es-VE', { hour: '2-digit', minute: '2-digit' });
-const DAY = new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit' });
-
-function when(iso: string): string {
-    const date = new Date(iso);
-
-    return date.toDateString() === new Date().toDateString() ? TIME.format(date) : DAY.format(date);
-}
+const when = (iso: string) => formatMoment(iso);
 
 export function ConversationList({ threads, activeId }: { threads: readonly ConversationRow[]; activeId: number | null }) {
     return (

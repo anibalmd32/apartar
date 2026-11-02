@@ -65,7 +65,7 @@ it('pinta cada fila con sus datos, en el orden en que llega', () => {
     expect(first.getByText('Mercantil · Ref. 00042')).toBeInTheDocument();
     expect(first.getByText('Cuenta desactivada')).toBeInTheDocument();
     expect(first.getByText('Bs. 1.275,50')).toBeInTheDocument();
-    expect(first.getByText('06/10/2026')).toBeInTheDocument();
+    expect(first.getByText('6 oct 2026')).toBeInTheDocument();
     expect(first.getByText('En revisión')).toBeInTheDocument();
     expect(within(rows[1]!).getByText('AP-SECOND00')).toBeInTheDocument();
 });

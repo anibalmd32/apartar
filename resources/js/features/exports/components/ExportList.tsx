@@ -2,7 +2,8 @@ import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CompactList, CompactRow } from '@/components/ui/compact-list';
 import { Icon } from '@/components/ui/icon';
-import { formatBytes, formatMoment } from '@/features/exports/lib/export-format';
+import { formatBytes } from '@/features/exports/lib/export-format';
+import { formatRelative } from '@/lib/dates';
 import { type ExportRow, type ExportStatus, type ExportType } from '@/types/exports';
 import { cilCloudDownload, cilReload } from '@coreui/icons';
 
@@ -23,7 +24,7 @@ interface ExportListProps {
 }
 
 function requested(row: ExportRow): string {
-    return row.waitingMinutes !== null ? `hace ${row.waitingMinutes} min` : formatMoment(row.requestedIso);
+    return row.waitingMinutes !== null ? `hace ${row.waitingMinutes} min` : formatRelative(row.requestedIso);
 }
 
 function Availability({ row }: { row: ExportRow }) {
@@ -36,7 +37,7 @@ function Availability({ row }: { row: ExportRow }) {
     }
 
     if (row.status === 'completed' && row.expiresIso !== null) {
-        return <>hasta {formatMoment(row.expiresIso)}</>;
+        return <>hasta {formatRelative(row.expiresIso, { inSentence: true })}</>;
     }
 
     return <>—</>;

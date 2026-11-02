@@ -1,9 +1,10 @@
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { SectionCard } from '@/components/ui/section-card';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { RescheduleInstallmentDialog } from '@/features/layaway/components/RescheduleInstallmentDialog';
+import { INSTALLMENT_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type BackofficeInstallmentRow, type BackofficeLayaway } from '@/types/layaway-backoffice';
 import { cilBasket, cilCheckAlt } from '@coreui/icons';
@@ -21,8 +22,6 @@ function toneOf(installment: BackofficeInstallmentRow, today: string): Tone {
 
     return Number(installment.paid.cents) > 0 ? 'partial' : 'pending';
 }
-
-const BADGE: Record<Tone, BadgeTone> = { paid: 'success', overdue: 'error', partial: 'info', pending: 'neutral' };
 
 function todayIso(): string {
     return new Date().toISOString().slice(0, 10);
@@ -128,7 +127,7 @@ export function InstallmentPlan({ installments }: { installments: readonly Backo
                                 </span>
                             </span>
                             <span className="flex w-full items-center justify-end gap-1 sm:w-auto sm:min-w-56">
-                                <Badge tone={BADGE[tone]}>{installment.statusLabel}</Badge>
+                                <Badge tone={INSTALLMENT_TONES[tone]}>{installment.statusLabel}</Badge>
                                 {installment.reschedule !== null ? (
                                     <RescheduleInstallmentDialog installment={installment} option={installment.reschedule} />
                                 ) : null}

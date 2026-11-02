@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { type ChipTone, IconChip } from '@/components/ui/icon-chip';
+import { formatTime } from '@/lib/dates';
 import { type AuditActorKind, type AuditEntry } from '@/types/audit';
 import { cilGlobeAlt, cilSettings, cilUser } from '@coreui/icons';
 
@@ -56,9 +57,7 @@ export function AuditEntryRow({ entry, timezone, area }: AuditEntryRowProps) {
     const changed = all.filter(([field]) => field !== 'reason');
     const motive = typeof reason === 'string' && reason !== '' ? reason : null;
 
-    const time = entry.occurredAt
-        ? new Intl.DateTimeFormat('es-VE', { timeStyle: 'short', timeZone: timezone }).format(new Date(entry.occurredAt))
-        : '—';
+    const time = entry.occurredAt ? formatTime(entry.occurredAt, timezone) : '—';
 
     return (
         <li className="flex items-start gap-3 py-3.5 first:pt-0 last:pb-0">

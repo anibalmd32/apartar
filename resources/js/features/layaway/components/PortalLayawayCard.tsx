@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { PrimaryMoney } from '@/features/account/components/PrimaryMoney';
-import { LAYAWAY_TONES } from '@/features/layaway/components/PortalLayawayHero';
+import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type LayawaySummary } from '@/types/portal';
 import { cilBasket, cilCalendar } from '@coreui/icons';
@@ -59,7 +59,7 @@ export function PortalLayawayCard({ layaway }: { layaway: LayawaySummary }) {
                             {layaway.quantity > 1 ? `${layaway.quantity} × ` : ''}
                             {layaway.productName}
                         </span>
-                        <span className="text-ink-3 text-xs">{layaway.code}</span>
+                        <span className="text-ink-3 text-xs whitespace-nowrap">{layaway.code}</span>
                     </span>
                     <Badge tone={LAYAWAY_TONES[layaway.status]} className="shrink-0">
                         {layaway.statusLabel}

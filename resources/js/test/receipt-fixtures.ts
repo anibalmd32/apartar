@@ -34,6 +34,7 @@ export function receiptProps(overrides: Partial<ReceiptCreateProps> = {}): Recei
         layaway: {
             code: 'AP-7K3M9QRT',
             productName: 'Nevera Mabe',
+            status: 'active',
             statusLabel: 'Al día',
             remaining: { cents: centsUsd(15_000), usd: '$150,00', ves: null },
         },

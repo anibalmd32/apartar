@@ -12,6 +12,7 @@ use App\Models\PlatformUser;
 use App\Models\Subscription;
 use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\Auditing\PlatformAudit;
+use App\Support\HumanDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -72,7 +73,7 @@ final class GrantCourtesyPeriodAction
             return $locked;
         }));
 
-        PlatformAudit::record(PlatformAudit::COURTESY_GRANTED, 'Concedió cortesía hasta el '.$until->toDateString().': '.$reason, $operator, (int) $organization->getKey(), [
+        PlatformAudit::record(PlatformAudit::COURTESY_GRANTED, 'Concedió cortesía hasta el '.HumanDate::long($until).': '.$reason, $operator, (int) $organization->getKey(), [
             'until' => $until->toIso8601String(),
         ]);
 

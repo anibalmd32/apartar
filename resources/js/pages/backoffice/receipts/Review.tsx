@@ -1,5 +1,5 @@
 import { Alert } from '@/components/ui/alert';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { ApprovalForm } from '@/features/receipts/components/ApprovalForm';
@@ -8,8 +8,9 @@ import { RejectForm } from '@/features/receipts/components/RejectForm';
 import { CustomerCard, DeclaredCard, ReceiptChain, ReceiptViewer } from '@/features/receipts/components/ReviewCards';
 import { ReviewSchedule } from '@/features/receipts/components/ReviewSchedule';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { RECEIPT_TONES as STATUS_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
-import { type ReceiptReviewProps, type ReceiptStatus } from '@/types/receipt';
+import { type ReceiptReviewProps } from '@/types/receipt';
 import { cilChevronLeft, cilChevronRight } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
@@ -67,12 +68,6 @@ function QueueNav({ queue }: { queue: NonNullable<ReceiptReviewProps['queue']> }
         </nav>
     );
 }
-
-const STATUS_TONES: Readonly<Record<ReceiptStatus, BadgeTone>> = {
-    pending_review: 'warning',
-    approved: 'success',
-    rejected: 'error',
-};
 
 function Decision({ receipt, layaway, rate, preview, previewError, approval, rejection }: ReceiptReviewProps) {
     const [mode, setMode] = useState<'approve' | 'reject'>('approve');

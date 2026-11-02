@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { dueDateMeta } from '@/features/collections/components/collectionMobile';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
 import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
 import { type CustomerDirectoryRow } from '@/types/customers';
 import { type DataTableColumn } from '@/types/data-table';
@@ -35,7 +35,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
                             </span>
                         ) : null}
                     </span>
-                    <span className="text-ink-3 text-xs">{row.document ?? NO_DOCUMENT}</span>
+                    <span className="text-ink-3 text-xs whitespace-nowrap">{row.document ?? NO_DOCUMENT}</span>
                     {row.inArrears ? <Badge tone="error">En mora</Badge> : null}
                 </div>
             </div>
@@ -99,6 +99,6 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
         id: 'next',
         header: 'Próximo vencimiento',
         mobile: { meta: (row) => dueDateMeta(row.nextDueDate) },
-        cell: (row) => (row.nextDueDate === null ? <span className="text-ink-3">—</span> : formatDay(row.nextDueDate)),
+        cell: (row) => (row.nextDueDate === null ? <span className="text-ink-3">—</span> : formatDate(row.nextDueDate)),
     },
 ];

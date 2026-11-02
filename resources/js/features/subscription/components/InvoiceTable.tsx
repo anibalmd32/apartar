@@ -1,5 +1,7 @@
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatDate, formatPeriod } from '@/lib/dates';
+import { INVOICE_TONES as STATUS_TONES } from '@/lib/status-tones';
 import { type InvoiceRow, type InvoiceStatus } from '@/types/invoice';
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
@@ -10,22 +12,8 @@ const STATUS_LABELS: Record<InvoiceStatus, string> = {
     void: 'Anulada',
 };
 
-const STATUS_TONES: Record<InvoiceStatus, BadgeTone> = {
-    pending: 'warning',
-    under_review: 'info',
-    paid: 'success',
-    overdue: 'error',
-    void: 'neutral',
-};
-
 export function isPayable(invoice: InvoiceRow): boolean {
     return invoice.payUrl !== null && invoice.receiptStatus !== 'pending_review';
-}
-
-export function formatDay(day: string, withYear = false): string {
-    const [year, month, date] = day.split('-');
-
-    return withYear ? `${date}/${month}/${year}` : `${date}/${month}`;
 }
 
 export function InvoiceTable({
@@ -61,7 +49,7 @@ export function InvoiceTable({
                                 <p className="text-ink-3 text-xs">{invoice.kind}</p>
                             </td>
                             <td data-label="Periodo" className="text-ink-2 whitespace-nowrap">
-                                {formatDay(invoice.periodStart.slice(0, 10))} – {formatDay(invoice.periodEnd.slice(0, 10))}
+                                {formatPeriod(invoice.periodStart.slice(0, 10), invoice.periodEnd.slice(0, 10))}
                             </td>
                             <td data-label="Monto">
                                 <div className="max-md:text-right">
@@ -80,7 +68,7 @@ export function InvoiceTable({
                                 <Badge tone={STATUS_TONES[invoice.status]}>{STATUS_LABELS[invoice.status]}</Badge>
                             </td>
                             <td data-label="Vence" className="text-ink-2 whitespace-nowrap">
-                                {formatDay(invoice.dueDate)}
+                                {formatDate(invoice.dueDate)}
                             </td>
                             <td data-label="Comprobante" data-empty={invoice.status !== 'paid' && invoice.receiptStatus === 'none' ? '' : undefined}>
                                 <ReceiptCell invoice={invoice} />
@@ -108,7 +96,7 @@ function ReceiptCell({ invoice }: { invoice: InvoiceRow }) {
     }
 
     if (invoice.receiptStatus === 'pending_review') {
-        return <span className="text-info font-medium">En revisión</span>;
+        return <span className="text-warning font-medium">En revisión</span>;
     }
 
     if (invoice.receiptStatus === 'rejected') {

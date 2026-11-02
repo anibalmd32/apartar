@@ -40,6 +40,7 @@ use App\Models\PaymentAccount;
 use App\Models\Receipt;
 use App\Models\User;
 use App\Support\DecimalInput;
+use App\Support\HumanDate;
 use App\Support\SignedFileUrl;
 use DateTimeZone;
 use Illuminate\Database\DeadlockException;
@@ -283,7 +284,7 @@ final class ReceiptReviewController extends Controller
             'id' => (int) $receipt->getKey(),
             'status' => $receipt->status->value,
             'statusLabel' => $receipt->status->label(),
-            'submittedAt' => $receipt->created_at?->setTimezone($timezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY, h:mm a'),
+            'submittedAt' => $receipt->created_at === null ? null : HumanDate::longDateTime($receipt->created_at->setTimezone($timezone)),
             'paidAt' => $receipt->paid_at->toDateString(),
             'method' => $receipt->payment_method->label(),
             'bank' => $receipt->bank,

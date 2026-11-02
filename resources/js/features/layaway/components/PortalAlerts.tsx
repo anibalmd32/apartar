@@ -73,7 +73,7 @@ function describe(alert: PortalAlert): { tone: AlertTone; message: ReactNode; ac
                 message: (
                     <>
                         <strong>{alert.businessName}:</strong> te quedan {timeLeft(alert.hoursLeft, alert.minutesLeft)} para pagar la inicial de{' '}
-                        <span className="font-mono">{alert.layawayCode}</span>.
+                        <span className="font-mono whitespace-nowrap">{alert.layawayCode}</span>.
                     </>
                 ),
                 action: 'Pagar la inicial',
@@ -94,8 +94,8 @@ function describe(alert: PortalAlert): { tone: AlertTone; message: ReactNode; ac
                 tone: 'error',
                 message: (
                     <>
-                        <strong>{alert.businessName}:</strong> rechazó tu comprobante de <span className="font-mono">{alert.layawayCode}</span>.
-                        Revisa el motivo y envía otro.
+                        <strong>{alert.businessName}:</strong> rechazó tu comprobante de{' '}
+                        <span className="font-mono whitespace-nowrap">{alert.layawayCode}</span>. Revisa el motivo y envía otro.
                     </>
                 ),
                 action: 'Ver el motivo',

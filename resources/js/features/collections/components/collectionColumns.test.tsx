@@ -56,7 +56,7 @@ it('en Cobranza la cuota es una tarjeta que lleva al apartado, con el monto, el 
     expect(row).toHaveTextContent('$14,50');
     expect(row).toHaveTextContent('5 días de atraso');
     expect(row).toHaveTextContent('AP-YZE96F5Q · Cuota 2 de 4');
-    expect(row).toHaveTextContent('28/10/2026');
+    expect(row).toHaveTextContent('28 oct 2026');
     expect(row).not.toHaveTextContent('Pagado');
     expect(row).not.toHaveTextContent('$0,00');
     expect(within(row).queryByRole('link', { name: 'Registrar pago' })).toBeNull();
@@ -109,7 +109,7 @@ it('en Clientes el pendiente y las cuotas vencidas se ven en la tarjeta', () => 
 
     expect(card()).toHaveTextContent('$43,50');
     expect(card()).toHaveTextContent('1 cuota vencida');
-    expect(card()).toHaveTextContent('Venció el 28/10/2026');
+    expect(card()).toHaveTextContent('Venció el 28 oct 2026');
     expect(card()).not.toHaveTextContent('Vence el');
     expect(card()).not.toHaveTextContent('En mora');
     vi.useRealTimers();
@@ -120,6 +120,6 @@ it('en Clientes una cuota que aún no llega dice Vence el', () => {
     vi.setSystemTime(new Date(2026, 10, 2, 10));
     render(<List rows={[{ ...CUSTOMER, nextDueDate: '2026-11-02' }]} columns={directoryColumns} href={(row) => row.url} />);
 
-    expect(card()).toHaveTextContent('Vence el 02/11/2026');
+    expect(card()).toHaveTextContent('Vence el 2 nov 2026');
     vi.useRealTimers();
 });

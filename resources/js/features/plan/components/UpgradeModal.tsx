@@ -3,7 +3,7 @@ import { DocumentField } from '@/components/ui/document-field';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
-import { formatPlanDate } from '@/lib/plan-change';
+import { formatPeriod } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
 import { type PlanOption } from '@/types/plan';
 import { cilCheckAlt } from '@coreui/icons';
@@ -68,9 +68,7 @@ export function UpgradeModal({
                     <dl className="flex flex-col gap-1.5">
                         <div className="flex justify-between gap-3">
                             <dt className="text-ink-2">Periodo</dt>
-                            <dd className="font-semibold">
-                                {formatPlanDate(invoice.periodStart, timeZone)} – {formatPlanDate(invoice.periodEnd, timeZone)}
-                            </dd>
+                            <dd className="font-semibold">{formatPeriod(invoice.periodStart, invoice.periodEnd, timeZone)}</dd>
                         </div>
                         <div className="flex justify-between gap-3">
                             <dt className="text-ink-2">Monto</dt>

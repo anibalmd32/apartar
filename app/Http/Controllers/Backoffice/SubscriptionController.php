@@ -24,6 +24,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Models\UsageCounter;
 use App\Models\User;
+use App\Support\HumanDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -140,7 +141,7 @@ final class SubscriptionController extends Controller
             return sprintf(
                 'Pasarás a %s el %s. Hasta entonces conservas todo lo de %s.',
                 $after->scheduledPlan->name,
-                $after->scheduled_plan_at?->setTimezone(app(TenantContext::class)->organization()->timezone)->format('d/m/Y'),
+                $after->scheduled_plan_at === null ? '' : HumanDate::long($after->scheduled_plan_at->setTimezone(app(TenantContext::class)->organization()->timezone)),
                 $after->plan->name,
             );
         }

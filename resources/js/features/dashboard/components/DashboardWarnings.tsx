@@ -2,7 +2,7 @@ import { type ChipTone, IconChip } from '@/components/ui/icon-chip';
 import { SectionCard } from '@/components/ui/section-card';
 import { PlansLink } from '@/features/plan/components/PlansLink';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
 import { type DashboardWarning } from '@/types/dashboard';
 import { type UsageMetric } from '@/types/plan';
@@ -86,7 +86,7 @@ function WarningText({ warning }: { warning: DashboardWarning }) {
         case 'invoice_overdue':
             return (
                 <span>
-                    Tu suscripción tiene una factura vencida{warning.dueDate !== null ? ` desde el ${formatDay(warning.dueDate)}` : ''}.{' '}
+                    Tu suscripción tiene una factura vencida{warning.dueDate !== null ? ` desde el ${formatDate(warning.dueDate)}` : ''}.{' '}
                     <Link href={bo('/suscripcion/facturas')} className="link">
                         Págala
                     </Link>

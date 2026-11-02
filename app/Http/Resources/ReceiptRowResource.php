@@ -10,6 +10,7 @@ use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\ReceiptStatus;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
+use App\Support\HumanDate;
 use App\Support\SignedFileUrl;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
@@ -58,7 +59,7 @@ final class ReceiptRowResource extends JsonResource
     private function statusLabel(Receipt $receipt, CarbonImmutable $submitted): string
     {
         if ($receipt->status->awaitsReview() && $submitted->lessThan($this->now->subHours(self::LONG_REVIEW_HOURS))) {
-            return sprintf('En revisión desde el %s', $submitted->format('d/m'));
+            return sprintf('En revisión desde el %s', HumanDate::dayMonth($submitted));
         }
 
         return $receipt->status->label();

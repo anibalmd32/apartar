@@ -25,6 +25,7 @@ use App\Models\Catalog;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\CatalogShareLink;
+use App\Support\HumanDate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -253,9 +254,7 @@ final class CatalogController extends Controller
             'shareUrl' => CatalogShareLink::of($catalog->slug),
             'slugIsLocked' => $visibility !== CatalogVisibility::Draft,
             'productsCount' => (int) $catalog->getAttribute('products_count'),
-            'updatedAt' => $catalog->updated_at
-                ?->setTimezone($this->context->organization()->timezone)
-                ->isoFormat('lll'),
+            'updatedAt' => $catalog->updated_at === null ? null : HumanDate::dateTime($catalog->updated_at->setTimezone($this->context->organization()->timezone)),
             'updatedBy' => $catalog->editor?->name,
         ];
     }

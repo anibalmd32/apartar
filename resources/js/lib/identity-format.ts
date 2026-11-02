@@ -47,6 +47,10 @@ export function formatPhone(raw: string | null): string {
     const plus = match[1] ?? '';
     const digits = match[2] ?? '';
 
+    if (plus !== '' && digits.startsWith('58') && digits.length === NATIONAL_DIGITS + 2) {
+        return splitAt(`0${digits.slice(2)}`, 4);
+    }
+
     if (plus !== '') {
         return digits.startsWith('58') && digits.length > 2 ? `+58 ${splitAt(digits.slice(2), 3)}` : `+${digits}`;
     }

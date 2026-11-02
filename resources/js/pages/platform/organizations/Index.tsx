@@ -5,6 +5,7 @@ import { OrganizationFilters } from '@/features/platform/components/Organization
 import { OrganizationCard, RiskBadges } from '@/features/platform/components/OrganizationRowParts';
 import PlatformLayout from '@/layouts/platform-layout';
 import { compactQuery } from '@/lib/compact-query';
+import { formatDate } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { type OrganizationRow } from '@/types/platform';
 import { cilChevronLeft, cilChevronRight } from '@coreui/icons';
@@ -22,8 +23,7 @@ interface DirectoryProps {
 export default function OrganizationsIndex({ rows, hasMore, page, filters, plans, total }: DirectoryProps) {
     const visit = (changes: Record<string, string | boolean | number | null>) =>
         router.get(pf('/organizaciones'), compactQuery({ ...filters, pagina: 1, ...changes }, { pagina: 1 }), { preserveState: true, replace: true });
-    const lastActivity = (row: OrganizationRow) => (row.lastActivityAt === null ? 'Nunca' : dateFormat.format(new Date(row.lastActivityAt)));
-    const dateFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' });
+    const lastActivity = (row: OrganizationRow) => (row.lastActivityAt === null ? 'Nunca' : formatDate(row.lastActivityAt));
 
     return (
         <PlatformLayout

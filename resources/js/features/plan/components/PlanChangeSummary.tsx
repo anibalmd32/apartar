@@ -1,5 +1,6 @@
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
-import { describeExcess, formatPlanDate } from '@/lib/plan-change';
+import { formatDate } from '@/lib/dates';
+import { describeExcess } from '@/lib/plan-change';
 import { type PlanOption } from '@/types/plan';
 
 export function PlanChangeSummary({ option, timeZone }: { option: PlanOption; timeZone?: string }) {
@@ -33,7 +34,7 @@ export function PlanChangeSummary({ option, timeZone }: { option: PlanOption; ti
     return (
         <div className="flex flex-col gap-2 text-sm">
             <p>
-                El cambio se programa para el {preview.effectiveAt === null ? 'fin del período' : formatPlanDate(preview.effectiveAt, timeZone)}y
+                El cambio se programa para el {preview.effectiveAt === null ? 'fin del período' : formatDate(preview.effectiveAt, 'long', timeZone)}y
                 hasta que se aplique conservas tu plan actual y puedes revertirlo desde aquí.
             </p>
 

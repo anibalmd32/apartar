@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
 import { customerMobile, DueBadge, dueDateMeta, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
 import { type CollectionDownPaymentRow, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
 import { Link } from '@inertiajs/react';
@@ -19,10 +19,10 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
     {
         id: 'due',
         header: 'Vence',
-        mobile: { status: (row) => <DueBadge row={row} />, meta: (row) => formatDay(row.dueDate) },
+        mobile: { status: (row) => <DueBadge row={row} />, meta: (row) => formatDate(row.dueDate) },
         cell: (row) => (
             <div className="flex flex-col gap-1">
-                <span>{formatDay(row.dueDate)}</span>
+                <span>{formatDate(row.dueDate)}</span>
                 <DueBadge row={row} />
             </div>
         ),
@@ -72,7 +72,7 @@ export const layawayColumns: DataTableColumn<CollectionLayawayRow>[] = [
         id: 'completed',
         header: 'Pagado el',
         mobile: { meta: (row) => dueMeta(row.completedAt, 'Pagado el') },
-        cell: (row) => (row.completedAt === null ? '—' : formatDay(row.completedAt)),
+        cell: (row) => (row.completedAt === null ? '—' : formatDate(row.completedAt)),
     },
     {
         id: 'total',
@@ -101,7 +101,7 @@ function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
 
     return (
         <div className="flex flex-col gap-1">
-            <span>{formatDay(expiresAt.slice(0, 10))}</span>
+            <span>{formatDate(expiresAt.slice(0, 10))}</span>
             {expiryBadge(expiresAt)}
         </div>
     );

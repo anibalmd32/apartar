@@ -95,7 +95,7 @@ it('enseña cada exportación con lo que se puede hacer', () => {
     expect(table.getAllByRole('link', { name: 'Descargar' })).toHaveLength(1);
     expect(table.getAllByText('34').length).toBeGreaterThan(0);
     expect(table.getAllByText('2 KB').length).toBeGreaterThan(0);
-    expect(table.getByText('hasta 17/09')).toBeInTheDocument();
+    expect(table.getByText(/^hasta 17 sept/)).toBeInTheDocument();
     expect(table.getByText('hace 12 min')).toBeInTheDocument();
     expect(table.getByText('Tu almacenamiento está lleno.')).toBeInTheDocument();
     expect(table.getByText('Se borró a los siete días')).toBeInTheDocument();

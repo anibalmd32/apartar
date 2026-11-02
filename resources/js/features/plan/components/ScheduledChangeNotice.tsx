@@ -1,6 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { formatPlanDate } from '@/lib/plan-change';
+import { formatDate } from '@/lib/dates';
 import { CHANGE_PLAN_URL, type ScheduledPlanChange } from '@/types/plan';
 import { useForm } from '@inertiajs/react';
 
@@ -18,7 +18,7 @@ export function ScheduledChangeNotice({
     timeZone?: string;
 }) {
     const { post, processing } = useForm({ plan: currentPlanCode });
-    const when = change.effectiveAt === null ? 'al cerrar el período' : `el ${formatPlanDate(change.effectiveAt, timeZone)}`;
+    const when = change.effectiveAt === null ? 'al cerrar el período' : `el ${formatDate(change.effectiveAt, 'long', timeZone)}`;
 
     return (
         <Alert tone="info" className="flex-col items-start gap-2 sm:flex-row sm:items-center">

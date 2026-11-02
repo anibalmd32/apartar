@@ -137,6 +137,20 @@ final class GrantSupportAccessActionTest extends TestCase
         $this->assertSame('2026-10-22 22:00:00', $second->refresh()->expires_at->format('Y-m-d H:i:s'));
     }
 
+    public function test_la_auditoria_dice_que_datos_consulto_en_palabras_y_no_con_el_nombre_de_la_ruta(): void
+    {
+        Notification::fake();
+        $this->asOperator();
+        $this->post($this->base().'/soporte', ['reason' => self::REASON])->assertRedirect();
+
+        $this->get($this->data('clientes'))->assertOk();
+        $this->get($this->data('apartados'))->assertOk();
+
+        $descriptions = PlatformActivity::query()->where('action', 'support_access.viewed')->orderBy('id')->pluck('description')->all();
+
+        $this->assertSame(['Consultó los clientes con acceso de soporte.', 'Consultó los apartados con acceso de soporte.'], $descriptions);
+    }
+
     public function test_a_grant_never_allows_writing_as_the_business(): void
     {
         $operator = $this->asOperator();

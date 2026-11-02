@@ -1,19 +1,11 @@
 import { Alert } from '@/components/ui/alert';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
-import { type LayawayStatus, type PortalLayawayShowProps } from '@/types/portal';
+import { type PortalLayawayShowProps } from '@/types/portal';
 import { cilBasket } from '@coreui/icons';
-
-export const LAYAWAY_TONES: Record<LayawayStatus, BadgeTone> = {
-    pending_down_payment: 'warning',
-    active: 'success',
-    overdue: 'error',
-    completed: 'info',
-    cancelled: 'neutral',
-    expired: 'neutral',
-};
 
 type Layaway = PortalLayawayShowProps['layaway'];
 
@@ -40,7 +32,7 @@ export function PortalLayawayHero({ layaway, businessName, className }: PortalLa
                             {layaway.productName}
                         </h1>
                         <p className="text-ink-3 text-[13px]">
-                            {layaway.code} · <span>Apartado en {businessName}</span>
+                            <span className="whitespace-nowrap">{layaway.code}</span> · <span>Apartado en {businessName}</span>
                         </p>
                     </div>
                 </div>

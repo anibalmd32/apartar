@@ -1,5 +1,6 @@
 import { type ChipTone, IconChip } from '@/components/ui/icon-chip';
 import { SectionCard } from '@/components/ui/section-card';
+import { formatDateTime } from '@/lib/dates';
 import { type LayawayActivityEvent } from '@/types/layaway-backoffice';
 import { cilBan, cilBasket, cilCheckCircle, cilDescription, cilMoney, cilTruck, cilWarning, cilXCircle } from '@coreui/icons';
 
@@ -22,8 +23,6 @@ export function LayawayActivity({ events, timezone }: { events: readonly Layaway
         return null;
     }
 
-    const format = new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: timezone });
-
     return (
         <SectionCard title="Actividad">
             <ol className="flex flex-col gap-3.5">
@@ -37,7 +36,7 @@ export function LayawayActivity({ events, timezone }: { events: readonly Layaway
                                 <span className="text-[13px] font-semibold">{event.title}</span>
                                 {event.detail ? <span className="text-ink-2 text-xs">{event.detail}</span> : null}
                                 <span className="text-ink-3 text-xs">
-                                    {event.at ? format.format(new Date(event.at)) : ''}
+                                    {event.at ? formatDateTime(event.at, timezone) : ''}
                                     {event.actor ? ` · ${event.actor}` : ''}
                                 </span>
                             </span>

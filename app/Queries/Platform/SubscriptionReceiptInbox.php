@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Queries\Platform;
 
+use App\Domain\Money\Money;
+use App\Domain\Money\MoneyFormatter;
 use App\Domain\Payment\ReceiptStatus;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionReceipt;
@@ -86,7 +88,7 @@ final class SubscriptionReceiptInbox
             'invoiceId' => $invoice->getKey(),
             'plan' => $invoice->plan->name,
             'outstanding' => $this->money->view(max(0, $invoice->amount_cents - $invoice->paid_cents)),
-            'declared' => $receipt->declared_amount.' '.$receipt->declared_currency->value,
+            'declared' => MoneyFormatter::format(Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency)),
             'method' => $receipt->payment_method->label(),
             'bank' => $receipt->bank,
             'reference' => $receipt->reference,

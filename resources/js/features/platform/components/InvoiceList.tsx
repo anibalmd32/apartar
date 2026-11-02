@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { formatDate } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { type InvoiceRow } from '@/types/platform';
 import { useState } from 'react';
@@ -9,12 +10,8 @@ import { InvoiceStatusBadge } from './labels';
 
 const OPEN = ['pending', 'under_review', 'overdue'];
 
-const DAY = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-
 export function humanDay(day: string): string {
-    const date = new Date(`${day.slice(0, 10)}T00:00:00Z`);
-
-    return Number.isNaN(date.getTime()) ? day : DAY.format(date).replace('.', '');
+    return formatDate(day.slice(0, 10));
 }
 
 export function InvoiceList({ invoices }: { invoices: readonly InvoiceRow[] }) {

@@ -1,14 +1,9 @@
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { IconChip } from '@/components/ui/icon-chip';
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { formatDate } from '@/lib/dates';
+import { RECEIPT_TONES as TONES } from '@/lib/status-tones';
 import { type ReceiptRow, type ReceiptStatus } from '@/types/receipt';
 import { cilCheckCircle, cilFile, cilXCircle } from '@coreui/icons';
-
-const TONES: Readonly<Record<ReceiptStatus, BadgeTone>> = {
-    pending_review: 'warning',
-    approved: 'success',
-    rejected: 'error',
-};
 
 const ICONS: Readonly<Record<ReceiptStatus, string[]>> = {
     pending_review: cilFile,
@@ -41,12 +36,12 @@ export function ReceiptHistory({ receipts }: ReceiptHistoryProps) {
                                 <Badge tone={TONES[receipt.status]}>{receipt.statusLabel}</Badge>
                             </div>
                             <p className="text-ink-3 text-xs">
-                                {formatDay(receipt.submittedAt)} · {receipt.method}
+                                {formatDate(receipt.submittedAt)} · {receipt.method}
                                 {receipt.reference !== null ? ` · Ref. ${receipt.reference}` : ''}
                             </p>
                             {receipt.paidToAccount !== null ? <p className="text-ink-3 text-xs">Pagado a {receipt.paidToAccount}</p> : null}
                             {replaced !== undefined ? (
-                                <p className="text-ink-3 text-xs">Reintento del comprobante del {formatDay(replaced)}</p>
+                                <p className="text-ink-3 text-xs">Reintento del comprobante del {formatDate(replaced)}</p>
                             ) : null}
                             {receipt.rejectionReason !== null ? <p className="text-error text-xs">Motivo: {receipt.rejectionReason}</p> : null}
                             <a

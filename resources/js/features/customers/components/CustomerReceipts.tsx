@@ -1,4 +1,6 @@
-import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { Badge } from '@/components/ui/badge';
+import { formatDate } from '@/lib/dates';
+import { RECEIPT_TONES } from '@/lib/status-tones';
 import { type CustomerReceiptRow } from '@/types/customers';
 import { Link } from '@inertiajs/react';
 
@@ -16,10 +18,10 @@ export function CustomerReceipts({ receipts }: { receipts: readonly CustomerRece
                             {receipt.declared}
                         </Link>
                         <span className="text-ink-3">
-                            {receipt.submittedAt !== null ? formatDay(receipt.submittedAt) : ''}
-                            {receipt.layawayCode !== null ? ` · ${receipt.layawayCode}` : ''}
+                            {receipt.submittedAt !== null ? formatDate(receipt.submittedAt) : ''}
+                            {receipt.layawayCode !== null ? <span className="whitespace-nowrap">{` · ${receipt.layawayCode}`}</span> : null}
                         </span>
-                        <span className="badge badge-neutral">{receipt.statusLabel}</span>
+                        <Badge tone={RECEIPT_TONES[receipt.status]}>{receipt.statusLabel}</Badge>
                     </span>
                     {receipt.paidToAccount !== null ? <span className="text-ink-3 text-xs">A {receipt.paidToAccount}</span> : null}
                     {receipt.rejectionReason !== null ? (

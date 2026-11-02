@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { AuditEntryRow } from '@/features/tenancy/components/AuditEntryRow';
 import { AuditFilters } from '@/features/tenancy/components/AuditFilters';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { formatDate } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
 import { type AuditActorOption, type AuditEntry, type AuditEventGroup, type AuditFilters as Filters } from '@/types/audit';
 import { type Paginated } from '@/types/data-table';
@@ -83,13 +84,7 @@ function byDay(entries: readonly AuditEntry[], timezone: string): [string, Audit
     for (const entry of entries) {
         const day = entry.occurredAt === null ? 'Sin fecha' : key(new Date(entry.occurredAt));
         const label =
-            day === today
-                ? 'Hoy'
-                : day === yesterday
-                  ? 'Ayer'
-                  : entry.occurredAt === null
-                    ? day
-                    : new Intl.DateTimeFormat('es-VE', { dateStyle: 'long', timeZone: timezone }).format(new Date(entry.occurredAt));
+            day === today ? 'Hoy' : day === yesterday ? 'Ayer' : entry.occurredAt === null ? day : formatDate(entry.occurredAt, 'long', timezone);
         groups.set(label, [...(groups.get(label) ?? []), entry]);
     }
 

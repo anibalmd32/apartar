@@ -41,9 +41,13 @@ describe('máscara del teléfono', () => {
         expect(formatPhone(input)).toBe(formatted);
     });
 
-    it('da forma al internacional sin quitarle el +58', () => {
-        expect(formatPhone('+584141234567')).toBe('+58 414-1234567');
-        expect(formatPhone('+58 414 123 45 67')).toBe('+58 414-1234567');
+    it('enseña el venezolano guardado con +58 como se marca en el país', () => {
+        expect(formatPhone('+584241234502')).toBe('0424-1234502');
+        expect(formatPhone('+58 414 123 45 67')).toBe('0414-1234567');
+    });
+
+    it('conserva el +58 mientras el número está incompleto', () => {
+        expect(formatPhone('+58414123')).toBe('+58 414-123');
     });
 
     it('da forma al nacional sin cero', () => {

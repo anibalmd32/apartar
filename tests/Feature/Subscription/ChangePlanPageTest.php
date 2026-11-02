@@ -98,7 +98,7 @@ final class ChangePlanPageTest extends TestCase
                 ->where('plans.0.preview.excesses.0.consequence', PlanChangePreview::CONSEQUENCE_BLOCK_CREATION));
 
         $this->post('/backoffice/suscripcion/cambiar', ['plan' => 'free', 'confirmed' => true])
-            ->assertSessionHas('status', 'Pasarás a Free el 08/11/2026. Hasta entonces conservas todo lo de Pro.');
+            ->assertSessionHas('status', 'Pasarás a Free el 8 de noviembre de 2026. Hasta entonces conservas todo lo de Pro.');
 
         $this->get('/backoffice/suscripcion')
             ->assertInertia(fn (AssertableInertia $page) => $page

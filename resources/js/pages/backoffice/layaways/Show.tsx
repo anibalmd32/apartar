@@ -11,6 +11,7 @@ import { ManualPaymentForm } from '@/features/receipts/components/ManualPaymentF
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import { paymentSuggestions } from '@/features/receipts/lib/payment-suggestions';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { bo } from '@/lib/surfaces';
 import { type BackofficeLayawayShowProps } from '@/types/layaway-backoffice';
 import { cilBan, cilCheckCircle, cilPlus } from '@coreui/icons';
@@ -34,7 +35,7 @@ export default function LayawayShow({
     return (
         <BackofficeLayout
             title={layaway.code}
-            badge={<Badge tone={layaway.status === 'cancelled' ? 'neutral' : 'primary'}>{layaway.statusLabel}</Badge>}
+            badge={<Badge tone={LAYAWAY_TONES[layaway.status]}>{layaway.statusLabel}</Badge>}
             back={{ href: bo('/cobranza'), label: 'Cobranza' }}
             description={layaway.createdAt !== null ? `Creado el ${layaway.createdAt}` : undefined}
             actions={

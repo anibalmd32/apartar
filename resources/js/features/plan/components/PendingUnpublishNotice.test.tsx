@@ -6,7 +6,7 @@ it('dice cuántos catálogos sobran, desde cuándo y que se conservan los más a
     render(<PendingUnpublishNotice pending={{ excess: 3, limit: 1, unpublishAt: '2026-11-08T02:00:00Z' }} timeZone="America/Caracas" />);
 
     expect(screen.getByText(/Tu plan permite 1 y tienes 3 catálogos publicados de más/)).toBeInTheDocument();
-    expect(screen.getByText(/A partir del 07\/11\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/A partir del 7 de noviembre de 2026/)).toBeInTheDocument();
     expect(screen.getByText(/se conservarán los más antiguos/)).toBeInTheDocument();
     expect(screen.getByText(/Nada se borra/)).toBeInTheDocument();
 });

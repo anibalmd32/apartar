@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { StatCard } from '@/components/ui/stat-card';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { formatDate } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { type SubscriberRow, type SubscribersPageProps } from '@/types/subscribers';
 import { cilLibrary, cilPeople, cilUser, cilUserPlus } from '@coreui/icons';
@@ -107,8 +108,6 @@ export default function Subscribers({ subscribers, nextPageUrl, stats }: Subscri
     );
 }
 
-const DATE = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' });
-
 function SubscriberItem({ row }: { row: SubscriberRow }) {
     return (
         <li className="flex items-center gap-3 py-2 text-sm">
@@ -120,7 +119,7 @@ function SubscriberItem({ row }: { row: SubscriberRow }) {
             <div className="min-w-0 grow">
                 <p className="truncate font-semibold">{row.displayName}</p>
                 <p className="text-ink-3 truncate text-xs">
-                    Sigue {row.catalogName} · desde el {DATE.format(new Date(row.subscribedAt))}
+                    Sigue {row.catalogName} · desde el {formatDate(row.subscribedAt, 'long')}
                 </p>
             </div>
             {row.isCustomer && row.customerUrl !== null ? (

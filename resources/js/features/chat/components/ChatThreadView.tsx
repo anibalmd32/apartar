@@ -3,6 +3,7 @@ import { ChatBubble, DaySeparator } from '@/features/chat/components/ChatBubble'
 import { useConversation } from '@/features/chat/hooks/useConversation';
 import { useTypingIndicator } from '@/features/chat/hooks/useTypingIndicator';
 import { dayKey, dayLabel } from '@/features/chat/lib/day-label';
+import { formatTime } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { type ChatThread, type MessageSenderType } from '@/types/chat';
 import { cilSend } from '@coreui/icons';
@@ -151,7 +152,5 @@ export function ChatThreadView({ thread, me, placeholder, className }: ChatThrea
 }
 
 function meta(senderName: string, sentAt: string): string {
-    const time = new Intl.DateTimeFormat('es-VE', { hour: '2-digit', minute: '2-digit' }).format(new Date(sentAt));
-
-    return `${senderName} · ${time}`;
+    return `${senderName} · ${formatTime(sentAt)}`;
 }

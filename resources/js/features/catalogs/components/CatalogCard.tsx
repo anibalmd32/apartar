@@ -2,6 +2,7 @@ import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
 import { ShareButton } from '@/features/catalogs/components/CatalogShareButtons';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
+import { formatDate } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
 import { type CatalogListItem } from '@/types/catalog';
 import { cilBasket, cilCalendar, cilCheckAlt, cilCopy, cilExternalLink, cilUserFollow } from '@coreui/icons';
@@ -11,7 +12,7 @@ import { useEffect, useState } from 'react';
 const COPIED_FOR = 2000;
 
 function day(iso: string): string {
-    return new Date(iso).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' });
+    return formatDate(iso, 'dayMonth');
 }
 
 function expiry(catalog: CatalogListItem): string {

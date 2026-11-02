@@ -1,6 +1,7 @@
 import { PlanOptionCard } from '@/features/plan/components/PlanOptionCard';
 import { ScheduledChangeNotice } from '@/features/plan/components/ScheduledChangeNotice';
-import { describeExcess, formatPlanDate } from '@/lib/plan-change';
+import { formatDate } from '@/lib/dates';
+import { describeExcess } from '@/lib/plan-change';
 import { planOption, planState } from '@/test/plan-fixtures';
 import { type PlanChangePreview } from '@/types/plan';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -71,7 +72,7 @@ it('dice qué quedará por encima y qué pasará con ello', () => {
     const [catalogs, products] = downgradePreview().excesses;
 
     expect(describeExcess(catalogs!, 'catálogos publicados', 'Free', '2026-11-16T12:00:00-04:00', CARACAS)).toBe(
-        'Tienes 8 catálogos publicados; en Free quedarán 1 y 7 se despublicarán a partir del 16/11/2026, conservando los más antiguos.',
+        'Tienes 8 catálogos publicados; en Free quedarán 1 y 7 se despublicarán a partir del 16 de noviembre de 2026, conservando los más antiguos.',
     );
     expect(describeExcess(catalogs!, 'catálogos publicados', 'Free', null)).toBe(
         'Tienes 8 catálogos publicados; en Free quedarán 1 y 7 se despublicarán unos días después del cambio, conservando los más antiguos.',
@@ -82,14 +83,14 @@ it('dice qué quedará por encima y qué pasará con ello', () => {
 });
 
 it('fecha en la zona del negocio y no en la del navegador', () => {
-    expect(formatPlanDate('2026-11-09T02:00:00Z', CARACAS)).toBe('08/11/2026');
-    expect(formatPlanDate('2026-11-09T02:00:00Z', 'Europe/Madrid')).toBe('09/11/2026');
+    expect(formatDate('2026-11-09T02:00:00Z', 'long', CARACAS)).toBe('8 de noviembre de 2026');
+    expect(formatDate('2026-11-09T02:00:00Z', 'long', 'Europe/Madrid')).toBe('9 de noviembre de 2026');
 });
 
 it('no deja bajar con exceso hasta confirmarlo', () => {
     render(<PlanOptionCard option={planOption({ code: 'free', name: 'Free', preview: downgradePreview() })} canChange timeZone={CARACAS} />);
 
-    expect(screen.getByText(/se despublicarán a partir del 16\/11\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/se despublicarán a partir del 16 de noviembre de 2026/)).toBeInTheDocument();
     expect(screen.getByText(/Temporada: 35/)).toBeInTheDocument();
     expect(screen.getByText(/Dejarás de tener: Exportación a Excel/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bajar a Free' })).toBeDisabled();
@@ -156,7 +157,9 @@ it('enseña la bajada programada y permite mantener el plan', () => {
         />,
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Cancelaste Pro: pasarás a Free el 09/11/2026. Hasta entonces conservas todo lo de Pro.');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+        'Cancelaste Pro: pasarás a Free el 9 de noviembre de 2026. Hasta entonces conservas todo lo de Pro.',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Mantener Pro' }));
 

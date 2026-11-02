@@ -225,7 +225,7 @@ it('no deja registrar con un comprobante de más del máximo', async () => {
 it('el formulario del cliente dice a qué comprobante rechazado sustituye', () => {
     render(<ReceiptCreate {...receiptProps({ replaces: { submittedAt: '2026-10-01', reason: 'La imagen está cortada.' } })} />);
 
-    expect(screen.getByText('Este comprobante sustituye al que enviaste el 01/10/2026, que fue rechazado.')).toBeInTheDocument();
+    expect(screen.getByText('Este comprobante sustituye al que enviaste el 1 oct 2026, que fue rechazado.')).toBeInTheDocument();
     expect(screen.getByText('Motivo: La imagen está cortada.')).toBeInTheDocument();
     expect(screen.getByText(/no podrás reportarlo otra vez: escríbele a/)).toBeInTheDocument();
 });

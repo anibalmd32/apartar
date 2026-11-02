@@ -1,4 +1,5 @@
 import { SectionCard } from '@/components/ui/section-card';
+import { formatDocumentNumber, formatPhone } from '@/lib/identity-format';
 
 export interface OrganizationProfileData {
     readonly ownerName: string | null;
@@ -13,8 +14,8 @@ export function OrganizationProfile({ profile }: { profile: OrganizationProfileD
     const rows: [string, string | null][] = [
         ['Dueño/a', profile.ownerName],
         ['Correo', profile.ownerEmail],
-        ['Teléfono', profile.phone],
-        ['RIF o cédula', profile.document],
+        ['Teléfono', profile.phone === null ? null : formatPhone(profile.phone)],
+        ['RIF o cédula', profile.document === null ? null : formatDocumentNumber(profile.document)],
         ['Vitrina', profile.storefrontUrl],
         ['Zona horaria', profile.timezone],
     ];

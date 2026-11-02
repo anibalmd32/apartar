@@ -14,11 +14,11 @@ export function LayawayCustomerCard({ customer }: { customer: NonNullable<Backof
             </div>
             <p className="text-ink-2 flex items-center gap-2.5 text-[13px]">
                 <Icon icon={cilUser} className="text-ink-3" />
-                {formatDocumentNumber(customer.documentNumber)}
+                <span className="whitespace-nowrap">{formatDocumentNumber(customer.documentNumber)}</span>
             </p>
             <p className="text-ink-2 flex items-center gap-2.5 text-[13px]">
                 <Icon icon={cilPhone} className="text-ink-3" />
-                {formatPhone(customer.phone)}
+                <span className="whitespace-nowrap">{formatPhone(customer.phone)}</span>
             </p>
             {customer.email ? (
                 <p className="text-ink-2 flex items-center gap-2.5 truncate text-[13px]">

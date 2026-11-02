@@ -17,6 +17,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class RequiresSupportAccess
 {
+    /**
+     * @var array<string, string>
+     */
+    private const SECTIONS = [
+        'platform.support.layaways' => 'los apartados',
+        'platform.support.customers' => 'los clientes',
+    ];
+
     public function __construct(
         private readonly SupportGrants $grants,
         private readonly TenantContext $context,
@@ -44,7 +52,7 @@ final class RequiresSupportAccess
             throw SupportAccessRequiredException::noGrant($organization);
         }
 
-        PlatformAudit::record(PlatformAudit::SUPPORT_VIEWED, 'Consultó '.($request->route()?->getName() ?? $request->path()).'.', $operator, (int) $organization->getKey(), [
+        PlatformAudit::record(PlatformAudit::SUPPORT_VIEWED, sprintf('Consultó %s con acceso de soporte.', self::SECTIONS[$request->route()?->getName() ?? ''] ?? 'datos del negocio'), $operator, (int) $organization->getKey(), [
             'route' => $request->route()?->getName(),
             'query' => $request->query(),
         ]);

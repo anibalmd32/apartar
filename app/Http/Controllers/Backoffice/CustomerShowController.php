@@ -205,6 +205,7 @@ final class CustomerShowController extends Controller
             'url' => route('receipts.show', $receipt),
             'submittedAt' => $this->day($receipt->created_at, $timezone),
             'layawayCode' => $receipt->layaway?->code,
+            'status' => $receipt->status->value,
             'statusLabel' => $receipt->status->label(),
             'declared' => MoneyFormatter::format(Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency)),
             'paidToAccount' => $account instanceof PaymentAccount ? implode(' · ', array_filter([$account->method->label(), $account->bank, $account->identifier])) : null,
