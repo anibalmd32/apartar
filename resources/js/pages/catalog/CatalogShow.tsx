@@ -83,7 +83,7 @@ export default function CatalogShow({ catalog, products, filters, facets, follow
                 </>
             )}
 
-            <div className="[&>.btn]:bg-neutral [&>.btn]:text-neutral-content [&>.btn]:shadow-pop [&>form]:shadow-pop [&>p]:shadow-pop [&>form]:border-line [&>p]:border-line fixed right-4 bottom-4 z-30 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end lg:right-10 lg:bottom-8 [&>.btn]:h-[52px] [&>.btn]:rounded-full [&>.btn]:border-0 [&>.btn]:px-[18px] [&>.btn]:text-sm [&>.btn]:font-bold [&>form]:border [&>p]:border">
+            <div className="[&>.btn]:bg-neutral [&>.btn]:text-neutral-content [&>.btn]:shadow-pop [&>form]:shadow-pop [&>p]:shadow-pop [&>form]:border-line [&>p]:border-line fixed right-4 bottom-[calc(var(--overlay-bottom)+var(--consent-height)+1rem)] z-30 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end lg:right-10 lg:bottom-[calc(var(--consent-height)+2rem)] [&>.btn]:h-[52px] [&>.btn]:rounded-full [&>.btn]:border-0 [&>.btn]:px-[18px] [&>.btn]:text-sm [&>.btn]:font-bold [&>form]:border [&>p]:border">
                 <ChatWidget chat={chat} />
             </div>
         </CatalogLayout>

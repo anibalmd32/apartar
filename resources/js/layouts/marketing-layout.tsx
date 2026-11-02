@@ -20,7 +20,7 @@ export default function MarketingLayout({ title, children }: MarketingLayoutProp
 
             <SiteFooter />
 
-            <CookieConsent />
+            <CookieConsent surface="site" />
         </div>
     );
 }

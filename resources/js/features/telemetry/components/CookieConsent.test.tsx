@@ -81,3 +81,32 @@ it('reabrir desde fuera del componente también lo enseña', () => {
 
     expect(screen.getByRole('button', { name: 'Aceptar todo' })).toBeTruthy();
 });
+
+it('es corto, enlaza a la política y no dice que no guarda la IP', () => {
+    render(<CookieConsent />);
+
+    const banner = screen.getByRole('region', { name: 'Aviso de cookies' });
+
+    expect(banner).toHaveTextContent('tu IP se guarda cifrada');
+    expect(banner).not.toHaveTextContent('No guardamos tu IP');
+    expect(screen.getByRole('link', { name: 'Más información' })).toHaveAttribute('href', '/privacidad');
+});
+
+it('en el sitio de Apartar no habla del catálogo ni del negocio', () => {
+    render(<CookieConsent surface="site" />);
+
+    const banner = screen.getByRole('region', { name: 'Aviso de cookies' });
+
+    expect(banner).toHaveTextContent('mejorar Apartar');
+    expect(banner).not.toHaveTextContent(/catálogo|negocio/);
+});
+
+it('reserva su alto abajo mientras se ve, para que los avisos y botones queden encima', () => {
+    render(<CookieConsent />);
+
+    expect(document.documentElement.style.getPropertyValue('--consent-height')).not.toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Solo lo esencial' }));
+
+    expect(document.documentElement.style.getPropertyValue('--consent-height')).toBe('');
+});
