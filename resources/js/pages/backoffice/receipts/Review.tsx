@@ -22,6 +22,16 @@ export default function ReceiptReview(props: ReceiptReviewProps) {
             badge={<Badge tone={STATUS_TONES[receipt.status]}>{receipt.statusLabel}</Badge>}
             actions={props.queue ? <QueueNav queue={props.queue} /> : null}
         >
+            <ReviewBody key={receipt.id} {...props} />
+        </BackofficeLayout>
+    );
+}
+
+function ReviewBody(props: ReceiptReviewProps) {
+    const { receipt, customer, layaway } = props;
+
+    return (
+        <>
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-6">
                 <div className="flex min-w-0 flex-col gap-4">
                     <DecisionStatus receipt={receipt} layaway={layaway} approval={props.approval} />
@@ -40,7 +50,7 @@ export default function ReceiptReview(props: ReceiptReviewProps) {
                 </div>
             </div>
             <DecisionBar {...props} />
-        </BackofficeLayout>
+        </>
     );
 }
 

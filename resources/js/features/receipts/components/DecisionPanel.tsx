@@ -62,7 +62,7 @@ export function DecisionPanel(props: ReceiptReviewProps) {
             disabled={!enabled}
             onClick={() => setMode(value)}
             className={cn(
-                'h-[34px] flex-1 rounded-lg text-sm transition-colors disabled:opacity-40',
+                'touch:h-11 h-[34px] flex-1 rounded-lg text-sm transition-colors disabled:opacity-40',
                 mode === value ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
             )}
         >
