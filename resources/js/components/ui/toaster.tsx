@@ -79,16 +79,23 @@ export function Toaster({ initialPage }: { initialPage: Page }) {
         };
     }, [initialPage]);
 
+    if (items.length === 0) {
+        return null;
+    }
+
     return (
         <div
             aria-live="polite"
-            className="toast toast-top toast-center sm:toast-bottom sm:toast-end z-[60] w-full max-w-[min(26rem,calc(100vw-1.5rem))] p-3 sm:p-5"
+            className="toast toast-top toast-center sm:toast-bottom sm:toast-end pointer-events-none z-[60] w-full max-w-[min(26rem,calc(100vw-1.5rem))] p-3 sm:p-5"
         >
             {items.map((item) => (
                 <div
                     key={item.id}
                     role={item.tone === 'error' ? 'alert' : 'status'}
-                    className={cn('alert shadow-pop animate-toast-in flex items-start gap-2.5 text-left text-sm', TONES[item.tone].className)}
+                    className={cn(
+                        'alert shadow-pop animate-toast-in pointer-events-auto flex items-start gap-2.5 text-left text-sm',
+                        TONES[item.tone].className,
+                    )}
                 >
                     <Icon icon={TONES[item.tone].icon} size={20} className="mt-px shrink-0" />
                     <span className="min-w-0 flex-1 leading-snug break-words whitespace-normal">{item.text}</span>

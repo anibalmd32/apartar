@@ -39,6 +39,23 @@ describe('los avisos', () => {
         expect(screen.queryByRole('alert')).toBeNull();
     });
 
+    it('no dejan un contenedor vacío en pantalla cuando no hay avisos', () => {
+        const { container } = render(<Toaster initialPage={page('backoffice/Dashboard')} />);
+
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('dejan pasar los toques alrededor del aviso y se puede tocar el aviso', () => {
+        const { container } = render(<Toaster initialPage={page('backoffice/Dashboard')} />);
+
+        act(() => {
+            toast.success('Guardado.');
+        });
+
+        expect(container.firstElementChild).toHaveClass('pointer-events-none');
+        expect(screen.getByRole('status')).toHaveClass('pointer-events-auto');
+    });
+
     it('no apilan dos veces el mismo aviso', () => {
         render(<Toaster initialPage={page('backoffice/Dashboard')} />);
 
