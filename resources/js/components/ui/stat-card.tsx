@@ -19,7 +19,7 @@ export function StatCard({ label, value, icon, tone = 'primary', href, children,
     const body = (
         <>
             <span className="stat-card-head flex items-center gap-2.5">
-                {icon ? <IconChip icon={icon} tone={tone} /> : null}
+                {icon ? <IconChip icon={icon} tone={tone} className="stat-card-icon" /> : null}
                 <span className="text-ink-2 flex-1 text-[13px] leading-tight font-semibold">{label}</span>
                 {href ? <Icon icon={cilArrowRight} size={14} className="text-ink-3 max-sm:hidden" /> : null}
             </span>

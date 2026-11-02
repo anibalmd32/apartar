@@ -1,11 +1,9 @@
 import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { findBank, normalizeName, useCatalogs } from '@/lib/venezuela-catalogs';
-import { cilChevronBottom } from '@coreui/icons';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
 import { type ReactNode, useId, useState } from 'react';
 import { BankMark } from './bank-mark';
-import { Icon } from './icon';
 
 interface BankFieldProps {
     label: string;
@@ -55,12 +53,7 @@ export function BankField({ label, value, onChange, name, error, hint, required 
                         displayValue={(current: string) => current}
                         onChange={(event) => setQuery(event.target.value)}
                     />
-                    <ComboboxButton
-                        aria-label="Ver bancos"
-                        className="text-ink-3 absolute inset-y-0 right-0 flex min-w-11 cursor-pointer items-center justify-center px-3"
-                    >
-                        <Icon icon={cilChevronBottom} size={14} />
-                    </ComboboxButton>
+                    <ComboboxButton aria-label="Ver bancos" className="select-chevron absolute inset-y-0 right-0 min-w-11 cursor-pointer" />
                 </div>
                 <ComboboxOptions
                     anchor={{ to: 'bottom start', gap: 6 }}

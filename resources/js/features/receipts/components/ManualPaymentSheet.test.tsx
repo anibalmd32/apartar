@@ -64,7 +64,7 @@ it('el pago manual se registra desde el pie de la hoja y la cierra al terminar',
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30,00' } });
-    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
@@ -118,11 +118,11 @@ it('no deja registrar el pago hasta que la nota tenga el mínimo de caracteres',
 
     const record = screen.getByRole('button', { name: 'Registrar el pago' });
     expect(record).toBeDisabled();
-    expect(screen.getByText(/Obligatoria, de al menos 10 caracteres/)).toBeInTheDocument();
+    expect(screen.getByText(/De al menos 10 caracteres/)).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'En tienda' } });
+    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'En tienda' } });
     expect(record).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
     await vi.waitFor(() => expect(record).toBeEnabled());
 });

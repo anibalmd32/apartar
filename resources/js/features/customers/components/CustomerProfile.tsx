@@ -55,9 +55,9 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
     );
 }
 
-function Figure({ label, children, tone }: { label: string; children: ReactNode; tone?: 'success' | 'error' }) {
+function Figure({ label, children, tone, className }: { label: string; children: ReactNode; tone?: 'success' | 'error'; className?: string }) {
     return (
-        <div className="bg-base-100 border-line shadow-card flex flex-col gap-1 rounded-2xl border px-4 py-3.5">
+        <div className={cn('bg-base-100 border-line shadow-card flex flex-col gap-1 rounded-2xl border px-4 py-3.5', className)}>
             <dt className="text-ink-3 text-xs">{label}</dt>
             <dd className={cn('text-xl leading-tight font-bold', tone === 'success' && 'text-success', tone === 'error' && 'text-error')}>
                 {children}
@@ -82,13 +82,14 @@ export function BalanceRow({ totals }: Pick<CustomerShowProps, 'totals'>) {
                 <Figure label="Cuotas vencidas" tone={overdue > 0 ? 'error' : undefined}>
                     {overdue}
                     {overdue > 0 ? (
-                        <span className="text-sm font-semibold">
-                            {' '}
-                            · <MoneyLabel money={totals.overdueAmount} />
+                        <span className="mt-1 block text-sm font-semibold">
+                            <MoneyLabel money={totals.overdueAmount} stacked />
                         </span>
                     ) : null}
                 </Figure>
-                <Figure label="Próximo vencimiento">{totals.nextDueDate !== null ? formatDate(totals.nextDueDate) : '—'}</Figure>
+                <Figure label="Próximo vencimiento" className="max-md:col-span-2">
+                    {totals.nextDueDate !== null ? formatDate(totals.nextDueDate) : '—'}
+                </Figure>
             </dl>
         </section>
     );

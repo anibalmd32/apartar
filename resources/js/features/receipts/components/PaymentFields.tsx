@@ -1,16 +1,14 @@
 import { Alert } from '@/components/ui/alert';
 import { BankField } from '@/components/ui/bank-field';
 import { CheckboxField } from '@/components/ui/checkbox-field';
-import { DateField } from '@/components/ui/date-field';
 import { FileField } from '@/components/ui/file-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
+import { PaymentAmountFields } from '@/features/receipts/components/PaymentAmountFields';
 import { PaymentNoteField, ReadingStatus } from '@/features/receipts/components/PaymentFieldsExtras';
-import { RateField } from '@/features/receipts/components/RateField';
 import { ReceiptFilePreview } from '@/features/receipts/components/ReceiptFilePreview';
 import { RateConfirmations } from '@/features/receipts/components/StaleRateConfirmation';
 import { type ApprovalPreviewState } from '@/features/receipts/hooks/useApprovalPreview';
-import { useRateOfDay } from '@/features/receipts/hooks/useRateOfDay';
 import { useReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
 import {
     fileTooLarge,
@@ -20,9 +18,9 @@ import {
     requiresReference,
 } from '@/features/receipts/lib/payment-fields';
 import { appliedRateLine } from '@/features/receipts/lib/payment-rate';
-import { typedAmount } from '@/lib/amount-typing';
+import { cn } from '@/lib/utils';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface PaymentFieldsProps {
     values: PaymentFieldValues;
@@ -34,8 +32,6 @@ interface PaymentFieldsProps {
 }
 
 export function PaymentFields({ values, errors, onChange, options, preview: { preview, error, loading }, onReadingChange }: PaymentFieldsProps) {
-    const [manualRate, setManualRate] = useState(values.rate !== '');
-    const rateOfDay = useRateOfDay(options.rateOfDayUrl, values.paid_at, values.currency === 'VES');
     const excess = preview?.unallocated ?? null;
     const confirmed = preview !== null && excess !== null && values.confirm_excess === preview.unallocatedCents;
     const withReference = requiresReference(options, values.method);
@@ -124,53 +120,22 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                             value={values.reference}
                             onChange={(event) => onChange({ reference: event.target.value })}
                             error={errors.reference}
+                            inputMode="numeric"
                             autoComplete="off"
                             required
                         />
                     </>
                 ) : null}
-                <TextField
-                    label="Importe"
-                    name="amount"
-                    inputMode="decimal"
-                    value={values.amount}
-                    onChange={(event) => onChange({ amount: typedAmount(event) })}
-                    error={errors.amount}
-                />
-                <SelectField
-                    label="Moneda"
-                    name="currency"
-                    options={options.currencies}
-                    value={values.currency}
-                    onChange={(event) => onChange({ currency: event.target.value, rate: event.target.value === 'USD' ? '' : values.rate })}
-                    error={errors.currency}
-                />
-                <DateField
-                    label="Fecha del pago"
-                    name="paid_at"
-                    min={options.paidAt.min}
-                    max={options.paidAt.max}
-                    value={values.paid_at}
-                    onChange={(value) => onChange({ paid_at: value })}
-                    error={errors.paid_at}
-                />
-                {values.currency === 'VES' ? (
-                    <RateField
-                        value={values.rate}
-                        onChange={(rate) => onChange({ rate })}
-                        manual={manualRate}
-                        onManualChange={setManualRate}
-                        day={values.paid_at}
-                        today={options.paidAt.max}
-                        ofDay={rateOfDay}
-                        error={errors.rate}
-                    />
-                ) : null}
+                <PaymentAmountFields values={values} errors={errors} onChange={onChange} options={options} />
             </fieldset>
 
             <PaymentNoteField value={values.note} error={errors.note} onChange={(note) => onChange({ note })} />
 
-            <section aria-label="Vista previa del pago" aria-busy={loading} className="bg-success-soft rounded-xl p-3.5 text-[13px]">
+            <section
+                aria-label="Vista previa del pago"
+                aria-busy={loading}
+                className={cn('rounded-xl p-3.5 text-[13px]', preview !== null && error === null ? 'bg-success-soft' : 'bg-surface-2')}
+            >
                 {error !== null ? (
                     <p className="text-error">{error}</p>
                 ) : preview !== null ? (

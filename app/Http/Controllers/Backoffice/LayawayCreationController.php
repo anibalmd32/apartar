@@ -40,8 +40,10 @@ use App\Models\User;
 use App\Queries\CustomerSearch;
 use App\Queries\PaymentFieldOptionsQuery;
 use App\Support\DecimalInput;
+use App\Support\DocumentNumber;
 use App\Support\ManualPaymentDates;
 use App\Support\PaymentDay;
+use App\Support\PhoneNumber;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
 use Illuminate\Http\JsonResponse;
@@ -286,7 +288,10 @@ final class LayawayCreationController extends Controller
         return [
             'id' => (int) $customer->getKey(),
             'name' => $customer->full_name,
-            'detail' => implode(' · ', array_filter([$customer->document_number, $customer->phone])),
+            'detail' => implode(' · ', array_filter([
+                DocumentNumber::tryFromInput($customer->document_number)?->formatted() ?? $customer->document_number,
+                PhoneNumber::tryFromInput($customer->phone)?->formatted() ?? $customer->phone,
+            ])),
         ];
     }
 

@@ -126,7 +126,7 @@ export function InstallmentPlan({ installments }: { installments: readonly Backo
                                     Pagado <MoneyLabel money={installment.paid} />
                                 </span>
                             </span>
-                            <span className="flex w-full items-center justify-end gap-1 sm:w-auto sm:min-w-56">
+                            <span className="flex w-full items-center justify-between gap-2 pl-11 sm:w-auto sm:min-w-56 sm:justify-end sm:pl-0">
                                 <Badge tone={INSTALLMENT_TONES[tone]}>{installment.statusLabel}</Badge>
                                 {installment.reschedule !== null ? (
                                     <RescheduleInstallmentDialog installment={installment} option={installment.reschedule} />

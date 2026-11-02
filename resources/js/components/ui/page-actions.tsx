@@ -1,5 +1,6 @@
 import { menuItemClass } from '@/components/shell/user-menu';
 import { buttonClass, type ButtonVariant } from '@/components/ui/button';
+import { DisabledReason } from '@/components/ui/disabled-reason';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { cilOptions } from '@coreui/icons';
@@ -92,7 +93,11 @@ function ActionControl({ action, className, onClick, ...rest }: ControlProps) {
 }
 
 function OverflowItem({ action }: { action: PageAction }) {
-    const className = cn(menuItemClass, 'data-disabled:opacity-50 max-lg:min-h-11', action.danger && 'text-error data-focus:text-error');
+    const className = cn(
+        menuItemClass,
+        'data-disabled:opacity-50 max-lg:min-h-11',
+        action.danger && !action.disabled && 'text-error data-focus:text-error',
+    );
 
     return (
         <MenuItem disabled={action.disabled === true || action.loading === true}>
@@ -137,24 +142,37 @@ export function PageActions({ actions }: { actions: readonly PageAction[] }) {
     return (
         <>
             <div data-page-actions className={cn('flex flex-wrap items-center gap-2 max-lg:flex-nowrap', !visible && 'max-lg:hidden')}>
-                {actions.map((action) => (
-                    <ActionControl
-                        key={action.label}
-                        action={action}
-                        ref={action === primary ? action.elementRef : undefined}
-                        data-page-primary={action === primary || undefined}
-                        aria-label={action.mobile === 'icon' ? action.label : undefined}
-                        className={cn(
-                            buttonClass(action.variant ?? 'secondary'),
-                            action.danger && 'text-error',
-                            action === primary
-                                ? 'max-lg:btn-primary max-lg:w-full max-lg:flex-1'
-                                : action.mobile === 'icon'
-                                  ? 'max-lg:btn-square max-lg:order-last max-lg:size-11'
-                                  : 'max-lg:hidden',
-                        )}
-                    />
-                ))}
+                {actions.map((action) => {
+                    const placement =
+                        action === primary
+                            ? 'max-lg:btn-primary max-lg:w-full max-lg:flex-1'
+                            : action.mobile === 'icon'
+                              ? 'max-lg:btn-square max-lg:order-last max-lg:size-11'
+                              : 'max-lg:hidden';
+                    const explained = action.disabled === true && action.disabledReason !== undefined && placement === 'max-lg:hidden';
+                    const control = (
+                        <ActionControl
+                            key={action.label}
+                            action={action}
+                            ref={action === primary ? action.elementRef : undefined}
+                            data-page-primary={action === primary || undefined}
+                            aria-label={action.mobile === 'icon' ? action.label : undefined}
+                            className={cn(
+                                buttonClass(action.variant ?? 'secondary'),
+                                action.danger && !action.disabled && 'text-error',
+                                !explained && placement,
+                            )}
+                        />
+                    );
+
+                    return explained ? (
+                        <DisabledReason key={action.label} reason={action.disabledReason ?? ''} className={placement}>
+                            {control}
+                        </DisabledReason>
+                    ) : (
+                        control
+                    );
+                })}
             </div>
             {overflow.length > 0 ? <OverflowMenu actions={overflow} /> : null}
         </>

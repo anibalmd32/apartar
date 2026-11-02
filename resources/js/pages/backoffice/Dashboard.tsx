@@ -52,7 +52,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
                     ids={layout.cards}
                     labelOf={(id) => CARD_LABELS[id]}
                     onChange={(ids) => save({ ...layout, cards: ids })}
-                    className={cn('stat-stack lg:grid lg:grid-cols-2 lg:gap-4', !split && 'lg:grid-cols-3')}
+                    className={cn('stat-stack stat-list lg:grid lg:auto-rows-fr lg:grid-cols-2 lg:gap-4', !split && 'lg:grid-cols-3')}
                 >
                     {layout.cards.map((id) => (
                         <SortableTile key={id} id={id} label={CARD_LABELS[id]} editing={editing}>
@@ -73,7 +73,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
                 <>
                     <button
                         type="button"
-                        className="btn btn-ghost"
+                        className="btn btn-ghost max-lg:hidden"
                         onClick={() => save({ ...layout, mode: split ? 'stacked' : 'split' })}
                         title={split ? 'Ver las cifras arriba y el plan debajo' : 'Ver las cifras a un lado y el plan al otro'}
                     >

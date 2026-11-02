@@ -25,7 +25,7 @@ export function PaymentNoteField({ value, error, onChange }: { value: string; er
     return (
         <div className="flex flex-col gap-1">
             <label className="fieldset-legend" htmlFor={noteId}>
-                Nota
+                Nota (obligatoria)
             </label>
             <textarea
                 id={noteId}
@@ -35,11 +35,12 @@ export function PaymentNoteField({ value, error, onChange }: { value: string; er
                 maxLength={500}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
+                required
                 aria-invalid={error !== undefined}
                 aria-describedby={`${noteId}-hint`}
             />
             <span id={`${noteId}-hint`} className="text-ink-3 text-xs">
-                Obligatoria, de al menos {NOTE_MIN_LENGTH} caracteres: quién lo recibió, dónde y cómo.
+                De al menos {NOTE_MIN_LENGTH} caracteres: quién lo recibió, dónde y cómo.
             </span>
             {error !== undefined ? <span className="text-error text-sm">{error}</span> : null}
         </div>

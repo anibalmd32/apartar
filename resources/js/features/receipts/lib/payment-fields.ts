@@ -51,20 +51,28 @@ export function fileTooLarge(options: PaymentFieldOptions, file: File | null): b
     return file !== null && file.size > options.file.maxMb * BYTES_PER_MB;
 }
 
-export function paymentPending(options: PaymentFieldOptions, values: PaymentFieldValues, { preview, loading }: ApprovalPreviewState): boolean {
+export function paymentMissing(options: PaymentFieldOptions, values: PaymentFieldValues, { preview, loading }: ApprovalPreviewState): string | null {
     const excess = preview?.unallocated ?? null;
     const excessPending = preview !== null && excess !== null && values.confirm_excess !== preview.unallocatedCents;
     const referencePending = requiresReference(options, values.method) && (values.bank.trim() === '' || values.reference.trim() === '');
+    const checks: readonly [boolean, string][] = [
+        [values.method === '', 'Elige el método del pago.'],
+        [referencePending, 'Escribe el banco y el número de referencia del pago.'],
+        [fileTooLarge(options, values.file), `El comprobante pasa de ${options.file.maxMb} MB.`],
+        [values.note.trim().length < NOTE_MIN_LENGTH, `Escribe la nota del pago, de al menos ${NOTE_MIN_LENGTH} caracteres.`],
+        [loading, 'Estamos calculando a qué cuotas va el pago.'],
+        [excessPending, 'Confirma que registras el pago con lo que sobra sin asignar.'],
+        [
+            ratePending(preview, { confirm_stale_rate: values.confirm_stale_rate, confirm_rate_deviation: values.confirm_rate_deviation }),
+            'Confirma la tasa del pago.',
+        ],
+    ];
 
-    return (
-        loading ||
-        values.method === '' ||
-        values.note.trim().length < NOTE_MIN_LENGTH ||
-        referencePending ||
-        fileTooLarge(options, values.file) ||
-        excessPending ||
-        ratePending(preview, { confirm_stale_rate: values.confirm_stale_rate, confirm_rate_deviation: values.confirm_rate_deviation })
-    );
+    return checks.find(([pending]) => pending)?.[1] ?? null;
+}
+
+export function paymentPending(options: PaymentFieldOptions, values: PaymentFieldValues, state: ApprovalPreviewState): boolean {
+    return paymentMissing(options, values, state) !== null;
 }
 
 export function patchFromReading(options: PaymentFieldOptions, values: PaymentFieldValues, reading: ReceiptReading): Partial<PaymentFieldValues> {

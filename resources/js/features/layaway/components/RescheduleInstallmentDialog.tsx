@@ -29,7 +29,13 @@ export function RescheduleInstallmentDialog({ installment, option }: RescheduleI
 
     return (
         <>
-            <Button variant="ghost" size="sm" onClick={() => setOpen(true)} aria-label={`Reprogramar la cuota ${installment.number}`}>
+            <Button
+                variant="ghost"
+                size="sm"
+                className="-mr-3"
+                onClick={() => setOpen(true)}
+                aria-label={`Reprogramar la cuota ${installment.number}`}
+            >
                 Reprogramar
             </Button>
 

@@ -74,6 +74,8 @@ function props(overrides: Partial<BackofficeLayawayCreateProps> = {}): Backoffic
     };
 }
 
+const submit = () => screen.getByRole('button', { name: 'Crear el apartado' });
+
 function renderPage(overrides: Partial<BackofficeLayawayCreateProps> = {}) {
     return render(
         <AppRoot>
@@ -116,16 +118,19 @@ it('muestra el plan del producto y crea el apartado para el cliente elegido', ()
 
 it('no deja crear sin cliente y pide el consentimiento declarado para uno nuevo', () => {
     renderPage({ customer: null });
-    const submit = screen.getByRole('button', { name: 'Crear el apartado' });
 
-    expect(submit).toBeDisabled();
+    expect(submit()).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cliente nuevo' }));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Pedro' } });
-    expect(submit).toBeDisabled();
+    expect(submit()).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Por qué no está disponible' }));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Marca que el cliente aceptó las condiciones del apartado.');
 
     fireEvent.click(screen.getByLabelText('El cliente aceptó las condiciones del apartado'));
-    expect(submit).toBeEnabled();
+    expect(submit()).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Por qué no está disponible' })).not.toBeInTheDocument();
 });
 
 it('recarga solo el plan cuando cambia la cantidad', () => {
@@ -139,14 +144,13 @@ it('recarga solo el plan cuando cambia la cantidad', () => {
 
 it('elige un plazo propio o sin vencimiento para la inicial', () => {
     renderPage();
-    const submit = screen.getByRole('button', { name: 'Crear el apartado' });
 
     fireEvent.change(screen.getByLabelText('Vence'), { target: { value: 'days' } });
-    expect(submit).toBeDisabled();
+    expect(submit()).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Días'), { target: { value: '3' } });
     expect(screen.getByText('Vence en 3 días si no se abona nada de la inicial.')).toBeInTheDocument();
-    expect(submit).toBeEnabled();
+    expect(submit()).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText('Vence'), { target: { value: 'none' } });
     expect(screen.getByText('La inicial no vence: el apartado espera hasta que la registres.')).toBeInTheDocument();
@@ -167,10 +171,9 @@ it('al cambiar a un producto sin inicial olvida el plazo a medias', () => {
             <LayawayCreate {...props()} />
         </QueryClientProvider>,
     );
-    const submit = screen.getByRole('button', { name: 'Crear el apartado' });
 
     fireEvent.change(screen.getByLabelText('Vence'), { target: { value: 'hours' } });
-    expect(submit).toBeDisabled();
+    expect(submit()).toBeDisabled();
 
     const plan = { ...props().plan!, requiresDownPayment: false, downPayment: money('$0,00', 0) };
     view.rerender(
@@ -180,19 +183,18 @@ it('al cambiar a un producto sin inicial olvida el plazo a medias', () => {
     );
 
     expect(screen.queryByLabelText('Vence')).not.toBeInTheDocument();
-    expect(submit).toBeEnabled();
+    expect(submit()).toBeEnabled();
 
-    fireEvent.click(submit);
+    fireEvent.click(submit());
 
     expect(post).toHaveBeenCalledWith('/backoffice/apartados', expect.objectContaining({ window: 'default', window_value: '' }));
 });
 
 it('al registrar un pago pide sus datos antes de crear', () => {
     renderPage();
-    const submit = screen.getByRole('button', { name: 'Crear el apartado' });
 
     fireEvent.click(screen.getByLabelText('Registrar un pago ahora'));
 
     expect(screen.getByLabelText('Método')).toBeInTheDocument();
-    expect(submit).toBeDisabled();
+    expect(submit()).toBeDisabled();
 });

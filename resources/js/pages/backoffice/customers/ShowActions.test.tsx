@@ -1,6 +1,6 @@
 import CustomerShow from '@/pages/backoffice/customers/Show';
 import { profileProps } from '@/test/t065-fixtures';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { expect, it, vi } from 'vitest';
 
@@ -34,3 +34,28 @@ it.each([null, 12])(
         expect(promoted).toHaveLength(1);
     },
 );
+
+it('«Eliminar» bloqueado se ve apagado y explica por qué', () => {
+    const props = profileProps();
+    render(<CustomerShow {...props} manage={{ ...props.manage, liveLayaways: 1 }} />);
+
+    const remove = screen.getAllByRole('button', { name: 'Eliminar' })[0]!;
+    expect(remove).toBeDisabled();
+    expect(remove).not.toHaveClass('text-error');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Por qué no está disponible' }));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Tiene apartados en curso: cancélalos o espera a que terminen.');
+});
+
+it('las cuotas vencidas ponen el monto debajo de la cantidad y las pestañas se reparten el ancho', () => {
+    render(<CustomerShow {...profileProps()} />);
+
+    const overdue = screen.getByText('Cuotas vencidas').nextElementSibling!;
+    expect(overdue.firstChild).toHaveTextContent('1');
+    expect(overdue.querySelector('.block')).toHaveTextContent('$30,00');
+
+    const tabs = screen.getByRole('group', { name: 'Secciones del cliente' });
+    within(tabs)
+        .getAllByRole('button')
+        .forEach((tab) => expect(tab).toHaveClass('max-sm:flex-1'));
+});

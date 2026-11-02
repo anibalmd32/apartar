@@ -65,3 +65,15 @@ export function typedAmount(event: ChangeEvent<HTMLInputElement>, decimals: numb
 
     return formatted;
 }
+
+export function completeAmount(value: string, decimals: number = AMOUNT_DECIMALS): string {
+    const formatted = formatAmountTyping(value.trim(), decimals);
+
+    if (formatted === '' || decimals === 0) {
+        return formatted;
+    }
+
+    const [whole = '', fraction = ''] = formatted.split(',');
+
+    return `${whole === '' ? '0' : whole},${fraction.padEnd(decimals, '0')}`;
+}

@@ -181,3 +181,13 @@ it('en el celular la primera cifra queda destacada y las demás forman una lista
         expect(card.querySelector('.stat-card-value')).not.toBeNull();
     });
 });
+
+it('en el celular esconde el cambio a dos columnas y la lista usa íconos pequeños', () => {
+    render(<Dashboard {...dashboardProps()} />);
+
+    expect(screen.getByRole('button', { name: /Dos columnas/ })).toHaveClass('max-lg:hidden');
+
+    const grid = screen.getByRole('region', { name: 'Cifras del día' }).firstElementChild!;
+    expect(grid).toHaveClass('stat-list', 'lg:auto-rows-fr');
+    expect(grid.querySelectorAll('.stat-card-icon')).toHaveLength(6);
+});

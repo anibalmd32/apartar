@@ -1,22 +1,23 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
+import { DisabledReason } from '@/components/ui/disabled-reason';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { SectionCard } from '@/components/ui/section-card';
-import { SelectField } from '@/components/ui/select-field';
 import { BackofficePlanCard } from '@/features/layaway/components/BackofficePlanCard';
 import { CustomerPicker } from '@/features/layaway/components/CustomerPicker';
 import { DownPaymentWindowFields } from '@/features/layaway/components/DownPaymentWindowFields';
+import { LayawayProductSection } from '@/features/layaway/components/LayawayProductSection';
 import { NewCustomerFields, type NewCustomerValues } from '@/features/layaway/components/NewCustomerFields';
-import { QuantityStepper } from '@/features/layaway/components/QuantityStepper';
+import { createBlocker } from '@/features/layaway/lib/create-blocker';
 import { PaymentFields } from '@/features/receipts/components/PaymentFields';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
-import { emptyPaymentValues, type PaymentFieldValues, paymentPending } from '@/features/receipts/lib/payment-fields';
+import { emptyPaymentValues, paymentMissing, type PaymentFieldValues } from '@/features/receipts/lib/payment-fields';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { type BackofficeLayawayCreateProps, type DownPaymentWindowChoice, type LayawayCustomerOption } from '@/types/layaway-backoffice';
 import { router, useForm } from '@inertiajs/react';
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 export const PLAN_DEBOUNCE_MS = 300;
 
@@ -58,7 +59,6 @@ export default function LayawayCreate({ products, selection, plan, customer, win
 
     const { data, errors } = form;
     const product = products.find((option) => String(option.id) === data.product) ?? null;
-    const maxQuantity = product?.maxQuantity ?? 1;
     const firstRender = useRef(true);
 
     useEffect(() => {
@@ -95,15 +95,24 @@ export default function LayawayCreate({ products, selection, plan, customer, win
         set({ customer: option === null ? '' : String(option.id) });
     };
 
-    const customerMissing = data.customer_mode === 'existing' ? data.customer === '' : data.first_name.trim() === '' || !data.terms_accepted;
     const windowApplies = plan === null || plan.requiresDownPayment;
     const windowMissing = windowApplies && (data.window === 'hours' || data.window === 'days') && !(Number(data.window_value) > 0);
-    const blocked =
-        form.processing ||
-        product === null ||
-        customerMissing ||
-        windowMissing ||
-        (data.with_payment && (reading || paymentPending(payment, data, previewState)));
+    const blocker = createBlocker({
+        hasProduct: product !== null,
+        customerMode: data.customer_mode,
+        customer: data.customer,
+        firstName: data.first_name,
+        termsAccepted: data.terms_accepted,
+        windowMissing,
+        withPayment: data.with_payment,
+        reading,
+        paymentMissing: data.with_payment ? paymentMissing(payment, data, previewState) : null,
+    });
+    const submitButton = (
+        <Button type="submit" variant="primary" block loading={form.processing} disabled={form.processing || blocker !== null}>
+            Crear el apartado
+        </Button>
+    );
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -123,39 +132,15 @@ export default function LayawayCreate({ products, selection, plan, customer, win
 
                 <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-6">
                     <div className="flex min-w-0 flex-col gap-4">
-                        <SectionCard title="Producto" subtitle="Precio, inicial, cuotas y frecuencia salen del producto.">
-                            {products.length === 0 ? (
-                                <Alert tone="info">
-                                    No tienes productos publicados con existencias. Publica uno o súbele el stock para apartarlo.
-                                </Alert>
-                            ) : (
-                                <SelectField
-                                    label="Producto"
-                                    name="product"
-                                    options={[
-                                        { value: '', label: 'Elige el producto' },
-                                        ...products.map((option) => ({
-                                            value: String(option.id),
-                                            label: `${option.name} · ${option.sku} (${option.stock} en stock)`,
-                                        })),
-                                    ]}
-                                    value={data.product}
-                                    onChange={(event) => chooseProduct(event.target.value)}
-                                    error={errors.product}
-                                />
-                            )}
-                            {product !== null ? (
-                                <QuantityStepper
-                                    value={data.quantity}
-                                    max={maxQuantity}
-                                    onChange={(value) =>
-                                        set({ quantity: Number.isFinite(value) ? Math.min(Math.max(Math.trunc(value), 1), maxQuantity) : 1 })
-                                    }
-                                    error={errors.quantity}
-                                    hint={maxQuantity > 1 ? `Hasta ${maxQuantity} unidades.` : 'Se aparta una unidad.'}
-                                />
-                            ) : null}
-                        </SectionCard>
+                        <LayawayProductSection
+                            products={products}
+                            product={product}
+                            value={data.product}
+                            quantity={data.quantity}
+                            onProductChange={chooseProduct}
+                            onQuantityChange={(quantity) => set({ quantity })}
+                            errors={errors}
+                        />
 
                         <SectionCard title="Cliente">
                             <FilterTabs<CustomerMode>
@@ -211,9 +196,13 @@ export default function LayawayCreate({ products, selection, plan, customer, win
 
                     <div className="flex flex-col gap-4 lg:sticky lg:top-4">
                         <BackofficePlanCard plan={plan} />
-                        <Button type="submit" variant="primary" block loading={form.processing} disabled={blocked}>
-                            Crear el apartado
-                        </Button>
+                        {blocker !== null && !form.processing ? (
+                            <DisabledReason reason={blocker} className="flex w-full">
+                                {submitButton}
+                            </DisabledReason>
+                        ) : (
+                            submitButton
+                        )}
                     </div>
                 </div>
             </form>

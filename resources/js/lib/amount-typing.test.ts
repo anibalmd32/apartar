@@ -1,4 +1,4 @@
-import { formatAmountTyping, RATE_DECIMALS } from '@/lib/amount-typing';
+import { completeAmount, formatAmountTyping, RATE_DECIMALS } from '@/lib/amount-typing';
 import { describe, expect, it } from 'vitest';
 
 describe('el monto se escribe al estilo venezolano', () => {
@@ -22,5 +22,18 @@ describe('el monto se escribe al estilo venezolano', () => {
     it('la tasa admite más decimales', () => {
         expect(formatAmountTyping('36,12345678', RATE_DECIMALS)).toBe('36,12345678');
         expect(formatAmountTyping('36,123456789', RATE_DECIMALS)).toBe('36,12345678');
+    });
+});
+
+describe('al salir del campo el monto queda con sus dos decimales', () => {
+    it.each([
+        ['14,5', '14,50'],
+        ['14', '14,00'],
+        ['14,', '14,00'],
+        ['1.234,56', '1.234,56'],
+        [',5', '0,50'],
+        ['', ''],
+    ])('%s queda %s', (typed, shown) => {
+        expect(completeAmount(typed)).toBe(shown);
     });
 });

@@ -991,3 +991,47 @@ img[data-broken='true'] {
         }
     }
 }
+
+@layer components {
+    .select-chevron {
+        background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position:
+            calc(100% - 20px) calc(50% + 1px),
+            calc(100% - 16.1px) calc(50% + 1px);
+        background-size: 4px 4px;
+        background-repeat: no-repeat;
+    }
+}
+
+@layer utilities {
+    @media (width < 64rem) {
+        .stat-list > :not(:first-child) .stat-card {
+            min-height: 3rem;
+            padding: 0.625rem 1rem;
+            row-gap: 0.125rem;
+        }
+
+        .stat-list > :not(:first-child) .stat-card-icon {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+            border-radius: 0.5rem;
+        }
+
+        .stat-list > :not(:first-child) .stat-card-icon svg {
+            width: 0.875rem;
+            height: 0.875rem;
+        }
+
+        .stat-list > :not(:first-child) .stat-card-head {
+            gap: 0.625rem;
+        }
+
+        .stat-list > :not(:first-child) .stat-card-note {
+            padding-left: 2.125rem;
+        }
+
+        .stat-list > :not(:first-child) .stat-card-value {
+            font-size: 1rem;
+        }
+    }
+}

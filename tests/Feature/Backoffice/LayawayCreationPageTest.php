@@ -65,7 +65,7 @@ final class LayawayCreationPageTest extends TestCase
                     'frequency_days' => 15,
                     'stock' => 3,
                 ]),
-                Customer::factory()->create(['full_name' => 'María González', 'phone' => '+584141234567', 'email' => 'maria@ejemplo.test']),
+                Customer::factory()->create(['full_name' => 'María González', 'document_number' => 'V20123456', 'phone' => '+584141234567', 'email' => 'maria@ejemplo.test']),
             ];
         });
 
@@ -99,6 +99,7 @@ final class LayawayCreationPageTest extends TestCase
                 ->where('plan', null)
                 ->where('customer.id', $this->customer->getKey())
                 ->where('customer.name', 'María González')
+                ->where('customer.detail', 'V-20.123.456 · 0414-1234567')
                 ->where('window.defaultHours', 72)
                 ->where('payment.paidAt.min', '2023-09-10')
                 ->where('payment.paidAt.max', '2026-09-10')
@@ -279,7 +280,8 @@ final class LayawayCreationPageTest extends TestCase
         $this->actingAs($this->member)->getJson(route('layaways.create.customers', ['q' => 'María']))
             ->assertOk()
             ->assertJsonCount(1, 'customers')
-            ->assertJsonPath('customers.0.name', 'María González');
+            ->assertJsonPath('customers.0.name', 'María González')
+            ->assertJsonPath('customers.0.detail', 'V-20.123.456 · 0414-1234567');
     }
 
     public function test_the_payment_preview_follows_the_chosen_terms(): void
