@@ -79,7 +79,10 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
                         />
                     </SectionCard>
 
-                    <SectionCard title="Operación" subtitle="Plazos y frecuencia de cuotas. Cada campo dice a qué alcanza el cambio.">
+                    <SectionCard
+                        title="Operación"
+                        subtitle="Plazos y frecuencia de cuotas. La etiqueta de cada campo dice cuándo se aplica el cambio."
+                    >
                         <div id="operacion" className="-mt-20 pt-20" />
                         <OperationSettingsForm settings={settings} definitions={definitions} {...forms.linkOf('operacion')} />
                     </SectionCard>

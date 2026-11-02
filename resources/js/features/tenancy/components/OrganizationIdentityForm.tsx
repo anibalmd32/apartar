@@ -5,8 +5,10 @@ import { DocumentField } from '@/components/ui/document-field';
 import { FileField } from '@/components/ui/file-field';
 import { FormActionBar } from '@/components/ui/form-action-bar';
 import { PhoneField } from '@/components/ui/phone-field';
+import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { type SettingsSectionLink, useReportFormState } from '@/features/tenancy/components/SettingsSaveBar';
+import { timezoneOptions } from '@/features/tenancy/lib/timezones';
 import { bo } from '@/lib/surfaces';
 import { type OrganizationBrand, type OrganizationIdentity } from '@/types/backoffice';
 import { useForm } from '@inertiajs/react';
@@ -89,12 +91,13 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
 
                 <PhoneField label="Teléfono de contacto" value={data.phone} onChange={(value) => setData('phone', value)} error={errors.phone} />
 
-                <TextField
+                <SelectField
                     label="Zona horaria"
+                    options={timezoneOptions(data.timezone)}
                     value={data.timezone}
                     onChange={(event) => setData('timezone', event.target.value)}
                     error={errors.timezone}
-                    hint="Rige cómo se muestran tus fechas y a qué hora salen los avisos. No mueve vencimientos ya fijados."
+                    hint="Rige tus fechas y la hora de los avisos. No mueve vencimientos ya fijados."
                 />
 
                 <TextField

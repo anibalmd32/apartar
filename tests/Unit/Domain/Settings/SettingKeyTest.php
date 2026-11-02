@@ -89,3 +89,7 @@ it('nombra cada clave para la pantalla', function (SettingKey $key): void {
     expect($key->label())->not->toBe('');
     expect($key->label())->not->toBe($key->value);
 })->with(SettingKey::cases());
+
+it('nombra la tolerancia de cobro con palabras de todos los días', function (): void {
+    expect(SettingKey::SettlementToleranceCents->label())->toBe('Margen de redondeo al cobrar (céntimos)');
+});

@@ -79,3 +79,19 @@ it('sin cambios, cada sección conserva su botón de guardar en el celular', () 
     expect(screen.getByRole('button', { name: 'Guardar fuente' }).parentElement).not.toHaveClass('max-lg:hidden');
     expect(screen.getByRole('button', { name: 'Guardar identidad' }).parentElement).not.toHaveClass('max-lg:hidden');
 });
+
+it('la zona horaria se elige de una lista con nombres legibles, empezando por la hora de Caracas', () => {
+    renderSettings();
+
+    const zone = screen.getByLabelText('Zona horaria');
+
+    expect(zone.tagName).toBe('SELECT');
+    expect(zone).toHaveDisplayValue('Hora de Caracas');
+});
+
+it('explica una sola vez cuándo se aplica cada cambio en vez de repetirlo en cada campo', () => {
+    renderSettings();
+
+    expect(screen.getByRole('list', { name: 'Cuándo se aplica cada cambio' })).toBeInTheDocument();
+    expect(screen.queryByText('Aplica ya.')).not.toBeInTheDocument();
+});

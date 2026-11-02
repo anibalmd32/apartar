@@ -48,7 +48,7 @@ export function PhoneField({ label, value, onChange, name, error, hint, required
                     >
                         {selected ? <BankMark bank={selected.carrier} logoUrl={selected.logoUrl} /> : null}
                         <span className={cn('grow text-left tabular-nums', selected ? 'text-base-content' : 'text-ink-3')}>
-                            {selected?.prefix ?? '04··'}
+                            {selected?.prefix ?? 'Ej. 0414'}
                         </span>
                         <Icon icon={cilChevronBottom} size={14} className="text-ink-3" />
                     </ListboxButton>

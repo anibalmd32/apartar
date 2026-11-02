@@ -103,7 +103,7 @@ enum SettingKey: string
             self::CurrencyDisplayDefault => 'Moneda que se muestra primero',
             self::GracePeriodDays => 'Días de gracia antes de marcar vencida una cuota',
             self::DownPaymentWindowHours => 'Horas para pagar el inicial',
-            self::SettlementToleranceCents => 'Tolerancia de liquidación (céntimos)',
+            self::SettlementToleranceCents => 'Margen de redondeo al cobrar (céntimos)',
             self::DefaultFrequencyDays => 'Días entre cuotas por defecto',
             self::DefaultInstallmentsCount => 'Número de cuotas por defecto',
             self::ReminderOffsetsDays => 'Días de recordatorio respecto al vencimiento',

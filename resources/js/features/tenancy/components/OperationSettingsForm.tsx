@@ -3,7 +3,7 @@ import { FormActionBar } from '@/components/ui/form-action-bar';
 import { NumberField } from '@/components/ui/number-field';
 import { SelectField } from '@/components/ui/select-field';
 import { ReminderOffsetsEditor } from '@/features/tenancy/components/ReminderOffsetsEditor';
-import { SettingScopeBadge } from '@/features/tenancy/components/SettingScopeBadge';
+import { SettingScopeBadge, SettingScopeLegend } from '@/features/tenancy/components/SettingScopeBadge';
 import { type SettingsSectionLink, useReportFormState } from '@/features/tenancy/components/SettingsSaveBar';
 import { bo } from '@/lib/surfaces';
 import { type OrganizationSettings, type SettingDefinition, type SettingValue } from '@/types/backoffice';
@@ -23,6 +23,10 @@ const NUMERIC_KEYS = [
     'default_installments_count',
     'overdue_alert_days',
 ];
+
+const HINTS: Record<string, string> = {
+    settlement_tolerance_cents: 'Si a una cuota le faltan hasta estos céntimos de dólar, se da por pagada. 50 = $0,50.',
+};
 
 interface SettingsForm {
     [key: string]: OrganizationSettings;
@@ -58,7 +62,7 @@ export function OperationSettingsForm({ settings, definitions, formId, onStateCh
     const scopeOf = (key: string) => {
         const definition = definitionOf(key);
 
-        return definition ? <SettingScopeBadge scope={definition.scope} note={definition.scopeNote} /> : undefined;
+        return definition ? <SettingScopeBadge scope={definition.scope} hint={HINTS[key]} /> : undefined;
     };
 
     const submit: FormEventHandler = (event) => {
@@ -69,6 +73,8 @@ export function OperationSettingsForm({ settings, definitions, formId, onStateCh
 
     return (
         <form id={formId} className="flex flex-col gap-2" onSubmit={submit} noValidate>
+            <SettingScopeLegend />
+
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <SelectField
                     label={labelOf('currency_display_default')}
