@@ -10,6 +10,7 @@ use App\Actions\Subscription\ApproveSubscriptionReceiptData;
 use App\Actions\Subscription\RejectSubscriptionReceiptAction;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Money\Currency;
+use App\Domain\Money\InvalidRateException;
 use App\Domain\Payment\ReceiptAlreadyProcessedException;
 use App\Domain\Subscription\InvoiceAlreadyPaidException;
 use App\Domain\Subscription\InvoiceNotPayableException;
@@ -44,7 +45,7 @@ final class InvoiceController extends Controller
             'settledAmount' => ['required', 'string', 'regex:/^\d{1,13}(\.\d{1,2})?$/'],
             'settledCurrency' => ['required', Rule::enum(Currency::class)],
             'rate' => ['nullable', 'string', 'regex:/^\d{1,10}(\.\d{1,8})?$/'],
-        ]);
+        ], [], ['settledAmount' => 'importe conciliado', 'settledCurrency' => 'moneda', 'rate' => 'tasa']);
 
         $found = $inbox->find($receipt) ?? abort(404);
         $operator = $this->operator($request);
@@ -55,6 +56,8 @@ final class InvoiceController extends Controller
             throw ValidationException::withMessages(['receipt' => $exception->getMessage()]);
         } catch (MissingExchangeRateException|InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['settledAmount' => $exception->getMessage()]);
+        } catch (InvalidRateException) {
+            throw ValidationException::withMessages(['rate' => 'La tasa debe ser mayor que cero.']);
         }
 
         PlatformAudit::record(PlatformAudit::INVOICE_APPROVED, 'Aprobó un comprobante de la factura #'.$invoice->getKey().'.', $operator, (int) $found->organization_id, [

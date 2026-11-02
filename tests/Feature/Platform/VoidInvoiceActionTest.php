@@ -83,6 +83,21 @@ final class VoidInvoiceActionTest extends TestCase
         $this->assertSame(ReceiptStatus::Rejected, SubscriptionReceipt::query()->withoutTenantScope()->findOrFail($receipt->getKey())->status);
     }
 
+    public function test_aprobar_explica_en_español_cada_campo_y_rechaza_una_tasa_en_cero(): void
+    {
+        $this->asOperator();
+        $receipt = $this->withinOrganization($this->organization, fn (): SubscriptionReceipt => SubscriptionReceipt::factory()->create(['subscription_invoice_id' => SubscriptionInvoice::factory()->create()->getKey()]));
+        $this->withoutOrganization();
+        $url = '/plataforma/comprobantes/'.$receipt->getKey().'/aprobar';
+
+        $this->post($url, ['settledAmount' => '', 'settledCurrency' => 'USD'])
+            ->assertSessionHasErrors(['settledAmount' => 'Completa el campo importe conciliado.']);
+        $this->post($url, ['settledAmount' => '500,00', 'settledCurrency' => 'VES', 'rate' => '0'])
+            ->assertSessionHasErrors(['rate' => 'La tasa debe ser mayor que cero.']);
+
+        $this->assertSame(ReceiptStatus::PendingReview, SubscriptionReceipt::query()->withoutTenantScope()->findOrFail($receipt->getKey())->status);
+    }
+
     private function fresh(SubscriptionInvoice $invoice): SubscriptionInvoice
     {
         return SubscriptionInvoice::query()->withoutTenantScope()->findOrFail($invoice->getKey());
