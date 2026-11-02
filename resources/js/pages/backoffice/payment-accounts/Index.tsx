@@ -1,6 +1,10 @@
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Meter } from '@/components/ui/meter';
+import { Modal } from '@/components/ui/modal';
 import { SectionCard } from '@/components/ui/section-card';
+import { focusesOnDesktop } from '@/features/account/lib/desktop-focus';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import { PlansLink } from '@/features/plan/components/PlansLink';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
@@ -10,6 +14,7 @@ import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatUsage } from '@/lib/plan';
 import { type PaymentAccountView, type PaymentMethodDefinition } from '@/types/payment';
 import { type UsageState } from '@/types/plan';
+import { cilPlus } from '@coreui/icons';
 import { useState } from 'react';
 
 interface PaymentAccountsPageProps {
@@ -24,9 +29,62 @@ export default function PaymentAccountsIndex({ accounts, methods, usage }: Payme
 
     const active = accounts.filter((account) => account.isActive);
     const editable = accounts.find((account) => account.id === editing);
+    const [sheet, setSheet] = useState(false);
+    const closeSheet = () => {
+        setSheet(false);
+        setEditing(null);
+    };
+
+    const panel = (inSheet: boolean) => (
+        <>
+            <div className="bg-surface-2 w-full rounded-xl px-4 py-3">
+                <Meter
+                    label="Cuentas activas"
+                    value={formatUsage(usage.used, usage.limit)}
+                    percentage={usage.percentage}
+                    warn={usage.isAtLimit || (usage.percentage ?? 0) >= 80}
+                />
+            </div>
+
+            {usage.isAtLimit && editable === undefined ? (
+                <Alert tone="warning" className="flex-col items-start gap-2">
+                    <span>
+                        Tu plan no admite más cuentas de cobro activas. Puedes desactivar alguna
+                        {plan.plansOffered ? ' o cambiar de plan' : ''}.
+                    </span>
+                    <PlansLink />
+                </Alert>
+            ) : null}
+
+            {editable ? (
+                <PaymentAccountForm key={editable.id} methods={methods} account={editable} onDone={inSheet ? closeSheet : () => setEditing(null)} />
+            ) : (
+                <PaymentAccountForm methods={methods} atLimit={usage.isAtLimit} onDone={inSheet ? closeSheet : undefined} />
+            )}
+
+            <p className="text-ink-3 text-xs">
+                El titular y su cédula son parte del dato de pago: sin ellos tu cliente no puede completar la transferencia.
+            </p>
+        </>
+    );
 
     return (
-        <BackofficeLayout title="Cuentas de cobro" description="Dónde te pagan tus clientes. Es lo que ven al apartar y al reportar un pago.">
+        <BackofficeLayout
+            title="Cuentas de cobro"
+            description="Dónde te pagan tus clientes. Es lo que ven al apartar y al reportar un pago."
+            actions={
+                <Button
+                    className="lg:hidden"
+                    onClick={() => {
+                        setEditing(null);
+                        setSheet(true);
+                    }}
+                >
+                    <Icon icon={cilPlus} />
+                    Añadir cuenta
+                </Button>
+            }
+        >
             {active.length === 0 ? (
                 <Alert tone="warning" title="No tienes ninguna cuenta de cobro activa">
                     Tus catálogos publicados siguen publicados, pero tus clientes no verán a dónde pagarte.
@@ -39,7 +97,7 @@ export default function PaymentAccountsIndex({ accounts, methods, usage }: Payme
                 <section aria-label="Tus cuentas" className="flex flex-col gap-3">
                     {accounts.length === 0 ? (
                         <p className="bg-base-100 border-line text-ink-2 rounded-2xl border border-dashed p-8 text-center text-sm">
-                            Todavía no has declarado ninguna. Añade la primera con el formulario.
+                            Todavía no has declarado ninguna. Añade la primera con «Añadir cuenta».
                         </p>
                     ) : (
                         <ul className="flex flex-col gap-3">
@@ -48,7 +106,10 @@ export default function PaymentAccountsIndex({ accounts, methods, usage }: Payme
                                     key={account.id}
                                     account={account}
                                     atLimit={usage.isAtLimit}
-                                    onEdit={() => setEditing(account.id)}
+                                    onEdit={() => {
+                                        setEditing(account.id);
+                                        setSheet(!focusesOnDesktop());
+                                    }}
                                 />
                             ))}
                         </ul>
@@ -60,37 +121,14 @@ export default function PaymentAccountsIndex({ accounts, methods, usage }: Payme
                     </p>
                 </section>
 
-                <SectionCard title={editable ? 'Editar cuenta' : 'Nueva cuenta de cobro'} className="lg:sticky lg:top-24">
-                    <div className="bg-surface-2 w-full rounded-xl px-4 py-3">
-                        <Meter
-                            label="Cuentas activas"
-                            value={formatUsage(usage.used, usage.limit)}
-                            percentage={usage.percentage}
-                            warn={usage.isAtLimit || (usage.percentage ?? 0) >= 80}
-                        />
-                    </div>
-
-                    {usage.isAtLimit && editable === undefined ? (
-                        <Alert tone="warning" className="flex-col items-start gap-2">
-                            <span>
-                                Tu plan no admite más cuentas de cobro activas. Puedes desactivar alguna
-                                {plan.plansOffered ? ' o cambiar de plan' : ''}.
-                            </span>
-                            <PlansLink />
-                        </Alert>
-                    ) : null}
-
-                    {editable ? (
-                        <PaymentAccountForm key={editable.id} methods={methods} account={editable} onDone={() => setEditing(null)} />
-                    ) : (
-                        <PaymentAccountForm methods={methods} atLimit={usage.isAtLimit} />
-                    )}
-
-                    <p className="text-ink-3 text-xs">
-                        El titular y su cédula son parte del dato de pago: sin ellos tu cliente no puede completar la transferencia.
-                    </p>
+                <SectionCard title={editable ? 'Editar cuenta' : 'Nueva cuenta de cobro'} className="max-lg:hidden lg:sticky lg:top-24">
+                    {panel(false)}
                 </SectionCard>
             </div>
+
+            <Modal open={sheet} onClose={closeSheet} title={editable ? 'Editar cuenta' : 'Nueva cuenta de cobro'}>
+                {sheet ? panel(true) : null}
+            </Modal>
         </BackofficeLayout>
     );
 }

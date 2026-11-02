@@ -13,6 +13,10 @@ interface TabBarProps {
     moreOpen: boolean;
 }
 
+export function tabLabel(label: string, badge: number): string {
+    return badge > 0 ? `${label}, ${badge} ${badge === 1 ? 'pendiente' : 'pendientes'}` : label;
+}
+
 export function TabBar({ tabs, capabilities, badges = {}, onMore, moreOpen }: TabBarProps) {
     const current = usePage().url;
     const visible = tabs.filter((tab) => tab.capability === ANY_CAPABILITY || capabilities.includes(tab.capability));
@@ -22,9 +26,11 @@ export function TabBar({ tabs, capabilities, badges = {}, onMore, moreOpen }: Ta
             <span className={cn('relative flex h-7 w-12 items-center justify-center rounded-full', active && 'bg-primary-soft')}>
                 {icon ? <Icon icon={icon} size={20} /> : null}
                 {badge > 0 ? (
-                    <span className="bg-error text-error-content absolute -top-1.5 left-7 rounded-full px-[5px] text-[10px] leading-[14px] font-bold">
+                    <span
+                        aria-hidden="true"
+                        className="bg-error text-error-content absolute -top-1.5 left-7 rounded-full px-[5px] text-[10px] leading-[14px] font-bold"
+                    >
                         {badge}
-                        <span className="sr-only"> pendientes</span>
                     </span>
                 ) : null}
             </span>
@@ -46,6 +52,7 @@ export function TabBar({ tabs, capabilities, badges = {}, onMore, moreOpen }: Ta
                         key={tab.href}
                         href={tab.href}
                         aria-current={active ? 'page' : undefined}
+                        aria-label={tabLabel(tab.label, badges[tab.href] ?? 0)}
                         className={cn('flex flex-1 flex-col items-center gap-1 py-1.5', active ? 'text-primary-ink' : 'text-ink-3')}
                     >
                         {item(active, tab.icon, tab.label, badges[tab.href])}

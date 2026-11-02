@@ -58,7 +58,7 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
             )}
         >
             <div className="flex min-w-0 flex-1 items-start gap-3.5">
-                <IconChip icon={METHOD_ICONS[account.method]} tone={account.isActive ? 'primary' : 'neutral'} size={40} />
+                <IconChip icon={METHOD_ICONS[account.method]} tone={account.isActive ? 'primary' : 'neutral'} size={40} className="max-sm:hidden" />
 
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-1">

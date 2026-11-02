@@ -59,7 +59,7 @@ export function BackofficeNav({ sections, capabilities, badges = {} }: Backoffic
                                             'touch:h-11 flex h-[38px] items-center gap-3 rounded-[10px] px-3 text-sm transition-colors',
                                             active
                                                 ? 'bg-primary-soft text-primary-ink font-bold'
-                                                : 'text-ink-2 hover:bg-surface-2 hover:text-base-content font-medium',
+                                                : 'text-ink-2 lg:hover:bg-surface-2 lg:hover:text-base-content font-medium',
                                         )}
                                     >
                                         {section.icon ? <Icon icon={section.icon} size={18} /> : null}
@@ -67,7 +67,7 @@ export function BackofficeNav({ sections, capabilities, badges = {} }: Backoffic
                                         {badge > 0 ? ' ' : null}
                                         {badge > 0 ? (
                                             <span className={cn('badge badge-count', active ? 'badge-primary' : 'badge-neutral')}>
-                                                {badge} <span className="sr-only">pendientes</span>
+                                                {badge} <span className="sr-only">{badge === 1 ? 'pendiente' : 'pendientes'}</span>
                                             </span>
                                         ) : null}
                                     </Link>
