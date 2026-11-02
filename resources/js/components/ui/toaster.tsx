@@ -1,3 +1,4 @@
+import { afterPaint, revealFirstError } from '@/lib/reveal-first-error';
 import { dismissToast, subscribeToToasts, toast, type ToastMessage, type ToastTone } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { cilCheckCircle, cilInfo, cilWarning, cilX } from '@coreui/icons';
@@ -54,8 +55,14 @@ export function Toaster({ initialPage }: { initialPage: Page }) {
 
         const offSuccess = router.on('success', (event) => announceStatus(event.detail.page));
         const offError = router.on('error', (event) => {
-            if (Object.keys(event.detail.errors).length > 0) {
-                toast.error(validationSummary(event.detail.errors as Record<string, string>));
+            const errors = event.detail.errors as Record<string, string>;
+
+            if (Object.keys(errors).length > 0) {
+                afterPaint(() => {
+                    if (!revealFirstError()) {
+                        toast.error(validationSummary(errors));
+                    }
+                });
             }
         });
         const offInvalid = router.on('invalid', (event) => {
@@ -86,7 +93,7 @@ export function Toaster({ initialPage }: { initialPage: Page }) {
     return (
         <div
             aria-live="polite"
-            className="toast toast-top toast-center sm:toast-bottom sm:toast-end pointer-events-none z-[60] w-full max-w-[min(26rem,calc(100vw-1.5rem))] p-3 sm:p-5"
+            className="toast toast-bottom toast-center sm:toast-end pointer-events-none bottom-[calc(var(--overlay-bottom)+var(--consent-height)+1rem)] z-[60] w-full max-w-[min(26rem,calc(100vw-1.5rem))] p-0 sm:p-5"
         >
             {items.map((item) => (
                 <div

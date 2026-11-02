@@ -670,6 +670,23 @@
     }
 }
 
+:root {
+    --overlay-bottom: env(safe-area-inset-bottom, 0px);
+    --consent-height: 0px;
+}
+
+@media (width < 64rem) {
+    :root:has([data-bottom-bar]) {
+        --overlay-bottom: calc(4.25rem + 1px + max(env(safe-area-inset-bottom, 0px), 0.75rem));
+    }
+}
+
+@media (width >= 64rem) {
+    :root {
+        --overlay-bottom: 0px;
+    }
+}
+
 @media (pointer: coarse), (width < 64rem) {
     .input,
     .select,

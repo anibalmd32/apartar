@@ -1,7 +1,8 @@
+import { TextField } from '@/components/ui/text-field';
 import { failureMessage, Toaster, validationSummary } from '@/components/ui/toaster';
 import { durationFor, resetToasts, toast } from '@/lib/toast';
 import { type Page } from '@inertiajs/core';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 function page(component: string, status?: string): Page {
@@ -54,6 +55,63 @@ describe('los avisos', () => {
 
         expect(container.firstElementChild).toHaveClass('pointer-events-none');
         expect(screen.getByRole('status')).toHaveClass('pointer-events-auto');
+    });
+
+    it('en el celular salen abajo, por encima de la barra de pestañas y del aviso de cookies', () => {
+        const { container } = render(<Toaster initialPage={page('backoffice/Dashboard')} />);
+
+        act(() => {
+            toast.success('Guardado.');
+        });
+
+        expect(container.firstElementChild).toHaveClass('toast-bottom');
+        expect(container.firstElementChild).not.toHaveClass('toast-top');
+        expect(container.firstElementChild?.className).toContain('bottom-[calc(var(--overlay-bottom)+var(--consent-height)+1rem)]');
+    });
+
+    it('al fallar un envío llevan al primer campo con error y no repiten el aviso', async () => {
+        render(
+            <>
+                <Toaster initialPage={page('backoffice/products/Create')} />
+                <TextField label="Nombre" error="Completa el campo nombre." />
+                <TextField label="Precio" error="Pon un precio." />
+            </>,
+        );
+
+        act(() => {
+            document.dispatchEvent(
+                new CustomEvent('inertia:error', { detail: { errors: { name: 'Completa el campo nombre.', price: 'Pon un precio.' } } }),
+            );
+        });
+
+        await waitFor(() => expect(screen.getByLabelText('Nombre')).toHaveFocus());
+        expect(screen.queryByText('Revisa los 2 campos marcados en rojo.')).toBeNull();
+    });
+
+    it('solo muestran el aviso de error cuando el campo marcado no está a la vista', async () => {
+        const { rerender } = render(<Toaster initialPage={page('backoffice/products/Create')} />);
+
+        act(() => {
+            document.dispatchEvent(new CustomEvent('inertia:error', { detail: { errors: { plan: 'Tu plan no permite más productos.' } } }));
+        });
+
+        expect(await screen.findByText('Tu plan no permite más productos.')).toBeInTheDocument();
+
+        act(() => resetToasts());
+        rerender(
+            <>
+                <Toaster initialPage={page('backoffice/products/Create')} />
+                <TextField label="Nombre" error="Completa el campo nombre." />
+            </>,
+        );
+
+        act(() => {
+            document.dispatchEvent(new CustomEvent('inertia:error', { detail: { errors: { name: 'Completa el campo nombre.' } } }));
+        });
+
+        await waitFor(() => expect(screen.getByLabelText('Nombre')).toHaveFocus());
+        expect(screen.queryByRole('status')).toBeNull();
+        expect(screen.getAllByText('Completa el campo nombre.')).toHaveLength(1);
     });
 
     it('no apilan dos veces el mismo aviso', () => {

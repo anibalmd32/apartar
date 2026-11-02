@@ -131,6 +131,7 @@ export function PlatformTabBar() {
     return (
         <nav
             aria-label="Accesos rápidos"
+            data-bottom-bar
             className="bg-base-100 border-line fixed inset-x-0 bottom-0 z-40 flex border-t px-2 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] lg:hidden"
         >
             {TAB_BAR_SECTIONS.map((section) => {
