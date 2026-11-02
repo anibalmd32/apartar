@@ -1,5 +1,4 @@
 import { AttentionBell } from '@/components/shell/attention-bell';
-import { Avatar } from '@/components/shell/avatar';
 import { Brand } from '@/components/shell/brand';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { GlobalSearch } from '@/components/shell/global-search';
@@ -19,6 +18,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useState } from 'react';
 
+import { MobileHeader } from '@/layouts/backoffice/mobile-header';
 import { BackofficeNav } from '@/layouts/backoffice/nav';
 import { PlanUsage } from '@/layouts/backoffice/plan-usage';
 import { CHAT_HREF, RECEIPTS_HREF, ROLE_LABELS, SECTIONS, TABS } from '@/layouts/backoffice/sections';
@@ -136,15 +136,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                     {userMenu}
                 </header>
 
-                <header className="bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden">
-                    <Avatar name={organization?.name ?? 'Apartar'} size={34} tone="accent" />
-                    <div className="min-w-0 flex-1">
-                        {plan.state ? <p className="text-ink-3 text-xs">Plan {plan.state.planName}</p> : null}
-                        <p className="text-h2 truncate">{organization?.name ?? 'Apartar'}</p>
-                    </div>
-                    <CurrencySwitch />
-                    {userMenu}
-                </header>
+                <MobileHeader organizationName={organization?.name ?? 'Apartar'} pendingReceipts={pendingReceipts} userMenu={userMenu} />
 
                 {suspended ? (
                     <div role="alert" className="bg-error text-error-content flex flex-wrap items-center gap-3 px-4 py-3 lg:px-8">
@@ -208,6 +200,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                         </button>
                     </div>
                     {organizationCard}
+                    <RatePill className="self-start" />
                     <BackofficeNav sections={SECTIONS} capabilities={capabilities} badges={badges} />
                     <PlanUsage className="mt-auto" />
                 </DialogPanel>

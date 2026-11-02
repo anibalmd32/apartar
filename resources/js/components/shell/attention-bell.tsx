@@ -16,7 +16,13 @@ interface Attention {
     readonly count: number;
 }
 
-export function AttentionBell({ pendingReceipts, className }: { pendingReceipts: number | null; className?: string }) {
+interface AttentionBellProps {
+    pendingReceipts: number | null;
+    className?: string;
+    plain?: boolean;
+}
+
+export function AttentionBell({ pendingReceipts, className, plain = false }: AttentionBellProps) {
     const { teamMember, pastDue } = usePage<BackofficeSharedData & { pastDue?: PastDueNotice | null }>().props;
 
     const items: Attention[] = [
@@ -29,12 +35,20 @@ export function AttentionBell({ pendingReceipts, className }: { pendingReceipts:
     return (
         <Menu as="div" className={cn('relative', className)}>
             <MenuButton
-                className="border-line hover:bg-surface-2 relative flex size-10 cursor-pointer items-center justify-center rounded-[10px] border"
+                className={cn(
+                    'hover:bg-surface-2 relative flex cursor-pointer items-center justify-center rounded-[10px]',
+                    plain ? 'text-ink-2 size-11' : 'border-line size-10 border',
+                )}
                 aria-label={total > 0 ? `Pendientes: ${total}` : 'Sin pendientes'}
             >
-                <Icon icon={cilBell} size={18} />
+                <Icon icon={cilBell} size={plain ? 20 : 18} />
                 {total > 0 ? (
-                    <span className="bg-error text-error-content absolute -top-1.5 -right-1.5 min-w-[18px] rounded-full px-1 text-center text-[11px] leading-[18px] font-bold">
+                    <span
+                        className={cn(
+                            'bg-error text-error-content absolute min-w-[18px] rounded-full px-1 text-center text-[11px] leading-[18px] font-bold',
+                            plain ? 'top-1 right-1' : '-top-1.5 -right-1.5',
+                        )}
+                    >
                         {total > 99 ? '99+' : total}
                     </span>
                 ) : null}

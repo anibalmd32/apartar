@@ -31,6 +31,7 @@ it('Ctrl K abre la búsqueda y Enter va al primer resultado', async () => {
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
     const input = screen.getByRole('searchbox', { name: 'Buscar cliente, código o producto' });
+    expect(input).toHaveAttribute('enterkeyhint', 'search');
 
     fireEvent.change(input, { target: { value: 'Ana' } });
     await act(async () => {
