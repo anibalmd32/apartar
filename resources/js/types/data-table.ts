@@ -19,11 +19,15 @@ export interface Paginated<T> {
     readonly meta: TableMeta;
 }
 
+export type MobileSlot = 'media' | 'title' | 'subtitle' | 'amount' | 'status' | 'meta' | 'action';
+
+export type MobileLayout<TRow> = Partial<Readonly<Record<MobileSlot, (row: TRow) => ReactNode>>>;
+
 export interface DataTableColumn<TRow> {
     readonly id: string;
     readonly header: string;
     readonly cell: (row: TRow) => ReactNode;
     readonly sortKey?: string;
-    readonly primary?: boolean;
+    readonly mobile?: MobileSlot | 'hidden' | MobileLayout<TRow>;
     readonly align?: 'start' | 'end';
 }

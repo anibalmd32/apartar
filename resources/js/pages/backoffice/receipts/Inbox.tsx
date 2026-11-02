@@ -77,6 +77,7 @@ function InboxContent({ rows, meta, options, overdueAfterHours, newestPending, n
                 label="Bandeja de comprobantes"
                 table={table}
                 filterLabels={INBOX_FILTER_LABELS}
+                rowHref={(row) => row.reviewUrl}
                 empty={emptyMessage(narrowed, meta.page)}
                 toolbar={
                     <InboxFilters

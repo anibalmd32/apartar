@@ -1,112 +1,25 @@
-import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Icon } from '@/components/ui/icon';
+import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
+import { customerMobile, DueBadge, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
-import { NO_PHONE } from '@/lib/identity-format';
-import {
-    type CollectionCustomer,
-    type CollectionDownPaymentRow,
-    type CollectionInstallmentRow,
-    type CollectionLayawayRow,
-} from '@/types/collections';
+import { type CollectionDownPaymentRow, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
-import { cilChatBubble, cilCheckAlt, cilCopy, cilUser } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
-
-function CustomerCell({ customer }: { customer: CollectionCustomer | null }) {
-    const [copied, setCopied] = useState(false);
-
-    if (customer === null) {
-        return <span className="text-ink-3">—</span>;
-    }
-
-    const copy = () => {
-        void navigator.clipboard?.writeText(customer.phone ?? '').then(() => setCopied(true));
-    };
-
-    return (
-        <div className="flex items-center gap-3">
-            <Avatar name={customer.name} size={32} tone="accent" />
-            <div className="flex min-w-0 flex-col">
-                <span className="font-semibold">{customer.name}</span>
-                {customer.phone === null ? (
-                    <span className="text-ink-3 text-xs">{NO_PHONE}</span>
-                ) : (
-                    <span className="text-ink-3 flex items-center gap-1.5 text-xs">
-                        <a href={`tel:${customer.phone}`} className="hit-area hover:text-base-content">
-                            {customer.phoneLabel}
-                        </a>
-                        <button
-                            type="button"
-                            className="hit-area hover:text-base-content rounded p-0.5"
-                            onClick={copy}
-                            aria-label={`Copiar el teléfono de ${customer.name}`}
-                            title={copied ? 'Copiado' : 'Copiar'}
-                        >
-                            <Icon icon={copied ? cilCheckAlt : cilCopy} size={12} />
-                        </button>
-                    </span>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function LayawayLink({ layaway }: { layaway: { code: string; url: string } }) {
-    return (
-        <Link href={layaway.url} className="hit-area text-primary-ink text-[13px] font-bold whitespace-nowrap hover:underline">
-            {layaway.code}
-        </Link>
-    );
-}
-
-function DueBadge({ row }: { row: CollectionInstallmentRow }) {
-    if (row.daysLate > 0) {
-        return <Badge tone="error">{row.daysLate === 1 ? '1 día de atraso' : `${row.daysLate} días de atraso`}</Badge>;
-    }
-
-    const today = new Date();
-    const start = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-    const [year = 0, month = 1, day = 1] = row.dueDate.split('-').map(Number);
-    const days = Math.round((Date.UTC(year, month - 1, day) - start) / 86_400_000);
-
-    if (days <= 0) {
-        return <Badge tone="warning">Vence hoy</Badge>;
-    }
-
-    return days === 1 ? <Badge tone="warning">Mañana</Badge> : <Badge tone="neutral">{`En ${days} días`}</Badge>;
-}
-
-function Contact({ customer }: { customer: CollectionCustomer | null }) {
-    if (customer === null) {
-        return null;
-    }
-
-    return (
-        <span className="flex justify-end gap-1.5">
-            {customer.chatUrl ? (
-                <Link href={customer.chatUrl} className="btn btn-sm btn-square" aria-label={`Escribir a ${customer.name}`} title="Abrir el chat">
-                    <Icon icon={cilChatBubble} size={14} />
-                </Link>
-            ) : null}
-            {customer.url ? (
-                <Link href={customer.url} className="btn btn-sm btn-square" aria-label={`Ficha de ${customer.name}`} title="Ver la ficha">
-                    <Icon icon={cilUser} size={14} />
-                </Link>
-            ) : null}
-        </span>
-    );
-}
 
 export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
-    { id: 'customer', header: 'Cliente', primary: true, cell: (row) => <CustomerCell customer={row.customer} /> },
-    { id: 'layaway', header: 'Apartado', cell: (row) => <LayawayLink layaway={row.layaway} /> },
-    { id: 'number', header: 'Cuota', cell: (row) => <span className="whitespace-nowrap">{row.of ? `${row.number} de ${row.of}` : row.number}</span> },
+    { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
+    { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    {
+        id: 'number',
+        header: 'Cuota',
+        mobile: { subtitle: (row) => (row.of ? `Cuota ${row.number} de ${row.of}` : `Cuota ${row.number}`) },
+        cell: (row) => <span className="whitespace-nowrap">{row.of ? `${row.number} de ${row.of}` : row.number}</span>,
+    },
     {
         id: 'due',
         header: 'Vence',
+        mobile: { status: (row) => <DueBadge row={row} />, meta: (row) => formatDay(row.dueDate) },
         cell: (row) => (
             <div className="flex flex-col gap-1">
                 <span>{formatDay(row.dueDate)}</span>
@@ -114,12 +27,32 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
             </div>
         ),
     },
-    { id: 'amount', header: 'Importe', align: 'end', cell: (row) => <MoneyLabel money={row.amount} className="font-semibold" compact /> },
-    { id: 'paid', header: 'Pagado', align: 'end', cell: (row) => <MoneyLabel money={row.paid} className="text-ink-2" compact /> },
+    {
+        id: 'amount',
+        header: 'Importe',
+        align: 'end',
+        mobile: 'amount',
+        cell: (row) => <MoneyLabel money={row.amount} className="font-semibold" compact />,
+    },
+    {
+        id: 'paid',
+        header: 'Pagado',
+        align: 'end',
+        mobile: {
+            meta: (row) =>
+                Number(row.paid.cents) === 0 ? null : (
+                    <span>
+                        Abonado <MoneyLabel money={row.paid} compact />
+                    </span>
+                ),
+        },
+        cell: (row) => <MoneyLabel money={row.paid} className="text-ink-2" compact />,
+    },
     {
         id: 'actions',
         header: 'Acciones',
         align: 'end',
+        mobile: 'hidden',
         cell: (row) => (
             <span className="flex items-center justify-end gap-1.5">
                 <Contact customer={row.customer} />
@@ -132,15 +65,27 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
 ];
 
 export const layawayColumns: DataTableColumn<CollectionLayawayRow>[] = [
-    { id: 'customer', header: 'Cliente', primary: true, cell: (row) => <CustomerCell customer={row.customer} /> },
-    { id: 'layaway', header: 'Apartado', cell: (row) => <LayawayLink layaway={row.layaway} /> },
-    { id: 'product', header: 'Producto', cell: (row) => row.productName },
-    { id: 'completed', header: 'Pagado el', cell: (row) => (row.completedAt === null ? '—' : formatDay(row.completedAt)) },
-    { id: 'total', header: 'Total', align: 'end', cell: (row) => <MoneyLabel money={row.total} className="font-semibold" compact /> },
+    { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
+    { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'product', header: 'Producto', mobile: 'subtitle', cell: (row) => row.productName },
+    {
+        id: 'completed',
+        header: 'Pagado el',
+        mobile: { meta: (row) => dueMeta(row.completedAt, 'Pagado el') },
+        cell: (row) => (row.completedAt === null ? '—' : formatDay(row.completedAt)),
+    },
+    {
+        id: 'total',
+        header: 'Total',
+        align: 'end',
+        mobile: 'amount',
+        cell: (row) => <MoneyLabel money={row.total} className="font-semibold" compact />,
+    },
     {
         id: 'actions',
         header: 'Acciones',
         align: 'end',
+        mobile: 'hidden',
         cell: (row) => (
             <Link href={row.layaway.url} className="btn btn-secondary btn-sm">
                 Marcar entrega
@@ -154,32 +99,46 @@ function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
         return <Badge tone="neutral">Sin vencimiento</Badge>;
     }
 
-    const hours = Math.round((new Date(expiresAt).getTime() - Date.now()) / 3_600_000);
-    const day = formatDay(expiresAt.slice(0, 10));
-
     return (
         <div className="flex flex-col gap-1">
-            <span>{day}</span>
-            {hours <= 0 ? (
-                <Badge tone="error">Plazo vencido</Badge>
-            ) : hours < 24 ? (
-                <Badge tone="warning">{hours === 1 ? 'Queda 1 hora' : `Quedan ${hours} horas`}</Badge>
-            ) : null}
+            <span>{formatDay(expiresAt.slice(0, 10))}</span>
+            {expiryBadge(expiresAt)}
         </div>
     );
 }
 
 export const downPaymentColumns: DataTableColumn<CollectionDownPaymentRow>[] = [
-    { id: 'customer', header: 'Cliente', primary: true, cell: (row) => <CustomerCell customer={row.customer} /> },
-    { id: 'layaway', header: 'Apartado', cell: (row) => <LayawayLink layaway={row.layaway} /> },
-    { id: 'product', header: 'Producto', cell: (row) => row.productName },
-    { id: 'expires', header: 'Vence', cell: (row) => <ExpiryCell expiresAt={row.expiresAt} /> },
-    { id: 'downPayment', header: 'Inicial', align: 'end', cell: (row) => <MoneyLabel money={row.downPayment} className="text-ink-2" compact /> },
-    { id: 'missing', header: 'Falta', align: 'end', cell: (row) => <MoneyLabel money={row.missing} className="font-semibold" compact /> },
+    { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
+    { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'product', header: 'Producto', mobile: 'subtitle', cell: (row) => row.productName },
+    {
+        id: 'expires',
+        header: 'Vence',
+        mobile: {
+            status: (row) => expiryBadge(row.expiresAt),
+            meta: (row) => dueMeta(row.expiresAt, 'Vence el'),
+        },
+        cell: (row) => <ExpiryCell expiresAt={row.expiresAt} />,
+    },
+    {
+        id: 'downPayment',
+        header: 'Inicial',
+        align: 'end',
+        mobile: 'hidden',
+        cell: (row) => <MoneyLabel money={row.downPayment} className="text-ink-2" compact />,
+    },
+    {
+        id: 'missing',
+        header: 'Falta',
+        align: 'end',
+        mobile: 'amount',
+        cell: (row) => <MoneyLabel money={row.missing} className="font-semibold" compact />,
+    },
     {
         id: 'actions',
         header: 'Acciones',
         align: 'end',
+        mobile: 'hidden',
         cell: (row) => (
             <span className="flex items-center justify-end gap-1.5">
                 <Contact customer={row.customer} />

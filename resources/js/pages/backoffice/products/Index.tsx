@@ -86,6 +86,7 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses, 
                 filterLabels={INVENTORY_FILTER_LABELS}
                 empty={emptyMessage(filters, narrowed)}
                 selection={selection}
+                rowHref={(product) => bo(`/productos/${product.id}/editar`)}
                 selectionActions={<BulkPublishButton ids={selection.ids} onDone={selection.clear} />}
                 toolbar={
                     <InventoryFilters

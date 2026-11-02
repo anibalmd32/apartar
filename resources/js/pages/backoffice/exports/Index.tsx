@@ -1,22 +1,13 @@
 import { Alert } from '@/components/ui/alert';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
-import { formatBytes, formatMoment } from '@/features/exports/lib/export-format';
+import { ExportList } from '@/features/exports/components/ExportList';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import BackofficeLayout from '@/layouts/backoffice-layout';
-import { EXPORTS_URL, type ExportRow, type ExportsPageProps, type ExportStatus, type ExportType } from '@/types/exports';
-import { cilBasket, cilCloudDownload, cilDollar, cilPeople, cilReload, cilWallet } from '@coreui/icons';
+import { EXPORTS_URL, type ExportsPageProps, type ExportType } from '@/types/exports';
+import { cilBasket, cilCloudDownload, cilDollar, cilPeople, cilWallet } from '@coreui/icons';
 import { router } from '@inertiajs/react';
-
-const TONES: Record<ExportStatus, BadgeTone> = {
-    queued: 'neutral',
-    processing: 'info',
-    completed: 'success',
-    failed: 'error',
-    expired: 'neutral',
-};
 
 const SOURCES: Record<ExportType, { hint: string; icon: string[] }> = {
     collections: { hint: 'Cuotas por cobrar con el filtro que elijas', icon: cilWallet },
@@ -67,80 +58,10 @@ export default function ExportsIndex({ exports, canExport, types }: ExportsPageP
                     Todavía no has exportado nada. Pide un Excel aquí o desde la cobranza, los clientes o el inventario, con sus filtros.
                 </Alert>
             ) : (
-                <div className="bg-base-100 border-line shadow-card overflow-x-auto rounded-2xl border">
-                    <table className="table" aria-label="Archivos">
-                        <thead>
-                            <tr>
-                                <th scope="col">Archivo</th>
-                                <th scope="col">Estado</th>
-                                <th scope="col">Solicitado</th>
-                                <th scope="col">Filas</th>
-                                <th scope="col">Tamaño</th>
-                                <th scope="col">Disponible</th>
-                                <th scope="col">
-                                    <span className="sr-only">Acciones</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {exports.map((row) => (
-                                <ExportTableRow key={row.id} row={row} canExport={canExport} />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <ExportList exports={exports} canExport={canExport} onRetry={request} />
             )}
 
             <p className="text-ink-3 text-xs">Solo puede haber una exportación en curso por tipo. Los archivos se borran a los siete días.</p>
         </BackofficeLayout>
     );
-}
-
-function ExportTableRow({ row, canExport }: { row: ExportRow; canExport: boolean }) {
-    return (
-        <tr>
-            <td className="font-semibold">{row.typeLabel}</td>
-            <td>
-                <Badge tone={TONES[row.status]}>{row.statusLabel}</Badge>
-            </td>
-            <td className="text-ink-2 whitespace-nowrap">
-                {row.waitingMinutes !== null ? `hace ${row.waitingMinutes} min` : formatMoment(row.requestedIso)}
-            </td>
-            <td className="text-ink-2">{row.rowCount ?? '—'}</td>
-            <td className="text-ink-2 whitespace-nowrap">{row.fileSize !== null ? formatBytes(row.fileSize) : '—'}</td>
-            <td className="text-ink-3 text-xs">
-                <Availability row={row} />
-            </td>
-            <td className="text-right">
-                {row.downloadUrl !== null ? (
-                    <a className="btn btn-secondary btn-sm" href={row.downloadUrl}>
-                        <Icon icon={cilCloudDownload} size={14} />
-                        Descargar
-                    </a>
-                ) : null}
-                {row.retryFilters !== null ? (
-                    <Button size="sm" variant="secondary" disabled={!canExport} onClick={() => request(row.type, row.retryFilters ?? {})}>
-                        <Icon icon={cilReload} size={14} />
-                        Reintentar
-                    </Button>
-                ) : null}
-            </td>
-        </tr>
-    );
-}
-
-function Availability({ row }: { row: ExportRow }) {
-    if (row.status === 'expired') {
-        return <>Se borró a los siete días</>;
-    }
-
-    if (row.status === 'failed') {
-        return <span className="text-error">{row.errorMessage ?? 'No se pudo generar.'}</span>;
-    }
-
-    if (row.status === 'completed' && row.expiresIso !== null) {
-        return <>hasta {formatMoment(row.expiresIso)}</>;
-    }
-
-    return <>—</>;
 }

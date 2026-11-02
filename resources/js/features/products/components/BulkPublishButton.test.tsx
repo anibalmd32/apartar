@@ -12,7 +12,7 @@ const { post } = vi.hoisted(() => ({ post: vi.fn() }));
 
 vi.mock('@inertiajs/react', () => ({ router: { post, get: vi.fn(), on: vi.fn(() => () => undefined) } }));
 
-const COLUMNS: DataTableColumn<ProductListItem>[] = [{ id: 'product', header: 'Producto', primary: true, cell: (product) => product.name }];
+const COLUMNS: DataTableColumn<ProductListItem>[] = [{ id: 'product', header: 'Producto', mobile: 'title', cell: (product) => product.name }];
 
 const META: TableMeta = { page: 1, perPage: 25, sort: null, filters: {}, total: 3, lastPage: 1, hasMore: false, ignoredFilters: [] };
 

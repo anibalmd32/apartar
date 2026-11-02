@@ -1,4 +1,5 @@
-import { PageCheckbox, RowCheckbox } from '@/features/data-table/components/SelectionControls';
+import { MobileList } from '@/features/data-table/components/MobileList';
+import { RowCheckbox } from '@/features/data-table/components/SelectionControls';
 import { type RowSelection } from '@/features/data-table/hooks/useRowSelection';
 import { type DataTableColumn } from '@/types/data-table';
 import { flexRender, type RowData } from '@tanstack/react-table';
@@ -12,6 +13,8 @@ interface TableBodyProps<TRow extends RowData> {
     empty: ReactNode;
     header: ReactNode;
     selection?: RowSelection<TRow>;
+    label: string;
+    rowHref?: (row: TRow) => string | null | undefined;
 }
 
 function Skeleton({ rows, columns }: { rows: number; columns: number }) {
@@ -30,39 +33,7 @@ function Skeleton({ rows, columns }: { rows: number; columns: number }) {
     );
 }
 
-function Card<TRow>({ row, columns, selection }: { row: TRow; columns: readonly DataTableColumn<TRow>[]; selection?: RowSelection<TRow> }) {
-    const primary = columns.filter((column) => column.primary);
-    const secondary = columns.filter((column) => !column.primary);
-
-    const fields = (
-        <>
-            {primary.map((column) => (
-                <div key={column.id}>{column.cell(row)}</div>
-            ))}
-            {secondary.map((column) => (
-                <div key={column.id} className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
-                    <span className="text-ink-3">{column.header}</span>
-                    <div>{column.cell(row)}</div>
-                </div>
-            ))}
-        </>
-    );
-
-    if (selection === undefined) {
-        return fields;
-    }
-
-    return (
-        <div className="flex items-start gap-3">
-            <div className="pt-3">
-                <RowCheckbox selection={selection} row={row} />
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-2.5">{fields}</div>
-        </div>
-    );
-}
-
-export function TableBody<TRow extends RowData>({ table, columns, loading, empty, header, selection }: TableBodyProps<TRow>) {
+export function TableBody<TRow extends RowData>({ table, columns, loading, empty, header, selection, label, rowHref }: TableBodyProps<TRow>) {
     const rows = table.getRowModel().rows;
 
     if (rows.length === 0 && !loading) {
@@ -105,24 +76,7 @@ export function TableBody<TRow extends RowData>({ table, columns, loading, empty
                 </table>
             </div>
 
-            {selection && selection.selectableCount > 0 ? (
-                <div className="px-1 md:hidden">
-                    <PageCheckbox selection={selection}>
-                        <span className="text-ink-2 text-sm">Seleccionar todos los de esta página</span>
-                    </PageCheckbox>
-                </div>
-            ) : null}
-
-            <ul className="flex flex-col gap-2 md:hidden" aria-busy={loading || undefined}>
-                {rows.map((row) => (
-                    <li
-                        key={row.id}
-                        className={`bg-base-100 border-line shadow-card flex flex-col gap-2.5 rounded-2xl border p-4 ${loading ? 'opacity-50' : ''} ${selection?.isSelected(row.original) ? 'border-primary' : ''}`}
-                    >
-                        <Card row={row.original} columns={columns} selection={selection} />
-                    </li>
-                ))}
-            </ul>
+            <MobileList rows={rows} columns={columns} loading={loading} label={label} selection={selection} rowHref={rowHref} />
         </>
     );
 }

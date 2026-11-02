@@ -95,6 +95,14 @@ function AccountCell({ row }: { row: ReceiptInboxRow }) {
     );
 }
 
+function Thumbnail({ row }: { row: ReceiptInboxRow }) {
+    return row.file.kind === 'pdf' ? (
+        <span className="bg-base-300 text-ink-2 flex h-11 w-9 items-center justify-center rounded-[7px] text-[10px] font-bold">PDF</span>
+    ) : (
+        <img src={row.file.url} alt="" loading="lazy" className="bg-base-300 h-11 w-9 rounded-[7px] object-cover" />
+    );
+}
+
 function FileCell({ row }: { row: ReceiptInboxRow }) {
     const label = `Abrir el comprobante de ${row.layaway?.code ?? 'este apartado'}`;
 
@@ -123,18 +131,37 @@ function FileCell({ row }: { row: ReceiptInboxRow }) {
 
 export function inboxColumns(now: number): DataTableColumn<ReceiptInboxRow>[] {
     return [
-        { id: 'layaway', header: 'Comprobante', cell: (row) => <LayawayCell row={row} />, primary: true },
-        { id: 'customer', header: 'Cliente', cell: (row) => <CustomerCell row={row} />, primary: true },
-        { id: 'payment', header: 'Método', cell: (row) => <PaymentCell row={row} /> },
-        { id: 'account', header: 'Cuenta declarada', cell: (row) => <AccountCell row={row} /> },
+        {
+            id: 'layaway',
+            header: 'Comprobante',
+            cell: (row) => <LayawayCell row={row} />,
+            mobile: {
+                media: (row) => <Thumbnail row={row} />,
+                subtitle: (row) => (row.layaway === null ? null : `${row.layaway.code}${row.layaway.cancelled ? ' (cancelado)' : ''}`),
+            },
+        },
+        {
+            id: 'customer',
+            header: 'Cliente',
+            cell: (row) => <CustomerCell row={row} />,
+            mobile: { title: (row) => row.customer?.fullName ?? 'Sin cliente' },
+        },
+        { id: 'payment', header: 'Método', cell: (row) => <PaymentCell row={row} />, mobile: { subtitle: (row) => row.methodLabel } },
+        { id: 'account', header: 'Cuenta declarada', cell: (row) => <AccountCell row={row} />, mobile: 'hidden' },
         {
             id: 'amount',
             header: 'Monto declarado',
             cell: (row) => <span className="font-semibold whitespace-nowrap">{formatDeclaredAmount(row.declaredAmount, row.declaredCurrency)}</span>,
-            primary: true,
+            mobile: { amount: (row) => formatDeclaredAmount(row.declaredAmount, row.declaredCurrency) },
         },
-        { id: 'paidAt', header: 'Pagado el', cell: (row) => <span className="whitespace-nowrap">{formatDay(row.paidAt)}</span>, sortKey: 'paid_at' },
-        { id: 'arrival', header: 'Recibido', cell: (row) => <Arrival row={row} now={now} />, sortKey: 'submitted', primary: true },
+        {
+            id: 'paidAt',
+            header: 'Pagado el',
+            cell: (row) => <span className="whitespace-nowrap">{formatDay(row.paidAt)}</span>,
+            sortKey: 'paid_at',
+            mobile: 'hidden',
+        },
+        { id: 'arrival', header: 'Recibido', cell: (row) => <Arrival row={row} now={now} />, sortKey: 'submitted', mobile: 'meta' },
         {
             id: 'status',
             header: 'Estado',
@@ -146,7 +173,7 @@ export function inboxColumns(now: number): DataTableColumn<ReceiptInboxRow>[] {
                     </Link>
                 </div>
             ),
-            primary: true,
+            mobile: { status: (row) => <Badge tone={STATUS_TONES[row.status]}>{row.statusLabel}</Badge> },
             align: 'end',
         },
     ];

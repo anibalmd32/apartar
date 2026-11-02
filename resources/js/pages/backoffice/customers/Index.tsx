@@ -46,6 +46,7 @@ export default function CustomerIndex({ rows, meta, options, filterCounts }: Cus
                 label="Directorio de clientes"
                 table={table}
                 filterLabels={DIRECTORY_FILTER_LABELS}
+                rowHref={(row) => row.url}
                 empty={
                     narrowed ? (
                         'Ningún cliente coincide. Revisa el formato de la cédula (V-12345678) o del teléfono (0414-1234567).'

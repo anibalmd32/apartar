@@ -1,16 +1,10 @@
-import { menuItemClass } from '@/components/shell/user-menu';
 import { Badge } from '@/components/ui/badge';
-import { Icon } from '@/components/ui/icon';
 import { ProductPlaceholder } from '@/features/catalog/components/ProductPlaceholder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { useStoredProductPreview } from '@/features/products/components/StoredProductPreview';
-import { bo } from '@/lib/surfaces';
+import { ProductRowActions } from '@/features/products/components/ProductRowActions';
 import { cn } from '@/lib/utils';
 import { type DataTableColumn } from '@/types/data-table';
 import { type ProductListItem, type ProductStatus } from '@/types/product';
-import { cilArrowCircleTop, cilBan, cilOptions, cilPencil, cilReload, cilScreenDesktop, cilTrash } from '@coreui/icons';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { Link, router } from '@inertiajs/react';
 
 const STATUS_TONES: Readonly<Record<ProductStatus, 'neutral' | 'success'>> = {
     draft: 'neutral',
@@ -27,50 +21,6 @@ function StatusBadges({ product, label }: { product: ProductListItem; label: str
                 <Badge tone="info">Programado {product.scheduledFor}</Badge>
             )}
         </div>
-    );
-}
-
-function Actions({ product }: { product: ProductListItem }) {
-    const preview = useStoredProductPreview(product.id);
-    const step = (path: string) => router.post(bo(`/productos/${product.id}/${path}`), {}, { preserveScroll: true });
-    const item = (icon: string[], label: string, path: string) => (
-        <MenuItem>
-            <button type="button" className={menuItemClass} onClick={() => step(path)}>
-                <Icon icon={icon} />
-                {label}
-            </button>
-        </MenuItem>
-    );
-
-    return (
-        <>
-            <Menu as="div" className="relative inline-block">
-                <MenuButton className="btn btn-ghost btn-sm btn-square" aria-label={`Acciones de ${product.name}`}>
-                    <Icon icon={cilOptions} />
-                </MenuButton>
-                <MenuItems
-                    anchor="bottom end"
-                    className="bg-base-100 border-line shadow-pop z-50 mt-1 w-48 rounded-xl border p-1.5 focus:outline-none"
-                >
-                    <MenuItem>
-                        <Link className={menuItemClass} href={bo(`/productos/${product.id}/editar`)}>
-                            <Icon icon={cilPencil} />
-                            Editar
-                        </Link>
-                    </MenuItem>
-                    <MenuItem>
-                        <button type="button" className={menuItemClass} onClick={preview.open}>
-                            <Icon icon={cilScreenDesktop} />
-                            Vista previa
-                        </button>
-                    </MenuItem>
-                    {product.status === 'draft' ? item(cilArrowCircleTop, 'Publicar', 'publicar') : null}
-                    {product.status === 'published' ? item(cilBan, 'Despublicar', 'despublicar') : null}
-                    {product.status === 'archived' ? item(cilReload, 'Restaurar', 'restaurar') : item(cilTrash, 'Archivar', 'archivar')}
-                </MenuItems>
-            </Menu>
-            {preview.dialog}
-        </>
     );
 }
 
@@ -105,6 +55,29 @@ export function LastEdit({ at, by }: { at: string | null; by: string | null }) {
     );
 }
 
+function Thumb({ product }: { product: ProductListItem }) {
+    return product.thumbUrl ? (
+        <img src={product.thumbUrl} alt="" loading="lazy" className="bg-base-300 size-11 shrink-0 rounded-[10px] object-cover" />
+    ) : (
+        <ProductPlaceholder name={product.name} className="size-11 shrink-0 rounded-[10px] text-base" />
+    );
+}
+
+function StockLine({ product }: { product: ProductListItem }) {
+    return (
+        <span className="whitespace-nowrap">
+            {product.stock === 0 ? <span className="text-error font-medium">Agotado</span> : `${product.stock} disp.`}
+            {product.reservedUnits > 0 ? ` · ${product.reservedUnits === 1 ? '1 apartada' : `${product.reservedUnits} apartadas`}` : null}
+            {product.shortfallUnits > 0 ? (
+                <span className="text-error">
+                    {' · '}
+                    {product.shortfallUnits === 1 ? 'falta 1' : `faltan ${product.shortfallUnits}`}
+                </span>
+            ) : null}
+        </span>
+    );
+}
+
 function CatalogsCell({ product }: { product: ProductListItem }) {
     const label = `en ${product.catalogsCount}`;
 
@@ -130,14 +103,17 @@ export function inventoryColumns(statusLabels: Readonly<Record<ProductStatus, st
             id: 'product',
             header: 'Producto',
             sortKey: 'name',
-            primary: true,
+            mobile: {
+                media: (product) => (
+                    <span className={cn('block', product.status === 'archived' && 'opacity-60')}>
+                        <Thumb product={product} />
+                    </span>
+                ),
+                title: (product) => product.name,
+            },
             cell: (product) => (
                 <div className={cn('flex items-center gap-3', product.status === 'archived' && 'opacity-60')}>
-                    {product.thumbUrl ? (
-                        <img src={product.thumbUrl} alt="" loading="lazy" className="bg-base-300 size-11 shrink-0 rounded-[10px] object-cover" />
-                    ) : (
-                        <ProductPlaceholder name={product.name} className="size-11 shrink-0 rounded-[10px] text-base" />
-                    )}
+                    <Thumb product={product} />
                     <div className="flex min-w-0 flex-col">
                         <span className="font-semibold">{product.name}</span>
                         <span className="text-ink-3 text-xs">
@@ -153,29 +129,47 @@ export function inventoryColumns(statusLabels: Readonly<Record<ProductStatus, st
         {
             id: 'status',
             header: 'Estado',
-            primary: true,
+            mobile: 'status',
             cell: (product) => <StatusBadges product={product} label={statusLabels[product.status]} />,
         },
         {
             id: 'price',
             header: 'Precio',
             sortKey: 'price',
-            primary: true,
+            mobile: 'amount',
             cell: (product) => <MoneyLabel money={product.price} compact className="font-bold" />,
         },
-        { id: 'stock', header: 'Stock', sortKey: 'stock', cell: (product) => <StockCell product={product} /> },
+        {
+            id: 'stock',
+            header: 'Stock',
+            sortKey: 'stock',
+            mobile: { meta: (product) => <StockLine product={product} /> },
+            cell: (product) => <StockCell product={product} />,
+        },
         {
             id: 'category',
             header: 'Categoría',
+            mobile: 'hidden',
             cell: (product) => product.categoryName ?? <span className="text-ink-3 text-[13px]">Sin categoría</span>,
         },
-        { id: 'catalogs', header: 'Catálogos', cell: (product) => <CatalogsCell product={product} /> },
+        {
+            id: 'catalogs',
+            header: 'Catálogos',
+            mobile: {
+                meta: (product) =>
+                    product.status === 'published' && product.catalogsCount === 0 ? (
+                        <span className="text-warning font-semibold">En ningún catálogo</span>
+                    ) : null,
+            },
+            cell: (product) => <CatalogsCell product={product} />,
+        },
         {
             id: 'updated',
             header: 'Actualizado',
             sortKey: 'updated',
+            mobile: 'hidden',
             cell: (product) => <LastEdit at={product.updatedAt} by={product.updatedBy} />,
         },
-        { id: 'actions', header: 'Acciones', align: 'end', cell: (product) => <Actions product={product} /> },
+        { id: 'actions', header: 'Acciones', align: 'end', mobile: 'action', cell: (product) => <ProductRowActions product={product} /> },
     ];
 }

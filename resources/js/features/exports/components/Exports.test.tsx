@@ -3,7 +3,7 @@ import { ExportButton, useExportAction } from '@/features/exports/components/Exp
 import ExportsIndex from '@/pages/backoffice/exports/Index';
 import { planState } from '@/test/plan-fixtures';
 import { type ExportRow } from '@/types/exports';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -73,36 +73,34 @@ function row(overrides: Partial<ExportRow> = {}): ExportRow {
     };
 }
 
+const ROWS = () => [
+    row(),
+    row({ id: 2, status: 'queued', statusLabel: 'En cola', waitingMinutes: 12, downloadUrl: null, rowCount: null, expiresAt: null }),
+    row({
+        id: 3,
+        status: 'failed',
+        statusLabel: 'Falló',
+        errorMessage: 'Tu almacenamiento está lleno.',
+        downloadUrl: null,
+        retryFilters: { preset: 'due_today' },
+    }),
+    row({ id: 4, status: 'expired', statusLabel: 'Caducada', downloadUrl: null }),
+];
+
 it('enseña cada exportación con lo que se puede hacer', () => {
-    render(
-        <ExportsIndex
-            canExport
-            types={[]}
-            exports={[
-                row(),
-                row({ id: 2, status: 'queued', statusLabel: 'En cola', waitingMinutes: 12, downloadUrl: null, rowCount: null, expiresAt: null }),
-                row({
-                    id: 3,
-                    status: 'failed',
-                    statusLabel: 'Falló',
-                    errorMessage: 'Tu almacenamiento está lleno.',
-                    downloadUrl: null,
-                    retryFilters: { preset: 'due_today' },
-                }),
-                row({ id: 4, status: 'expired', statusLabel: 'Caducada', downloadUrl: null }),
-            ]}
-        />,
-    );
+    render(<ExportsIndex canExport types={[]} exports={ROWS()} />);
 
-    expect(screen.getAllByRole('link', { name: 'Descargar' })).toHaveLength(1);
-    expect(screen.getAllByText('34').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('2 KB').length).toBeGreaterThan(0);
-    expect(screen.getByText('hasta 17/09')).toBeInTheDocument();
-    expect(screen.getByText('hace 12 min')).toBeInTheDocument();
-    expect(screen.getByText('Tu almacenamiento está lleno.')).toBeInTheDocument();
-    expect(screen.getByText('Se borró a los siete días')).toBeInTheDocument();
+    const table = within(screen.getByRole('table', { name: 'Archivos' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(table.getAllByRole('link', { name: 'Descargar' })).toHaveLength(1);
+    expect(table.getAllByText('34').length).toBeGreaterThan(0);
+    expect(table.getAllByText('2 KB').length).toBeGreaterThan(0);
+    expect(table.getByText('hasta 17/09')).toBeInTheDocument();
+    expect(table.getByText('hace 12 min')).toBeInTheDocument();
+    expect(table.getByText('Tu almacenamiento está lleno.')).toBeInTheDocument();
+    expect(table.getByText('Se borró a los siete días')).toBeInTheDocument();
+
+    fireEvent.click(table.getByRole('button', { name: 'Reintentar' }));
 
     expect(post).toHaveBeenLastCalledWith(
         '/backoffice/exportaciones',
@@ -150,4 +148,29 @@ it('como acción de cabecera exporta con los filtros y, sin la función, dice po
     fireEvent.click(screen.getByRole('button', { name: 'Exportar a Excel' }));
 
     expect(post).toHaveBeenCalledWith('/backoffice/exportaciones', { type: 'inventory', filters: { q: 'bolso' } }, expect.any(Object));
+});
+
+it('en el celular cada archivo es una fila compacta que se toca entera para descargar', () => {
+    render(<ExportsIndex canExport types={[]} exports={ROWS()} />);
+
+    const list = screen.getByRole('list', { name: 'Archivos' });
+    const items = within(list).getAllByRole('listitem');
+
+    expect(list).toHaveClass('md:hidden');
+    expect(items).toHaveLength(4);
+    expect(within(items[0]!).getByRole('link', { name: 'Descargar Cobranza' })).toHaveAttribute(
+        'href',
+        '/backoffice/exportaciones/1/descargar?signature=x',
+    );
+    expect(items[0]).toHaveTextContent('34 filas');
+    expect(items[1]).toHaveTextContent('Pedida hace 12 min');
+    expect(within(items[1]!).queryByRole('link')).toBeNull();
+
+    fireEvent.click(within(items[2]!).getByRole('button', { name: 'Reintentar Cobranza' }));
+
+    expect(post).toHaveBeenLastCalledWith(
+        '/backoffice/exportaciones',
+        { type: 'collections', filters: { preset: 'due_today' } },
+        { preserveScroll: true },
+    );
 });

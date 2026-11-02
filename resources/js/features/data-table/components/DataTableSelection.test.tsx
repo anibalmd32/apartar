@@ -13,7 +13,7 @@ interface Row {
     open: boolean;
 }
 
-const COLUMNS: DataTableColumn<Row>[] = [{ id: 'name', header: 'Nombre', primary: true, cell: (row) => row.name }];
+const COLUMNS: DataTableColumn<Row>[] = [{ id: 'name', header: 'Nombre', mobile: 'title', cell: (row) => row.name }];
 
 const META: TableMeta = { page: 1, perPage: 25, sort: null, filters: {}, total: 3, lastPage: 1, hasMore: false, ignoredFilters: [] };
 

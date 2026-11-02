@@ -13,7 +13,12 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
     {
         id: 'name',
         header: 'Cliente',
-        primary: true,
+        mobile: {
+            media: (row) => <Avatar name={row.name} size={40} tone={row.inArrears ? 'neutral' : 'accent'} />,
+            title: (row) => row.name,
+            subtitle: (row) => row.document ?? NO_DOCUMENT,
+            status: (row) => (row.inArrears && row.overdueInstallments === 0 ? <Badge tone="error">En mora</Badge> : null),
+        },
         cell: (row) => (
             <div className="flex items-center gap-3">
                 <Avatar name={row.name} size={32} tone={row.inArrears ? 'neutral' : 'accent'} />
@@ -38,6 +43,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
     {
         id: 'phone',
         header: 'Teléfono',
+        mobile: 'hidden',
         cell: (row) =>
             row.phone === null ? (
                 <span className="text-ink-3 whitespace-nowrap">{NO_PHONE}</span>
@@ -47,14 +53,38 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
                 </a>
             ),
     },
-    { id: 'active', header: 'Activos', align: 'end', cell: (row) => row.activeLayaways },
-    { id: 'committed', header: 'Comprometido', align: 'end', cell: (row) => <MoneyLabel money={row.committed} className="text-ink-2" compact /> },
-    { id: 'paid', header: 'Pagado', align: 'end', cell: (row) => <MoneyLabel money={row.paid} className="text-success" compact /> },
-    { id: 'remaining', header: 'Pendiente', align: 'end', cell: (row) => <MoneyLabel money={row.remaining} className="font-bold" compact /> },
+    {
+        id: 'active',
+        header: 'Activos',
+        align: 'end',
+        mobile: 'hidden',
+        cell: (row) => row.activeLayaways,
+    },
+    {
+        id: 'committed',
+        header: 'Comprometido',
+        align: 'end',
+        mobile: 'hidden',
+        cell: (row) => <MoneyLabel money={row.committed} className="text-ink-2" compact />,
+    },
+    { id: 'paid', header: 'Pagado', align: 'end', mobile: 'hidden', cell: (row) => <MoneyLabel money={row.paid} className="text-success" compact /> },
+    {
+        id: 'remaining',
+        header: 'Pendiente',
+        align: 'end',
+        mobile: { amount: (row) => (Number(row.remaining.cents) === 0 ? null : <MoneyLabel money={row.remaining} compact />) },
+        cell: (row) => <MoneyLabel money={row.remaining} className="font-bold" compact />,
+    },
     {
         id: 'overdue',
         header: 'Cuotas vencidas',
         align: 'end',
+        mobile: {
+            status: (row) =>
+                row.overdueInstallments > 0 ? (
+                    <Badge tone="error">{row.overdueInstallments === 1 ? '1 cuota vencida' : `${row.overdueInstallments} cuotas vencidas`}</Badge>
+                ) : null,
+        },
         cell: (row) =>
             row.overdueInstallments > 0 ? (
                 <Badge tone="error">
@@ -67,6 +97,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
     {
         id: 'next',
         header: 'Próximo vencimiento',
+        mobile: { meta: (row) => (row.nextDueDate === null ? null : `Vence el ${formatDay(row.nextDueDate)}`) },
         cell: (row) => (row.nextDueDate === null ? <span className="text-ink-3">—</span> : formatDay(row.nextDueDate)),
     },
 ];

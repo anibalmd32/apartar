@@ -15,7 +15,7 @@ interface Row {
 }
 
 const COLUMNS: DataTableColumn<Row>[] = [
-    { id: 'name', header: 'Nombre', sortKey: 'name', primary: true, cell: (row) => row.name },
+    { id: 'name', header: 'Nombre', sortKey: 'name', mobile: 'title', cell: (row) => row.name },
     { id: 'stock', header: 'Stock', cell: (row) => row.stock },
 ];
 

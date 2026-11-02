@@ -81,6 +81,7 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
             label={props.label}
             table={table}
             filterLabels={COLLECTION_FILTER_LABELS}
+            rowHref={(row) => row.layaway.url}
             empty={emptyMessage(props, narrowed)}
             toolbar={
                 <>
