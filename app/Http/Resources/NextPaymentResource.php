@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Domain\Layaway\NextPayment;
+use App\Domain\Money\MoneyFormatter;
 use App\Domain\Payment\ReceiptsInReview;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Support\HumanDate;
@@ -45,7 +46,11 @@ final class NextPaymentResource extends JsonResource
                 'amount' => $this->money($alternative->amount),
             ],
             'inReview' => $this->inReview->any() ? [
-                'amount' => $this->money($this->inReview->amount),
+                'amount' => [
+                    'cents' => $this->inReview->amount->cents,
+                    'usd' => MoneyFormatter::format($this->inReview->amount),
+                    'ves' => $this->inReview->declaredVes === null ? null : MoneyFormatter::format($this->inReview->declaredVes),
+                ],
                 'count' => $this->inReview->count,
                 'submittedOn' => $submittedAt === null ? null : HumanDate::dayMonth($submittedAt->setTimezone($this->timezone)),
             ] : null,

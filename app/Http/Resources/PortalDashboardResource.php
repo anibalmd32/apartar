@@ -20,6 +20,7 @@ use App\Models\Customer;
 use App\Models\Layaway;
 use App\Queries\BusinessBalance;
 use App\Queries\PortalAlert;
+use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -104,7 +105,7 @@ final class PortalDashboardResource extends JsonResource
             $this->resource,
         ));
 
-        $dates = array_filter(array_map(fn (BusinessBalance $block) => $block->nextDueDate(), $this->resource));
+        $dates = array_filter(array_map(fn (BusinessBalance $block) => $block->nextPaymentDueDate(), $this->resource));
         usort($dates, fn ($a, $b): int => $a->getTimestamp() <=> $b->getTimestamp());
         $next = $dates[0] ?? null;
 
@@ -114,9 +115,22 @@ final class PortalDashboardResource extends JsonResource
             'paid' => $across(fn (BusinessBalance $block) => $block->paid()),
             'remaining' => $across(fn (BusinessBalance $block) => $block->remaining()),
             'overdueInstallments' => array_sum(array_map(fn (BusinessBalance $block): int => $block->overdueInstallments(), $this->resource)),
+            'catchUp' => $across(fn (BusinessBalance $block) => $block->catchUp()),
+            'paymentInReview' => in_array(true, array_map(fn (BusinessBalance $block): bool => $block->paymentInReview(), $this->resource), true),
             'nextDueDate' => $next?->toDateString(),
             'nextDueDateLabel' => LayawaySummaryResource::dayLabel($next),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function suggestionOf(BusinessBalance $block, Layaway $layaway, DateTimeZone $timezone, Request $request): ?array
+    {
+        $next = $block->suggestionFor($layaway);
+        $review = $block->reviewFor($layaway);
+
+        return $next === null || $review === null ? null : (new NextPaymentResource($next, $review, $timezone))->resolve($request);
     }
 
     /**
@@ -124,8 +138,12 @@ final class PortalDashboardResource extends JsonResource
      */
     private function block(BusinessBalance $block, Request $request): array
     {
+        $timezone = new DateTimeZone($block->organization->timezone);
         $summaries = fn (array $layaways): array => array_map(
-            fn (Layaway $layaway): array => (new LayawaySummaryResource($layaway))->resolve($request),
+            fn (Layaway $layaway): array => [
+                ...(new LayawaySummaryResource($layaway))->resolve($request),
+                'suggestion' => $this->suggestionOf($block, $layaway, $timezone, $request),
+            ],
             $layaways,
         );
 
@@ -139,8 +157,10 @@ final class PortalDashboardResource extends JsonResource
                 'paid' => $this->money($block->paid()),
                 'remaining' => $this->money($block->remaining()),
                 'overdueInstallments' => $block->overdueInstallments(),
-                'nextDueDate' => $block->nextDueDate()?->toDateString(),
-                'nextDueDateLabel' => LayawaySummaryResource::dayLabel($block->nextDueDate()),
+                'catchUp' => $this->money($block->catchUp()),
+                'paymentInReview' => $block->paymentInReview(),
+                'nextDueDate' => $block->nextPaymentDueDate()?->toDateString(),
+                'nextDueDateLabel' => LayawaySummaryResource::dayLabel($block->nextPaymentDueDate()),
             ],
             'layaways' => $summaries($block->active),
             'history' => $summaries($block->history),

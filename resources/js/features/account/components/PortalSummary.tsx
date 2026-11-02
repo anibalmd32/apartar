@@ -17,6 +17,22 @@ function Figure({ label, children, className }: { label: string; children: React
     );
 }
 
+function NextFigure({ totals }: { totals: PortalTotals }) {
+    if (totals.overdueInstallments === 0 || totals.catchUp === undefined) {
+        return <Figure label="Próximo pago">{totals.nextDueDateLabel ?? (totals.paymentInReview ? 'En revisión' : '—')}</Figure>;
+    }
+
+    if (Number(totals.catchUp.cents) === 0) {
+        return <Figure label="Próximo pago">En revisión</Figure>;
+    }
+
+    return (
+        <Figure label="Para ponerte al día" className="text-error">
+            <MoneyLabel money={totals.catchUp} stacked />
+        </Figure>
+    );
+}
+
 export function PortalSummary({ totals, label }: PortalSummaryProps) {
     return (
         <section aria-label={label} className="border-line bg-base-100 shadow-card rounded-2xl border p-4 lg:p-6">
@@ -30,7 +46,7 @@ export function PortalSummary({ totals, label }: PortalSummaryProps) {
                 <Figure label="Restante">
                     <MoneyLabel money={totals.remaining} stacked />
                 </Figure>
-                <Figure label="Próximo pago">{totals.nextDueDateLabel ?? '—'}</Figure>
+                <NextFigure totals={totals} />
             </dl>
             <p className="text-ink-3 mt-3 text-xs">
                 {totals.activeLayaways} {totals.activeLayaways === 1 ? 'apartado activo' : 'apartados activos'}

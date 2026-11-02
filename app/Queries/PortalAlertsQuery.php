@@ -51,11 +51,11 @@ final class PortalAlertsQuery
                 $alerts[] = PortalAlert::downPaymentWindow($organization, $layaway, (int) ceil($now->diffInSeconds($expiresAt) / 60));
             }
 
-            $firstOverdueHere = $block->firstOverdueLayaway();
+            $firstOverdueHere = $block->firstCatchUpLayaway();
 
             if ($firstOverdueHere instanceof Layaway) {
-                $overdueCount += $block->overdueInstallments();
-                $overdueAmounts[] = ['organization' => $organization, 'amount' => $block->overdueAmount()];
+                $overdueCount += $block->catchUpInstallments();
+                $overdueAmounts[] = ['organization' => $organization, 'amount' => $block->catchUp()];
                 $firstOverdue ??= $firstOverdueHere;
             }
 

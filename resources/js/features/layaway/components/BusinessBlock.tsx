@@ -1,11 +1,27 @@
 import { Avatar } from '@/components/shell/avatar';
 import { RateStamp } from '@/components/shell/rate-pill';
 import { PortalLayawayCard } from '@/features/layaway/components/PortalLayawayCard';
-import { type BusinessBlock as BusinessBlockData } from '@/types/portal';
+import { type BusinessBlock as BusinessBlockData, type PortalTotals } from '@/types/portal';
 import { Link } from '@inertiajs/react';
 
 interface BusinessBlockProps {
     block: BusinessBlockData;
+}
+
+function DueStamp({ totals }: { totals: PortalTotals }) {
+    if (totals.nextDueDateLabel === null) {
+        return totals.paymentInReview ? <span>Pago en revisión</span> : null;
+    }
+
+    if (totals.overdueInstallments === 0 || totals.catchUp === undefined) {
+        return <span>Próximo vencimiento: {totals.nextDueDateLabel}</span>;
+    }
+
+    return Number(totals.catchUp.cents) > 0 ? (
+        <span className="text-error font-semibold">Vencido desde el {totals.nextDueDateLabel}</span>
+    ) : (
+        <span>Pago en revisión</span>
+    );
 }
 
 export function BusinessBlock({ block }: BusinessBlockProps) {
@@ -22,7 +38,7 @@ export function BusinessBlock({ block }: BusinessBlockProps) {
                 <div className="min-w-0 flex-1">
                     <h2 className="truncate text-[17px] font-bold">{business.name}</h2>
                     <p className="text-ink-3 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-                        {totals.nextDueDateLabel !== null ? <span>Próximo vencimiento: {totals.nextDueDateLabel}</span> : null}
+                        <DueStamp totals={totals} />
                         <RateStamp rate={block.rate} />
                     </p>
                 </div>

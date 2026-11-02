@@ -84,10 +84,10 @@ function describe(alert: PortalAlert): { tone: AlertTone; message: ReactNode; ac
                 message: (
                     <>
                         {alert.businessName !== null ? <strong>{alert.businessName}: </strong> : 'Entre tus negocios tienes '}
-                        {alert.count} {plural(alert.count, 'cuota vencida', 'cuotas vencidas')} por <MoneyLabel money={alert.amount} />.
+                        {alert.count} {plural(alert.count, 'cuota vencida', 'cuotas vencidas')}. Ponte al día con <MoneyLabel money={alert.amount} />.
                     </>
                 ),
-                action: 'Ver cómo pagar',
+                action: 'Ponte al día',
             };
         case 'receipt_rejected':
             return {

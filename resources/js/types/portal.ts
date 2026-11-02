@@ -50,6 +50,7 @@ export interface LayawaySummary {
     readonly nextAmount?: MoneyView | null;
     readonly overdueDays?: number | null;
     readonly imageUrl?: string | null;
+    readonly suggestion?: Omit<NextPaymentSuggestion, 'payOff'> | null;
 }
 
 export interface PortalTotals {
@@ -58,6 +59,8 @@ export interface PortalTotals {
     readonly paid: MoneyView;
     readonly remaining: MoneyView;
     readonly overdueInstallments: number;
+    readonly catchUp?: MoneyView;
+    readonly paymentInReview?: boolean;
     readonly nextDueDate: string | null;
     readonly nextDueDateLabel: string | null;
 }
@@ -130,6 +133,7 @@ export interface InstallmentRow {
     readonly status: 'pending' | 'partially_paid' | 'paid' | 'overdue';
     readonly daysUntilDue: number;
     readonly tone: InstallmentTone;
+    readonly inReview?: MoneyView | null;
 }
 
 export interface NextPaymentInReview {

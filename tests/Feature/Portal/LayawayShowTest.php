@@ -13,11 +13,13 @@ use App\Domain\Payment\PaymentApplier;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Catalog;
 use App\Models\Customer;
+use App\Models\ExchangeRate;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
@@ -147,6 +149,25 @@ final class LayawayShowTest extends TestCase
             ->where('nextPaymentSuggestion.inReview.amount.cents', 6_000)
             ->where('nextPaymentSuggestion.inReview.count', 2)
             ->where('nextPaymentSuggestion.inReview.submittedOn', '15 oct'));
+    }
+
+    public function test_un_comprobante_en_bolivares_en_revision_muestra_lo_declarado_y_marca_las_cuotas_que_cubre(): void
+    {
+        $this->activate();
+        ExchangeRate::factory()->create(['rate' => '40.00000000', 'published_at' => CarbonImmutable::parse('2026-10-14 09:00:00')]);
+        ExchangeRate::factory()->create(['rate' => '50.00000000', 'published_at' => CarbonImmutable::parse('2026-10-15 09:00:00')]);
+        Cache::flush();
+        CarbonImmutable::setTestNow('2026-10-15 12:00:00');
+        $this->receiptFor($this->layaway, attributes: ['declared_amount' => '1400.00', 'declared_currency' => Currency::VES, 'paid_at' => '2026-10-14']);
+        $this->withoutOrganization();
+
+        $this->show()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('nextPaymentSuggestion.inReview.amount.cents', 3_500)
+            ->where('nextPaymentSuggestion.inReview.amount.usd', '$35,00')
+            ->where('nextPaymentSuggestion.inReview.amount.ves', 'Bs. 1.400,00')
+            ->where('installments.0.inReview.cents', 3_000)
+            ->where('installments.1.inReview.cents', 500)
+            ->where('installments.2.inReview', null));
     }
 
     public function test_days_until_due_follow_the_local_midnight(): void

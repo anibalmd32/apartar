@@ -56,3 +56,19 @@ it('enseña lo pagado y lo que falta de una cuota a medias', () => {
 
     expect(screen.getByText(/pagado/)).toHaveTextContent('pagado $10,00, falta $20,00');
 });
+
+it('una cuota cubierta por un comprobante en revisión lo dice en vez del vencimiento', () => {
+    render(
+        <ScheduleTable
+            installments={[
+                row(1, { tone: 'soon', daysUntilDue: 1, inReview: money('$30,00', 3000) }),
+                row(2, { tone: 'pending', daysUntilDue: 16, inReview: money('$5,00', 500) }),
+            ]}
+        />,
+    );
+
+    expect(screen.getByText('En revisión')).toHaveClass('badge-info');
+    expect(screen.queryByText('Vence mañana')).not.toBeInTheDocument();
+    expect(screen.getByText(/en revisión/)).toHaveTextContent('en revisión $5,00');
+    expect(screen.getByText('Vence en 16 días')).toBeInTheDocument();
+});

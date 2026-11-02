@@ -48,18 +48,18 @@ it('sin alertas no pinta nada', () => {
     expect(container).toBeEmptyDOMElement();
 });
 
-it('nombra el negocio y enlaza la acción', () => {
+it('nombra el negocio, propone ponerse al día y enlaza la acción', () => {
     render(<PortalAlerts alerts={[OVERDUE]} />);
 
     const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('Ferretería Oriente: 1 cuota vencida por $30,00.');
-    expect(within(alert).getByRole('link', { name: 'Ver cómo pagar' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-1');
+    expect(alert).toHaveTextContent('Ferretería Oriente: 1 cuota vencida. Ponte al día con $30,00.');
+    expect(within(alert).getByRole('link', { name: 'Ponte al día' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-1');
 });
 
 it('la alerta consolidada de vencidas no nombra negocio', () => {
     render(<PortalAlerts alerts={[{ ...OVERDUE, count: 3, amount: money('$90,00'), businessName: null }]} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Entre tus negocios tienes 3 cuotas vencidas por $90,00.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Entre tus negocios tienes 3 cuotas vencidas. Ponte al día con $90,00.');
 });
 
 it('cuenta la ventana de la inicial en horas, y en minutos al final', () => {

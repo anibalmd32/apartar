@@ -13,9 +13,17 @@ const CHIPS: Record<InstallmentTone, string> = {
     pending: 'bg-surface-2 text-ink-2',
 };
 
+function reviewCovers(row: InstallmentRow): boolean {
+    return row.tone !== 'paid' && row.inReview != null && Number(row.inReview.cents) >= Number(row.pending.cents);
+}
+
 function dueText(row: InstallmentRow): string {
     if (row.tone === 'paid') {
         return 'Pagada';
+    }
+
+    if (reviewCovers(row)) {
+        return 'En revisión';
     }
 
     if (row.daysUntilDue < 0) {
@@ -48,7 +56,7 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
                             aria-hidden="true"
                             className={cn(
                                 'row-span-2 flex size-[34px] items-center justify-center rounded-full text-[13px] font-bold sm:row-span-1',
-                                CHIPS[row.tone],
+                                reviewCovers(row) ? 'bg-info-soft text-info' : CHIPS[row.tone],
                             )}
                         >
                             {row.tone === 'paid' ? <Icon icon={cilCheckAlt} size={14} /> : row.number}
@@ -61,12 +69,17 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
                                     pagado <MoneyLabel money={row.paid} />, falta <MoneyLabel money={row.pending} />
                                 </span>
                             ) : null}
+                            {row.inReview != null && row.tone !== 'paid' && !reviewCovers(row) ? (
+                                <span className="text-info text-xs">
+                                    en revisión <MoneyLabel money={row.inReview} />
+                                </span>
+                            ) : null}
                         </div>
                         <span className="row-span-2 text-right text-[15px] font-bold sm:row-span-1">
                             <MoneyLabel money={row.amount} stacked />
                         </span>
                         <Badge
-                            tone={INSTALLMENT_TONES[row.tone]}
+                            tone={reviewCovers(row) ? 'info' : INSTALLMENT_TONES[row.tone]}
                             className="col-start-2 row-start-2 justify-self-start sm:col-start-4 sm:row-start-1"
                         >
                             {dueText(row)}

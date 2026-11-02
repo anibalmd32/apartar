@@ -9,6 +9,7 @@ use App\Domain\Account\PortalContext;
 use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
 use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Settings\SettingKey;
@@ -306,6 +307,63 @@ final class PortalAlertsQueryTest extends TestCase
             ->where('alerts.0.businessName', 'Ferretería Oriente')
             ->where('alerts.1.kind', 'receipt_pending')
             ->where('alerts.1.count', 1));
+    }
+
+    public function test_un_comprobante_en_revision_que_cubre_la_cuota_que_vence_pronto_quita_ese_aviso(): void
+    {
+        $organization = $this->business('Ferretería Oriente');
+        $layaway = $this->scheduled($organization);
+        $customer = $this->customerOf($layaway);
+        CarbonImmutable::setTestNow('2026-09-23 12:00:00');
+        $this->receiptFor($layaway, ReceiptStatus::PendingReview, ['declared_amount' => '30.00', 'declared_currency' => Currency::USD]);
+
+        $this->assertSame(['receipt_pending'], $this->kinds($this->alertsFor($customer)));
+    }
+
+    public function test_un_comprobante_en_revision_que_cubre_parte_de_la_cuota_avisa_solo_lo_que_falta(): void
+    {
+        $organization = $this->business('Ferretería Oriente');
+        $layaway = $this->scheduled($organization);
+        $customer = $this->customerOf($layaway);
+        CarbonImmutable::setTestNow('2026-09-23 12:00:00');
+        $this->receiptFor($layaway, ReceiptStatus::PendingReview, ['declared_amount' => '10.00', 'declared_currency' => Currency::USD]);
+
+        $alerts = $this->alertsFor($customer);
+
+        $this->assertSame(['due_soon', 'receipt_pending'], $this->kinds($alerts));
+        $this->assertSame(2_000, $alerts[0]->amounts[0]['amount']->cents);
+    }
+
+    public function test_con_cuotas_vencidas_no_avisa_ademas_la_proxima_cuota_del_mismo_apartado(): void
+    {
+        $organization = $this->business('Ferretería Oriente');
+        $customer = $this->customerOf($this->scheduled($organization));
+
+        CarbonImmutable::setTestNow('2026-10-08 12:00:00');
+
+        $alerts = $this->alertsFor($customer);
+
+        $this->assertSame(['overdue'], $this->kinds($alerts));
+        $this->assertSame(3_000, $alerts[0]->amounts[0]['amount']->cents);
+    }
+
+    public function test_lo_que_esta_en_revision_se_descuenta_de_lo_vencido_y_si_lo_cubre_no_hay_aviso_de_vencidas(): void
+    {
+        $organization = $this->business('Ferretería Oriente');
+        $layaway = $this->scheduled($organization);
+        $customer = $this->customerOf($layaway);
+        CarbonImmutable::setTestNow('2026-10-12 12:00:00');
+        $this->receiptFor($layaway, ReceiptStatus::PendingReview, ['declared_amount' => '25.00', 'declared_currency' => Currency::USD]);
+
+        $alerts = $this->alertsFor($customer);
+
+        $this->assertSame(['overdue', 'receipt_pending'], $this->kinds($alerts));
+        $this->assertSame(2, $alerts[0]->count);
+        $this->assertSame(3_500, $alerts[0]->amounts[0]['amount']->cents);
+
+        $this->receiptFor($layaway, ReceiptStatus::PendingReview, ['declared_amount' => '35.00', 'declared_currency' => Currency::USD]);
+
+        $this->assertSame(['receipt_pending'], $this->kinds($this->alertsFor($customer)));
     }
 
     private function business(string $name): Organization

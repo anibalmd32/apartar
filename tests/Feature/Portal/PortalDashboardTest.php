@@ -7,6 +7,8 @@ namespace Tests\Feature\Portal;
 use App\Actions\Layaway\ActivateLayawayAction;
 use App\Domain\Layaway\LayawayStateMachine;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
+use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Customer;
 use App\Models\Layaway;
@@ -16,12 +18,13 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\CreatesLayaways;
+use Tests\Concerns\CreatesReceipts;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class PortalDashboardTest extends TestCase
 {
-    use CreatesLayaways, ReusesMigratedDatabase;
+    use CreatesLayaways, CreatesReceipts, ReusesMigratedDatabase;
 
     private Organization $organization;
 
@@ -82,6 +85,32 @@ final class PortalDashboardTest extends TestCase
             ->where('businesses.0.layaways.0.overdueDays', 2)
             ->where('businesses.0.layaways.1.overdueDays', null)
             ->has('businesses.0.layaways.0.imageUrl'));
+    }
+
+    public function test_cada_apartado_trae_la_sugerencia_de_pago_y_el_resumen_lo_que_falta_para_ponerse_al_dia(): void
+    {
+        $active = $this->ownLayaway(LayawayStatus::Active);
+
+        CarbonImmutable::setTestNow('2026-09-27 12:00:00');
+        $this->signIn();
+
+        $this->get(route('portal.dashboard'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('businesses.0.layaways.0.code', $active->code)
+            ->where('businesses.0.layaways.0.suggestion.kind', 'overdue')
+            ->where('businesses.0.layaways.0.suggestion.amount.cents', 3_000)
+            ->where('businesses.0.layaways.0.suggestion.covered', false)
+            ->where('businesses.0.totals.catchUp.cents', 3_000)
+            ->where('businesses.0.totals.paymentInReview', false)
+            ->where('businesses.0.totals.nextDueDate', '2026-09-25'));
+
+        $this->receiptFor($active, ReceiptStatus::PendingReview, ['declared_amount' => '30.00', 'declared_currency' => Currency::USD]);
+
+        $this->get(route('portal.dashboard'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('businesses.0.layaways.0.suggestion.covered', true)
+            ->where('businesses.0.layaways.0.suggestion.inReview.amount.usd', '$30,00')
+            ->where('businesses.0.totals.catchUp.cents', 0)
+            ->where('businesses.0.totals.paymentInReview', true)
+            ->where('businesses.0.totals.nextDueDate', null));
     }
 
     public function test_one_aggregated_query_per_organization(): void

@@ -56,6 +56,8 @@ final class LayawayShowController extends Controller
         $timezone = new DateTimeZone($organization->timezone);
         $calendar = DueCalendar::of($organization, $this->settings);
         $installments = $layaway->installments()->get();
+        $inReview = ReceiptsInReview::of($layaway, $organization, $this->rates);
+        $reviewed = $this->reviewedPerInstallment($installments->all(), $inReview->amount);
 
         return Inertia::render('portal/LayawayShow', [
             'business' => OrganizationBrand::of($organization, $this->limits->hasFeature(PlanFeature::Branding))->toArray(),
@@ -72,10 +74,13 @@ final class LayawayShowController extends Controller
                     : PaymentNotApplicableException::CLOSED_MESSAGE,
             ],
             'installments' => $installments
-                ->map(fn (Installment $installment): array => (new InstallmentRowResource($installment, $calendar))->resolve($request))
+                ->map(fn (Installment $installment): array => [
+                    ...(new InstallmentRowResource($installment, $calendar))->resolve($request),
+                    'inReview' => isset($reviewed[$installment->number]) ? $this->money($reviewed[$installment->number]) : null,
+                ])
                 ->values()
                 ->all(),
-            'nextPaymentSuggestion' => $this->suggestion($request, $layaway, $installments->all(), $calendar, $timezone),
+            'nextPaymentSuggestion' => $this->suggestion($request, $layaway, $installments->all(), $calendar, $timezone, $inReview),
             'catalogUrl' => $this->catalogUrl($layaway),
             'receiptUrl' => $layaway->status->acceptsPayments() && $organization->status->acceptsCustomerReceipts()
                 ? route('portal.receipts.create', ['code' => $layaway->code])
@@ -105,15 +110,36 @@ final class LayawayShowController extends Controller
      * @param  list<Installment>  $installments
      * @return array<string, mixed>|null
      */
-    private function suggestion(Request $request, Layaway $layaway, array $installments, DueCalendar $calendar, DateTimeZone $timezone): ?array
+    private function suggestion(Request $request, Layaway $layaway, array $installments, DueCalendar $calendar, DateTimeZone $timezone, ReceiptsInReview $inReview): ?array
     {
-        $inReview = ReceiptsInReview::of($layaway, $this->context->organization(), $this->rates);
         $next = NextPayment::for($layaway, $installments, $calendar->today, $inReview->amount);
 
         return $next === null ? null : [
             ...(new NextPaymentResource($next, $inReview, $timezone))->resolve($request),
             'payOff' => $this->money(new Money(max(0, $layaway->remaining_cents->cents - $inReview->amount->cents))),
         ];
+    }
+
+    /**
+     * @param  list<Installment>  $installments
+     * @return array<int, Money>
+     */
+    private function reviewedPerInstallment(array $installments, Money $inReview): array
+    {
+        $left = $inReview->cents;
+        $reviewed = [];
+
+        foreach ($installments as $installment) {
+            $pending = max(0, $installment->amount_cents->cents - $installment->paid_cents->cents);
+            $covers = min($pending, $left);
+
+            if ($covers > 0) {
+                $reviewed[$installment->number] = new Money($covers);
+                $left -= $covers;
+            }
+        }
+
+        return $reviewed;
     }
 
     private function statusMessage(Layaway $layaway): ?string

@@ -4,35 +4,69 @@ import { PrimaryMoney } from '@/features/account/components/PrimaryMoney';
 import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type LayawaySummary } from '@/types/portal';
-import { cilBasket, cilCalendar } from '@coreui/icons';
+import { cilBasket, cilCalendar, cilClock } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 
 function plural(count: number, one: string, many: string): string {
     return count === 1 ? one : many;
 }
 
-function nextStep(layaway: LayawaySummary): { text: string; urgent: boolean } | null {
+type StepTone = 'urgent' | 'review' | 'calm';
+
+interface Step {
+    text: string;
+    detail?: string;
+    tone: StepTone;
+}
+
+const STEP_TONES: Record<StepTone, string> = {
+    urgent: 'bg-error-soft text-error',
+    review: 'bg-info-soft text-base-content',
+    calm: 'bg-surface-2 text-ink-2',
+};
+
+function inReviewDetail(inReview: NonNullable<LayawaySummary['suggestion']>['inReview']): string | undefined {
+    return inReview !== null ? `${inReview.amount.usd} en revisión` : undefined;
+}
+
+function nextStep(layaway: LayawaySummary): Step | null {
+    const suggestion = layaway.suggestion ?? null;
+
     if (layaway.isTerminal) {
         return null;
+    }
+
+    if (suggestion?.covered && suggestion.inReview !== null) {
+        const on = suggestion.inReview.submittedOn !== null ? ` el ${suggestion.inReview.submittedOn}` : '';
+
+        return { text: 'Tu pago está en revisión', detail: `Enviaste ${suggestion.inReview.amount.usd}${on}`, tone: 'review' };
     }
 
     if (layaway.overdueInstallments > 0) {
         const n = layaway.overdueInstallments;
         const days = layaway.overdueDays;
-        const since = days ? ` · venció hace ${days} ${plural(days, 'día', 'días')}` : '';
+        const overdue = `${n} ${plural(n, 'cuota vencida', 'cuotas vencidas')}${days ? ` · venció hace ${days} ${plural(days, 'día', 'días')}` : ''}`;
 
-        return { text: `${n} ${plural(n, 'cuota vencida', 'cuotas vencidas')}${since}`, urgent: true };
+        return suggestion?.kind === 'overdue'
+            ? { text: `Ponte al día: ${suggestion.amount.usd}`, detail: overdue, tone: 'urgent' }
+            : { text: overdue, tone: 'urgent' };
     }
 
     if (layaway.status === 'pending_down_payment') {
-        return { text: 'Paga la inicial para activarlo', urgent: false };
+        return { text: 'Paga la inicial para activarlo', detail: inReviewDetail(suggestion?.inReview ?? null), tone: 'calm' };
     }
 
     if (layaway.nextDueDateLabel === null) {
         return null;
     }
 
-    return { text: `Próxima: ${layaway.nextDueDateLabel}${layaway.nextAmount ? ` · ${layaway.nextAmount.usd}` : ''}`, urgent: false };
+    const amount = suggestion?.kind === 'installment' ? suggestion.amount : layaway.nextAmount;
+
+    return {
+        text: `Próxima: ${layaway.nextDueDateLabel}${amount ? ` · ${amount.usd}` : ''}`,
+        detail: inReviewDetail(suggestion?.inReview ?? null),
+        tone: 'calm',
+    };
 }
 
 export function PortalLayawayCard({ layaway }: { layaway: LayawaySummary }) {
@@ -84,15 +118,19 @@ export function PortalLayawayCard({ layaway }: { layaway: LayawaySummary }) {
 
                 {step !== null ? (
                     <span
-                        className={cn(
-                            'flex items-center gap-2 rounded-[10px] py-2.5 pr-2.5 pl-3 text-[13px] font-semibold',
-                            step.urgent ? 'bg-error-soft text-error' : 'bg-surface-2 text-ink-2',
-                        )}
+                        className={cn('flex items-center gap-2 rounded-[10px] py-2.5 pr-2.5 pl-3 text-[13px] font-semibold', STEP_TONES[step.tone])}
                     >
-                        <Icon icon={cilCalendar} size={14} />
-                        <span className="min-w-0 flex-1">{step.text}</span>
-                        <span aria-hidden="true" className={cn('btn btn-sm', step.urgent ? 'btn-primary' : 'btn-secondary')}>
-                            {step.urgent ? 'Pagar' : 'Ver'}
+                        <Icon
+                            icon={step.tone === 'review' ? cilClock : cilCalendar}
+                            size={14}
+                            className={cn(step.tone === 'review' && 'text-info')}
+                        />
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span>{step.text}</span>
+                            {step.detail !== undefined ? <span className="text-xs font-normal opacity-80">{step.detail}</span> : null}
+                        </span>
+                        <span aria-hidden="true" className={cn('btn btn-sm', step.tone === 'urgent' ? 'btn-primary' : 'btn-secondary')}>
+                            {step.tone === 'urgent' ? 'Pagar' : 'Ver'}
                         </span>
                     </span>
                 ) : null}

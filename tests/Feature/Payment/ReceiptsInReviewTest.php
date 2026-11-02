@@ -79,6 +79,33 @@ final class ReceiptsInReviewTest extends TestCase
         $this->assertSame('2026-11-01 21:44', $inReview->lastSubmittedAt?->format('Y-m-d H:i'));
     }
 
+    public function test_de_varios_apartados_a_la_vez_guarda_los_bolivares_declarados_solo_si_todo_fue_en_bolivares(): void
+    {
+        ExchangeRate::factory()->create(['rate' => '40.00000000', 'published_at' => CarbonImmutable::parse('2026-10-30 09:00:00')]);
+        $mixed = $this->layawayIn($this->organization);
+        $empty = $this->layawayIn($this->organization);
+
+        foreach (['400.00', '200.00'] as $amount) {
+            $this->receiptFor($this->layaway, ReceiptStatus::PendingReview, ['declared_amount' => $amount, 'declared_currency' => Currency::VES, 'paid_at' => '2026-10-30']);
+        }
+
+        $this->receiptFor($mixed, ReceiptStatus::PendingReview, ['declared_amount' => '400.00', 'declared_currency' => Currency::VES, 'paid_at' => '2026-10-30']);
+        $this->receiptFor($mixed, ReceiptStatus::PendingReview, ['declared_amount' => '5.00', 'declared_currency' => Currency::USD]);
+
+        $all = $this->withinOrganization($this->organization, fn (): array => ReceiptsInReview::ofLayaways(
+            [$this->layaway, $mixed, $empty],
+            $this->organization,
+            app(ExchangeRateService::class),
+        ));
+
+        $this->assertSame(1_500, $all[(int) $this->layaway->getKey()]->amount->cents);
+        $this->assertSame(60_000, $all[(int) $this->layaway->getKey()]->declaredVes?->cents);
+        $this->assertSame(1_500, $all[(int) $mixed->getKey()]->amount->cents);
+        $this->assertNull($all[(int) $mixed->getKey()]->declaredVes);
+        $this->assertFalse($all[(int) $empty->getKey()]->any());
+        $this->assertNull($all[(int) $empty->getKey()]->declaredVes);
+    }
+
     private function inReview(): ReceiptsInReview
     {
         return $this->withinOrganization($this->organization, fn (): ReceiptsInReview => ReceiptsInReview::of(

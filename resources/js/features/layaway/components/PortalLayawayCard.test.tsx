@@ -55,3 +55,65 @@ it('en mora dice desde hace cuántos días', () => {
 
     expect(screen.getByText('1 cuota vencida · venció hace 7 días')).toBeInTheDocument();
 });
+
+function suggestion(overrides: Partial<NonNullable<LayawaySummary['suggestion']>> = {}): NonNullable<LayawaySummary['suggestion']> {
+    return {
+        kind: 'installment',
+        installmentNumber: 1,
+        overdueInstallments: 0,
+        amount: money('$8,00'),
+        started: false,
+        covered: false,
+        alternative: null,
+        inReview: null,
+        ...overrides,
+    };
+}
+
+it('si lo que envió cubre la cuota, dice que el pago está en revisión en vez de pedirla', () => {
+    const inReview = { amount: money('$8,00'), count: 1, submittedOn: '1 nov' };
+    render(
+        <ul>
+            <PortalLayawayCard
+                layaway={summary({ nextAmount: money('$8,00'), suggestion: suggestion({ amount: money('$0,00'), covered: true, inReview }) })}
+            />
+        </ul>,
+    );
+
+    expect(screen.getByText('Tu pago está en revisión')).toBeInTheDocument();
+    expect(screen.getByText('Enviaste $8,00 el 1 nov')).toBeInTheDocument();
+    expect(screen.queryByText(/Próxima:/)).not.toBeInTheDocument();
+});
+
+it('con cuotas vencidas propone ponerse al día con el total', () => {
+    render(
+        <ul>
+            <PortalLayawayCard
+                layaway={summary({
+                    status: 'overdue',
+                    statusLabel: 'En mora',
+                    overdueInstallments: 2,
+                    overdueDays: 12,
+                    suggestion: suggestion({ kind: 'overdue', installmentNumber: null, overdueInstallments: 2, amount: money('$45,00') }),
+                })}
+            />
+        </ul>,
+    );
+
+    expect(screen.getByText('Ponte al día: $45,00')).toBeInTheDocument();
+    expect(screen.getByText('2 cuotas vencidas · venció hace 12 días')).toBeInTheDocument();
+});
+
+it('la próxima cuota descuenta lo que está en revisión', () => {
+    const inReview = { amount: money('$3,00'), count: 1, submittedOn: '1 nov' };
+    render(
+        <ul>
+            <PortalLayawayCard
+                layaway={summary({ nextAmount: money('$8,00'), suggestion: suggestion({ amount: money('$5,00'), started: true, inReview }) })}
+            />
+        </ul>,
+    );
+
+    expect(screen.getByText('Próxima: 28 de octubre · $5,00')).toBeInTheDocument();
+    expect(screen.getByText('$3,00 en revisión')).toBeInTheDocument();
+});

@@ -6,7 +6,10 @@ namespace App\Queries;
 
 use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Layaway\NextPayment;
+use App\Domain\Layaway\NextPaymentKind;
 use App\Domain\Money\Money;
+use App\Domain\Payment\ReceiptsInReview;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Layaway;
 use App\Models\Organization;
@@ -24,8 +27,9 @@ final readonly class BusinessBalance
 
     /**
      * @param  list<Layaway>  $layaways
+     * @param  array<int, array{next: ?NextPayment, review: ReceiptsInReview}>  $suggestions
      */
-    public function __construct(public Organization $organization, array $layaways, public DueCalendar $calendar)
+    public function __construct(public Organization $organization, array $layaways, public DueCalendar $calendar, public array $suggestions = [])
     {
         $active = [];
         $history = [];
@@ -92,12 +96,13 @@ final readonly class BusinessBalance
         foreach ($this->active as $layaway) {
             $date = $layaway->getAttribute('soon_due_date');
 
-            if (! is_string($date)) {
+            $amount = $this->soonAmountOf($layaway);
+
+            if (! is_string($date) || $amount === null) {
                 continue;
             }
 
             $day = $this->calendar->day(CarbonImmutable::parse($date));
-            $amount = new Money((int) $layaway->getAttribute('soon_pending_cents'));
 
             if ($soon === null || $day->lessThan($soon['date'])) {
                 $soon = ['date' => $day, 'amount' => $amount, 'layaway' => $layaway];
@@ -107,6 +112,59 @@ final readonly class BusinessBalance
         }
 
         return $soon;
+    }
+
+    public function suggestionFor(Layaway $layaway): ?NextPayment
+    {
+        return $this->suggestions[(int) $layaway->getKey()]['next'] ?? null;
+    }
+
+    public function reviewFor(Layaway $layaway): ?ReceiptsInReview
+    {
+        return $this->suggestions[(int) $layaway->getKey()]['review'] ?? null;
+    }
+
+    public function nextPaymentDueDate(): ?CarbonInterface
+    {
+        $dates = array_values(array_filter(array_map(fn (Layaway $layaway): ?CarbonInterface => $this->paymentDueDateOf($layaway), $this->active)));
+        usort($dates, fn (CarbonInterface $a, CarbonInterface $b): int => $a->getTimestamp() <=> $b->getTimestamp());
+
+        return $dates[0] ?? null;
+    }
+
+    public function paymentInReview(): bool
+    {
+        foreach ($this->active as $layaway) {
+            if ($this->suggestionFor($layaway)?->covered() === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function catchUp(): Money
+    {
+        return $this->sum(fn (Layaway $layaway): Money => $this->catchUpOf($layaway));
+    }
+
+    public function catchUpInstallments(): int
+    {
+        return (int) array_sum(array_map(
+            fn (Layaway $layaway): int => $this->catchUpOf($layaway)->cents > 0 ? self::overdueCountOf($layaway) : 0,
+            $this->active,
+        ));
+    }
+
+    public function firstCatchUpLayaway(): ?Layaway
+    {
+        foreach ($this->active as $layaway) {
+            if ($this->catchUpOf($layaway)->cents > 0) {
+                return $layaway;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -141,6 +199,55 @@ final readonly class BusinessBalance
     public static function overdueCountOf(Layaway $layaway): int
     {
         return (int) $layaway->getAttribute('overdue_installments_count');
+    }
+
+    private function catchUpOf(Layaway $layaway): Money
+    {
+        if (self::overdueCountOf($layaway) === 0) {
+            return new Money(0);
+        }
+
+        if (! array_key_exists((int) $layaway->getKey(), $this->suggestions)) {
+            return new Money((int) $layaway->getAttribute('overdue_pending_cents'));
+        }
+
+        $next = $this->suggestionFor($layaway);
+
+        return $next?->kind === NextPaymentKind::Overdue ? $next->amount : new Money(0);
+    }
+
+    private function paymentDueDateOf(Layaway $layaway): ?CarbonInterface
+    {
+        if (! array_key_exists((int) $layaway->getKey(), $this->suggestions)) {
+            return $layaway->next_due_date;
+        }
+
+        $next = $this->suggestionFor($layaway);
+
+        if ($next === null || $next->covered()) {
+            return null;
+        }
+
+        if ($next->kind === NextPaymentKind::Installment) {
+            return $layaway->installments->firstWhere('number', $next->installmentNumber)?->due_date;
+        }
+
+        return $next->kind === NextPaymentKind::Overdue ? $layaway->next_due_date : null;
+    }
+
+    private function soonAmountOf(Layaway $layaway): ?Money
+    {
+        if (self::overdueCountOf($layaway) > 0) {
+            return null;
+        }
+
+        if (! array_key_exists((int) $layaway->getKey(), $this->suggestions)) {
+            return new Money((int) $layaway->getAttribute('soon_pending_cents'));
+        }
+
+        $next = $this->suggestionFor($layaway);
+
+        return $next?->kind === NextPaymentKind::Installment && ! $next->covered() ? $next->amount : null;
     }
 
     /**
