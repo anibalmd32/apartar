@@ -26,7 +26,7 @@ export function ThreadContextPanel({ context, className }: { context: ThreadCont
 
     return (
         <aside className={cn('bg-surface-2 flex flex-col gap-3 p-4', className)} aria-label="Contexto del cliente">
-            <h2 className="text-eyebrow text-ink-3">Contexto del cliente</h2>
+            <h2 className="text-label text-ink-3">Contexto del cliente</h2>
             <dl className="flex flex-col gap-3 text-[13px]">
                 {rows.map((row) => (
                     <div key={row.label} className="flex items-baseline justify-between gap-3">
@@ -37,7 +37,7 @@ export function ThreadContextPanel({ context, className }: { context: ThreadCont
             </dl>
             {context.layaways !== undefined && context.layaways.length > 0 ? (
                 <>
-                    <h3 className="text-eyebrow text-ink-3 mt-2">Apartados</h3>
+                    <h3 className="text-label text-ink-3 mt-2">Apartados</h3>
                     <ul className="flex flex-col gap-2">
                         {context.layaways.map((layaway) => (
                             <li key={layaway.code}>

@@ -14,7 +14,7 @@ function frequencyLabel(days: number): string {
 export function PriceTag({ product }: { product: PriceOffer }) {
     return (
         <div className="flex items-start gap-2.5">
-            <MoneyLabel money={product.price} stacked className="text-[34px] leading-[1.2] font-extrabold tracking-[-1px] @3xl:text-[40px]" />
+            <MoneyLabel money={product.price} stacked className="tracking-heading text-[34px] leading-[1.2] font-extrabold @3xl:text-[40px]" />
             {product.compareAtPrice !== null ? (
                 <s className="text-ink-3 mt-3 text-lg @3xl:mt-4">
                     <span className="sr-only">Antes </span>

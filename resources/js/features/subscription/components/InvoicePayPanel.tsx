@@ -26,7 +26,7 @@ export function InvoicePayPanel({
 
             {platformAccounts.length > 0 ? (
                 <div className="bg-surface-2 flex flex-col gap-2 rounded-xl p-3.5">
-                    <p className="text-eyebrow text-ink-3">Cuentas de Apartar</p>
+                    <p className="text-label text-ink-3">Cuentas de Apartar</p>
                     <ul className="flex flex-col gap-2">
                         {platformAccounts.map((account) => (
                             <li key={account.method} className="flex items-center justify-between gap-2">

@@ -43,7 +43,7 @@ export function CatalogHero({ catalog, stats, action }: CatalogHeroProps) {
                     Catálogo
                 </span>
 
-                <h1 className="text-[30px] leading-[1.4] font-extrabold tracking-[-1px] lg:text-[40px] lg:tracking-[-1.5px]">{catalog.name}</h1>
+                <h1 className="tracking-heading text-[30px] leading-[1.4] font-extrabold lg:text-[40px]">{catalog.name}</h1>
 
                 {catalog.description !== null ? <p className="text-ink-2 text-[15px] leading-normal">{catalog.description}</p> : null}
 

@@ -52,7 +52,7 @@ export default function Dashboard({ metrics, links, pendingReceipts, suspension 
                     ids={layout.cards}
                     labelOf={(id) => CARD_LABELS[id]}
                     onChange={(ids) => save({ ...layout, cards: ids })}
-                    className={cn('grid grid-cols-2 gap-2.5 lg:gap-4', !split && 'lg:grid-cols-3')}
+                    className={cn('stat-stack lg:grid lg:grid-cols-2 lg:gap-4', !split && 'lg:grid-cols-3')}
                 >
                     {layout.cards.map((id) => (
                         <SortableTile key={id} id={id} label={CARD_LABELS[id]} editing={editing}>

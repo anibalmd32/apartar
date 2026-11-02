@@ -82,7 +82,7 @@ export function ProductDetailView({ product, offer, reserve, children }: Product
                         <p className="text-ink-3 text-[13px]">
                             {product.categoryName !== '' ? `${product.categoryName} · ` : null}SKU {product.sku}
                         </p>
-                        <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] @3xl:text-[34px]">{product.name}</h1>
+                        <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold @3xl:text-[34px]">{product.name}</h1>
                     </header>
 
                     {offer !== null ? (

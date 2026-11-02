@@ -81,7 +81,7 @@ export function PlatformNav() {
         <nav aria-label="Plataforma" className="flex flex-col gap-5">
             <NavList sections={PLATFORM_SECTIONS} counts={counts} current={current} />
             <div className="flex flex-col gap-1.5">
-                <p className="text-ink-3 px-3 text-[11px] font-bold tracking-[0.06em] uppercase">Soporte</p>
+                <p className="text-label text-ink-3 px-3">Soporte</p>
                 <NavList sections={PLATFORM_SUPPORT_SECTIONS} counts={counts} current={current} />
             </div>
         </nav>

@@ -44,7 +44,7 @@ export function OrganizationSwitcher({ name, detail, organizations, foundUrl = n
                 anchor="bottom start"
                 className="bg-base-100 border-line shadow-pop z-50 mt-2 w-[228px] rounded-xl border p-1.5 focus:outline-none"
             >
-                {organizations.length > 0 ? <p className="text-eyebrow text-ink-3 px-2.5 pt-2 pb-1">Tus negocios</p> : null}
+                {organizations.length > 0 ? <p className="text-label text-ink-3 px-2.5 pt-2 pb-1">Tus negocios</p> : null}
                 {organizations.map((organization) => (
                     <MenuItem key={organization.slug}>
                         <button

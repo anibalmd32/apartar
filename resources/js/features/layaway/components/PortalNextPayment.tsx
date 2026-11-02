@@ -26,7 +26,7 @@ export function PortalNextPayment({ suggestion, receiptUrl, className }: PortalN
                             : 'La inicial: '
                         : `La cuota ${suggestion.installmentNumber}: `}
                 </span>
-                <MoneyLabel money={suggestion.amount} className="text-[30px] leading-tight font-extrabold tracking-[-0.6px]" stacked />
+                <MoneyLabel money={suggestion.amount} className="tracking-heading text-[30px] leading-tight font-extrabold" stacked />
             </p>
 
             {receiptUrl !== null ? (

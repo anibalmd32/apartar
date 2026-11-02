@@ -12,14 +12,14 @@ export default function OrganizationStorefront({ business, showsPlatformBadge, c
 
     return (
         <CatalogLayout title={business.name} business={business} showsPlatformBadge={showsPlatformBadge}>
-            <section className="bg-accent/12 dark:bg-accent/20 flex items-center gap-4 rounded-3xl p-5 lg:gap-5 lg:px-10 lg:py-9">
+            <section className="lg:bg-accent/12 lg:dark:bg-accent/20 flex items-center gap-4 lg:gap-5 lg:rounded-3xl lg:px-10 lg:py-9">
                 {branded ? (
-                    <img src={business.logoUrl ?? ''} alt="" className="size-16 shrink-0 rounded-full object-contain lg:size-[88px]" />
+                    <img src={business.logoUrl ?? ''} alt="" className="size-[88px] shrink-0 rounded-full object-contain max-lg:hidden" />
                 ) : (
-                    <Avatar name={business.name} tone="accent" size={88} className="max-lg:size-16! max-lg:text-2xl!" />
+                    <Avatar name={business.name} tone="accent" size={88} className="max-lg:hidden" />
                 )}
                 <div className="flex min-w-0 flex-col gap-2">
-                    <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-4xl">{business.name}</h1>
+                    <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold lg:text-4xl">{business.name}</h1>
                     {profile?.description ? <p className="text-ink-2 text-[15px] leading-normal">{profile.description}</p> : null}
                     {profile?.address || profile?.phone ? (
                         <p className="text-ink-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">

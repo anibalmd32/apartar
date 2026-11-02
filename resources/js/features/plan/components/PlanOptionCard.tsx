@@ -50,7 +50,7 @@ export function PlanOptionCard({
             </header>
 
             <p className="flex items-baseline gap-1">
-                <span className="text-[34px] leading-none font-extrabold tracking-[-1px]">{formatPrice(option.priceCents)}</span>
+                <span className="tracking-heading text-[34px] leading-none font-extrabold">{formatPrice(option.priceCents)}</span>
                 <span className="text-ink-3 text-[13px]">/ mes</span>
             </p>
 

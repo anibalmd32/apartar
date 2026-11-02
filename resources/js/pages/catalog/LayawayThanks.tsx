@@ -23,14 +23,14 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
             <div className="bg-base-100 border-line shadow-card mx-auto flex w-full max-w-[640px] flex-col gap-[18px] rounded-2xl border p-5 lg:p-10">
                 <header className="flex flex-col items-center gap-2 text-center">
                     <IconChip icon={cilCheckCircle} tone="success" size={64} className="mb-2 rounded-2xl" />
-                    <h1 className="text-[24px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-[30px]">¡Listo, ya está apartado!</h1>
+                    <h1 className="tracking-heading text-[24px] leading-[1.3] font-extrabold lg:text-[30px]">¡Listo, ya está apartado!</h1>
                     <p className="text-ink-2 text-sm">
                         {layaway.productName} · {layaway.plan.quantity === 1 ? '1 unidad' : `${layaway.plan.quantity} unidades`}
                     </p>
                 </header>
 
                 <div className="bg-primary-soft flex flex-col items-center gap-1 rounded-2xl p-5 text-center">
-                    <p className="text-eyebrow text-primary-ink">Tu código de apartado</p>
+                    <p className="text-label text-ink-3">Tu código de apartado</p>
                     <div className="flex items-center gap-1.5">
                         <p
                             className="text-[26px] font-extrabold tracking-[2px] select-all lg:text-[32px]"

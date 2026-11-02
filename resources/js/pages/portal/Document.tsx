@@ -18,7 +18,7 @@ export default function Document({ mode, customerName, businessName, typed, stor
         <PortalLayout title="Tu cédula" businessName={businessName} customerName={customerName}>
             <div className="flex w-full max-w-[560px] flex-col gap-4 lg:gap-[18px]">
                 <header className="flex flex-col gap-1.5">
-                    <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Antes de seguir, tu cédula</h1>
+                    <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[30px]">Antes de seguir, tu cédula</h1>
                     <p className="text-ink-2 text-[15px] leading-normal">
                         {mode === 'account'
                             ? 'Escríbela una sola vez. Con ella te avisamos si algún negocio tiene apartados a tu nombre que aún no están en tu cuenta; para agregarlos te pediremos el código de uno de ellos.'

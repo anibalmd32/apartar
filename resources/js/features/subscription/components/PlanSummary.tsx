@@ -55,7 +55,7 @@ export function PlanSummary({
             <IconChip icon={cilDiamond} tone="primary" size={48} className="rounded-xl" />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <p className="flex flex-wrap items-center gap-2">
-                    <span className="text-xl font-bold tracking-[-0.3px]">Plan {state.planName}</span>
+                    <span className="text-xl font-bold">Plan {state.planName}</span>
                     <Badge tone={STATUS_TONES[state.status]}>{STATUS_LABELS[state.status]}</Badge>
                 </p>
                 {period !== null ? (

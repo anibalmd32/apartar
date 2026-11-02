@@ -44,7 +44,7 @@ export function BackofficeNav({ sections, capabilities, badges = {} }: Backoffic
         <nav aria-label="Secciones del backoffice" className="flex flex-col gap-5">
             {groups.map((group) => (
                 <div key={group.label ?? 'principal'} className="flex flex-col gap-0.5">
-                    {group.label ? <p className="text-eyebrow text-ink-3 px-3 pb-1.5">{group.label}</p> : null}
+                    {group.label ? <p className="text-label text-ink-3 px-3 pb-1.5">{group.label}</p> : null}
                     <ul className="flex flex-col gap-0.5">
                         {group.items.map((section) => {
                             const active = isCurrentSection(section.href, current);

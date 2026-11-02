@@ -64,7 +64,7 @@ export function UpgradeModal({
 
             {invoice !== null ? (
                 <section aria-label="Factura que se emite hoy" className="bg-surface-2 flex flex-col gap-2 rounded-xl p-4 text-[13px]">
-                    <h3 className="text-eyebrow text-ink-3">Factura que se emite hoy</h3>
+                    <h3 className="text-label text-ink-3">Factura que se emite hoy</h3>
                     <dl className="flex flex-col gap-1.5">
                         <div className="flex justify-between gap-3">
                             <dt className="text-ink-2">Periodo</dt>

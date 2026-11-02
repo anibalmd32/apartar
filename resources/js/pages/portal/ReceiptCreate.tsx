@@ -41,7 +41,7 @@ export default function ReceiptCreate({
                 <BackLink href={backUrl}>Volver al apartado</BackLink>
 
                 <header className="flex flex-col gap-1">
-                    <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Subir comprobante</h1>
+                    <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[30px]">Subir comprobante</h1>
                     <p className="text-ink-2 text-sm">
                         Sube la captura de tu pago a {business.name}. Lo revisarán y te descontarán lo que corresponda.
                     </p>

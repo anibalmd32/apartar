@@ -166,3 +166,18 @@ it('al organizar cada sección y cada tarjeta tiene su asa', () => {
     expect(screen.getAllByRole('button', { name: /^Mover/ })).toHaveLength(8);
     expect(screen.getByRole('button', { name: /Listo/ })).toHaveAttribute('aria-pressed', 'true');
 });
+
+it('en el celular la primera cifra queda destacada y las demás forman una lista densa', () => {
+    render(<Dashboard {...dashboardProps()} />);
+
+    const grid = screen.getByRole('region', { name: 'Cifras del día' }).firstElementChild!;
+    const cards = grid.querySelectorAll('.stat-card');
+
+    expect(grid).toHaveClass('stat-stack', 'lg:grid');
+    expect(grid).not.toHaveClass('grid-cols-2');
+    expect(cards).toHaveLength(6);
+    cards.forEach((card) => {
+        expect(card.querySelector('.stat-card-head')).not.toBeNull();
+        expect(card.querySelector('.stat-card-value')).not.toBeNull();
+    });
+});

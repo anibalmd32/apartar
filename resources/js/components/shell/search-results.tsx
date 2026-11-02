@@ -19,7 +19,7 @@ export function SearchResults({ term, groups, active, onHover, onPick, itemClass
 
             {groups.map((group) => (
                 <section key={group.key} aria-label={group.label} className="flex flex-col gap-1">
-                    <h3 className="text-eyebrow text-ink-3">{group.label}</h3>
+                    <h3 className="text-label text-ink-3">{group.label}</h3>
                     <ul className="flex flex-col">
                         {group.items.map((item) => {
                             index += 1;

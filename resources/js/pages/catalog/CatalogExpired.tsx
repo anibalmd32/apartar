@@ -28,7 +28,7 @@ export default function CatalogExpired({ catalogName, businessName, storefrontUr
                     >
                         <Icon icon={cilCalendar} size={48} />
                     </span>
-                    <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-[34px]">
+                    <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold lg:text-[34px]">
                         {withdrawn ? 'Este catálogo ya no está disponible' : 'Esta campaña ya terminó'}
                     </h1>
                     <p className="text-ink-2 text-[15px] leading-relaxed">

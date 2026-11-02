@@ -55,7 +55,7 @@ export function AttentionBell({ pendingReceipts, className, plain = false }: Att
             </MenuButton>
 
             <MenuItems anchor="bottom end" className="bg-base-100 border-line shadow-pop z-50 mt-2 w-72 rounded-xl border p-1.5 focus:outline-none">
-                <p className="text-eyebrow text-ink-3 px-2.5 pt-2 pb-1">Para atender</p>
+                <p className="text-label text-ink-3 px-2.5 pt-2 pb-1">Para atender</p>
                 {pastDue ? (
                     <MenuItem>
                         <Link href={pastDue.invoicesUrl ?? bo('/suscripcion')} className={menuItemClass}>

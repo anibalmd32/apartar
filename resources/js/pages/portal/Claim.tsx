@@ -32,7 +32,7 @@ export default function Claim({ storeUrl, document }: PortalClaimProps) {
                 <BackLink href={route('portal.dashboard')}>Volver a mis apartados</BackLink>
 
                 <header className="flex flex-col gap-1.5">
-                    <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Agrega un apartado a tu cuenta</h1>
+                    <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[30px]">Agrega un apartado a tu cuenta</h1>
                     <p className="text-ink-2 text-[15px] leading-normal">
                         Si ya habías apartado en algún negocio sin tu cuenta, escribe tu cédula y el código de ese apartado para verlo junto a los
                         demás.

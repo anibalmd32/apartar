@@ -12,7 +12,7 @@ export default function ChatIndex({ threads }: PortalChatIndexProps) {
 
     return (
         <PortalLayout title="Chat" businessName="Chat" customerName={auth?.portal?.fullName ?? ''}>
-            <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Tus conversaciones</h1>
+            <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[30px]">Tus conversaciones</h1>
 
             {threads.length === 0 ? (
                 <p className="border-line bg-base-100 text-ink-2 rounded-2xl border p-6 text-sm">

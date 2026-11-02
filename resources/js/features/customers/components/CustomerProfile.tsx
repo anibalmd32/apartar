@@ -59,13 +59,7 @@ function Figure({ label, children, tone }: { label: string; children: ReactNode;
     return (
         <div className="bg-base-100 border-line shadow-card flex flex-col gap-1 rounded-2xl border px-4 py-3.5">
             <dt className="text-ink-3 text-xs">{label}</dt>
-            <dd
-                className={cn(
-                    'text-xl leading-tight font-bold tracking-[-0.4px]',
-                    tone === 'success' && 'text-success',
-                    tone === 'error' && 'text-error',
-                )}
-            >
+            <dd className={cn('text-xl leading-tight font-bold', tone === 'success' && 'text-success', tone === 'error' && 'text-error')}>
                 {children}
             </dd>
         </div>

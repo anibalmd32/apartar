@@ -68,7 +68,7 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
 
             {plan.installments.length > 0 ? (
                 <div className="flex flex-col gap-1">
-                    <h3 className="text-eyebrow text-ink-3">Tus cuotas</h3>
+                    <h3 className="text-label text-ink-3">Tus cuotas</h3>
                     <ol className="flex flex-col">
                         {plan.installments.map((installment) => (
                             <li key={installment.number} className="flex items-baseline justify-between gap-4 py-1.5 text-[13px]">

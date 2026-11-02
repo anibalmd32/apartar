@@ -45,7 +45,7 @@ export function ProductGridCard({ product }: { product: ProductCard }) {
                     <h2 className="line-clamp-2 text-sm leading-snug font-semibold">{product.name}</h2>
 
                     <div className="flex items-start gap-1.5">
-                        <MoneyLabel money={product.price} stacked className="text-[17px] leading-6 font-extrabold tracking-[-0.3px]" />
+                        <MoneyLabel money={product.price} stacked className="text-[17px] leading-6 font-extrabold" />
                         {product.compareAtPrice !== null ? (
                             <s className="text-ink-3 mt-1 text-xs">
                                 <span className="sr-only">Antes </span>

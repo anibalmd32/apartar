@@ -41,7 +41,7 @@ export default function AuditIndex({ rows: entries, meta, events, actors, timezo
                 ) : (
                     byDay(entries, timezone).map(([day, items]) => (
                         <div key={day} className="flex flex-col gap-2">
-                            <h2 className="text-eyebrow text-ink-3 mt-2">{day}</h2>
+                            <h2 className="text-label text-ink-3 mt-2">{day}</h2>
                             <ul className="bg-base-100 border-line shadow-card divide-line flex flex-col divide-y rounded-2xl border p-5">
                                 {items.map((entry) => (
                                     <AuditEntryRow key={entry.id} entry={entry} timezone={timezone} area={areaOf(events, entry.event)} />

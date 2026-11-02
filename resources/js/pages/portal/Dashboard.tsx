@@ -34,7 +34,7 @@ export default function Dashboard({
 
     return (
         <PortalLayout title={`Mis apartados · ${businessName}`} businessName={businessName} customerName={session.displayName}>
-            <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.5px] lg:text-[32px]">
+            <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[32px]">
                 Hola, {firstName} <span aria-hidden="true">👋</span>
             </h1>
 

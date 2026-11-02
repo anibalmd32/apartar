@@ -28,7 +28,7 @@ export default function Pricing({ plans }: PricingProps) {
         <MarketingLayout title="Planes y precios">
             <header className="flex flex-col items-center gap-3.5 px-4 pt-8 pb-8 text-center lg:px-20 lg:pt-16 lg:pb-10">
                 <span className="bg-primary-soft text-primary-ink rounded-full px-2.5 py-[3px] text-xs font-semibold">Sin tarjeta internacional</span>
-                <h1 className="text-[34px] leading-tight font-extrabold tracking-[-0.04em] lg:text-5xl">Precios simples para crecer</h1>
+                <h1 className="tracking-heading text-[34px] leading-tight font-extrabold lg:text-5xl">Precios simples para crecer</h1>
                 <p className="text-ink-2 max-w-[640px] text-base leading-normal lg:text-lg">
                     {paid
                         ? 'Empieza gratis. Cuando tu negocio crezca, mejora tu plan y paga en bolívares o dólares.'
@@ -44,7 +44,7 @@ export default function Pricing({ plans }: PricingProps) {
 
             <section className="bg-base-100 px-4 pt-14 pb-20">
                 <div className="mx-auto flex max-w-[880px] flex-col gap-3">
-                    <h2 className="mb-1 text-[26px] font-extrabold tracking-[-0.03em] lg:text-[32px]">Preguntas frecuentes</h2>
+                    <h2 className="tracking-heading mb-1 text-[26px] font-extrabold lg:text-[32px]">Preguntas frecuentes</h2>
                     {faqs.map((faq, index) => (
                         <details key={faq.question} className="group bg-base-200 rounded-[14px] px-5 py-[18px]" open={index === 0}>
                             <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 text-base font-bold [&::-webkit-details-marker]:hidden">

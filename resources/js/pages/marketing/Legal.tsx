@@ -42,7 +42,7 @@ export default function Legal({ document }: LegalProps) {
                 </nav>
 
                 <header className="flex flex-col gap-2">
-                    <h1 className="text-[32px] leading-tight font-extrabold tracking-[-0.04em] lg:text-[44px]">{document.title}</h1>
+                    <h1 className="tracking-heading text-[32px] leading-tight font-extrabold lg:text-[44px]">{document.title}</h1>
                     <p className="text-ink-3 text-sm">Última actualización: {document.updatedOn}</p>
                 </header>
 

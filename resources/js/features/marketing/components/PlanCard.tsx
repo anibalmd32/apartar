@@ -1,9 +1,9 @@
 import { Icon } from '@/components/ui/icon';
+import { SignupCta } from '@/features/marketing/components/SignupCta';
 import { formatLimit } from '@/lib/plan';
 import { cn } from '@/lib/utils';
 import { type PricingPlan } from '@/types/marketing';
 import { cilCheckCircle } from '@coreui/icons';
-import { Link } from '@inertiajs/react';
 
 interface PlanCardProps {
     plan: PricingPlan;
@@ -21,13 +21,9 @@ export function PlanCard({ plan, featured = false }: PlanCardProps) {
             )}
         >
             <h2 className="text-xl font-bold">{plan.name}</h2>
-            <p className="text-[34px] leading-tight font-extrabold tracking-[-0.04em]">{plan.priceLabel}</p>
+            <p className="tracking-heading text-[34px] leading-tight font-extrabold">{plan.priceLabel}</p>
 
-            {plan.isFree ? (
-                <Link href={route('register')} className={cn('btn h-12 rounded-full text-[15px]', featured && 'border-0 bg-white text-[#4338ca]')}>
-                    Empezar gratis
-                </Link>
-            ) : null}
+            {plan.isFree ? <SignupCta tone={featured ? 'inverse' : 'secondary'} /> : null}
 
             <ul className="flex flex-col gap-2.5 text-sm">
                 {plan.limits.map((limit) => (

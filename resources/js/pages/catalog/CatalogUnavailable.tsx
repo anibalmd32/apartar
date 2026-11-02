@@ -26,7 +26,7 @@ export default function CatalogUnavailable() {
                     >
                         <Icon icon={cilLibrary} size={48} />
                     </span>
-                    <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-0.4px]">Este catálogo no está disponible</h1>
+                    <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold">Este catálogo no está disponible</h1>
                     <p className="text-ink-2 text-[15px] leading-relaxed">
                         Puede que el negocio lo haya retirado por ahora o que el enlace haya cambiado. Pídele el enlace nuevo a quien te lo compartió.
                     </p>

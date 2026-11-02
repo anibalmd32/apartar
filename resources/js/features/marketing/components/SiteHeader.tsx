@@ -1,5 +1,6 @@
 import { Brand } from '@/components/shell/brand';
 import { Icon } from '@/components/ui/icon';
+import { SIGNUP_LABEL, SignupCta } from '@/features/marketing/components/SignupCta';
 import { type SharedData } from '@/types';
 import { cilMenu, cilX } from '@coreui/icons';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
@@ -44,7 +45,7 @@ export function SiteHeader() {
                             Entrar
                         </Link>
                         <Link href={route('register')} className="btn btn-primary hidden h-10 rounded-full px-4 text-sm lg:inline-flex">
-                            Empezar gratis
+                            {SIGNUP_LABEL}
                         </Link>
                     </div>
                 )}
@@ -68,11 +69,7 @@ export function SiteHeader() {
                                         {link.label}
                                     </Link>
                                 ))}
-                                {loggedIn ? null : (
-                                    <Link href={route('register')} className="btn btn-primary btn-sm mt-1 rounded-full">
-                                        Empezar gratis
-                                    </Link>
-                                )}
+                                {loggedIn ? null : <SignupCta className="mt-1" />}
                             </PopoverPanel>
                         </>
                     )}

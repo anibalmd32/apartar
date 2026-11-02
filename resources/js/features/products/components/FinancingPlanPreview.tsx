@@ -23,7 +23,7 @@ export function FinancingPlanPreview({ plan }: FinancingPlanPreviewProps) {
 
     return (
         <div className="bg-primary-soft flex flex-col gap-3 rounded-xl p-4">
-            <p className="text-eyebrow text-primary-ink">Vista previa del plan</p>
+            <p className="text-label text-ink-3">Vista previa del plan</p>
 
             <p className="text-ink-2 text-sm">
                 {requiresDownPayment ? (

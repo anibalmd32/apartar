@@ -36,7 +36,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                     productUrl={route('catalog.product', { catalog: catalog.slug, product: product.slug })}
                     requiresDownPayment={plan?.requiresDownPayment ?? true}
                 />
-                <h1 className="text-[26px] leading-[1.3] font-extrabold tracking-[-1px] lg:text-[34px]">Aparta tu producto</h1>
+                <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold lg:text-[34px]">Aparta tu producto</h1>
             </div>
 
             {!product.canBeReserved || plan === null ? (

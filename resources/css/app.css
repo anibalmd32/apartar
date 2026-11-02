@@ -113,6 +113,37 @@
     --pop-shadow: 0 16px 40px -8px rgb(0 0 0 / 0.55);
 }
 
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+        U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url('/fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+        U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Plus Jakarta Sans Fallback';
+    src: local('Arial'), local('ArialMT'), local('Helvetica Neue'), local('Roboto');
+    size-adjust: 104.98%;
+    ascent-override: 98.88%;
+    descent-override: 21.15%;
+    line-gap-override: 0%;
+}
+
 @custom-variant dark (&:is(.dark *));
 @custom-variant touch {
     @media (pointer: coarse), (width < 64rem) {
@@ -122,7 +153,8 @@
 
 @theme {
     --font-sans:
-        'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -185,18 +217,28 @@
     --radius: 0.625rem;
 }
 
+@utility tracking-heading {
+    letter-spacing: -0.02em;
+    word-spacing: 0.05em;
+
+    @media (width >= 64rem) {
+        letter-spacing: -0.03em;
+    }
+}
+
 @utility text-display {
     font-size: 3.5rem;
     line-height: 1.1;
     font-weight: 800;
-    letter-spacing: -0.125rem;
+    letter-spacing: -0.02em;
+    word-spacing: 0.05em;
 }
 
 @utility text-figure {
     font-size: 1.625rem;
     line-height: 1.1;
     font-weight: 800;
-    letter-spacing: -0.0375rem;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
 }
 
@@ -204,22 +246,20 @@
     font-size: 1.625rem;
     line-height: 1.3;
     font-weight: 700;
-    letter-spacing: -0.025rem;
+    letter-spacing: -0.02em;
+    word-spacing: 0.05em;
 }
 
 @utility text-h2 {
     font-size: 1.0625rem;
     line-height: 1.4;
     font-weight: 700;
-    letter-spacing: -0.0125rem;
 }
 
-@utility text-eyebrow {
-    font-size: 0.6875rem;
+@utility text-label {
+    font-size: 0.75rem;
     line-height: 1.4;
-    font-weight: 700;
-    letter-spacing: 0.0375rem;
-    text-transform: uppercase;
+    font-weight: 600;
 }
 
 @layer base {
@@ -241,6 +281,7 @@
         color: var(--color-base-content);
         font-size: 0.875rem;
         line-height: 1.4;
+        word-spacing: 0.04em;
     }
 
     ::selection {
@@ -416,7 +457,6 @@
     :where(.card-title) {
         font-size: 1.0625rem;
         font-weight: 700;
-        letter-spacing: -0.0125rem;
     }
 
     :where(.table) {
@@ -523,7 +563,6 @@
     .modal-box > :where(h2, h3):first-child {
         font-size: 1.1875rem;
         font-weight: 700;
-        letter-spacing: -0.019rem;
     }
 
     .modal-action {
@@ -892,5 +931,58 @@ img[data-broken='true'] {
 @layer utilities {
     .dark :is(.text-primary, .link-primary, .btn-link) {
         color: var(--primary-ink);
+    }
+}
+
+@layer utilities {
+    @media (width < 64rem) {
+        .stat-stack {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-stack > :first-child {
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-stack > :first-child .stat-card-value {
+            font-size: 2rem;
+        }
+
+        .stat-stack > :not(:first-child) .stat-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            column-gap: 0.75rem;
+            row-gap: 0.25rem;
+            min-height: 3.5rem;
+            padding: 0.75rem 1rem;
+            border-top-width: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .stat-stack > :nth-child(2) .stat-card {
+            border-top-width: 1px;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        .stat-stack > :last-child .stat-card {
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+        }
+
+        .stat-stack > :not(:first-child) .stat-card-value {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            font-size: 1.0625rem;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .stat-stack > :not(:first-child) :is(.stat-card-head, .stat-card-note) {
+            grid-column: 1;
+        }
     }
 }

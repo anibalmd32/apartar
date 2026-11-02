@@ -99,7 +99,7 @@ export function SuspensionCard({ suspension, invoicesUrl }: { suspension: Dashbo
 function StatusList({ title, items, ok }: { title: string; items: readonly { title: string; detail: string }[]; ok: boolean }) {
     return (
         <div className="bg-base-100 border-line shadow-card flex flex-col gap-3 rounded-2xl border p-5">
-            <h3 className="text-eyebrow text-ink-3">{title}</h3>
+            <h3 className="text-label text-ink-3">{title}</h3>
             <ul className="flex flex-col gap-3">
                 {items.map((item) => (
                     <li key={item.title} className="flex gap-2.5">

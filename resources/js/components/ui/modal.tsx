@@ -96,7 +96,7 @@ export function Modal({
                         {tone === 'danger' ? <IconChip icon={cilWarning} tone="error" size={40} className="rounded-[12px]" /> : null}
                         <DialogTitle
                             className={cn(
-                                'min-w-0 flex-1 text-[19px] leading-tight font-bold tracking-[-0.3px] max-lg:text-[17px]',
+                                'min-w-0 flex-1 text-[19px] leading-tight font-bold max-lg:text-[17px]',
                                 tone === 'danger' && 'self-center',
                             )}
                         >

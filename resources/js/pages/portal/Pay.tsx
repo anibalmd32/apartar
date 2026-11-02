@@ -16,7 +16,7 @@ export default function Pay({ layaways, dashboardUrl }: PortalPayProps) {
         <PortalLayout title="¿Qué vas a pagar?" businessName={businessName} customerName={auth.portal?.fullName ?? ''}>
             <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 lg:gap-6">
                 <header className="flex flex-col gap-1.5 text-center">
-                    <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.5px] lg:text-[32px]">¿Qué vas a pagar?</h1>
+                    <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[32px]">¿Qué vas a pagar?</h1>
                     <p className="text-ink-2 text-[15px]">Elige el apartado. Arriba está el más reciente.</p>
                 </header>
 

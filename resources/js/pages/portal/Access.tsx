@@ -29,7 +29,7 @@ export default function Access({ status, code = null, googleUrl }: PortalAccessP
                 </span>
 
                 <header className="flex flex-col gap-2">
-                    <h1 className="text-[26px] leading-tight font-extrabold tracking-[-1px] sm:text-[32px]">
+                    <h1 className="tracking-heading text-[26px] leading-tight font-extrabold sm:text-[32px]">
                         {code ? 'Paga tu apartado' : 'Mira tus apartados'}
                     </h1>
                     <p className="text-ink-2 text-[15px] leading-normal">

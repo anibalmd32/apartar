@@ -12,7 +12,7 @@ function Figure({ label, children, className }: { label: string; children: React
     return (
         <div className="flex min-w-0 flex-col gap-1">
             <dt className="text-ink-3 text-xs">{label}</dt>
-            <dd className={cn('text-[18px] leading-tight font-extrabold tracking-[-0.3px] lg:text-[22px]', className)}>{children}</dd>
+            <dd className={cn('text-[18px] leading-tight font-extrabold lg:text-[22px]', className)}>{children}</dd>
         </div>
     );
 }

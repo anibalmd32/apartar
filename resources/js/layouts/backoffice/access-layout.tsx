@@ -47,7 +47,12 @@ export default function AccessLayout({
                         <IconChip icon={icon} tone={iconTone} size={centered ? 64 : 48} className={centered ? 'rounded-[19px]' : 'rounded-[14px]'} />
                     ) : null}
                     {badge}
-                    <h1 className={cn('font-extrabold tracking-[-0.03em]', centered || header ? 'text-[22px]' : icon ? 'text-2xl' : 'text-[26px]')}>
+                    <h1
+                        className={cn(
+                            'font-extrabold',
+                            centered || header ? 'text-[22px]' : cn('tracking-heading', icon ? 'text-2xl' : 'text-[26px]'),
+                        )}
+                    >
                         {title}
                     </h1>
                     {description ? <p className="text-ink-2 text-sm leading-normal">{description}</p> : null}

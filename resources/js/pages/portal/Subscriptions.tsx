@@ -11,7 +11,7 @@ export default function Subscriptions({ account, subscriptions }: SubscriptionsP
     return (
         <PortalLayout title="Catálogos que sigues" businessName="Mi cuenta" customerName={account.displayName}>
             <header className="flex flex-col gap-1">
-                <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Catálogos que sigo</h1>
+                <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[30px]">Catálogos que sigo</h1>
                 <p className="text-ink-2 max-w-[760px] text-sm leading-normal">
                     Te avisamos cuando agreguen productos. Silencia un catálogo para dejar de recibir avisos sin dejar de seguirlo.
                 </p>

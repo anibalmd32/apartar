@@ -31,7 +31,7 @@ function Figure({ label, money, tone, zeroLabel }: { label: string; money: Backo
     return (
         <div className="bg-surface-2 flex flex-col gap-1 rounded-[10px] p-3">
             <dt className="text-ink-3 text-xs">{label}</dt>
-            <dd className={cn('text-xl leading-tight font-bold tracking-[-0.4px]', tone === 'success' && 'text-success')}>
+            <dd className={cn('text-xl leading-tight font-bold', tone === 'success' && 'text-success')}>
                 {zeroLabel !== undefined && Number(money.cents) === 0 ? zeroLabel : <MoneyLabel money={money} stacked />}
             </dd>
         </div>

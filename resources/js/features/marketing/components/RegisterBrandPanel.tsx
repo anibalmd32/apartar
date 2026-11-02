@@ -14,7 +14,7 @@ export function RegisterBrandPanel() {
             </Link>
 
             <div className="my-auto flex max-w-[470px] flex-col gap-5">
-                <p className="text-[38px] leading-[1.1] font-extrabold tracking-[-0.04em]">Vende en cuotas sin perseguir a nadie por WhatsApp</p>
+                <p className="tracking-heading text-[38px] leading-[1.1] font-extrabold">Vende en cuotas sin perseguir a nadie por WhatsApp</p>
                 <ul className="flex flex-col gap-5 text-base opacity-90">
                     {POINTS.map((point) => (
                         <li key={point} className="flex items-center gap-2.5">

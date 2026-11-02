@@ -48,7 +48,7 @@ export function UserMenu({ name, detail, onLogout, extra, className }: UserMenuP
 
                 {extra}
 
-                <p className="text-eyebrow text-ink-3 px-2.5 pt-2 pb-1">Tema</p>
+                <p className="text-label text-ink-3 px-2.5 pt-2 pb-1">Tema</p>
                 {THEMES.map((theme) => (
                     <MenuItem key={theme.value}>
                         <button type="button" className={menuItemClass} onClick={() => updateAppearance(theme.value)}>
