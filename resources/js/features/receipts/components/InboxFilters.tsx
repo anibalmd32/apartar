@@ -1,6 +1,7 @@
 import { DateRangeField } from '@/components/ui/date-range-field';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { type FilterTab, FilterTabs } from '@/components/ui/filter-tabs';
+import { type FilterTab } from '@/components/ui/filter-tabs';
+import { QuickFilters } from '@/components/ui/quick-filters';
 import { SelectField } from '@/components/ui/select-field';
 import { ToggleField } from '@/components/ui/toggle-field';
 import { useFilterDraft } from '@/hooks/use-filter-draft';
@@ -147,7 +148,7 @@ export function InboxFilters({ filters, options, onChange, onChangeMany, pending
 
     return (
         <div className="flex flex-col gap-3 lg:gap-4">
-            <FilterTabs label="Estado" tabs={tabs} value={filters.status} onChange={(value) => onChange('status', value)} />
+            <QuickFilters label="Estado" tabs={tabs} value={filters.status} onChange={(value) => onChange('status', value)} />
 
             <FilterBar
                 inline={<Fields values={applied} options={options} onPick={onChange} />}

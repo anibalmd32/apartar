@@ -70,7 +70,7 @@ final class CollectionController extends Controller
             'meta' => $meta,
             'definition' => $filters->preset?->definition(app(Settings::class)->longOverdueDays()),
             'summary' => $listsLayaways ? null : $this->summary($filters),
-            'awaitingDownPayment' => $listsLayaways ? null : $this->awaitingDownPayment(),
+            'awaitingDownPayment' => $listsLayaways ? null : $this->awaitingDownPayment($filters),
             'presetCounts' => fn (): array => $this->presetCounts(),
             'options' => fn (): array => $this->options(),
         ]);
@@ -135,9 +135,14 @@ final class CollectionController extends Controller
     /**
      * @return array{count: int, missing: array<string, mixed>}|null
      */
-    private function awaitingDownPayment(): ?array
+    private function awaitingDownPayment(CollectionFilters $filters): ?array
     {
-        $layaways = (new CollectionFilters(CollectionPreset::AwaitingDownPayment))->layaways()->get();
+        $layaways = (new CollectionFilters(
+            CollectionPreset::AwaitingDownPayment,
+            search: $filters->search,
+            categoryId: $filters->categoryId,
+            catalogId: $filters->catalogId,
+        ))->layaways()->get();
 
         if ($layaways->isEmpty()) {
             return null;

@@ -95,7 +95,12 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
                     {props.summary || props.awaitingDownPayment ? (
                         <div className="flex flex-col gap-2 lg:gap-3">
                             {props.summary ? <CollectionSummary summary={props.summary} /> : null}
-                            {props.awaitingDownPayment ? <AwaitingDownPaymentLink awaiting={props.awaitingDownPayment} /> : null}
+                            {props.awaitingDownPayment ? (
+                                <AwaitingDownPaymentLink
+                                    awaiting={props.awaitingDownPayment}
+                                    narrowing={props.meta.filters as Record<string, string | null>}
+                                />
+                            ) : null}
                         </div>
                     ) : null}
                 </>

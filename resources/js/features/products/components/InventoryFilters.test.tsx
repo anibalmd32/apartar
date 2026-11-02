@@ -34,3 +34,21 @@ it('la hoja de filtros aplica la categoría y el orden en una sola petición', (
     expect(onChangeMany).toHaveBeenCalledExactlyOnceWith({ category: '3' }, 'name');
     expect(onSort).not.toHaveBeenCalled();
 });
+
+it('los filtros rápidos de estado son píldoras como en Clientes y Cobranza', () => {
+    render(
+        <InventoryFilters
+            filters={FILTERS}
+            statuses={[{ value: 'draft', label: 'Borrador' }]}
+            categories={[]}
+            tags={[]}
+            onChange={vi.fn()}
+            onChangeMany={vi.fn()}
+        />,
+    );
+
+    const pills = within(screen.getByRole('group', { name: 'Estado' })).getAllByRole('button');
+
+    expect(pills.every((pill) => pill.classList.contains('rounded-full'))).toBe(true);
+    expect(pills[0]).toHaveAttribute('aria-pressed', 'true');
+});

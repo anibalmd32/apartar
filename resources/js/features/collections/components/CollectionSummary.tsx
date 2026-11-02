@@ -30,10 +30,30 @@ function Figure({ label, children }: { label: string; children: ReactNode }) {
     );
 }
 
-export function AwaitingDownPaymentLink({ awaiting }: { awaiting: NonNullable<CollectionIndexProps['awaitingDownPayment']> }) {
+export function awaitingHref(narrowing: Readonly<Record<string, string | null>> = {}): string {
+    const query = new URLSearchParams({ preset: 'awaiting_down_payment' });
+
+    for (const key of ['q', 'category', 'catalog']) {
+        const value = narrowing[key];
+
+        if (value !== null && value !== undefined && value !== '') {
+            query.set(key, value);
+        }
+    }
+
+    return bo(`/cobranza?${query.toString()}`);
+}
+
+export function AwaitingDownPaymentLink({
+    awaiting,
+    narrowing,
+}: {
+    awaiting: NonNullable<CollectionIndexProps['awaitingDownPayment']>;
+    narrowing?: Readonly<Record<string, string | null>>;
+}) {
     return (
         <Link
-            href={bo('/cobranza?preset=awaiting_down_payment')}
+            href={awaitingHref(narrowing)}
             className="bg-warning-soft hover:border-line-strong hit-area flex flex-wrap items-center justify-between gap-2 rounded-xl border border-transparent px-[18px] py-3 text-sm max-lg:min-h-10 max-lg:flex-nowrap max-lg:rounded-lg max-lg:px-3 max-lg:py-2"
         >
             <span className="min-w-0 max-lg:truncate">

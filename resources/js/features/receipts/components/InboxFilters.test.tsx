@@ -90,3 +90,13 @@ it('la hoja de filtros reparte Limpiar y Aplicar a todo el ancho y respeta el bo
     expect(actions).toHaveClass('grid', 'w-full', 'auto-cols-fr');
     expect(actions.parentElement!.className).toContain('safe-area-inset-bottom');
 });
+
+it('los filtros rápidos de estado son las mismas píldoras que en Clientes y Cobranza', () => {
+    setup({ status: 'pending_review' });
+
+    const pills = within(screen.getByRole('group', { name: 'Estado' })).getAllByRole('button');
+
+    expect(pills.every((pill) => pill.classList.contains('rounded-full'))).toBe(true);
+    expect(pills[1]).toHaveAttribute('aria-pressed', 'true');
+    expect(pills[1]).toHaveClass('bg-neutral');
+});

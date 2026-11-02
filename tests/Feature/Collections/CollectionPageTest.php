@@ -10,6 +10,7 @@ use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Category;
 use App\Models\Layaway;
 use App\Models\Organization;
+use App\Models\Product;
 use App\Models\User;
 use App\Queries\CollectionFilters;
 use Carbon\CarbonImmutable;
@@ -70,6 +71,24 @@ final class CollectionPageTest extends TestCase
             ->where('kind', 'installments')
             ->where('awaitingDownPayment.count', 3)
             ->where('awaitingDownPayment.missing.cents', 13_000));
+    }
+
+    public function test_el_aviso_de_los_que_esperan_la_inicial_respeta_la_categoria_filtrada(): void
+    {
+        [$shoes, $bags] = $this->withinOrganization($this->organization, fn (): array => [Category::factory()->create(), Category::factory()->create()]);
+        $shoe = $this->withinOrganization($this->organization, fn (): Product => Product::factory()->create(['category_id' => $shoes->getKey()]));
+        $bag = $this->withinOrganization($this->organization, fn (): Product => Product::factory()->create(['category_id' => $bags->getKey()]));
+        $this->withoutOrganization();
+        $this->layawayIn($this->organization, product: $shoe);
+        $this->layawayIn($this->organization, product: $bag);
+        $this->layawayIn($this->organization, product: $bag);
+
+        $this->actingAs($this->member)->get(route('collections.index', ['category' => (string) $shoes->getKey()]))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('awaitingDownPayment.count', 1)
+            ->where('awaitingDownPayment.missing.cents', 5_000));
+
+        $this->actingAs($this->member)->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('awaitingDownPayment.count', 3));
     }
 
     public function test_without_layaways_awaiting_the_down_payment_there_is_no_notice(): void

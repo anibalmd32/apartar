@@ -1,5 +1,6 @@
 import { FilterBar } from '@/components/ui/filter-bar';
-import { FilterTabs, type FilterTab } from '@/components/ui/filter-tabs';
+import { type FilterTab } from '@/components/ui/filter-tabs';
+import { QuickFilters } from '@/components/ui/quick-filters';
 import { SearchField } from '@/components/ui/search-field';
 import { InventoryFilterFields, inventoryChipLabels, type InventorySheetValues } from '@/features/products/components/InventoryFilterFields';
 import { useFilterDraft } from '@/hooks/use-filter-draft';
@@ -78,7 +79,7 @@ export function InventoryFilters({
 
     return (
         <div className="flex flex-col gap-3 lg:gap-4">
-            <FilterTabs label="Estado" tabs={tabs} value={activeTab} onChange={pickTab} />
+            <QuickFilters label="Estado" tabs={tabs} value={activeTab} onChange={pickTab} />
 
             <FilterBar
                 search={
