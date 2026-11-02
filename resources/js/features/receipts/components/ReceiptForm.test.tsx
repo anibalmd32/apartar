@@ -96,6 +96,22 @@ it('precarga la sugerencia en la moneda elegida, en dólares y en bolívares', (
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
 });
 
+it('la moneda va en su fila, antes del monto, y el monto muestra el símbolo de la moneda elegida', () => {
+    renderForm({ paymentAccounts: [] });
+
+    const amount = screen.getByLabelText('Monto que pagaste');
+    const currency = screen.getByRole('group', { name: 'Moneda' });
+    const amountField = amount.closest('fieldset');
+
+    expect(amountField?.contains(currency)).toBe(false);
+    expect(currency.parentElement).toBe(amountField?.parentElement);
+    expect(currency.compareDocumentPosition(amount) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(amount.closest('label')).toHaveTextContent('$');
+
+    pick('Moneda', 'VES');
+    expect(screen.getByLabelText('Monto que pagaste').closest('label')).toHaveTextContent('Bs.');
+});
+
 it('no pisa el monto que escribió la persona al cambiar de moneda', () => {
     renderForm({ paymentAccounts: [] });
 

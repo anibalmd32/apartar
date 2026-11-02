@@ -75,10 +75,10 @@ export function CurrencyChoice({ currencies, value, onChange, error }: CurrencyC
     const id = useId();
 
     return (
-        <fieldset className="fieldset" aria-describedby={error ? `${id}-error` : undefined}>
+        <fieldset className="fieldset w-full" aria-describedby={error ? `${id}-error` : undefined}>
             <legend className="fieldset-legend">Moneda</legend>
 
-            <div className="bg-surface-2 flex h-10 w-fit items-center gap-0.5 rounded-[10px] p-[3px]">
+            <div className="bg-surface-2 pointer-coarse:h-11 flex h-10 w-full items-center gap-0.5 rounded-[10px] p-[3px] sm:w-fit">
                 {currencies.map((currency) => {
                     const checked = value === currency.value;
 
@@ -86,7 +86,7 @@ export function CurrencyChoice({ currencies, value, onChange, error }: CurrencyC
                         <label
                             key={currency.value}
                             className={cn(
-                                'has-[:focus-visible]:outline-primary flex h-full cursor-pointer items-center rounded-lg px-3.5 text-[13px] outline-offset-1 has-[:focus-visible]:outline-2',
+                                'has-[:focus-visible]:outline-primary flex h-full flex-1 cursor-pointer items-center justify-center rounded-lg px-3.5 text-[13px] whitespace-nowrap outline-offset-1 has-[:focus-visible]:outline-2 sm:flex-none',
                                 checked ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 font-medium',
                             )}
                         >

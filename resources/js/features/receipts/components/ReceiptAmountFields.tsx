@@ -13,6 +13,8 @@ interface ReceiptAmountFieldsProps {
     paidAt: { readonly min: string; readonly max: string };
 }
 
+const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = { USD: '$', VES: 'Bs.' };
+
 function SuggestionHint({ suggestion }: { suggestion: ReceiptSuggestion }) {
     const downPayment = suggestion.started ? 'lo que falta de la inicial' : 'la inicial';
     const what = suggestion.kind === 'down_payment' ? downPayment : `la cuota ${suggestion.installmentNumber ?? ''}`.trim();
@@ -40,21 +42,21 @@ export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: Re
                 required
             />
 
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                <TextField
-                    label="Monto que pagaste"
-                    name="amount"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    placeholder="0,00"
-                    value={data.amount}
-                    onChange={(event) => form.setAmount(typedAmount(event))}
-                    error={errors.amount}
-                    required
-                />
+            <CurrencyChoice currencies={currencies} value={data.currency} onChange={form.selectCurrency} error={errors.currency} />
 
-                <CurrencyChoice currencies={currencies} value={data.currency} onChange={form.selectCurrency} error={errors.currency} />
-            </div>
+            <TextField
+                label="Monto que pagaste"
+                name="amount"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0,00"
+                prefix={CURRENCY_SYMBOLS[data.currency] ?? data.currency}
+                className="tabular-nums"
+                value={data.amount}
+                onChange={(event) => form.setAmount(typedAmount(event))}
+                error={errors.amount}
+                required
+            />
 
             {suggestion !== null ? (
                 <p className="text-sm opacity-80">
