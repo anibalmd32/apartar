@@ -114,7 +114,7 @@ final class ChatTest extends TestCase
         $this->postJson($url, ['body' => 'Uno más', 'idempotencyKey' => (string) Str::uuid()])->assertStatus(429);
     }
 
-    public function test_la_lista_del_portal_muestra_el_ultimo_mensaje_de_cada_conversacion(): void
+    public function test_la_lista_del_portal_muestra_el_último_mensaje_de_cada_conversación(): void
     {
         $this->withinOrganization($this->organization, function (): void {
             $conversation = Conversation::factory()->create(['customer_id' => $this->customer->getKey()]);
