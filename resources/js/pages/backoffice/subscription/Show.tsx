@@ -9,9 +9,9 @@ import { ScheduledChangeNotice } from '@/features/plan/components/ScheduledChang
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { PlanSummary, type NextInvoice, type SubscriptionPeriod } from '@/features/subscription/components/PlanSummary';
+import { usageLabel, usageValue } from '@/features/subscription/lib/usage';
 import { CloseOrganizationCard } from '@/features/tenancy/components/CloseOrganizationCard';
 import BackofficeLayout from '@/layouts/backoffice-layout';
-import { formatUsage } from '@/lib/plan';
 import { type PlanFeature, type PlanOption, type ScheduledPlanChange, type UsageMetric } from '@/types/plan';
 import { cilCheckAlt, cilDescription } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
@@ -75,8 +75,9 @@ export default function SubscriptionShow({
                         {(Object.keys(state.usage) as UsageMetric[]).map((metric) => (
                             <div key={metric} className="bg-base-100 border-line shadow-card rounded-xl border px-3.5 py-3">
                                 <Meter
-                                    label={plan.metricLabel(metric)}
-                                    value={formatUsage(state.usage[metric].used, state.usage[metric].limit)}
+                                    className="[&>span:first-child]:flex-col [&>span:first-child]:items-start [&>span:first-child]:gap-0.5"
+                                    label={usageLabel(metric, plan.metricLabel(metric))}
+                                    value={usageValue(metric, state.usage[metric].used, state.usage[metric].limit)}
                                     percentage={state.usage[metric].percentage}
                                     warn={plan.isNearLimit(metric)}
                                 />

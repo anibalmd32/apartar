@@ -34,7 +34,7 @@ export function CloseOrganizationCard({ closeUrl }: CloseOrganizationCardProps) 
                     </p>
                 ) : null}
 
-                <label className="label cursor-pointer justify-start gap-2 text-sm">
+                <label className="label min-h-11 cursor-pointer justify-start gap-3 text-sm whitespace-normal">
                     <input
                         type="checkbox"
                         className="checkbox checkbox-sm"

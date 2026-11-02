@@ -104,6 +104,15 @@ it('no deja bajar con exceso hasta confirmarlo', () => {
     expect(post).toHaveBeenCalledWith({ plan: 'free', confirmed: true }, '/backoffice/suscripcion/cambiar', { preserveScroll: true });
 });
 
+it('resume la bajada y deja el detalle plegado', () => {
+    render(<PlanOptionCard option={planOption({ code: 'free', name: 'Free', preview: downgradePreview() })} canChange timeZone={CARACAS} />);
+    expect(screen.getByText(/Se aplica el 9 de noviembre de 2026. Hasta entonces conservas tu plan actual/)).toBeInTheDocument();
+    const details = screen.getByText('Qué cambia al bajar').closest('details');
+    expect(details).not.toHaveAttribute('open');
+    expect(details?.querySelector('summary')).toHaveTextContent('Qué cambia al bajar');
+    expect(details).toHaveTextContent(/Dejarás de tener: Exportación a Excel/);
+});
+
 it('pide confirmar aunque el único exceso sea el techo por catálogo', () => {
     render(<PlanOptionCard option={planOption({ code: 'free', name: 'Free', preview: downgradePreview({ excesses: [] }) })} canChange />);
 

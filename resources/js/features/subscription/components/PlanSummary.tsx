@@ -59,8 +59,14 @@ export function PlanSummary({
                     <Badge tone={STATUS_TONES[state.status]}>{STATUS_LABELS[state.status]}</Badge>
                 </p>
                 {period !== null ? (
-                    <p className="text-ink-2 text-[13px]">
-                        Periodo actual: {formatPeriod(period.start, period.end, timeZone)} · {period.price} al mes
+                    <p className="text-ink-2 flex flex-wrap gap-x-1.5 text-[13px]">
+                        <span>Periodo actual: {formatPeriod(period.start, period.end, timeZone)}</span>
+                        <span>
+                            <span aria-hidden="true" className="max-sm:hidden">
+                                ·{' '}
+                            </span>
+                            {period.price} al mes
+                        </span>
                     </p>
                 ) : null}
                 {pricingUrl !== null ? (
