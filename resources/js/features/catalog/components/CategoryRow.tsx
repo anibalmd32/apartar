@@ -6,16 +6,18 @@ import { SortableHandle, SortableRow } from '@/components/ui/sortable';
 import { DeleteCategoryDialog } from '@/features/catalog/components/DeleteCategoryDialog';
 import { bo } from '@/lib/surfaces';
 import { type CategoryView } from '@/types/taxonomy';
-import { cilPencil, cilTrash } from '@coreui/icons';
+import { cilArrowBottom, cilArrowTop, cilPencil, cilTrash } from '@coreui/icons';
 import { useState } from 'react';
 
 interface CategoryRowProps {
     category: CategoryView;
     others: readonly CategoryView[];
     onEdit: () => void;
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
 }
 
-export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
+export function CategoryRow({ category, others, onEdit, onMoveUp, onMoveDown }: CategoryRowProps) {
     const url = bo(`/categorias/${category.id}`);
 
     const [asking, setAsking] = useState(false);
@@ -27,7 +29,7 @@ export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
         <SortableRow id={category.id} label={category.name}>
             {({ containerProps, handleProps }) => (
                 <tr ref={containerProps.ref} style={containerProps.style} className={containerProps.className}>
-                    <td data-cell="shrink" className="w-10 pr-0">
+                    <td data-cell="shrink" className="w-10 pr-0 max-md:hidden!">
                         <SortableHandle handleProps={handleProps} />
                     </td>
 
@@ -46,6 +48,28 @@ export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
 
                     <td data-cell="actions" className="text-right">
                         <div className="flex flex-wrap items-end justify-end gap-1">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-ink-2 md:hidden"
+                                onClick={onMoveUp}
+                                disabled={onMoveUp === undefined}
+                                aria-label={`Subir ${category.name}`}
+                            >
+                                <Icon icon={cilArrowTop} />
+                            </Button>
+
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-ink-2 md:hidden"
+                                onClick={onMoveDown}
+                                disabled={onMoveDown === undefined}
+                                aria-label={`Bajar ${category.name}`}
+                            >
+                                <Icon icon={cilArrowBottom} />
+                            </Button>
+
                             <Button
                                 size="sm"
                                 variant="ghost"

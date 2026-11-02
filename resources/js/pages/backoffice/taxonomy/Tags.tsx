@@ -34,11 +34,19 @@ export default function TagsIndex({ tags }: TagsPageProps) {
             </SectionCard>
 
             <div className="flex flex-col gap-2.5">
-                <SectionCard flush aria-label="Tus etiquetas" className="overflow-hidden">
+                <SectionCard
+                    flush
+                    aria-label="Tus etiquetas"
+                    className={
+                        tags.length === 0
+                            ? 'overflow-hidden'
+                            : 'max-md:overflow-visible max-md:border-0 max-md:bg-transparent max-md:shadow-none md:overflow-hidden'
+                    }
+                >
                     {tags.length === 0 ? (
                         <p className="text-ink-3 p-5 text-sm">Todavía no tienes ninguna. Añade la primera arriba.</p>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="table-stack md:overflow-x-auto">
                             <table className="table">
                                 <thead>
                                     <tr>

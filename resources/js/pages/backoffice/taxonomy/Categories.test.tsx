@@ -1,6 +1,6 @@
 import CategoriesIndex from '@/pages/backoffice/taxonomy/Categories';
 import { type CategoryView } from '@/types/taxonomy';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { expect, it, vi } from 'vitest';
 
@@ -16,7 +16,7 @@ vi.mock('@inertiajs/react', () => ({
         reset: vi.fn(),
         clearErrors: vi.fn(),
     }),
-    router: { patch: vi.fn(), visit: vi.fn(), delete: vi.fn() },
+    router: { patch: vi.fn(), visit: vi.fn(), delete: vi.fn(), on: vi.fn(() => () => undefined) },
     Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
 }));
 
@@ -49,4 +49,31 @@ it('editar y eliminar se leen con texto en la tarjeta, no solo con un icono', ()
 
     expect(screen.getByRole('button', { name: 'Editar Vestidos' })).toHaveTextContent('Editar');
     expect(screen.getByRole('button', { name: 'Eliminar Vestidos' })).toHaveTextContent('Eliminar');
+});
+
+it('en el celular se ordena con flechas y el orden se guarda desde la lista', async () => {
+    const { router } = await import('@inertiajs/react');
+
+    render(<CategoriesIndex categories={[category(1, 'Vestidos'), category(2, 'Calzado'), category(3, 'Bolsos')]} />);
+
+    const save = screen.getByRole('button', { name: 'Guardar orden' });
+
+    expect(save).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Subir Vestidos' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bajar Bolsos' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Subir Bolsos' }));
+
+    expect(save).toBeEnabled();
+
+    fireEvent.click(save);
+
+    expect(router.patch).toHaveBeenCalledWith('/backoffice/categorias/orden', { categories: [1, 3, 2] }, expect.anything());
+});
+
+it('al añadir una categoría el enlace queda detrás de «Cambiar el enlace», igual que al editar', () => {
+    render(<CategoriesIndex categories={[category(1, 'Vestidos')]} />);
+
+    expect(screen.queryByLabelText('Enlace')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cambiar el enlace' })).toBeInTheDocument();
 });

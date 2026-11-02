@@ -1,14 +1,17 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { SortableList } from '@/components/ui/sortable';
 import { CategoryRow } from '@/features/catalog/components/CategoryRow';
 import { TaxonomyForm } from '@/features/catalog/components/TaxonomyForm';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { moved } from '@/lib/reorder';
 import { bo } from '@/lib/surfaces';
 import { type CategoryView } from '@/types/taxonomy';
-import { cilCheckAlt, cilMenu } from '@coreui/icons';
+import { cilCheckAlt } from '@coreui/icons';
 import { router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -22,39 +25,31 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
 
     const [order, setOrder] = useState<CategoryView[]>(categories);
     const [editing, setEditing] = useState<number | null>(null);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => setOrder(categories), [categories]);
 
     const editable = order.find((category) => category.id === editing);
     const dirty = order.some((category, index) => category.id !== categories[index]?.id);
 
-    const move = (from: number, to: number) => {
-        setOrder((current) => {
-            const next = [...current];
-            const [moved] = next.splice(from, 1);
+    const move = (from: number, to: number) => setOrder((current) => moved(current, from, to));
 
-            if (moved === undefined) {
-                return current;
-            }
+    const saveOrder = () =>
+        router.patch(
+            bo('/categorias/orden'),
+            { categories: order.map((category) => category.id) },
+            { preserveScroll: true, onStart: () => setSaving(true), onFinish: () => setSaving(false) },
+        );
 
-            next.splice(to, 0, moved);
-
-            return next;
-        });
-    };
-
-    const saveOrder = () => router.patch(bo('/categorias/orden'), { categories: order.map((category) => category.id) }, { preserveScroll: true });
+    const leaveGuard = useLeaveGuard(dirty && !saving, {
+        title: '¿Salir sin guardar el orden?',
+        description: 'Cambiaste el orden de tus categorías y todavía no lo guardaste. Si sales ahora, se pierde.',
+    });
 
     return (
         <BackofficeLayout
             title="Categorías"
             description="Cómo ordenas tu inventario. Tus clientes filtran el catálogo con ellas, así que el orden que fijes aquí es el que ven."
-            actions={
-                <Button variant="secondary" onClick={saveOrder} disabled={!dirty}>
-                    <Icon icon={cilCheckAlt} />
-                    Guardar orden
-                </Button>
-            }
         >
             {errors.category_id ? <Alert tone="warning">{errors.category_id}</Alert> : null}
 
@@ -74,10 +69,18 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
             </SectionCard>
 
             <div className="flex flex-col gap-2.5">
-                <p className="text-ink-3 flex items-center gap-2 text-xs">
-                    <Icon icon={cilMenu} size={14} />
-                    Arrastra las filas para cambiar el orden y pulsa «Guardar orden».
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                    <p className="text-ink-3 text-xs">
+                        <span className="max-md:hidden">Arrastra las filas</span>
+                        <span className="md:hidden">Usa las flechas</span> para cambiar el orden y guárdalo al terminar.
+                    </p>
+
+                    {dirty ? (
+                        <Button size="sm" variant="ghost" className="touch:min-h-11 shrink-0" onClick={() => setOrder(categories)}>
+                            Deshacer
+                        </Button>
+                    ) : null}
+                </div>
 
                 <SectionCard
                     flush
@@ -112,12 +115,14 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
                                         onReorder={move}
                                         labelOf={(id) => order.find((category) => category.id === id)?.name ?? 'la categoría'}
                                     >
-                                        {order.map((category) => (
+                                        {order.map((category, index) => (
                                             <CategoryRow
                                                 key={category.id}
                                                 category={category}
                                                 others={order.filter((other) => other.id !== category.id)}
                                                 onEdit={() => setEditing(category.id)}
+                                                onMoveUp={index === 0 ? undefined : () => move(index, index - 1)}
+                                                onMoveDown={index === order.length - 1 ? undefined : () => move(index, index + 1)}
                                             />
                                         ))}
                                     </SortableList>
@@ -127,10 +132,20 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
                     )}
                 </SectionCard>
 
+                {order.length > 1 ? (
+                    <FormActionBar sticky={dirty} className="max-lg:-mx-4 max-lg:px-4 lg:justify-end">
+                        <Button variant={dirty ? 'primary' : 'secondary'} onClick={saveOrder} disabled={!dirty} loading={saving}>
+                            <Icon icon={cilCheckAlt} />
+                            Guardar orden
+                        </Button>
+                    </FormActionBar>
+                ) : null}
+
                 <p className="text-ink-3 text-xs">
                     Una categoría con productos no se puede eliminar: muévelos antes a otra. El conteo incluye los borradores y los archivados.
                 </p>
             </div>
+            {leaveGuard}
         </BackofficeLayout>
     );
 }

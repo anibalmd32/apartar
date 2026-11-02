@@ -16,33 +16,37 @@ export function TagRow({ tag, onEdit }: TagRowProps) {
 
     return (
         <tr>
-            <td>
+            <td data-cell="primary">
                 <span className="bg-primary-soft text-primary-ink inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
                     <Icon icon={cilTag} size={12} />
                     {tag.name}
                 </span>
             </td>
 
-            <td className="text-ink-2">/{tag.slug}</td>
+            <td data-cell="shrink" className="text-ink-2">
+                /{tag.slug}
+            </td>
 
-            <td className={tag.productsCount > 0 ? '' : 'text-warning'}>
+            <td data-cell="shrink" className={tag.productsCount > 0 ? '' : 'text-warning'}>
                 {tag.productsCount === 1 ? '1 producto' : `${tag.productsCount} productos`}
             </td>
 
-            <td className="text-right">
+            <td data-cell="actions" className="text-right">
                 <div className="flex flex-wrap justify-end gap-1">
-                    <Button size="sm" variant="ghost" className="btn-square text-ink-2" onClick={onEdit} aria-label={`Editar ${tag.name}`}>
+                    <Button size="sm" variant="ghost" className="text-ink-2 md:btn-square" onClick={onEdit} aria-label={`Editar ${tag.name}`}>
                         <Icon icon={cilPencil} />
+                        <span className="md:sr-only">Editar</span>
                     </Button>
 
                     <Button
                         size="sm"
                         variant="ghost"
-                        className="btn-square text-ink-2 hover:text-error"
+                        className="text-ink-2 hover:text-error md:btn-square"
                         onClick={() => setConfirming(true)}
                         aria-label={`Eliminar ${tag.name}`}
                     >
                         <Icon icon={cilTrash} />
+                        <span className="md:sr-only">Eliminar</span>
                     </Button>
                 </div>
                 <ConfirmDialog

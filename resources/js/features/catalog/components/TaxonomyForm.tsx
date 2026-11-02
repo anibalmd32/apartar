@@ -29,7 +29,7 @@ export function TaxonomyForm({ createUrl, editUrl, entry, noun, maxLength, onDon
         slug: entry?.slug ?? '',
     });
 
-    const [slugOpen, setSlugOpen] = useState(!editing);
+    const [slugOpen, setSlugOpen] = useState(false);
 
     const changeName = (value: string) => {
         setData((current) => ({
@@ -73,7 +73,7 @@ export function TaxonomyForm({ createUrl, editUrl, entry, noun, maxLength, onDon
                 required
             />
 
-            {slugOpen ? (
+            {slugOpen || errors.slug !== undefined ? (
                 <TextField
                     label="Enlace"
                     name="slug"
@@ -91,11 +91,11 @@ export function TaxonomyForm({ createUrl, editUrl, entry, noun, maxLength, onDon
             ) : (
                 <div className="flex flex-col gap-1 sm:pt-[30px]">
                     <p className="text-ink-2 text-sm">
-                        Enlace: <span className="text-ink-3">/{data.slug}</span>
+                        Enlace: <span className="text-ink-3">{data.slug === '' ? 'se propone a partir del nombre' : `/${data.slug}`}</span>
                     </p>
 
                     <div>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => setSlugOpen(true)}>
+                        <Button type="button" size="sm" variant="ghost" className="touch:min-h-11 -ml-3" onClick={() => setSlugOpen(true)}>
                             Cambiar el enlace
                         </Button>
                     </div>
