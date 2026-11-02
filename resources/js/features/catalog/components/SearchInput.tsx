@@ -14,6 +14,7 @@ export function SearchInput({ value, onChange }: SearchInputProps) {
             <Icon icon={cilSearch} className="text-ink-3" />
             <input
                 type="search"
+                enterKeyHint="search"
                 className="grow"
                 value={value}
                 maxLength={SEARCH_MAX_LENGTH}

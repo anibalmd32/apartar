@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/icon';
+import { ScrollRow } from '@/components/ui/scroll-row';
 import { type SelectOption } from '@/components/ui/select-field';
 import { cn } from '@/lib/utils';
 import { type CatalogFacets, type CatalogFilters, type CatalogSort, type Facet } from '@/types/catalog-view';
@@ -64,23 +65,25 @@ function FacetChip({ facet, pressed, onClick }: { facet: Facet; pressed: boolean
 
 function SortSelect({ searching, value, onSort }: { searching: boolean; value: CatalogSort | null; onSort: (sort: CatalogSort | null) => void }) {
     const id = useId();
+    const options = sortOptions(searching);
+    const current = options.find((option) => option.value === (value ?? ''))?.label ?? options[0]?.label;
 
     return (
         <div className="relative">
             <label htmlFor={id} className="sr-only">
                 Ordenar por
             </label>
-            <Icon
-                icon={cilSortAscending}
-                className="text-ink-2 pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 lg:left-3 lg:translate-x-0"
-            />
+            <span aria-hidden="true" className="select text-ink-2 pointer-events-none h-11 w-auto rounded-full pr-8 pl-9 font-medium lg:hidden">
+                {current}
+            </span>
+            <Icon icon={cilSortAscending} className="text-ink-2 pointer-events-none absolute top-1/2 left-3 z-10 -translate-y-1/2" />
             <select
                 id={id}
-                className="select lg:text-ink-2 h-10 w-10 px-0 text-transparent max-lg:size-11 lg:w-auto lg:pr-8 lg:pl-9 lg:text-[13px] lg:font-medium"
+                className="select text-ink-2 h-10 w-auto pr-8 pl-9 text-[13px] font-medium max-lg:absolute max-lg:inset-0 max-lg:h-full max-lg:w-full max-lg:appearance-none max-lg:opacity-0"
                 value={value ?? ''}
                 onChange={(event) => onSort(isSort(event.target.value) ? event.target.value : null)}
             >
-                {sortOptions(searching).map((option) => (
+                {options.map((option) => (
                     <option key={option.value} value={option.value} className="text-base-content">
                         {option.label}
                     </option>
@@ -101,41 +104,56 @@ interface CatalogFilterPanelProps {
 }
 
 export function CatalogFilterPanel({ facets, applied, searching, search, onCategory, onToggleTag, onSort }: CatalogFilterPanelProps) {
+    const divider = <span aria-hidden="true" className="bg-line-strong h-6 w-px shrink-0 lg:hidden" />;
+
     return (
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 lg:grid-cols-[360px_minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-1 items-center gap-2.5 lg:grid-cols-[360px_minmax(0,1fr)_auto]">
             <div className="min-w-0">{search}</div>
 
-            <div className="lg:col-start-3 lg:row-start-1">
-                <SortSelect searching={searching} value={applied.sort} onSort={onSort} />
-            </div>
-
-            {facets.categories.length > 1 ? (
-                <div
-                    role="group"
-                    aria-label="Categoría"
-                    className="col-span-2 -mx-4 flex gap-2 overflow-x-auto px-4 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:mx-0 lg:px-0"
-                >
-                    <Chip pressed={applied.category === null} onClick={() => onCategory(null)}>
-                        Todo
-                    </Chip>
-                    {facets.categories.map((category) => (
-                        <FacetChip
-                            key={category.slug}
-                            facet={category}
-                            pressed={applied.category === category.slug}
-                            onClick={() => onCategory(applied.category === category.slug ? null : category.slug)}
-                        />
-                    ))}
+            <ScrollRow activeKey={applied.category} className="-mx-4 flex items-center gap-2 px-4 lg:contents">
+                <div className="shrink-0 lg:col-start-3 lg:row-start-1">
+                    <SortSelect searching={searching} value={applied.sort} onSort={onSort} />
                 </div>
-            ) : null}
 
-            {facets.tags.length > 0 ? (
-                <div role="group" aria-label="Etiquetas" className="col-span-full -mx-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
-                    {facets.tags.map((tag) => (
-                        <FacetChip key={tag.slug} facet={tag} pressed={applied.tags.includes(tag.slug)} onClick={() => onToggleTag(tag.slug)} />
-                    ))}
-                </div>
-            ) : null}
+                {facets.categories.length > 1 ? (
+                    <>
+                        {divider}
+                        <div
+                            role="group"
+                            aria-label="Categoría"
+                            className="flex shrink-0 gap-2 lg:col-start-2 lg:row-start-1 lg:min-w-0 lg:shrink lg:overflow-x-auto"
+                        >
+                            <Chip pressed={applied.category === null} onClick={() => onCategory(null)}>
+                                Todo
+                            </Chip>
+                            {facets.categories.map((category) => (
+                                <FacetChip
+                                    key={category.slug}
+                                    facet={category}
+                                    pressed={applied.category === category.slug}
+                                    onClick={() => onCategory(applied.category === category.slug ? null : category.slug)}
+                                />
+                            ))}
+                        </div>
+                    </>
+                ) : null}
+
+                {facets.tags.length > 0 ? (
+                    <>
+                        {divider}
+                        <div role="group" aria-label="Etiquetas" className="flex shrink-0 gap-2 lg:col-span-full lg:flex-wrap">
+                            {facets.tags.map((tag) => (
+                                <FacetChip
+                                    key={tag.slug}
+                                    facet={tag}
+                                    pressed={applied.tags.includes(tag.slug)}
+                                    onClick={() => onToggleTag(tag.slug)}
+                                />
+                            ))}
+                        </div>
+                    </>
+                ) : null}
+            </ScrollRow>
         </div>
     );
 }
