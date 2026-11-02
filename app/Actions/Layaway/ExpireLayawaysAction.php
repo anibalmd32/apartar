@@ -30,6 +30,7 @@ final class ExpireLayawaysAction
         Layaway::query()
             ->where('status', LayawayStatus::PendingDownPayment)
             ->where('expires_at', '<', $now)
+            ->whereNull('delivered_at')
             ->whereNotExists(fn ($payments) => $payments
                 ->selectRaw('1')
                 ->from('payments')
@@ -67,6 +68,7 @@ final class ExpireLayawaysAction
     private function stillExpirable(Layaway $layaway, CarbonImmutable $now): bool
     {
         return $layaway->status === LayawayStatus::PendingDownPayment
+            && $layaway->delivered_at === null
             && $layaway->expires_at !== null
             && $layaway->expires_at->lessThan($now);
     }

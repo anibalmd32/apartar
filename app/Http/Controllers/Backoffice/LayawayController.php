@@ -80,7 +80,7 @@ final class LayawayController extends Controller
                 'deliveredAt' => $this->moment($layaway->delivered_at, $timezone),
                 'cancellationReason' => $layaway->cancellation_reason,
                 'cancelUrl' => $layaway->status->canTransitionTo(LayawayStatus::Cancelled) ? route('layaways.cancel', $layaway) : null,
-                'deliverUrl' => $layaway->status === LayawayStatus::Completed && $layaway->delivered_at === null ? route('layaways.deliver', $layaway) : null,
+                'deliverUrl' => $layaway->status->allowsDelivery() && $layaway->delivered_at === null ? route('layaways.deliver', $layaway) : null,
             ],
             'customer' => $customer instanceof Customer ? [
                 'fullName' => $customer->full_name,

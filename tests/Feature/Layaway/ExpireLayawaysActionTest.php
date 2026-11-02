@@ -86,6 +86,19 @@ final class ExpireLayawaysActionTest extends TestCase
         $this->assertSame('2026-09-13 10:00:00', DB::table('layaways')->where('id', $layaway->getKey())->value('expires_at'), 'Expirar no mueve el plazo.');
     }
 
+    public function test_un_apartado_entregado_no_se_vence_aunque_pase_el_plazo(): void
+    {
+        $product = $this->product(stock: 4);
+        $layaway = $this->pendingUntil('2026-09-13 10:00:00', $product);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['delivered_at' => '2026-09-12 18:00:00']);
+
+        $outcome = $this->expireAt('2026-09-14 10:00:00');
+
+        $this->assertSame(['expired' => 0, 'held' => 0], $outcome->toArray());
+        $this->assertSame('pending_down_payment', $this->statusOf($layaway));
+        $this->assertSame(3, $this->stockOf($product));
+    }
+
     public function test_the_deadline_itself_is_not_yet_expired(): void
     {
         $layaway = $this->pendingUntil('2026-09-13 10:00:00');

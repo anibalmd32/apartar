@@ -90,3 +90,12 @@ it('nombra cada estado para el negocio sin repetir ninguno', function (): void {
         ->and(LayawayStatus::Overdue->label())->toBe('En mora')
         ->and(LayawayStatus::Overdue->label())->not->toBe(LayawayStatus::Overdue->customerLabel());
 });
+
+it('se entrega en cualquier estado vivo o pagado, nunca cancelado ni expirado', function (): void {
+    $deliverable = array_map(
+        fn (LayawayStatus $status): string => $status->value,
+        array_values(array_filter(LayawayStatus::cases(), fn (LayawayStatus $status): bool => $status->allowsDelivery())),
+    );
+
+    expect($deliverable)->toBe(['pending_down_payment', 'active', 'overdue', 'completed']);
+});

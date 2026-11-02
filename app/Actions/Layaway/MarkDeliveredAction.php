@@ -6,7 +6,6 @@ namespace App\Actions\Layaway;
 
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Layaway\LayawayNotDeliverableException;
-use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Notification\CustomerNotices;
 use App\Models\Layaway;
 use App\Models\User;
@@ -33,7 +32,7 @@ final class MarkDeliveredAction
             /** @var Layaway $locked */
             $locked = Layaway::query()->whereKey($layaway->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($locked->status !== LayawayStatus::Completed) {
+            if (! $locked->status->allowsDelivery()) {
                 throw new LayawayNotDeliverableException($locked->status);
             }
 

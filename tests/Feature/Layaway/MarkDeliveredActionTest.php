@@ -62,9 +62,24 @@ final class MarkDeliveredActionTest extends TestCase
         $this->assertSame(1, $this->auditCount());
     }
 
-    public function test_only_completed_can_be_delivered(): void
+    public function test_se_entrega_aunque_no_este_pagado_y_sin_cambiar_de_estado(): void
     {
-        foreach ([LayawayStatus::PendingDownPayment, LayawayStatus::Active, LayawayStatus::Overdue, LayawayStatus::Cancelled, LayawayStatus::Expired] as $status) {
+        foreach ([LayawayStatus::PendingDownPayment, LayawayStatus::Active, LayawayStatus::Overdue] as $status) {
+            $layaway = $this->layawayIn($this->organization, $status);
+
+            $this->deliver($layaway);
+
+            $row = DB::table('layaways')->where('id', $layaway->getKey())->sole();
+            $this->assertSame($status->value, $row->status);
+            $this->assertNotNull($row->delivered_at, $status->value);
+        }
+
+        $this->assertSame(3, $this->auditCount());
+    }
+
+    public function test_no_se_entrega_un_apartado_cancelado_ni_expirado(): void
+    {
+        foreach ([LayawayStatus::Cancelled, LayawayStatus::Expired] as $status) {
             $layaway = $this->layawayIn($this->organization, $status);
 
             try {

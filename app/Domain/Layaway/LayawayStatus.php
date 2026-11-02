@@ -60,6 +60,14 @@ enum LayawayStatus: string
         };
     }
 
+    public function allowsDelivery(): bool
+    {
+        return match ($this) {
+            self::PendingDownPayment, self::Active, self::Overdue, self::Completed => true,
+            self::Cancelled, self::Expired => false,
+        };
+    }
+
     public function releasesStock(): bool
     {
         return match ($this) {

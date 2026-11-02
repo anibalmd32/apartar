@@ -85,6 +85,21 @@ final class CancelLayawayActionTest extends TestCase
         Event::assertDispatchedTimes(LayawayCancelled::class, 3);
     }
 
+    public function test_cancelar_un_apartado_entregado_no_devuelve_la_unidad_al_inventario(): void
+    {
+        $product = $this->withinOrganization($this->organization, fn (): Product => Product::factory()->create(['stock' => 3]));
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active, $product);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['delivered_at' => CarbonImmutable::now()]);
+        $stock = (int) DB::table('products')->where('id', $product->getKey())->value('stock');
+
+        $this->cancel($layaway);
+
+        $row = DB::table('layaways')->where('id', $layaway->getKey())->sole();
+        $this->assertSame('cancelled', $row->status);
+        $this->assertNull($row->stock_released_at);
+        $this->assertSame($stock, (int) DB::table('products')->where('id', $product->getKey())->value('stock'));
+    }
+
     public function test_it_fails_on_terminal_layaways(): void
     {
         $this->fakeReceipts();

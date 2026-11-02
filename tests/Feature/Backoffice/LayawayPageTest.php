@@ -55,7 +55,7 @@ final class LayawayPageTest extends TestCase
             ->where('layaway.code', $layaway->code)
             ->where('layaway.statusLabel', 'Activo')
             ->where('layaway.cancelUrl', route('layaways.cancel', $layaway))
-            ->where('layaway.deliverUrl', null)
+            ->where('layaway.deliverUrl', route('layaways.deliver', $layaway))
             ->has('installments', 5)
             ->where('installments.0.reschedule', null)
             ->where('installments.1.reschedule.earliest', '2026-10-02')
@@ -126,18 +126,21 @@ final class LayawayPageTest extends TestCase
         $this->assertSame('completed', DB::table('layaways')->where('id', $completed->getKey())->value('status'));
     }
 
-    public function test_only_a_completed_layaway_can_be_delivered(): void
+    public function test_se_entrega_un_apartado_sin_pagar_pero_no_uno_cancelado(): void
     {
         $active = $this->layawayIn($this->organization, LayawayStatus::Active);
-        $completed = $this->layawayIn($this->organization, LayawayStatus::Completed);
+        $cancelled = $this->layawayIn($this->organization, LayawayStatus::Cancelled);
         $this->withoutOrganization();
         $this->actingAs($this->member);
 
-        $this->from(route('layaways.show', $active))->post(route('layaways.deliver', $active))->assertSessionHasErrors('delivery');
-        $this->post(route('layaways.deliver', $completed))->assertRedirect(route('layaways.show', $completed));
-        $this->post(route('layaways.deliver', $completed))->assertRedirect(route('layaways.show', $completed));
+        $this->post(route('layaways.deliver', $active))->assertRedirect(route('layaways.show', $active));
+        $this->post(route('layaways.deliver', $active))->assertRedirect(route('layaways.show', $active));
+        $this->from(route('layaways.show', $cancelled))->post(route('layaways.deliver', $cancelled))
+            ->assertSessionHasErrors(['delivery' => 'Un apartado cancelado no se puede entregar.']);
 
-        $this->assertNotNull(DB::table('layaways')->where('id', $completed->getKey())->value('delivered_at'));
+        $this->assertNotNull(DB::table('layaways')->where('id', $active->getKey())->value('delivered_at'));
+        $this->assertNull(DB::table('layaways')->where('id', $cancelled->getKey())->value('delivered_at'));
+        $this->get(route('layaways.show', $active))->assertInertia(fn (AssertableInertia $page) => $page->where('layaway.deliverUrl', null));
     }
 
     public function test_rescheduling_answers_in_the_date_field(): void

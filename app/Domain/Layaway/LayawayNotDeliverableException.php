@@ -11,7 +11,7 @@ final class LayawayNotDeliverableException extends RuntimeException
     public function __construct(public readonly LayawayStatus $status)
     {
         parent::__construct(sprintf(
-            'Solo se entrega un apartado pagado, y este está %s.',
+            'Un apartado %s no se puede entregar.',
             mb_strtolower($status->label()),
         ));
     }
