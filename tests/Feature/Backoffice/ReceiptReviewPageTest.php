@@ -68,6 +68,26 @@ final class ReceiptReviewPageTest extends TestCase
         $this->get(route('receipts.show', $reviewed))->assertInertia(fn (AssertableInertia $page) => $page->where('queue', null));
     }
 
+    public function test_after_deciding_it_goes_to_the_next_pending_receipt(): void
+    {
+        $layaway = $this->activeLayaway();
+        $first = $this->receiptFor($layaway, attributes: ['created_at' => CarbonImmutable::now()->subHours(3)]);
+        $second = $this->receiptFor($layaway, attributes: ['created_at' => CarbonImmutable::now()->subHours(2)]);
+        $third = $this->receiptFor($layaway, attributes: ['created_at' => CarbonImmutable::now()->subHour()]);
+        $this->actingAs($this->member);
+
+        $this->post(route('receipts.approve', $second), ['amount' => '30.00', 'currency' => 'USD'])
+            ->assertRedirect(route('receipts.show', $third))
+            ->assertSessionHas('status', 'Comprobante aprobado: acreditamos $30,00 ($30,00 a la cuota 1).');
+
+        $this->post(route('receipts.reject', $third), ['code' => 'not_legible', 'reason' => 'La imagen está cortada.'])
+            ->assertRedirect(route('receipts.show', $first));
+
+        $this->post(route('receipts.reject', $first), ['code' => 'not_legible', 'reason' => 'La imagen está cortada.'])
+            ->assertRedirect(route('receipts.index'))
+            ->assertSessionHas('status');
+    }
+
     public function test_the_screen_shows_what_is_needed_to_decide(): void
     {
         $layaway = $this->activeLayaway();
@@ -311,7 +331,8 @@ final class ReceiptReviewPageTest extends TestCase
 
         $this->actingAs($this->member)
             ->post(route('receipts.approve', $initial), ['amount' => '50.00', 'currency' => 'USD'])
-            ->assertRedirect(route('receipts.index'));
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
 
         return $layaway;
     }

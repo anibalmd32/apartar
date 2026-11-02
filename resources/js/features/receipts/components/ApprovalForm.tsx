@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
@@ -7,6 +8,7 @@ import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview
 import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { amountInput } from '@/lib/money';
+import { type MoneyView } from '@/types/money';
 import { type ReceiptReviewProps } from '@/types/receipt';
 import { useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
@@ -16,6 +18,7 @@ type Approval = NonNullable<ReceiptReviewProps['approval']>;
 interface ApprovalFormProps {
     approval: Approval;
     receipt: ReceiptReviewProps['receipt'];
+    remaining: MoneyView;
     rate: ReceiptReviewProps['rate'];
     initialPreview: ReceiptReviewProps['preview'];
     initialError: ReceiptReviewProps['previewError'];
@@ -32,7 +35,7 @@ interface ApprovalFormValues {
     confirm_rate_deviation: string | null;
 }
 
-export function ApprovalForm({ approval, receipt, rate, initialPreview, initialError }: ApprovalFormProps) {
+export function ApprovalForm({ approval, receipt, remaining, rate, initialPreview, initialError }: ApprovalFormProps) {
     const form = useForm<ApprovalFormValues>({
         amount: amountInput(receipt.declaredAmount),
         currency: receipt.declaredCurrency,
@@ -116,6 +119,8 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
             >
                 {error !== null ? (
                     <p className="text-error">{error}</p>
+                ) : loading && preview === null ? (
+                    <p className="text-ink-2">Calculando a qué cuotas iría…</p>
                 ) : preview !== null ? (
                     <div className="flex flex-col gap-1">
                         <p className="font-bold">{preview.summary}</p>
@@ -134,7 +139,10 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
 
             {excess !== null ? (
                 <Alert tone="warning" className="flex-col items-start">
-                    <span>Sobran {excess} sobre el saldo. No se devuelven como crédito: quedan registrados sin asignar.</span>
+                    <span>
+                        <strong>Supera lo que falta: {remaining.usd}.</strong> Sobran {excess}: no se devuelven como crédito, quedan registrados sin
+                        asignar.
+                    </span>
                     <CheckboxField
                         label={`Confirmo que apruebo con ${excess} sin asignar`}
                         name="confirm_excess"
@@ -149,9 +157,9 @@ export function ApprovalForm({ approval, receipt, rate, initialPreview, initialE
 
             <RateConfirmations preview={preview} values={form.data} onChange={(field, token) => form.setData(field, token)} errors={form.errors} />
 
-            <button type="submit" className="btn btn-success btn-lg w-full" disabled={blocked}>
-                Aprobar y aplicar el pago
-            </button>
+            <Button type="submit" variant="success" size="lg" block loading={form.processing} disabled={blocked}>
+                {form.processing ? 'Aprobando…' : 'Aprobar y aplicar el pago'}
+            </Button>
         </form>
     );
 }

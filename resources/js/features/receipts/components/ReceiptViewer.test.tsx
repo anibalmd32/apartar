@@ -43,3 +43,15 @@ it('con el PDF deja el zoom y el giro al visor del navegador', () => {
     expect(screen.queryByRole('button', { name: 'Acercar' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Descargar' })).toBeInTheDocument();
 });
+
+it('en el celular cada botón de la barra del visor mide 44px', () => {
+    viewer('image');
+
+    for (const name of ['Alejar', 'Acercar', 'Girar']) {
+        expect(screen.getByRole('button', { name })).toHaveClass('max-lg:size-11');
+    }
+
+    for (const name of ['Descargar', 'Abrir el archivo completo']) {
+        expect(screen.getByRole('link', { name })).toHaveClass('max-lg:size-11');
+    }
+});

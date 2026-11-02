@@ -9,7 +9,14 @@ const ZOOM_STEP = 0.25;
 
 function ToolButton({ icon, label, onClick, disabled }: { icon: string[]; label: string; onClick: () => void; disabled?: boolean }) {
     return (
-        <button type="button" className="btn btn-ghost btn-sm btn-square" onClick={onClick} disabled={disabled} aria-label={label} title={label}>
+        <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square max-lg:size-11"
+            onClick={onClick}
+            disabled={disabled}
+            aria-label={label}
+            title={label}
+        >
             <Icon icon={icon} size={14} />
         </button>
     );
@@ -23,8 +30,10 @@ export function ReceiptViewer({ receipt }: Pick<ReceiptReviewProps, 'receipt'>) 
 
     return (
         <section className="bg-base-100 border-line shadow-card flex flex-col gap-3 rounded-2xl border p-3" aria-label="Comprobante">
-            <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1">
-                <span className="text-ink-2 me-auto text-[13px] font-semibold">{isPdf ? 'Comprobante en PDF' : 'Captura del comprobante'}</span>
+            <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1 max-lg:justify-between max-lg:gap-0">
+                <span className="text-ink-2 me-auto text-[13px] font-semibold max-lg:sr-only">
+                    {isPdf ? 'Comprobante en PDF' : 'Captura del comprobante'}
+                </span>
                 {!isPdf ? (
                     <>
                         <ToolButton
@@ -45,14 +54,20 @@ export function ReceiptViewer({ receipt }: Pick<ReceiptReviewProps, 'receipt'>) 
                         <ToolButton icon={cilReload} label="Girar" onClick={() => setRotation((r) => (r + 90) % 360)} />
                     </>
                 ) : null}
-                <a href={receipt.file.url} download className="btn btn-ghost btn-sm btn-square" aria-label="Descargar" title="Descargar">
+                <a
+                    href={receipt.file.url}
+                    download
+                    className="btn btn-ghost btn-sm btn-square max-lg:size-11"
+                    aria-label="Descargar"
+                    title="Descargar"
+                >
                     <Icon icon={cilCloudDownload} size={14} />
                 </a>
                 <a
                     href={receipt.file.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-ghost btn-sm btn-square"
+                    className="btn btn-ghost btn-sm btn-square max-lg:size-11"
                     aria-label="Abrir el archivo completo"
                     title="Abrir el archivo completo"
                 >

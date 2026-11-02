@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { SelectField } from '@/components/ui/select-field';
 import { type ReceiptReviewProps } from '@/types/receipt';
 import { useForm } from '@inertiajs/react';
@@ -52,13 +53,16 @@ export function RejectForm({ rejection }: { rejection: Rejection }) {
                 {form.errors.reason !== undefined ? <span className="text-error text-sm">{form.errors.reason}</span> : null}
             </div>
 
-            <button
+            <Button
                 type="submit"
-                className="btn btn-danger-soft w-full"
-                disabled={form.processing || form.data.code === '' || form.data.reason.trim().length < 10}
+                variant="secondary"
+                block
+                className="btn-danger-soft"
+                loading={form.processing}
+                disabled={form.data.code === '' || form.data.reason.trim().length < 10}
             >
-                Rechazar el comprobante
-            </button>
+                {form.processing ? 'Rechazando…' : 'Rechazar el comprobante'}
+            </Button>
         </form>
     );
 }

@@ -28,6 +28,7 @@ use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Requests\Backoffice\ApproveReceiptRequest;
 use App\Http\Requests\Backoffice\RejectReceiptRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
@@ -53,6 +54,7 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 final class ReceiptReviewController extends Controller
 {
@@ -69,16 +71,7 @@ final class ReceiptReviewController extends Controller
      */
     private function queuePosition(Receipt $receipt): ?array
     {
-        /** @var list<int> $ids */
-        $ids = Receipt::query()
-            ->pendingReview()
-            ->whereHas('layaway', fn (Builder $layaway) => $layaway->where('status', '!=', LayawayStatus::Cancelled->value))
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->pluck('id')
-            ->map(fn (mixed $id): int => (int) $id)
-            ->all();
-
+        $ids = $this->pendingQueue();
         $index = array_search((int) $receipt->getKey(), $ids, true);
 
         if ($index === false) {
@@ -91,6 +84,60 @@ final class ReceiptReviewController extends Controller
             'previousUrl' => isset($ids[$index - 1]) ? route('receipts.show', $ids[$index - 1]) : null,
             'nextUrl' => isset($ids[$index + 1]) ? route('receipts.show', $ids[$index + 1]) : null,
         ];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function pendingQueue(): array
+    {
+        /** @var list<int> $ids */
+        $ids = Receipt::query()
+            ->pendingReview()
+            ->whereHas('layaway', fn (Builder $layaway) => $layaway->where('status', '!=', LayawayStatus::Cancelled->value))
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->values()
+            ->all();
+
+        return $ids;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function followersOf(Receipt $receipt): array
+    {
+        $ids = $this->pendingQueue();
+        $index = array_search((int) $receipt->getKey(), $ids, true);
+
+        if ($index === false) {
+            return $ids;
+        }
+
+        return [...array_slice($ids, $index + 1), ...array_slice($ids, 0, $index)];
+    }
+
+    /**
+     * @param  list<int>  $followers
+     */
+    private function afterDecision(array $followers, string $status): RedirectResponse
+    {
+        $pending = $this->pendingQueue();
+        $next = array_values(array_intersect($followers, $pending))[0] ?? $pending[0] ?? null;
+
+        return ($next === null ? redirect()->route('receipts.index') : redirect()->route('receipts.show', $next))->with('status', $status);
+    }
+
+    public static function missing(Request $request): SymfonyResponse
+    {
+        Inertia::share(app(HandleInertiaRequests::class)->share($request));
+
+        return Inertia::render('backoffice/receipts/Missing', ['inboxUrl' => route('receipts.index')])
+            ->toResponse($request)
+            ->setStatusCode(404);
     }
 
     public function show(Request $request, Receipt $receipt): Response
@@ -176,13 +223,15 @@ final class ReceiptReviewController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
+        $followers = $this->followersOf($receipt);
+
         try {
             $extension = $action->handle($receipt, $request->code(), $request->reason(), $actor);
         } catch (ReceiptAlreadyProcessedException $exception) {
             return back()->withErrors(['reason' => $exception->getMessage()]);
         }
 
-        return redirect()->route('receipts.index')->with('status', 'Comprobante rechazado: el cliente verá tu explicación y podrá reportar de nuevo.'.$this->extensionNote($extension));
+        return $this->afterDecision($followers, 'Comprobante rechazado: el cliente verá tu explicación y podrá reportar de nuevo.'.$this->extensionNote($extension));
     }
 
     private function extensionNote(DownPaymentExtension $extension): string
@@ -200,6 +249,8 @@ final class ReceiptReviewController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
+        $followers = $this->followersOf($receipt);
+
         try {
             $applied = $action->handle($receipt, $request->toData(), $actor);
         } catch (UnconfirmedExcessException $exception) {
@@ -214,7 +265,7 @@ final class ReceiptReviewController extends Controller
             return back()->withErrors(['amount' => $exception->getMessage()]);
         }
 
-        return redirect()->route('receipts.index')->with('status', $this->confirmationOf($applied));
+        return $this->afterDecision($followers, $this->confirmationOf($applied));
     }
 
     /**

@@ -297,6 +297,7 @@ Surface::backofficeRoutes(function (): void {
 
                 Route::get('comprobantes/{receipt}', [ReceiptReviewController::class, 'show'])
                     ->whereNumber('receipt')
+                    ->missing(fn (Request $request) => ReceiptReviewController::missing($request))
                     ->name('receipts.show');
 
                 Route::get('comprobantes/{receipt}/vista-previa', [ReceiptReviewController::class, 'preview'])

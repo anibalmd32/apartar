@@ -29,7 +29,12 @@ final class ReceiptReviewIsolationTest extends TestCase
         $this->withoutOrganization();
         $this->actingAs($intruder);
 
-        $this->get(route('receipts.show', $receipt))->assertNotFound();
+        $this->get(route('receipts.show', $receipt))->assertNotFound()->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('backoffice/receipts/Missing')
+            ->where('inboxUrl', route('receipts.index'))
+            ->where('teamMember.email', $intruder->email)
+            ->missing('receipt')
+            ->missing('layaway'));
         $this->getJson(route('receipts.preview', [$receipt, 'amount' => '30.00', 'currency' => 'USD']))->assertNotFound();
         $this->post(route('receipts.approve', $receipt), ['amount' => '30.00', 'currency' => 'USD'])->assertNotFound();
 
