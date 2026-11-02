@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
+import { ReceiptImage } from '@/features/platform/components/ReceiptImage';
 import { ReceiptReview } from '@/features/platform/components/ReceiptReview';
 import PlatformLayout from '@/layouts/platform-layout';
 import { cn } from '@/lib/utils';
@@ -59,10 +60,10 @@ export default function InvoicesIndex({ receipts }: { receipts: readonly Pending
                         {failed.has(selected.id) ? (
                             <p className="text-ink-2 my-auto text-sm">Este comprobante no se puede previsualizar (puede ser un PDF).</p>
                         ) : (
-                            <img
+                            <ReceiptImage
+                                key={selected.id}
                                 src={selected.fileUrl}
                                 alt={`Comprobante de ${selected.organization.name}`}
-                                className="shadow-pop max-h-[520px] max-w-full rounded-xl object-contain"
                                 onError={() => setFailed((current) => new Set(current).add(selected.id))}
                             />
                         )}
