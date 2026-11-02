@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Exchange;
 
 use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Exchange\HistoricalRateImporter;
 use App\Domain\Exchange\RateSource;
 use App\Models\ExchangeRate;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ExchangeRateSeeder;
+use Illuminate\Support\Facades\Http;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
@@ -35,6 +37,27 @@ final class ExchangeRateSeederTest extends TestCase
         $this->assertNotNull($snapshot);
         $this->assertTrue($snapshot->isStale());
         $this->assertTrue($snapshot->publishedAt->isBefore(CarbonImmutable::now()->subDay()));
+    }
+
+    public function test_deja_libres_los_dias_recientes_para_la_tasa_real_del_bcv(): void
+    {
+        CarbonImmutable::setTestNow('2026-11-01 12:00:00');
+        config()->set('services.exchange_rate.history_url', 'https://historicos.test/dolares');
+        Http::fake(['historicos.test/*' => Http::response([
+            ['fuente' => 'oficial', 'compra' => null, 'venta' => null, 'promedio' => 889.2553, 'fecha' => '2026-10-30'],
+        ])]);
+
+        try {
+            $this->seed(ExchangeRateSeeder::class);
+
+            $this->assertSame(['bcv' => 1], app(HistoricalRateImporter::class)->import());
+            $this->assertTrue(ExchangeRateSeeder::publishedAt()->isBefore(CarbonImmutable::parse('2024-01-01')));
+            $this->assertSame('889.25530000', ExchangeRate::query()
+                ->where('published_at', CarbonImmutable::parse('2026-10-30', 'America/Caracas')->startOfDay()->setTimezone(date_default_timezone_get()))
+                ->value('rate'));
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
     }
 
     public function test_it_is_idempotent(): void

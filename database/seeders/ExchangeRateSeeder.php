@@ -13,7 +13,7 @@ class ExchangeRateSeeder extends Seeder
 {
     public const INITIAL_RATE = '36.50000000';
 
-    public const PUBLISHED_DAYS_AGO = 2;
+    public const PUBLISHED_AT = '2000-01-01 00:00:00';
 
     public function run(): void
     {
@@ -24,7 +24,12 @@ class ExchangeRateSeeder extends Seeder
         ExchangeRate::query()->create([
             'source' => RateSource::Bcv,
             'rate' => self::INITIAL_RATE,
-            'published_at' => CarbonImmutable::now()->subDays(self::PUBLISHED_DAYS_AGO),
+            'published_at' => self::publishedAt(),
         ]);
+    }
+
+    public static function publishedAt(): CarbonImmutable
+    {
+        return CarbonImmutable::parse(self::PUBLISHED_AT, 'America/Caracas')->setTimezone(date_default_timezone_get());
     }
 }
