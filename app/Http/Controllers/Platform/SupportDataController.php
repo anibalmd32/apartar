@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Platform;
 
+use App\Domain\Layaway\LayawayStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Layaway;
@@ -25,10 +26,11 @@ final class SupportDataController extends Controller
                 'code' => $layaway->code,
                 'customer' => $layaway->customer->full_name ?? '—',
                 'product' => $layaway->product_name_snapshot,
-                'status' => $layaway->status->label(),
+                'status' => $layaway->status->value,
+                'statusLabel' => $layaway->status->label(),
                 'totalCents' => $layaway->total_cents->cents,
                 'paidCents' => $layaway->paid_cents->cents,
-                'remainingCents' => $layaway->remaining_cents->cents,
+                'remainingCents' => in_array($layaway->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true) ? null : $layaway->remaining_cents->cents,
                 'createdAt' => $layaway->created_at?->toIso8601String(),
             ])->all();
 

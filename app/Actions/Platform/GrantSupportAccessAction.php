@@ -80,7 +80,9 @@ final class GrantSupportAccessAction
             'expires_at' => $expiresAt->toIso8601String(),
         ]);
 
-        $this->notifyOwners($organization, $operator, $reason, $expiresAt);
+        if ($grant->wasRecentlyCreated) {
+            $this->notifyOwners($organization, $operator, $reason, $expiresAt);
+        }
 
         return $grant;
     }
@@ -91,7 +93,8 @@ final class GrantSupportAccessAction
             $owners = $this->context->runFor($organization, fn () => User::query()
                 ->where('role', OrganizationRole::Owner)
                 ->whereNull('disabled_at')
-                ->get());
+                ->get()
+                ->unique(fn (User $owner): string => mb_strtolower($owner->email)));
 
             $when = $expiresAt->setTimezone($organization->timezone)->locale('es')->isoFormat('D [de] MMMM, HH:mm');
 

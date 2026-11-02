@@ -34,7 +34,12 @@ final class OutgoingMailRecorder
     {
         $headers = $message->getHeaders();
         $given = $headers->get(self::UUID_HEADER)?->getBodyAsString();
-        $uuid = is_string($given) && Str::isUuid($given) ? strtolower($given) : (string) Str::uuid();
+        $notificationId = $data['__laravel_notification_id'] ?? null;
+        $uuid = match (true) {
+            is_string($given) && Str::isUuid($given) => strtolower($given),
+            is_string($notificationId) && Str::isUuid($notificationId) => strtolower($notificationId),
+            default => (string) Str::uuid(),
+        };
         $headers->remove(self::UUID_HEADER);
         $category = MailCategory::fromMessageData($data);
 
@@ -51,8 +56,8 @@ final class OutgoingMailRecorder
         $from = $email?->getFrom()[0] ?? null;
         $to = self::addresses($email?->getTo() ?? []);
 
-        $mail = SentMail::query()->create([
-            'uuid' => $uuid,
+        $mail = SentMail::query()->firstOrNew(['uuid' => $uuid]);
+        $mail->fill([
             'message_id' => self::messageId($message),
             'from_address' => $from?->getAddress() ?? (string) config('mail.from.address'),
             'from_name' => $from?->getName() ?: null,
@@ -67,7 +72,7 @@ final class OutgoingMailRecorder
             'category' => $category,
             'status' => MailStatus::Sending,
             'target_organization_id' => $this->context->organizationFor($data),
-        ]);
+        ])->save();
 
         MailActivity::announce(MailActivityKind::Sent, [$uuid]);
 

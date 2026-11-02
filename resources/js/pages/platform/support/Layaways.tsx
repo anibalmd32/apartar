@@ -1,5 +1,7 @@
 import { BackLink } from '@/components/ui/back-link';
+import { Badge } from '@/components/ui/badge';
 import PlatformLayout from '@/layouts/platform-layout';
+import { LAYAWAY_TONES, toneOf } from '@/lib/status-tones';
 import { pf } from '@/lib/surfaces';
 
 interface LayawayRow {
@@ -7,9 +9,10 @@ interface LayawayRow {
     customer: string;
     product: string;
     status: string;
+    statusLabel: string;
     totalCents: number;
     paidCents: number;
-    remainingCents: number;
+    remainingCents: number | null;
     createdAt: string | null;
 }
 
@@ -51,7 +54,7 @@ export default function SupportLayaways({
                                     <p className="text-ink-3 text-xs">{row.product}</p>
                                 </td>
                                 <td data-cell="shrink" className="whitespace-nowrap">
-                                    {row.status}
+                                    <Badge tone={toneOf(LAYAWAY_TONES, row.status)}>{row.statusLabel}</Badge>
                                 </td>
                                 <td data-label="Total" className="text-right whitespace-nowrap tabular-nums">
                                     {usd(row.totalCents)}
@@ -60,7 +63,11 @@ export default function SupportLayaways({
                                     {row.paidCents === 0 ? null : usd(row.paidCents)}
                                 </td>
                                 <td data-label="Falta" className="text-right font-semibold whitespace-nowrap tabular-nums">
-                                    {row.remainingCents === 0 ? null : usd(row.remainingCents)}
+                                    {row.remainingCents === null ? (
+                                        <span className="text-ink-3 font-normal">Cerrado</span>
+                                    ) : row.remainingCents === 0 ? null : (
+                                        usd(row.remainingCents)
+                                    )}
                                 </td>
                             </tr>
                         ))}

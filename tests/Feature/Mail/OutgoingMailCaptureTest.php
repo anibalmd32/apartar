@@ -10,7 +10,10 @@ use App\Notifications\LayawayCodeNotification;
 use App\Notifications\SupportAccessGrantedNotification;
 use App\Support\Mail\OutgoingMailRecorder;
 use Carbon\CarbonImmutable;
+use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Tests\Concerns\ActsAsPlatformOperator;
 use Tests\Concerns\ReadsSentMail;
@@ -61,6 +64,32 @@ final class OutgoingMailCaptureTest extends TestCase
 
         $this->assertSame($organization->getKey(), $mail->target_organization_id);
         $this->assertSame([strtolower($owner->email)], $mail->to);
+    }
+
+    public function test_reintentar_un_correo_que_fallo_no_crea_otro_registro(): void
+    {
+        [, $owner] = $this->businessWithOwner();
+        $notification = new SupportAccessGrantedNotification('Rosa', 'Revisar un pago', 'mañana');
+        $notification->id = (string) Str::uuid();
+        $attempts = 0;
+        Event::listen(MessageSending::class, function () use (&$attempts): void {
+            if (++$attempts < 3) {
+                throw new RuntimeException('550 Too many emails per second');
+            }
+        });
+
+        foreach ([1, 2, 3] as $attempt) {
+            try {
+                $owner->notifyNow($notification);
+            } catch (RuntimeException) {
+            }
+        }
+
+        $mail = SentMail::query()->where('category', 'SupportAccessGrantedNotification')->sole();
+
+        $this->assertSame(MailStatus::Sent, $mail->status);
+        $this->assertSame($notification->id, $mail->uuid);
+        $this->assertCount(1, $this->sentEmails());
     }
 
     public function test_a_broken_recorder_never_stops_the_mail(): void

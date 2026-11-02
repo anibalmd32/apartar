@@ -25,7 +25,8 @@ it('los apartados de soporte vuelven al negocio y se apilan en el celular sin mo
                     code: 'AP-YZE96F5Q',
                     customer: 'José Gregorio Martínez',
                     product: 'Lentes de sol',
-                    status: 'Activo',
+                    status: 'active',
+                    statusLabel: 'Activo',
                     totalCents: 123_450,
                     paidCents: 0,
                     remainingCents: 123_450,
@@ -43,6 +44,26 @@ it('los apartados de soporte vuelven al negocio y se apilan en el celular sin mo
     expect(cells[0]).toHaveAttribute('data-cell', 'primary');
     expect(cells[2]).toHaveTextContent('$1.234,50');
     expect(cells[3]).toBeEmptyDOMElement();
+});
+
+it('el estado del apartado es una insignia con su tono y uno cancelado no muestra deuda', () => {
+    const row = { customer: 'Ana', product: 'Lentes', totalCents: 9_500, paidCents: 0, createdAt: null };
+    render(
+        <SupportLayaways
+            organization={ORGANIZATION}
+            layaways={[
+                { ...row, code: 'AP-MORA0001', status: 'overdue', statusLabel: 'En mora', remainingCents: 9_500 },
+                { ...row, code: 'AP-CANC0001', status: 'cancelled', statusLabel: 'Cancelado', remainingCents: null },
+            ]}
+        />,
+    );
+
+    expect(screen.getByText('En mora')).toHaveClass('badge', 'badge-error');
+    expect(screen.getByText('Cancelado')).toHaveClass('badge', 'badge-neutral');
+
+    const cancelled = within(screen.getAllByRole('row')[2]!).getAllByRole('cell');
+    expect(cancelled[4]).toHaveTextContent('Cerrado');
+    expect(cancelled[4]).not.toHaveTextContent('$95,00');
 });
 
 it('los clientes de soporte muestran la cédula y el teléfono con formato', () => {

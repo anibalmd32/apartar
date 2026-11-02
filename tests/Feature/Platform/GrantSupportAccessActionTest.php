@@ -6,6 +6,7 @@ namespace Tests\Feature\Platform;
 
 use App\Actions\Platform\GrantSupportAccessAction;
 use App\Domain\Auditing\AuditEvent;
+use App\Domain\Layaway\LayawayStatus;
 use App\Models\AuditEntry;
 use App\Models\Customer;
 use App\Models\Layaway;
@@ -17,12 +18,14 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\ActsAsPlatformOperator;
+use Tests\Concerns\CreatesLayaways;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
 final class GrantSupportAccessActionTest extends TestCase
 {
     use ActsAsPlatformOperator;
+    use CreatesLayaways;
     use ReusesMigratedDatabase;
 
     private const REASON = 'Revisión de balance reportado por el cliente, ticket 42';
@@ -87,6 +90,18 @@ final class GrantSupportAccessActionTest extends TestCase
             ->where('teamMember.supportAccess.0.reason', self::REASON));
     }
 
+    public function test_abrir_el_acceso_dos_veces_avisa_una_sola_vez_a_cada_dueno(): void
+    {
+        Notification::fake();
+        $operator = $this->asOperator();
+
+        app(GrantSupportAccessAction::class)->handle($operator, $this->organization, self::REASON);
+        app(GrantSupportAccessAction::class)->handle($operator, $this->organization, self::REASON);
+
+        Notification::assertSentToTimes($this->owner, SupportAccessGrantedNotification::class, 1);
+        Notification::assertCount(1);
+    }
+
     public function test_los_montos_de_los_apartados_llegan_como_centimos_enteros(): void
     {
         Notification::fake();
@@ -101,6 +116,21 @@ final class GrantSupportAccessActionTest extends TestCase
             ->where('layaways.0.totalCents', 20_000)
             ->where('layaways.0.paidCents', 0)
             ->where('layaways.0.remainingCents', 20_000));
+    }
+
+    public function test_un_apartado_cancelado_llega_con_su_estado_y_sin_monto_pendiente(): void
+    {
+        Notification::fake();
+        $this->layawayIn($this->organization, LayawayStatus::Cancelled);
+        $this->withoutOrganization();
+        $this->asOperator();
+
+        $this->post($this->base().'/soporte', ['reason' => self::REASON])->assertRedirect();
+
+        $this->get($this->data('apartados'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaways.0.status', 'cancelled')
+            ->where('layaways.0.statusLabel', LayawayStatus::Cancelled->label())
+            ->where('layaways.0.remainingCents', null));
     }
 
     public function test_an_expired_grant_stops_working_on_the_next_request(): void
