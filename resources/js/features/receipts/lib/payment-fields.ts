@@ -19,9 +19,6 @@ export interface PaymentFieldValues {
     confirm_excess: number | null;
     confirm_stale_rate: string | null;
     confirm_rate_deviation: string | null;
-    surplus_destination: string;
-    surplus_user_id: string;
-    surplus_note: string;
 }
 
 export const NOTE_MIN_LENGTH = 10;
@@ -43,9 +40,6 @@ export function emptyPaymentValues(options: PaymentFieldOptions): PaymentFieldVa
         confirm_excess: null,
         confirm_stale_rate: null,
         confirm_rate_deviation: null,
-        surplus_destination: '',
-        surplus_user_id: '',
-        surplus_note: '',
     };
 }
 
@@ -68,7 +62,6 @@ export function paymentMissing(options: PaymentFieldOptions, values: PaymentFiel
         [values.note.trim().length < NOTE_MIN_LENGTH, `Escribe la nota del pago, de al menos ${NOTE_MIN_LENGTH} caracteres.`],
         [loading, 'Estamos calculando a qué cuotas va el pago.'],
         [excessPending, 'Confirma que registras el pago con lo que sobra sin asignar.'],
-        [surplusDestinationMissing(values), 'Elige a dónde va lo que sobra, o déjalo sin asignar.'],
         [
             ratePending(preview, { confirm_stale_rate: values.confirm_stale_rate, confirm_rate_deviation: values.confirm_rate_deviation }),
             'Confirma la tasa del pago.',
@@ -76,26 +69,6 @@ export function paymentMissing(options: PaymentFieldOptions, values: PaymentFiel
     ];
 
     return checks.find(([pending]) => pending)?.[1] ?? null;
-}
-
-export function surplusDestinationMissing(values: {
-    readonly surplus_destination: string;
-    readonly surplus_user_id: string;
-    readonly surplus_note: string;
-}): boolean {
-    if (values.surplus_destination === '') {
-        return false;
-    }
-
-    if (values.surplus_destination === 'team_member') {
-        return values.surplus_user_id === '';
-    }
-
-    if (values.surplus_destination === 'other') {
-        return values.surplus_note.trim() === '';
-    }
-
-    return false;
 }
 
 export function paymentPending(options: PaymentFieldOptions, values: PaymentFieldValues, state: ApprovalPreviewState): boolean {

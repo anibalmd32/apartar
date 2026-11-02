@@ -12,7 +12,6 @@ use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\ExchangeRate;
 use App\Models\Layaway;
 use App\Models\Organization;
-use App\Models\Payment;
 use App\Models\Receipt;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -165,67 +164,6 @@ final class ReceiptReviewPageTest extends TestCase
         $this->post(route('receipts.approve', $receipt), ['amount' => '160.00', 'currency' => 'USD', 'confirm_excess' => '1000'])
             ->assertRedirect(route('receipts.index'))
             ->assertSessionHas('status', 'Comprobante aprobado: acreditamos $160,00 ($150,00 a las cuotas 1, 2, 3, 4 y 5; $10,00 sin asignar). El apartado está pagado.');
-    }
-
-    public function test_the_screen_offers_the_destinations_of_the_surplus(): void
-    {
-        $receipt = $this->receiptFor($this->activeLayaway());
-        $irma = $this->withinOrganization($this->organization, fn (): User => User::factory()->create(['name' => 'Irma Rojas']));
-        $this->withoutOrganization();
-
-        $this->actingAs($this->member)->get(route('receipts.show', $receipt))->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('approval.destinations.0.value', 'team_member')
-            ->where('approval.destinations.3.value', 'other')
-            ->where('approval.destinations.3.requiresNote', true)
-            ->has('approval.teamMembers', 2)
-            ->where('approval.teamMembers.0.name', 'Ana Pérez')
-            ->where('approval.teamMembers.1.name', 'Irma Rojas'));
-    }
-
-    public function test_the_surplus_can_be_assigned_when_the_receipt_is_approved(): void
-    {
-        $receipt = $this->receiptFor($this->activeLayaway());
-        $irma = $this->withinOrganization($this->organization, fn (): User => User::factory()->create(['name' => 'Irma Rojas']));
-        $this->withoutOrganization();
-        $this->actingAs($this->member);
-
-        $this->post(route('receipts.approve', $receipt), [
-            'amount' => '160.00',
-            'currency' => 'USD',
-            'confirm_excess' => '1000',
-            'surplus_destination' => 'team_member',
-            'surplus_user_id' => (string) $irma->getKey(),
-        ])->assertRedirect(route('receipts.index'));
-
-        $payment = $this->withinOrganization($this->organization, fn (): Payment => Payment::query()->latest('id')->firstOrFail());
-
-        $this->assertSame('team_member', $payment->surplus_destination_type?->value);
-        $this->assertSame('Irma Rojas', $payment->surplus_team_member_name);
-    }
-
-    public function test_the_surplus_destination_is_refused_when_it_is_not_valid(): void
-    {
-        $receipt = $this->receiptFor($this->activeLayaway());
-        $foreign = $this->withinOrganization($this->neighbourOrganization(), fn (): User => User::factory()->create());
-        $this->withoutOrganization();
-        $this->actingAs($this->member)->from(route('receipts.show', $receipt));
-
-        $this->post(route('receipts.approve', $receipt), [
-            'amount' => '160.00',
-            'currency' => 'USD',
-            'confirm_excess' => '1000',
-            'surplus_destination' => 'team_member',
-            'surplus_user_id' => (string) $foreign->getKey(),
-        ])->assertSessionHasErrors('surplus_user_id');
-
-        $this->post(route('receipts.approve', $receipt), [
-            'amount' => '160.00',
-            'currency' => 'USD',
-            'confirm_excess' => '1000',
-            'surplus_destination' => 'other',
-        ])->assertSessionHasErrors('surplus_note');
-
-        $this->assertSame('pending_review', DB::table('receipts')->where('id', $receipt->getKey())->value('status'));
     }
 
     public function test_each_refusal_comes_back_in_its_field(): void

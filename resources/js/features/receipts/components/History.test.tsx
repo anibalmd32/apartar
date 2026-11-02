@@ -1,8 +1,7 @@
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import { ReceiptHistory } from '@/features/receipts/components/ReceiptHistory';
 import { centsUsd } from '@/lib/money';
-import { type PaymentRow } from '@/types/receipt';
-import { type ReceiptRow } from '@/types/receipt-row';
+import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
 import { render, screen, within } from '@testing-library/react';
 import { expect, it } from 'vitest';
 

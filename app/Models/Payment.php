@@ -9,7 +9,6 @@ use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentMethod;
-use App\Domain\Payment\SurplusDestinationType;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Models\Concerns\ReferencesBank;
 use Database\Factories\PaymentFactory;
@@ -36,12 +35,6 @@ use LogicException;
  * @property string|null $idempotency_key
  * @property Money $amount_cents_usd
  * @property Money $unallocated_cents
- * @property SurplusDestinationType|null $surplus_destination_type
- * @property int|null $surplus_user_id
- * @property string|null $surplus_team_member_name
- * @property string|null $surplus_note
- * @property int|null $surplus_assigned_by
- * @property \Illuminate\Support\Carbon|null $surplus_assigned_at
  * @property Currency $declared_currency
  * @property string $declared_amount
  * @property string $rate_applied
@@ -134,22 +127,6 @@ class Payment extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
-     */
-    public function surplusUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'surplus_user_id');
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function surplusAssignedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'surplus_assigned_by');
-    }
-
-    /**
      * @return HasMany<PaymentAllocation, $this>
      */
     public function allocations(): HasMany
@@ -167,16 +144,6 @@ class Payment extends Model
         return $this->file_path !== null;
     }
 
-    public function hasSurplus(): bool
-    {
-        return $this->unallocated_cents->cents > 0;
-    }
-
-    public function hasSurplusDestination(): bool
-    {
-        return $this->surplus_destination_type !== null;
-    }
-
     /**
      * @return array<string, string|class-string>
      */
@@ -192,7 +159,6 @@ class Payment extends Model
             'rate_published_at' => 'datetime',
             'settled_at' => 'datetime',
             'payment_method' => PaymentMethod::class,
-            'surplus_destination_type' => SurplusDestinationType::class,
             'paid_on' => 'date',
             'file_size' => 'integer',
         ];

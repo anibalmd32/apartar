@@ -15,7 +15,6 @@ use App\Domain\Money\InvalidRateException;
 use App\Domain\Money\Money;
 use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\IdempotencyKeyReusedException;
-use App\Domain\Payment\InvalidSurplusDestinationException;
 use App\Domain\Payment\PaymentAmounts;
 use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\PaymentConfirmation;
@@ -64,8 +63,6 @@ final class ManualPaymentController extends Controller
             return back()->withErrors(['rate' => $exception->getMessage()]);
         } catch (PaymentNotApplicableException|IdempotencyKeyReusedException $exception) {
             return back()->withErrors(['amount' => $exception->getMessage()]);
-        } catch (InvalidSurplusDestinationException $exception) {
-            return back()->withErrors(['surplus_destination' => $exception->getMessage()]);
         } catch (DuplicateReceiptException $exception) {
             return back()->withErrors([$exception->field() => $exception->getMessage()]);
         }

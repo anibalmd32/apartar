@@ -2,13 +2,7 @@ import { type OrganizationBrand } from '@/types/backoffice';
 import { type Paginated } from '@/types/data-table';
 import { type DownPaymentProgressView } from '@/types/layaway';
 import { type Currency, type MoneyView } from '@/types/money';
-import {
-    type PaymentAccountView,
-    type PaymentEvidence,
-    type PaymentMethod,
-    type SurplusDestinationOption,
-    type SurplusTeamMember,
-} from '@/types/payment';
+import { type PaymentAccountView, type PaymentEvidence, type PaymentMethod } from '@/types/payment';
 import { type LayawaySummary, type NextPaymentSuggestion } from '@/types/portal';
 import { type RateChecks } from '@/types/rate-deviation';
 
@@ -199,12 +193,24 @@ export interface ReceiptReviewProps {
         readonly url: string;
         readonly previewUrl: string;
         readonly currencies: readonly ReceiptCurrencyOption[];
-        readonly destinations: readonly SurplusDestinationOption[];
-        readonly teamMembers: readonly SurplusTeamMember[];
     } | null;
     readonly rejection: {
         readonly url: string;
         readonly codes: readonly { readonly value: string; readonly label: string }[];
     } | null;
     readonly inboxUrl: string;
+}
+
+export interface ReceiptRow {
+    readonly id: string;
+    readonly submittedAt: string;
+    readonly method: string;
+    readonly reference: string | null;
+    readonly declaredAmount: string;
+    readonly paidToAccount: string | null;
+    readonly status: ReceiptStatus;
+    readonly statusLabel: string;
+    readonly rejectionReason: string | null;
+    readonly fileUrl: string;
+    readonly replacesReceiptId: string | null;
 }

@@ -17,8 +17,6 @@ use App\Domain\Payment\AppliedPayment;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptAlreadyProcessedException;
 use App\Domain\Payment\ReceiptStatus;
-use App\Domain\Payment\SurplusDestination;
-use App\Domain\Payment\SurplusDestinationType;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\UsageMetric;
@@ -189,37 +187,6 @@ final class ApproveReceiptActionTest extends TestCase
         $this->assertSame('active → completed', $after['layaway_status']['after'] ?? null);
     }
 
-    public function test_the_surplus_can_get_a_destination_when_the_receipt_is_approved(): void
-    {
-        $layaway = $this->activeLayaway();
-        $receipt = $this->receiptFor($layaway);
-        $irma = $this->within(fn (): User => User::factory()->create(['name' => 'Irma Rojas']));
-
-        $applied = $this->approve(
-            $receipt,
-            '160.00',
-            Currency::USD,
-            confirmedExcess: 1_000,
-            surplus: new SurplusDestination(SurplusDestinationType::TeamMember, $irma),
-        );
-
-        $this->assertSame(SurplusDestinationType::TeamMember, $applied->payment->surplus_destination_type);
-        $this->assertSame('Irma Rojas', $applied->payment->surplus_team_member_name);
-        $this->assertSame(1_000, $applied->payment->unallocated_cents->cents);
-        $this->assertSame(1, $this->within(fn (): int => AuditEntry::query()->where('event', AuditEvent::PaymentSurplusAssigned->value)->count()));
-    }
-
-    public function test_approving_without_a_destination_leaves_the_surplus_unassigned(): void
-    {
-        $layaway = $this->activeLayaway();
-        $receipt = $this->receiptFor($layaway);
-
-        $applied = $this->approve($receipt, '160.00', Currency::USD, confirmedExcess: 1_000);
-
-        $this->assertNull($applied->payment->surplus_destination_type);
-        $this->assertSame(1_000, $applied->payment->unallocated_cents->cents);
-    }
-
     public function test_an_approval_with_a_stale_copy_is_refused_under_the_lock(): void
     {
         $receipt = $this->receiptFor($this->activeLayaway());
@@ -362,18 +329,11 @@ final class ApproveReceiptActionTest extends TestCase
         $this->assertSame(3_000, $this->approve($receipt, '30.00', Currency::USD)->payment->amount_cents_usd->cents);
     }
 
-    private function approve(
-        Receipt $receipt,
-        string $amount,
-        Currency $currency,
-        ?string $rate = null,
-        ?int $confirmedExcess = null,
-        ?string $note = null,
-        ?SurplusDestination $surplus = null,
-    ): AppliedPayment {
+    private function approve(Receipt $receipt, string $amount, Currency $currency, ?string $rate = null, ?int $confirmedExcess = null, ?string $note = null): AppliedPayment
+    {
         return $this->within(fn (): AppliedPayment => app(ApproveReceiptAction::class)->handle(
             $receipt,
-            new ApproveReceiptData($amount, $currency, $rate, $note, $confirmedExcess, surplusDestination: $surplus),
+            new ApproveReceiptData($amount, $currency, $rate, $note, $confirmedExcess),
             $this->reviewer,
         ));
     }

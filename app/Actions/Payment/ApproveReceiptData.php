@@ -9,7 +9,6 @@ use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
 use App\Domain\Money\Money;
 use App\Domain\Payment\PaymentAmounts;
-use App\Domain\Payment\SurplusDestination;
 use InvalidArgumentException;
 
 final readonly class ApproveReceiptData
@@ -28,7 +27,6 @@ final readonly class ApproveReceiptData
         public ?int $confirmedExcessCents = null,
         public ?string $confirmedStaleRate = null,
         public ?string $confirmedRateDeviation = null,
-        public ?SurplusDestination $surplusDestination = null,
     ) {
         PaymentAmounts::assertPositive($settledAmount, $settledCurrency, 'conciliado');
 

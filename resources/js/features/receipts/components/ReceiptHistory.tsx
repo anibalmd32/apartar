@@ -2,8 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { IconChip } from '@/components/ui/icon-chip';
 import { formatDate } from '@/lib/dates';
 import { RECEIPT_TONES as TONES } from '@/lib/status-tones';
-import { type ReceiptStatus } from '@/types/receipt';
-import { type ReceiptRow } from '@/types/receipt-row';
+import { type ReceiptRow, type ReceiptStatus } from '@/types/receipt';
 import { cilCheckCircle, cilFile, cilXCircle } from '@coreui/icons';
 
 const ICONS: Readonly<Record<ReceiptStatus, string[]>> = {

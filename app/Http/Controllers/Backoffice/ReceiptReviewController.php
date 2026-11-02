@@ -20,7 +20,6 @@ use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
 use App\Domain\Payment\AppliedPayment;
 use App\Domain\Payment\ApprovalPreview;
-use App\Domain\Payment\InvalidSurplusDestinationException;
 use App\Domain\Payment\PaymentAccountView;
 use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\PaymentNotApplicableException;
@@ -41,7 +40,6 @@ use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Models\Receipt;
 use App\Models\User;
-use App\Queries\SurplusDestinationOptionsQuery;
 use App\Support\DecimalInput;
 use App\Support\HumanDate;
 use App\Support\SignedFileUrl;
@@ -66,7 +64,6 @@ final class ReceiptReviewController extends Controller
         private readonly TenantContext $context,
         private readonly ExchangeRateService $rates,
         private readonly PaymentApplier $applier,
-        private readonly SurplusDestinationOptionsQuery $surplus,
     ) {}
 
     /**
@@ -174,7 +171,6 @@ final class ReceiptReviewController extends Controller
                 'url' => route('receipts.approve', $receipt),
                 'previewUrl' => route('receipts.preview', $receipt),
                 'currencies' => array_map(fn (Currency $currency): array => ['value' => $currency->value, 'label' => $currency->label()], Currency::cases()),
-                ...$this->surplus->for(),
             ] : null,
             'rejection' => $receipt->status->awaitsReview() ? [
                 'url' => route('receipts.reject', $receipt),
@@ -267,8 +263,6 @@ final class ReceiptReviewController extends Controller
             return back()->withErrors(['rate' => $exception->getMessage()]);
         } catch (ReceiptAlreadyProcessedException|PaymentNotApplicableException $exception) {
             return back()->withErrors(['amount' => $exception->getMessage()]);
-        } catch (InvalidSurplusDestinationException $exception) {
-            return back()->withErrors(['surplus_destination' => $exception->getMessage()]);
         }
 
         return $this->afterDecision($followers, $this->confirmationOf($applied));

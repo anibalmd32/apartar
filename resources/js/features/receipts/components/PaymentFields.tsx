@@ -8,7 +8,6 @@ import { PaymentAmountFields } from '@/features/receipts/components/PaymentAmoun
 import { PaymentNoteField, ReadingStatus } from '@/features/receipts/components/PaymentFieldsExtras';
 import { ReceiptFilePreview } from '@/features/receipts/components/ReceiptFilePreview';
 import { RateConfirmations } from '@/features/receipts/components/StaleRateConfirmation';
-import { SurplusDestinationFields } from '@/features/receipts/components/SurplusDestinationFields';
 import { type ApprovalPreviewState } from '@/features/receipts/hooks/useApprovalPreview';
 import { useReceiptReading } from '@/features/receipts/hooks/useReceiptReading';
 import {
@@ -158,13 +157,6 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                         checked={confirmed}
                         onChange={(event) => onChange({ confirm_excess: event.target.checked ? preview.unallocatedCents : null })}
                         error={errors.confirm_excess}
-                    />
-                    <SurplusDestinationFields
-                        destinations={options.destinations}
-                        teamMembers={options.teamMembers}
-                        values={values}
-                        errors={errors}
-                        onChange={onChange}
                     />
                 </Alert>
             ) : errors.confirm_excess !== undefined ? (

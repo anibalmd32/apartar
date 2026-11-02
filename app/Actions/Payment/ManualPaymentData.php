@@ -13,7 +13,6 @@ use App\Domain\Payment\PaymentAmounts;
 use App\Domain\Payment\PaymentAttachment;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentOrigin;
-use App\Domain\Payment\SurplusDestination;
 use App\Models\PaymentAccount;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
@@ -43,7 +42,6 @@ final readonly class ManualPaymentData
         public ?string $bank = null,
         public ?string $reference = null,
         public ?UploadedFile $file = null,
-        public ?SurplusDestination $surplusDestination = null,
     ) {
         PaymentAmounts::assertPositive($amount, $currency, 'del pago');
         SubmitReceiptData::assertReferenceFits($method, $bank, $reference);

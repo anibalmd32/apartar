@@ -4,10 +4,8 @@ import { CheckboxField } from '@/components/ui/checkbox-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
 import { RateConfirmations, ratePending } from '@/features/receipts/components/StaleRateConfirmation';
-import { SurplusDestinationFields } from '@/features/receipts/components/SurplusDestinationFields';
 import { useApprovalPreview } from '@/features/receipts/hooks/useApprovalPreview';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
-import { surplusDestinationMissing } from '@/features/receipts/lib/payment-fields';
 import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { amountInput } from '@/lib/money';
 import { type MoneyView } from '@/types/money';
@@ -35,9 +33,6 @@ interface ApprovalFormValues {
     confirm_excess: number | null;
     confirm_stale_rate: string | null;
     confirm_rate_deviation: string | null;
-    surplus_destination: string;
-    surplus_user_id: string;
-    surplus_note: string;
 }
 
 export function ApprovalForm({ approval, receipt, remaining, rate, initialPreview, initialError }: ApprovalFormProps) {
@@ -49,9 +44,6 @@ export function ApprovalForm({ approval, receipt, remaining, rate, initialPrevie
         confirm_excess: null,
         confirm_stale_rate: null,
         confirm_rate_deviation: null,
-        surplus_destination: '',
-        surplus_user_id: '',
-        surplus_note: '',
     });
 
     const { preview, error, loading } = useApprovalPreview(
@@ -63,8 +55,7 @@ export function ApprovalForm({ approval, receipt, remaining, rate, initialPrevie
 
     const excess = preview?.unallocated ?? null;
     const confirmed = preview !== null && excess !== null && form.data.confirm_excess === preview.unallocatedCents;
-    const destinationPending = surplusDestinationMissing(form.data);
-    const blocked = form.processing || loading || (excess !== null && !confirmed) || destinationPending || ratePending(preview, form.data);
+    const blocked = form.processing || loading || (excess !== null && !confirmed) || ratePending(preview, form.data);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -158,13 +149,6 @@ export function ApprovalForm({ approval, receipt, remaining, rate, initialPrevie
                         checked={confirmed}
                         onChange={(event) => form.setData('confirm_excess', event.target.checked ? (preview?.unallocatedCents ?? null) : null)}
                         error={form.errors.confirm_excess}
-                    />
-                    <SurplusDestinationFields
-                        destinations={approval.destinations}
-                        teamMembers={approval.teamMembers}
-                        values={form.data}
-                        errors={form.errors}
-                        onChange={(patch) => form.setData((data) => ({ ...data, ...patch }))}
                     />
                 </Alert>
             ) : form.errors.confirm_excess !== undefined ? (

@@ -21,8 +21,6 @@ use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\IdempotencyKeyReusedException;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentNotApplicableException;
-use App\Domain\Payment\SurplusDestination;
-use App\Domain\Payment\SurplusDestinationType;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\OrganizationStatus;
@@ -340,39 +338,6 @@ final class RegisterManualPaymentActionTest extends TestCase
         $this->assertSame(3_000, $this->register($layaway, '30.00', Currency::USD)->amount_cents_usd->cents);
     }
 
-    public function test_the_surplus_can_get_a_destination_when_the_payment_is_registered(): void
-    {
-        $layaway = $this->activeLayaway();
-        $irma = $this->within(fn (): User => User::factory()->create(['name' => 'Irma Rojas']));
-
-        $payment = $this->register(
-            $layaway,
-            '160.00',
-            Currency::USD,
-            confirmed: 1_000,
-            surplus: new SurplusDestination(SurplusDestinationType::TeamMember, $irma),
-        );
-
-        $this->assertSame(SurplusDestinationType::TeamMember, $payment->surplus_destination_type);
-        $this->assertSame($irma->getKey(), $payment->surplus_user_id);
-        $this->assertSame('Irma Rojas', $payment->surplus_team_member_name);
-        $this->assertSame(1_000, $payment->unallocated_cents->cents);
-
-        $entry = $this->within(fn (): AuditEntry => AuditEntry::query()->where('event', AuditEvent::PaymentSurplusAssigned->value)->sole());
-        $this->assertSame($this->staff->getKey(), $entry->causer_id);
-        $this->assertSame(self::NOTE, $entry->properties?->toArray()['changed']['reason']['after'] ?? null);
-    }
-
-    public function test_a_payment_without_surplus_keeps_no_destination(): void
-    {
-        $layaway = $this->activeLayaway();
-
-        $payment = $this->register($layaway, '30.00', Currency::USD);
-
-        $this->assertNull($payment->surplus_destination_type);
-        $this->assertNull($payment->surplus_user_id);
-    }
-
     private function register(
         Layaway $layaway,
         string $amount,
@@ -386,11 +351,10 @@ final class RegisterManualPaymentActionTest extends TestCase
         ?string $bank = null,
         ?string $reference = null,
         ?UploadedFile $file = null,
-        ?SurplusDestination $surplus = null,
     ): Payment {
         return $this->within(fn (): Payment => app(RegisterManualPaymentAction::class)->handle(
             $layaway,
-            $this->data($amount, $currency, $method, $account, $paidAt, $key, $confirmed, $rate, $bank, $reference, $file, $surplus),
+            $this->data($amount, $currency, $method, $account, $paidAt, $key, $confirmed, $rate, $bank, $reference, $file),
             $this->staff,
         ));
     }
@@ -407,11 +371,10 @@ final class RegisterManualPaymentActionTest extends TestCase
         ?string $bank = null,
         ?string $reference = null,
         ?UploadedFile $file = null,
-        ?SurplusDestination $surplus = null,
     ): ManualPaymentData {
         return new ManualPaymentData(
             $method, $account, $amount, $currency, $rate, CarbonImmutable::parse($paidAt), self::NOTE, $key ?? (string) Str::uuid(), $confirmed,
-            bank: $bank, reference: $reference, file: $file, surplusDestination: $surplus,
+            bank: $bank, reference: $reference, file: $file,
         );
     }
 

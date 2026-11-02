@@ -29,8 +29,6 @@ use InvalidArgumentException;
 
 trait ValidatesManualPayment
 {
-    use ValidatesSurplusDestination;
-
     /**
      * @return array<string, list<mixed>>
      */
@@ -69,7 +67,6 @@ trait ValidatesManualPayment
             'confirm_excess' => ['nullable', 'integer', 'min:1'],
             'confirm_stale_rate' => ['nullable', 'string', 'max:100'],
             'confirm_rate_deviation' => ['nullable', 'string', 'max:100'],
-            ...$this->surplusRules(),
         ];
     }
 
@@ -89,7 +86,6 @@ trait ValidatesManualPayment
             'reference' => 'referencia',
             'file' => 'comprobante',
             'note' => 'nota',
-            ...$this->surplusAttributes(),
         ];
     }
 
@@ -132,7 +128,6 @@ trait ValidatesManualPayment
                 bank: $method->requiresReference() ? Bank::canonicalName($this->nullableString('bank')) : null,
                 reference: $method->requiresReference() ? $this->nullableString('reference') : null,
                 file: $file instanceof UploadedFile ? $file : null,
-                surplusDestination: $this->surplusDestination(),
             );
         } catch (InvalidRateException $exception) {
             throw ValidationException::withMessages(['rate' => $exception->getMessage()]);
