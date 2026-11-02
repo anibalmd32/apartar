@@ -4,11 +4,11 @@ import { type SubscriptionRow } from '@/types/account';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-const { usePage, patch, del } = vi.hoisted(() => ({ usePage: vi.fn(), patch: vi.fn(), del: vi.fn() }));
+const { usePage, patch, visit } = vi.hoisted(() => ({ usePage: vi.fn(), patch: vi.fn(), visit: vi.fn() }));
 
 vi.mock('@inertiajs/react', async () => ({
     usePage,
-    router: { patch, delete: del },
+    router: { patch, visit },
     Head: () => null,
     Link: (await import('@/test/fakes')).FakeLink,
 }));
@@ -76,12 +76,19 @@ it('silenciar manda el PATCH sin sacar el catálogo', () => {
     expect(patch).toHaveBeenCalledWith('/mi-cuenta/suscripciones/7', { muted: true }, { preserveScroll: true });
 });
 
-it('dejar de seguir va por el DELETE del catálogo', () => {
+it('dejar de seguir pide confirmación y va por el DELETE del catálogo', () => {
     renderPage([row({ active: false, url: null })]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dejar de seguir' }));
+    const button = screen.getByRole('button', { name: 'Dejar de seguir' });
+    expect(button).toHaveClass('max-lg:min-h-11');
+    fireEvent.click(button);
+    expect(visit).not.toHaveBeenCalled();
 
-    expect(del).toHaveBeenCalledWith('/c/ofertas/seguir', { preserveScroll: true });
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('¿Dejar de seguir «Ofertas de octubre»?');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Dejar de seguir' }));
+
+    expect(visit).toHaveBeenCalledWith('/c/ofertas/seguir', expect.objectContaining({ method: 'delete', preserveScroll: true }));
 });
 
 it('sin suscripciones, explica cómo seguir uno', () => {

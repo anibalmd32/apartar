@@ -24,7 +24,7 @@ export function PaymentAccountChoice({ accounts, value, onChange, label, error }
 
     return (
         <fieldset className="fieldset w-full" aria-describedby={error ? `${id}-error` : undefined}>
-            <legend className="fieldset-legend">Cuenta a la que pagaste</legend>
+            <legend className="fieldset-legend">¿A cuál cuenta vas a pagar?</legend>
 
             <div className="flex flex-col gap-2">
                 {accounts.map((account) => {

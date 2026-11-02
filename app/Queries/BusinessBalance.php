@@ -132,6 +132,31 @@ final readonly class BusinessBalance
         return $dates[0] ?? null;
     }
 
+    public function nextPaymentAmount(?CarbonInterface $day = null): Money
+    {
+        $day ??= $this->nextPaymentDueDate();
+
+        if ($day === null) {
+            return new Money(0);
+        }
+
+        return $this->sum(function (Layaway $layaway) use ($day): Money {
+            $due = $this->paymentDueDateOf($layaway);
+
+            if ($due === null || $due->toDateString() !== $day->toDateString()) {
+                return new Money(0);
+            }
+
+            if (! array_key_exists((int) $layaway->getKey(), $this->suggestions)) {
+                return new Money((int) $layaway->getAttribute('next_pending_cents'));
+            }
+
+            $next = $this->suggestionFor($layaway);
+
+            return $next === null || $next->covered() ? new Money(0) : $next->amount;
+        });
+    }
+
     public function paymentInReview(): bool
     {
         foreach ($this->active as $layaway) {

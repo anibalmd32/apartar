@@ -90,7 +90,7 @@ it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua
     expect(screen.getByText('Apartado en Ferretería Oriente')).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Cronograma de cuotas' })).toBeInTheDocument();
     expect(screen.getByText('Vence en 2 días')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('La cuota 1: $30,00');
+    expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('Te sugerimos pagar la cuota 1$30,00');
     expect(screen.queryByRole('region', { name: 'Dónde pagar' })).toBeNull();
 });
 
@@ -106,7 +106,7 @@ it('ofrece subir el comprobante; el aviso de la acción anterior lo da el Toaste
     render(<LayawayShow {...props({ receiptUrl: '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante' })} />);
 
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Subir comprobante' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante');
+    expect(screen.getByRole('link', { name: 'Pagar' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QX2/comprobante');
 });
 
 it('avisa de que liquidar no tiene descuento y de que los bolívares se fijan al pagar', () => {
@@ -223,5 +223,5 @@ it('con parte de la inicial abonada, dice cuánto abonó y cuánto falta', () =>
     expect(card).toHaveTextContent(
         'Ya abonaste $20,00 de la inicial de $50,00: te faltan $30,00. Tu apartado ya está reservado y no vence; cuando completes la inicial, verás aquí tu cronograma de cuotas.',
     );
-    expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('Lo que falta de la inicial:');
+    expect(screen.getByRole('region', { name: 'Próximo pago' })).toHaveTextContent('Te sugerimos pagar lo que falta de la inicial');
 });

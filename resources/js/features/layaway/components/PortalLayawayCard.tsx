@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { PrimaryMoney } from '@/features/account/components/PrimaryMoney';
+import { paidOnly } from '@/features/layaway/lib/paid-money';
+import { todayIn } from '@/features/layaway/lib/today';
 import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type LayawaySummary } from '@/types/portal';
@@ -29,7 +31,7 @@ function inReviewDetail(inReview: NonNullable<LayawaySummary['suggestion']>['inR
     return inReview !== null ? `${inReview.amount.usd} en revisión` : undefined;
 }
 
-function nextStep(layaway: LayawaySummary): Step | null {
+function nextStep(layaway: LayawaySummary, today: string): Step | null {
     const suggestion = layaway.suggestion ?? null;
 
     if (layaway.isTerminal) {
@@ -62,17 +64,25 @@ function nextStep(layaway: LayawaySummary): Step | null {
 
     const amount = suggestion?.kind === 'installment' ? suggestion.amount : layaway.nextAmount;
 
+    const past = layaway.nextDueDate !== null && layaway.nextDueDate < today;
+
     return {
-        text: `Próxima: ${layaway.nextDueDateLabel}${amount ? ` · ${amount.usd}` : ''}`,
+        text: `${past ? 'Venció el' : 'Próxima:'} ${layaway.nextDueDateLabel}${amount ? ` · ${amount.usd}` : ''}`,
         detail: inReviewDetail(suggestion?.inReview ?? null),
-        tone: 'calm',
+        tone: past ? 'urgent' : 'calm',
     };
 }
 
-export function PortalLayawayCard({ layaway }: { layaway: LayawaySummary }) {
+interface PortalLayawayCardProps {
+    layaway: LayawaySummary;
+    showStep?: boolean;
+    today?: string;
+}
+
+export function PortalLayawayCard({ layaway, showStep = true, today = todayIn() }: PortalLayawayCardProps) {
     const total = Number(layaway.total.cents);
     const progress = total > 0 ? Math.min(100, Math.max(0, (Number(layaway.paid.cents) / total) * 100)) : 0;
-    const step = nextStep(layaway);
+    const step = showStep ? nextStep(layaway, today) : null;
 
     return (
         <li>
@@ -80,24 +90,34 @@ export function PortalLayawayCard({ layaway }: { layaway: LayawaySummary }) {
                 href={route('portal.layaways.show', { code: layaway.code })}
                 className="border-line bg-base-100 hover:border-line-strong flex h-full flex-col gap-3 rounded-2xl border p-4 transition-colors"
             >
-                <span className="flex items-center gap-3">
+                <span className="flex items-start gap-3 sm:items-center">
                     {layaway.imageUrl ? (
-                        <img src={layaway.imageUrl} alt="" loading="lazy" className="size-[52px] shrink-0 rounded-lg object-cover" />
+                        <img
+                            src={layaway.imageUrl}
+                            alt=""
+                            loading="lazy"
+                            className="border-line size-[52px] shrink-0 rounded-lg border object-cover"
+                        />
                     ) : (
-                        <span aria-hidden="true" className="bg-surface-2 text-ink-3 flex size-[52px] shrink-0 items-center justify-center rounded-lg">
+                        <span
+                            aria-hidden="true"
+                            className="border-line bg-surface-2 text-ink-3 flex size-[52px] shrink-0 items-center justify-center rounded-lg border"
+                        >
                             <Icon icon={cilBasket} size={22} />
                         </span>
                     )}
-                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="line-clamp-2 text-[15px] leading-snug font-semibold">
-                            {layaway.quantity > 1 ? `${layaway.quantity} × ` : ''}
-                            {layaway.productName}
+                    <span className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="line-clamp-2 text-[15px] leading-snug font-semibold">
+                                {layaway.quantity > 1 ? `${layaway.quantity} × ` : ''}
+                                {layaway.productName}
+                            </span>
+                            <span className="text-ink-3 text-xs whitespace-nowrap">{layaway.code}</span>
                         </span>
-                        <span className="text-ink-3 text-xs whitespace-nowrap">{layaway.code}</span>
+                        <Badge tone={LAYAWAY_TONES[layaway.status]} className="shrink-0 self-start sm:self-center">
+                            {layaway.statusLabel}
+                        </Badge>
                     </span>
-                    <Badge tone={LAYAWAY_TONES[layaway.status]} className="shrink-0">
-                        {layaway.statusLabel}
-                    </Badge>
                 </span>
 
                 <span className="bg-base-300 block h-2 overflow-hidden rounded-full" aria-hidden="true">
@@ -109,7 +129,7 @@ export function PortalLayawayCard({ layaway }: { layaway: LayawaySummary }) {
 
                 <span className="flex items-baseline justify-between gap-2">
                     <span className="text-ink-3 text-xs">
-                        Pagado <PrimaryMoney money={layaway.paid} /> de <PrimaryMoney money={layaway.total} />
+                        Pagado <PrimaryMoney money={paidOnly(layaway.paid)} /> de <PrimaryMoney money={layaway.total} />
                     </span>
                     <span className="text-[13px] font-bold whitespace-nowrap">
                         Resta <PrimaryMoney money={layaway.remaining} />

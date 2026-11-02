@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { DocumentField } from '@/components/ui/document-field';
 import { TextField } from '@/components/ui/text-field';
+import { focusesOnDesktop } from '@/features/account/lib/desktop-focus';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 
@@ -37,7 +38,7 @@ export function CodeAccess({ initialCode = null }: { initialCode?: string | null
                 onChange={(value) => setData('document', value)}
                 error={errors.document}
                 hint="Si el negocio cargó tu apartado sin tu cédula, déjala vacía: te la pedimos al entrar."
-                autoFocus
+                autoFocus={focusesOnDesktop()}
             />
 
             <TextField
@@ -48,6 +49,9 @@ export function CodeAccess({ initialCode = null }: { initialCode?: string | null
                 error={errors.code}
                 hint={initialCode ? 'Ya va puesto el del apartado que acabas de hacer.' : 'Está en el correo o en la pantalla de confirmación.'}
                 autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="AP-7K3M9QRT"
                 required
             />

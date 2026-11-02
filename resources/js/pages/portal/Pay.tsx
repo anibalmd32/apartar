@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { suggestionWhat } from '@/features/layaway/lib/next-payment';
 import PortalLayout from '@/layouts/portal-layout';
 import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { type PayableLayaway, type PortalPayProps, type PortalSessionView } from '@/types/portal';
@@ -15,7 +16,7 @@ export default function Pay({ layaways, dashboardUrl }: PortalPayProps) {
     return (
         <PortalLayout title="¿Qué vas a pagar?" businessName={businessName} customerName={auth.portal?.fullName ?? ''}>
             <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 lg:gap-6">
-                <header className="flex flex-col gap-1.5 text-center">
+                <header className="flex flex-col gap-1.5">
                     <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[32px]">¿Qué vas a pagar?</h1>
                     <p className="text-ink-2 text-[15px]">Elige el apartado. Arriba está el más reciente.</p>
                 </header>
@@ -45,9 +46,28 @@ export default function Pay({ layaways, dashboardUrl }: PortalPayProps) {
     );
 }
 
-function PayableRow({ layaway }: { layaway: PayableLayaway }) {
-    const pending = layaway.status === 'pending_down_payment';
+function AmountDue({ layaway }: { layaway: PayableLayaway }) {
+    const suggestion = layaway.suggestion ?? null;
 
+    if (suggestion?.covered) {
+        return <span className="text-info text-xs font-semibold">Tu pago está en revisión</span>;
+    }
+
+    const amount = suggestion?.amount ?? layaway.nextAmount ?? null;
+
+    if (amount === null) {
+        return null;
+    }
+
+    return (
+        <span className="text-ink-2 text-xs">
+            Debes <MoneyLabel money={amount} className="text-base-content font-semibold" />
+            {suggestion !== null ? ` · ${suggestionWhat(suggestion)}` : ''}
+        </span>
+    );
+}
+
+function PayableRow({ layaway }: { layaway: PayableLayaway }) {
     return (
         <li>
             <Link
@@ -56,7 +76,7 @@ function PayableRow({ layaway }: { layaway: PayableLayaway }) {
                 aria-label={`Pagar ${layaway.productName} (${layaway.code})`}
             >
                 {layaway.imageUrl ? (
-                    <img src={layaway.imageUrl} alt="" loading="lazy" className="size-[52px] shrink-0 rounded-lg object-cover" />
+                    <img src={layaway.imageUrl} alt="" loading="lazy" className="border-line size-[52px] shrink-0 rounded-lg border object-cover" />
                 ) : (
                     <span aria-hidden="true" className="bg-surface-2 text-ink-3 flex size-[52px] shrink-0 items-center justify-center rounded-lg">
                         <Icon icon={cilBasket} size={22} />
@@ -70,11 +90,7 @@ function PayableRow({ layaway }: { layaway: PayableLayaway }) {
                     <span className="text-ink-3 text-xs">
                         <span className="whitespace-nowrap">{layaway.code}</span> · {layaway.businessName}
                     </span>
-                    {layaway.nextAmount ? (
-                        <span className="text-ink-2 text-xs">
-                            {pending ? 'Inicial' : 'Próximo pago'}: <MoneyLabel money={layaway.nextAmount} className="font-semibold" />
-                        </span>
-                    ) : null}
+                    <AmountDue layaway={layaway} />
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-2">
                     <Badge tone={LAYAWAY_TONES[layaway.status]}>{layaway.statusLabel}</Badge>

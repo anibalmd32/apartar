@@ -4,6 +4,7 @@ import { DocumentField } from '@/components/ui/document-field';
 import { Icon } from '@/components/ui/icon';
 import { TextField } from '@/components/ui/text-field';
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
+import { focusesOnDesktop } from '@/features/account/lib/desktop-focus';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalClaimProps } from '@/types/portal';
 import { cilPlus } from '@coreui/icons';
@@ -27,7 +28,7 @@ export default function Claim({ storeUrl, document }: PortalClaimProps) {
     };
 
     return (
-        <PortalLayout title="Recupera tu historial" businessName="Mi cuenta" customerName={session?.fullName ?? ''}>
+        <PortalLayout title="Agrega un apartado a tu cuenta" businessName="Mi cuenta" customerName={session?.fullName ?? ''}>
             <div className="flex w-full max-w-[560px] flex-col gap-4 lg:gap-[18px]">
                 <BackLink href={route('portal.dashboard')}>Volver a mis apartados</BackLink>
 
@@ -43,7 +44,7 @@ export default function Claim({ storeUrl, document }: PortalClaimProps) {
                     className="border-line bg-base-100 shadow-card flex flex-col gap-1 rounded-2xl border p-5"
                     onSubmit={submit}
                     noValidate
-                    aria-label="Recuperar mi historial"
+                    aria-label="Agregar un apartado a mi cuenta"
                 >
                     <DocumentField
                         label="Cédula o RIF"
@@ -51,7 +52,7 @@ export default function Claim({ storeUrl, document }: PortalClaimProps) {
                         value={data.document}
                         onChange={(value) => setData('document', value)}
                         error={errors.document}
-                        autoFocus
+                        autoFocus={focusesOnDesktop()}
                         required
                     />
 
@@ -63,13 +64,16 @@ export default function Claim({ storeUrl, document }: PortalClaimProps) {
                         error={errors.code}
                         hint="Está en tu confirmación y en el correo, si dejaste uno. Empieza por AP-."
                         autoComplete="off"
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        spellCheck={false}
                         placeholder="AP-7K3M9QRT"
                         required
                     />
 
                     <Button type="submit" size="lg" block loading={processing} className="mt-2">
                         <Icon icon={cilPlus} />
-                        Recuperar
+                        Agregar a mi cuenta
                     </Button>
                 </form>
             </div>

@@ -1,56 +1,25 @@
-import { Alert } from '@/components/ui/alert';
 import { BankField } from '@/components/ui/bank-field';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
-import { PaymentAccountList } from '@/features/catalog/components/PaymentAccountList';
-import { PaymentAccountChoice } from '@/features/receipts/components/ReceiptChoiceFields';
 import { type ReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
-import { formatAccountIdentifier } from '@/lib/identity-format';
-import { type PaymentAccountView } from '@/types/payment';
 import { type ReceiptMethodOption } from '@/types/receipt';
 
-interface ReceiptPaymentFieldsProps {
+interface ReceiptMethodFieldProps {
     form: ReceiptForm;
-    paymentAccounts: readonly PaymentAccountView[];
     methods: readonly ReceiptMethodOption[];
-    businessName: string;
 }
 
-function accountLabel(account: PaymentAccountView): string {
-    return [account.methodLabel, account.bank, formatAccountIdentifier(account)].filter((part) => part !== null && part !== '').join(' · ');
-}
-
-export function ReceiptPaymentFields({ form, paymentAccounts, methods, businessName }: ReceiptPaymentFieldsProps) {
-    const { data, errors } = form;
-
+export function ReceiptMethodField({ form, methods }: ReceiptMethodFieldProps) {
     return (
-        <>
-            {paymentAccounts.length === 0 ? (
-                <Alert tone="info">Este negocio no tiene cuentas de cobro publicadas: indica en la nota a dónde pagaste.</Alert>
-            ) : (
-                <>
-                    <PaymentAccountChoice
-                        accounts={paymentAccounts}
-                        value={data.paymentAccount}
-                        onChange={form.selectAccount}
-                        label={accountLabel}
-                        error={errors.paymentAccount}
-                    />
-
-                    {form.selectedAccount !== null ? <PaymentAccountList accounts={[form.selectedAccount]} businessName={businessName} /> : null}
-                </>
-            )}
-
-            <SelectField
-                label="Método de pago"
-                name="method"
-                value={data.method}
-                onChange={(event) => form.selectMethod(event.target.value)}
-                options={[{ value: '', label: 'Elige cómo pagaste' }, ...methods.map((method) => ({ value: method.value, label: method.label }))]}
-                error={errors.method}
-                required
-            />
-        </>
+        <SelectField
+            label="Método de pago"
+            name="method"
+            value={form.data.method}
+            onChange={(event) => form.selectMethod(event.target.value)}
+            options={[{ value: '', label: 'Elige cómo pagaste' }, ...methods.map((method) => ({ value: method.value, label: method.label }))]}
+            error={form.errors.method}
+            required
+        />
     );
 }
 
@@ -64,7 +33,10 @@ export function ReceiptReferenceFields({ form }: { form: ReceiptForm }) {
                 name="bank"
                 hint="Desde el que hiciste el pago."
                 value={data.bank}
-                onChange={(value) => form.setData('bank', value)}
+                onChange={(value) => {
+                    form.setData('bank', value);
+                    form.clearErrors('bank');
+                }}
                 error={errors.bank}
                 required
             />
@@ -73,9 +45,14 @@ export function ReceiptReferenceFields({ form }: { form: ReceiptForm }) {
                 label="Número de referencia"
                 name="reference"
                 value={data.reference}
-                onChange={(event) => form.setData('reference', event.target.value)}
+                onChange={(event) => {
+                    form.setData('reference', event.target.value);
+                    form.clearErrors('reference');
+                }}
                 error={errors.reference}
+                inputMode={form.numericReference ? 'numeric' : 'text'}
                 autoComplete="off"
+                spellCheck={false}
                 required
             />
         </div>

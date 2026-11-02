@@ -1,6 +1,6 @@
 import { ReceiptForm } from '@/features/receipts/components/ReceiptForm';
 import { useReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
-import { fakeFile, PAGO_MOVIL, receiptProps, stubObjectUrls, ZELLE } from '@/test/receipt-fixtures';
+import { fakeFile, receiptProps, stubObjectUrls } from '@/test/receipt-fixtures';
 import { type ReceiptCreateProps } from '@/types/receipt';
 import type * as InertiaReact from '@inertiajs/react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
@@ -42,7 +42,7 @@ beforeEach(() => {
 });
 
 it('elegir un método sugiere su moneda sin imponerla', () => {
-    renderForm({ paymentAccounts: [PAGO_MOVIL, ZELLE] });
+    renderForm({ paymentAccounts: [] });
 
     choose('Método de pago', 'efectivo_ves');
     expect(checkedIn('Moneda')).toBe('VES');
@@ -54,15 +54,19 @@ it('elegir un método sugiere su moneda sin imponerla', () => {
     expect(checkedIn('Moneda')).toBe('USD');
     expect(screen.getByLabelText('Método de pago')).toHaveValue('efectivo_ves');
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
+});
 
-    choose('Método de pago', 'pago_movil');
-    pick('Cuenta a la que pagaste', '7');
-    expect(checkedIn('Moneda')).toBe('USD');
-    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
+it('con una cuenta elegida no vuelve a preguntar el método', () => {
+    renderForm();
+
+    expect(screen.queryByLabelText('Método de pago')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Cuenta a la que pagaste' })).toBeNull();
 });
 
 it('pide banco y referencia solo cuando el método los lleva, y los vacía al pasar a efectivo', () => {
-    renderForm();
+    renderForm({ paymentAccounts: [] });
+
+    choose('Método de pago', 'pago_movil');
 
     choose('Banco', 'Mercantil');
     choose('Número de referencia', '00123456');
@@ -173,7 +177,7 @@ it('avisa si el archivo pasa del límite, sin bloquear el envío', () => {
 
     fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('foto.jpg', 'image/jpeg', 4 * 1024 * 1024)] } });
     expect(screen.queryByText(/pasa de 5 MB/)).toBeNull();
-    expect(screen.getByText('JPG, PNG, WebP o PDF, hasta 5 MB.')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Archivo elegido' })).toHaveTextContent('foto.jpg');
 });
 
 it('el selector acepta solo los tipos del servidor', () => {

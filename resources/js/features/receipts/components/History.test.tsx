@@ -93,6 +93,27 @@ it('dice qué parte fue a la inicial y qué sobró', () => {
     expect(screen.getByText('$80,00 · $50,00 a la inicial, cuota 1, $0,50 sin asignar')).toBeInTheDocument();
 });
 
+it('un pago en dólares que fue entero a la inicial no repite el monto', () => {
+    render(
+        <PaymentHistory
+            payments={[
+                {
+                    ...PAYMENT,
+                    amountUsd: { cents: centsUsd(1_000), usd: '$10,00', ves: null },
+                    declaredAmount: '$10,00',
+                    rateApplied: null,
+                    appliedTo: [],
+                    downPayment: '$10,00',
+                },
+            ]}
+            empty="—"
+        />,
+    );
+
+    expect(screen.getByText('A la inicial')).toBeInTheDocument();
+    expect(screen.queryByText(/$10,00 ·/)).not.toBeInTheDocument();
+});
+
 it('sin pagos, lo dice', () => {
     render(<PaymentHistory payments={[]} empty="Todavía no hay pagos." />);
 

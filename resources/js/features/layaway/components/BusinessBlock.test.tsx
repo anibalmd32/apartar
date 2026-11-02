@@ -57,3 +57,9 @@ it('si el próximo pago está en revisión lo dice en vez de una fecha', () => {
 
     expect(screen.getByText('Pago en revisión')).toBeInTheDocument();
 });
+
+it('con un solo negocio no repite la fecha que ya dice el resumen', () => {
+    render(<BusinessBlock block={block({})} showDue={false} />);
+
+    expect(screen.queryByText(/21 oct 2026/)).not.toBeInTheDocument();
+});

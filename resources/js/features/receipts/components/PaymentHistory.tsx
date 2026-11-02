@@ -14,7 +14,8 @@ function appliedTo(payment: PaymentRow): string | null {
     const numbers = payment.appliedTo;
 
     if (payment.downPayment !== null) {
-        parts.push(`${payment.downPayment} a la inicial`);
+        const onlyDownPayment = numbers.length === 0 && payment.unallocated === null;
+        parts.push(onlyDownPayment ? 'a la inicial' : `${payment.downPayment} a la inicial`);
     }
 
     if (numbers.length === 1) {
@@ -28,6 +29,17 @@ function appliedTo(payment: PaymentRow): string | null {
     }
 
     return parts.length === 0 ? null : parts.join(', ');
+}
+
+function detail(payment: PaymentRow): string {
+    const segments = [
+        payment.declaredAmount !== payment.amountUsd.usd || payment.rateApplied !== null ? payment.declaredAmount : null,
+        payment.rateApplied !== null ? `tasa ${formatRate(payment.rateApplied)} (${payment.rateSourceLabel}), la del día del pago` : null,
+        appliedTo(payment),
+    ].filter((segment): segment is string => segment !== null);
+    const text = segments.join(' · ');
+
+    return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function PaymentHistory({ payments, empty }: PaymentHistoryProps) {
@@ -45,13 +57,7 @@ export function PaymentHistory({ payments, empty }: PaymentHistoryProps) {
                             <span className="text-sm font-bold">{payment.amountUsd.usd}</span>
                             <span className="text-ink-3 text-xs">{payment.settledAt}</span>
                         </div>
-                        <p className="text-ink-2">
-                            {payment.declaredAmount}
-                            {payment.rateApplied !== null
-                                ? ` · tasa ${formatRate(payment.rateApplied)} (${payment.rateSourceLabel}), la del día del pago`
-                                : ''}
-                            {appliedTo(payment) !== null ? ` · ${appliedTo(payment)}` : ''}
-                        </p>
+                        {detail(payment) !== '' ? <p className="text-ink-2">{detail(payment)}</p> : null}
                         <div className="text-ink-3 flex flex-wrap items-center gap-2 text-xs">
                             <span>{payment.method}</span>
                             {payment.bankReference !== null ? <span>{payment.bankReference}</span> : null}

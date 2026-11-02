@@ -1,11 +1,11 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { FileField } from '@/components/ui/file-field';
 import { ReceiptAmountFields } from '@/features/receipts/components/ReceiptAmountFields';
-import { ReceiptFilePreview } from '@/features/receipts/components/ReceiptFilePreview';
 import { ReceiptNoteField } from '@/features/receipts/components/ReceiptNoteField';
-import { ReceiptPaymentFields, ReceiptReferenceFields } from '@/features/receipts/components/ReceiptPaymentFields';
-import { type ReceiptForm as ReceiptFormState } from '@/features/receipts/hooks/useReceiptForm';
+import { ReceiptMethodField, ReceiptReferenceFields } from '@/features/receipts/components/ReceiptPaymentFields';
+import { ReceiptUploadZone } from '@/features/receipts/components/ReceiptUploadZone';
+import { type AutofilledField, type ReceiptForm as ReceiptFormState } from '@/features/receipts/hooks/useReceiptForm';
+import { afterPaint, revealFirstError } from '@/lib/reveal-first-error';
 import { type ReceiptCreateProps } from '@/types/receipt';
 import { type FormEventHandler } from 'react';
 
@@ -14,30 +14,66 @@ type ReceiptFormProps = Pick<ReceiptCreateProps, 'paymentAccounts' | 'methods' |
     businessName: string;
 };
 
-export function ReceiptForm({ form, paymentAccounts, methods, currencies, suggestion, paidAt, file, businessName }: ReceiptFormProps) {
+const AUTOFILLED_NAMES: Record<AutofilledField, string> = {
+    amount: 'el monto',
+    paidAt: 'la fecha',
+    bank: 'el banco',
+    reference: 'la referencia',
+};
+
+function listed(fields: readonly AutofilledField[]): string {
+    const names = fields.map((field) => AUTOFILLED_NAMES[field]);
+
+    return names.length === 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`;
+}
+
+function ReadingNotice({ form }: { form: ReceiptFormState }) {
+    if (form.reading === 'reading') {
+        return (
+            <p role="status" className="bg-surface-2 text-ink-2 flex items-center gap-2 rounded-xl p-3 text-sm">
+                <span className="loading loading-spinner loading-sm" aria-hidden="true" />
+                Estamos validando tu comprobante…
+            </p>
+        );
+    }
+
+    if (form.reading !== 'read') {
+        return null;
+    }
+
+    return (
+        <p role="status" className="bg-info-soft text-base-content rounded-xl p-3 text-sm">
+            {form.autofilled.length > 0
+                ? `Tomamos de tu captura ${listed(form.autofilled)}. Revisa que esté bien y completa lo que falte.`
+                : 'Revisa los datos de tu pago y completa lo que esté vacío.'}
+        </p>
+    );
+}
+
+export function ReceiptForm({ form, paymentAccounts, methods, currencies, suggestion, paidAt, file }: ReceiptFormProps) {
     const { data, errors, processing } = form;
     const validating = form.reading === 'reading';
 
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
-        form.submit();
+
+        if (!form.submit()) {
+            afterPaint(() => revealFirstError(event.target as HTMLFormElement));
+        }
     };
 
     return (
         <form className="flex flex-col gap-3" onSubmit={onSubmit} noValidate>
-            <ReceiptPaymentFields form={form} paymentAccounts={paymentAccounts} methods={methods} businessName={businessName} />
+            {paymentAccounts.length === 0 ? <ReceiptMethodField form={form} methods={methods} /> : null}
 
-            <FileField
+            <ReceiptUploadZone
                 label="Captura o PDF del pago"
-                name="file"
                 accept={file.accept}
-                onChange={(event) => form.setFile(event.target.files?.[0] ?? null)}
+                file={data.file}
+                onChange={form.setFile}
                 error={errors.file}
                 hint={`JPG, PNG, WebP o PDF, hasta ${file.maxMb} MB.`}
-                required
             />
-
-            <ReceiptFilePreview file={data.file} />
 
             {form.fileTooLarge ? (
                 <Alert tone="warning">
@@ -45,18 +81,7 @@ export function ReceiptForm({ form, paymentAccounts, methods, currencies, sugges
                 </Alert>
             ) : null}
 
-            {validating ? (
-                <p role="status" className="bg-surface-2 text-ink-2 flex items-center gap-2 rounded-xl p-3 text-sm">
-                    <span className="loading loading-spinner loading-sm" aria-hidden="true" />
-                    Estamos validando tu comprobante…
-                </p>
-            ) : null}
-
-            {form.reading === 'read' ? (
-                <p role="status" className="text-ink-2 text-sm">
-                    Revisa los datos de tu pago y completa lo que esté vacío.
-                </p>
-            ) : null}
+            <ReadingNotice form={form} />
 
             <fieldset disabled={validating} aria-busy={validating} className="flex min-w-0 flex-col gap-3 disabled:opacity-60">
                 <ReceiptReferenceFields form={form} />

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { paidOnly } from '@/features/layaway/lib/paid-money';
 import { INSTALLMENT_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type InstallmentRow, type InstallmentTone } from '@/types/portal';
@@ -63,10 +64,12 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
                         </span>
                         <div className="flex min-w-0 flex-col gap-0.5">
                             <span className="text-[15px] font-semibold">Cuota {row.number}</span>
-                            <span className={cn('text-xs', row.tone === 'overdue' ? 'text-error' : 'text-ink-3')}>Vence el {row.dueDateLabel}</span>
+                            <span className={cn('text-xs', row.tone === 'overdue' ? 'text-error' : 'text-ink-3')}>
+                                {row.daysUntilDue < 0 ? 'Venció' : 'Vence'} el {row.dueDateLabel}
+                            </span>
                             {row.status === 'partially_paid' || (row.paid.cents > 0 && row.tone !== 'paid') ? (
                                 <span className="text-ink-3 text-xs">
-                                    pagado <MoneyLabel money={row.paid} />, falta <MoneyLabel money={row.pending} />
+                                    pagado <MoneyLabel money={paidOnly(row.paid)} />, falta <MoneyLabel money={row.pending} />
                                 </span>
                             ) : null}
                             {row.inReview != null && row.tone !== 'paid' && !reviewCovers(row) ? (

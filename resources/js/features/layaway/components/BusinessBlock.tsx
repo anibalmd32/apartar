@@ -6,6 +6,7 @@ import { Link } from '@inertiajs/react';
 
 interface BusinessBlockProps {
     block: BusinessBlockData;
+    showDue?: boolean;
 }
 
 function DueStamp({ totals }: { totals: PortalTotals }) {
@@ -24,7 +25,7 @@ function DueStamp({ totals }: { totals: PortalTotals }) {
     );
 }
 
-export function BusinessBlock({ block }: BusinessBlockProps) {
+export function BusinessBlock({ block, showDue = true }: BusinessBlockProps) {
     const { business, totals, layaways, history, closed } = block;
 
     return (
@@ -38,7 +39,7 @@ export function BusinessBlock({ block }: BusinessBlockProps) {
                 <div className="min-w-0 flex-1">
                     <h2 className="truncate text-[17px] font-bold">{business.name}</h2>
                     <p className="text-ink-3 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-                        <DueStamp totals={totals} />
+                        {showDue ? <DueStamp totals={totals} /> : null}
                         <RateStamp rate={block.rate} />
                     </p>
                 </div>
@@ -66,7 +67,7 @@ export function BusinessBlock({ block }: BusinessBlockProps) {
             {layaways.length > 0 ? (
                 <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {layaways.map((layaway) => (
-                        <PortalLayawayCard key={layaway.code} layaway={layaway} />
+                        <PortalLayawayCard key={layaway.code} layaway={layaway} showStep={showDue || layaways.length > 1} />
                     ))}
                 </ul>
             ) : null}

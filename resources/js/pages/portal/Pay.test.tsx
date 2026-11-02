@@ -1,3 +1,4 @@
+import { centsUsd } from '@/lib/money';
 import Pay from '@/pages/portal/Pay';
 import { type PayableLayaway } from '@/types/portal';
 import { render, screen, within } from '@testing-library/react';
@@ -18,6 +19,19 @@ vi.mock('@inertiajs/react', () => ({
 vi.mock('@/layouts/portal-layout', () => ({ default: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
 
 const money = (usd: string) => ({ cents: '0', usd, ves: null });
+
+function suggestion(kind: 'down_payment' | 'installment', usd: string, installmentNumber: number | null = null) {
+    return {
+        kind,
+        installmentNumber,
+        overdueInstallments: 0,
+        amount: { cents: centsUsd(0), usd, ves: null },
+        started: false,
+        covered: false,
+        alternative: null,
+        inReview: null,
+    };
+}
 
 function layaway(code: string, productName: string, overrides: Partial<PayableLayaway> = {}): PayableLayaway {
     return {
@@ -45,7 +59,10 @@ it('lista los apartados por pagar en el orden que llegan y cada uno lleva a su c
     render(
         <Pay
             dashboardUrl="/mi-cuenta"
-            layaways={[layaway('AP-NUEVO123', 'Mini UPS'), layaway('AP-VIEJO123', 'Nevera', { status: 'active', statusLabel: 'Al día' })]}
+            layaways={[
+                layaway('AP-NUEVO123', 'Mini UPS', { nextAmount: null, suggestion: suggestion('down_payment', '$50,00') }),
+                layaway('AP-VIEJO123', 'Nevera', { status: 'active', statusLabel: 'Al día', suggestion: suggestion('installment', '$25,00', 2) }),
+            ]}
         />,
     );
 
@@ -53,8 +70,21 @@ it('lista los apartados por pagar en el orden que llegan y cada uno lleva a su c
 
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual(['Pagar Mini UPS (AP-NUEVO123)', 'Pagar Nevera (AP-VIEJO123)']);
     expect(items[0]).toHaveAttribute('href', '/mi-cuenta/apartados/AP-NUEVO123/comprobante');
-    expect(screen.getByText(/Inicial:/)).toBeInTheDocument();
-    expect(screen.getByText(/Próximo pago:/)).toBeInTheDocument();
+    expect(items[0]).toHaveTextContent('Debes $50,00 · la inicial');
+    expect(items[1]).toHaveTextContent('Debes $25,00 · la cuota 2');
+    expect(screen.getByRole('heading', { name: '¿Qué vas a pagar?' }).parentElement).not.toHaveClass('text-center');
+});
+
+it('si lo que envió cubre el pago, dice que está en revisión en vez de pedirlo', () => {
+    render(
+        <Pay
+            dashboardUrl="/mi-cuenta"
+            layaways={[layaway('AP-NUEVO123', 'Mini UPS', { suggestion: { ...suggestion('down_payment', '$0,00'), covered: true } })]}
+        />,
+    );
+
+    expect(screen.getByText('Tu pago está en revisión')).toBeInTheDocument();
+    expect(screen.queryByText(/Debes/)).toBeNull();
 });
 
 it('sin nada por pagar lo dice y manda a sus apartados', () => {

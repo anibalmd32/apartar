@@ -37,6 +37,16 @@ it('pide la cédula y el código, y envía al acceso por código', () => {
     expect(post).toHaveBeenCalledWith('/mi-cuenta/acceso/codigo');
 });
 
+it('el código se escribe en mayúsculas, sin corrector, y la cédula no abre el teclado sola en el celular', () => {
+    render(<Access googleUrl={GOOGLE} />);
+
+    expect(screen.getByRole('tab', { name: 'Con código' })).toHaveAttribute('aria-selected', 'true');
+    const code = screen.getByLabelText('Código de apartado');
+    expect(code).toHaveAttribute('autocapitalize', 'characters');
+    expect(code).toHaveAttribute('spellcheck', 'false');
+    expect(screen.getByLabelText('Cédula o RIF')).not.toHaveFocus();
+});
+
 it('pinta el error genérico en el campo del código', () => {
     mockForm({ code: 'No encontramos un apartado con esa cédula y ese código.' });
 
@@ -55,7 +65,7 @@ it('dice dónde está el código', () => {
 it('ofrece pedir un enlace por correo con la cédula y el correo', () => {
     render(<Access googleUrl={GOOGLE} />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Recibir enlace por correo' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Por correo' }));
     fireEvent.change(screen.getByLabelText('Correo que dejaste'), { target: { value: 'maria@ejemplo.test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviarme un enlace' }));
 

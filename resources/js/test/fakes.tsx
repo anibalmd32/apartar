@@ -36,6 +36,8 @@ export function fakeRoute(name: string, params: RouteParams = {}): string {
             return '/mi-cuenta/salir';
         case 'portal.dashboard':
             return '/mi-cuenta';
+        case 'portal.pay':
+            return '/mi-cuenta/pagar';
         case 'portal.layaways.show':
             return `/mi-cuenta/apartados/${params.code}`;
         case 'portal.receipts.create':

@@ -8,6 +8,7 @@ use App\Domain\Account\FeedFilters;
 use App\Domain\Account\FeedQuery;
 use App\Domain\Account\PortalContext;
 use App\Domain\Exchange\CurrentRate;
+use App\Domain\Money\Money;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationBrand;
@@ -117,6 +118,7 @@ final class PortalDashboardResource extends JsonResource
             'overdueInstallments' => array_sum(array_map(fn (BusinessBalance $block): int => $block->overdueInstallments(), $this->resource)),
             'catchUp' => $across(fn (BusinessBalance $block) => $block->catchUp()),
             'paymentInReview' => in_array(true, array_map(fn (BusinessBalance $block): bool => $block->paymentInReview(), $this->resource), true),
+            'nextAmount' => $across(fn (BusinessBalance $block) => $next === null ? new Money(0) : $block->nextPaymentAmount($next)),
             'nextDueDate' => $next?->toDateString(),
             'nextDueDateLabel' => LayawaySummaryResource::dayLabel($next),
         ];
@@ -159,6 +161,7 @@ final class PortalDashboardResource extends JsonResource
                 'overdueInstallments' => $block->overdueInstallments(),
                 'catchUp' => $this->money($block->catchUp()),
                 'paymentInReview' => $block->paymentInReview(),
+                'nextAmount' => $this->money($block->nextPaymentAmount()),
                 'nextDueDate' => $block->nextPaymentDueDate()?->toDateString(),
                 'nextDueDateLabel' => LayawaySummaryResource::dayLabel($block->nextPaymentDueDate()),
             ],

@@ -1,6 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { capitalized, suggestionWhat } from '@/features/layaway/lib/next-payment';
+import { suggestionWhat } from '@/features/layaway/lib/next-payment';
 import { cn } from '@/lib/utils';
 import { type NextPaymentInReview, type NextPaymentSuggestion } from '@/types/portal';
 import { cilClock, cilCloudUpload } from '@coreui/icons';
@@ -32,11 +32,10 @@ function Suggested({ suggestion }: { suggestion: NextPaymentSuggestion }) {
 
     return (
         <>
-            <h2 className={cn('text-sm font-semibold', overdue ? 'text-error' : 'text-ink-2')}>{overdue ? 'Ponte al día' : 'Te sugerimos pagar'}</h2>
-            <p className="flex flex-col gap-1">
-                <span className="text-ink-2 text-[13px] font-semibold">{capitalized(suggestionWhat(suggestion))}: </span>
-                <MoneyLabel money={suggestion.amount} className="tracking-heading text-[30px] leading-tight font-extrabold" stacked />
-            </p>
+            <h2 className={cn('text-sm font-semibold', overdue ? 'text-error' : 'text-ink-2')}>
+                {overdue ? 'Ponte al día con' : 'Te sugerimos pagar'} {suggestionWhat(suggestion)}
+            </h2>
+            <MoneyLabel money={suggestion.amount} className="tracking-heading text-[30px] leading-tight font-extrabold" stacked />
         </>
     );
 }
@@ -69,7 +68,7 @@ export function PortalNextPayment({ suggestion, receiptUrl, className }: PortalN
             {receiptUrl !== null ? (
                 <Link href={receiptUrl} className={cn('btn btn-block', covered ? 'btn-secondary' : 'btn-primary btn-lg')}>
                     <Icon icon={cilCloudUpload} size={18} />
-                    {covered ? 'Subir otro comprobante' : 'Subir comprobante'}
+                    {covered ? 'Subir otro comprobante' : 'Pagar'}
                 </Link>
             ) : null}
 

@@ -27,11 +27,11 @@ final class AccessController extends Controller
     public function create(Request $request, AccountSession $account, TenantContext $context): Response|RedirectResponse
     {
         $code = $this->codeFrom($request);
-        $next = $code === null ? 'portal.dashboard' : 'portal.pay';
+        $next = $code === null ? route('portal.dashboard', absolute: false) : route('portal.pay', [self::CODE_PARAMETER => $code], absolute: false);
 
         if (Auth::guard('account')->check() || Auth::guard('customer')->check()) {
             if ($code === null || $this->sessionSees(PortalContext::fromSession(), $context, $code)) {
-                return redirect()->route($next);
+                return redirect($next);
             }
 
             Auth::guard('customer')->logout();
@@ -39,13 +39,13 @@ final class AccessController extends Controller
         }
 
         if ($code !== null) {
-            redirect()->setIntendedUrl(route('portal.pay'));
+            redirect()->setIntendedUrl(route('portal.pay', [self::CODE_PARAMETER => $code]));
         }
 
         return Inertia::render('portal/Access', [
             'status' => $request->session()->get('status'),
             'code' => $code,
-            'googleUrl' => route('account.google.redirect', ['luego' => route($next, absolute: false)]),
+            'googleUrl' => route('account.google.redirect', ['luego' => $next]),
         ]);
     }
 

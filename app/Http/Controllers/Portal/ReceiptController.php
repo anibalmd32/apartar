@@ -70,6 +70,7 @@ final class ReceiptController extends Controller
         $organization = $this->context->organization();
 
         abort_unless($organization->status->acceptsCustomerReceipts(), 403, PaymentNotApplicableException::CLOSED_MESSAGE);
+        $layaway->loadMissing('product.media');
         $summary = (new LayawaySummaryResource($layaway))->resolve($request);
         [$min, $max] = StoreReceiptRequest::boundsFor($layaway, new DateTimeZone($organization->timezone));
 
@@ -78,6 +79,8 @@ final class ReceiptController extends Controller
             'layaway' => [
                 'code' => $summary['code'],
                 'productName' => $summary['productName'],
+                'imageUrl' => $summary['imageUrl'],
+                'status' => $summary['status'],
                 'statusLabel' => $summary['statusLabel'],
                 'remaining' => $summary['remaining'],
             ],

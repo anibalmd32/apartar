@@ -3,14 +3,20 @@ import { centsUsd } from '@/lib/money';
 import { fakeRoute } from '@/test/fakes';
 import { type LayawaySummary } from '@/types/portal';
 import { render, screen } from '@testing-library/react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('@inertiajs/react', async () => ({
     usePage: () => ({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: null } } }),
     Link: (await import('@/test/fakes')).FakeLink,
 }));
 
-beforeEach(() => vi.stubGlobal('route', fakeRoute));
+beforeEach(() => {
+    vi.stubGlobal('route', fakeRoute);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-20T12:00:00-04:00'));
+});
+
+afterEach(() => vi.useRealTimers());
 
 function money(usd: string) {
     return { cents: centsUsd(100), usd, ves: null };
@@ -116,4 +122,39 @@ it('la próxima cuota descuenta lo que está en revisión', () => {
 
     expect(screen.getByText('Próxima: 28 de octubre · $5,00')).toBeInTheDocument();
     expect(screen.getByText('$3,00 en revisión')).toBeInTheDocument();
+});
+
+it('una fecha que ya pasó no se anuncia como próxima', () => {
+    render(
+        <ul>
+            <PortalLayawayCard layaway={summary({ nextAmount: money('$17,50') })} today="2026-10-30" />
+        </ul>,
+    );
+
+    expect(screen.getByText('Venció el 28 de octubre · $17,50')).toBeInTheDocument();
+    expect(screen.queryByText(/Próxima/)).not.toBeInTheDocument();
+});
+
+it('la foto lleva borde y el estado va en su propia línea bajo el nombre en el celular', () => {
+    const { container } = render(
+        <ul>
+            <PortalLayawayCard layaway={summary({ imageUrl: '/fotos/sandalias.jpg' })} />
+        </ul>,
+    );
+
+    expect(container.querySelector('img')).toHaveClass('border');
+    const badge = screen.getByText('Al día');
+    const name = screen.getByText('Sandalias trenzadas');
+    expect(name.parentElement?.parentElement).toContainElement(badge);
+    expect(name.parentElement?.parentElement).toHaveClass('flex-col', 'sm:flex-row');
+});
+
+it('si el resumen ya dice el próximo pago, la tarjeta no lo repite', () => {
+    render(
+        <ul>
+            <PortalLayawayCard layaway={summary({ nextAmount: money('$17,50') })} showStep={false} />
+        </ul>,
+    );
+
+    expect(screen.queryByText(/28 de octubre/)).not.toBeInTheDocument();
 });

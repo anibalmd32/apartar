@@ -100,6 +100,7 @@ final class PortalDashboardTest extends TestCase
             ->where('businesses.0.layaways.0.suggestion.amount.cents', 3_000)
             ->where('businesses.0.layaways.0.suggestion.covered', false)
             ->where('businesses.0.totals.catchUp.cents', 3_000)
+            ->where('businesses.0.totals.nextAmount.cents', 3_000)
             ->where('businesses.0.totals.paymentInReview', false)
             ->where('businesses.0.totals.nextDueDate', '2026-09-25'));
 
@@ -109,8 +110,23 @@ final class PortalDashboardTest extends TestCase
             ->where('businesses.0.layaways.0.suggestion.covered', true)
             ->where('businesses.0.layaways.0.suggestion.inReview.amount.usd', '$30,00')
             ->where('businesses.0.totals.catchUp.cents', 0)
+            ->where('businesses.0.totals.nextAmount.cents', 0)
             ->where('businesses.0.totals.paymentInReview', true)
             ->where('businesses.0.totals.nextDueDate', null));
+    }
+
+    public function test_el_resumen_dice_cuanto_toca_pagar_en_el_proximo_vencimiento(): void
+    {
+        $this->ownLayaway(LayawayStatus::Active);
+        $this->ownLayaway(LayawayStatus::Active);
+
+        CarbonImmutable::setTestNow('2026-09-20 12:00:00');
+        $this->signIn();
+
+        $this->get(route('portal.dashboard'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('businesses.0.totals.overdueInstallments', 0)
+            ->where('businesses.0.totals.nextDueDate', '2026-09-25')
+            ->where('businesses.0.totals.nextAmount.cents', 6_000));
     }
 
     public function test_one_aggregated_query_per_organization(): void

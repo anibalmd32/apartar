@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { DocumentField } from '@/components/ui/document-field';
+import { focusesOnDesktop } from '@/features/account/lib/desktop-focus';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalDocumentProps } from '@/types/portal';
 import { useForm } from '@inertiajs/react';
@@ -38,7 +39,7 @@ export default function Document({ mode, customerName, businessName, typed, stor
                         value={data.document}
                         onChange={(value) => setData('document', value)}
                         error={errors.document}
-                        autoFocus
+                        autoFocus={focusesOnDesktop()}
                         required
                     />
 

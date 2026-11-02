@@ -1,11 +1,13 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import PortalLayout from '@/layouts/portal-layout';
 import { cn } from '@/lib/utils';
 import { type SubscriptionRow, type SubscriptionsPageProps } from '@/types/account';
 import { cilLibrary } from '@coreui/icons';
 import { router } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function Subscriptions({ account, subscriptions }: SubscriptionsPageProps) {
     return (
@@ -38,7 +40,7 @@ export default function Subscriptions({ account, subscriptions }: SubscriptionsP
 function SubscriptionCard({ row }: { row: SubscriptionRow }) {
     const toggleMute = () =>
         router.patch(route('portal.subscriptions.update', { catalog: String(row.catalogId) }), { muted: !row.muted }, { preserveScroll: true });
-    const leave = () => router.delete(route('catalog.unfollow', { catalog: row.catalogSlug }), { preserveScroll: true });
+    const [leaving, setLeaving] = useState(false);
 
     return (
         <article
@@ -94,10 +96,19 @@ function SubscriptionCard({ row }: { row: SubscriptionRow }) {
                     Avisarme de novedades
                 </label>
 
-                <button type="button" className="btn btn-ghost btn-sm" onClick={leave}>
+                <button type="button" className="btn btn-ghost btn-sm max-lg:min-h-11" onClick={() => setLeaving(true)}>
                     Dejar de seguir
                 </button>
             </div>
+
+            <ConfirmDialog
+                open={leaving}
+                onClose={() => setLeaving(false)}
+                title={`¿Dejar de seguir «${row.catalogName}»?`}
+                description="Ya no te avisaremos de sus novedades. Puedes volver a seguirlo desde el catálogo."
+                confirmLabel="Dejar de seguir"
+                url={route('catalog.unfollow', { catalog: row.catalogSlug })}
+            />
         </article>
     );
 }

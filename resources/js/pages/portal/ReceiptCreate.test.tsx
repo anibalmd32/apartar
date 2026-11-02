@@ -61,10 +61,13 @@ it('dice de qué apartado es, cuánto falta y enlaza de vuelta', () => {
     expect(summary).toHaveTextContent('Nevera Mabe');
     expect(summary).toHaveTextContent('AP-7K3M9QRT');
     expect(summary).toHaveTextContent('Al día');
-    expect(summary).toHaveTextContent('Te falta: $150,00');
+    expect(summary).toHaveTextContent('Te falta $150,00');
     expect(screen.getByRole('link', { name: 'Volver al apartado' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QRT');
     expect(screen.getByText('María González')).toBeInTheDocument();
+    expect(summary.querySelector('img')).toBeNull();
 });
+
+const startUpload = () => fireEvent.click(screen.getByRole('button', { name: 'Ya pagué, subir el comprobante' }));
 
 const checkedIn = (group: string) =>
     within(screen.getByRole('group', { name: group }))
@@ -79,12 +82,13 @@ const pick = (group: string, value: string) => {
     fireEvent.click(radio);
 };
 
-it('preselecciona la única cuenta, su método y la sugerencia en su moneda', () => {
+it('preselecciona la única cuenta sin volver a preguntar el método, y la sugerencia en su moneda', () => {
     renderPage();
+    startUpload();
 
-    expect(checkedIn('Cuenta a la que pagaste')).toBe('7');
-    expect(screen.getByRole('radio', { name: 'Pago móvil · Banesco · 0414-1234567' })).toBeChecked();
-    expect(screen.getByLabelText('Método de pago')).toHaveValue('pago_movil');
+    expect(screen.queryByRole('group', { name: '¿A cuál cuenta vas a pagar?' })).toBeNull();
+    expect(screen.queryByLabelText('Método de pago')).toBeNull();
+    expect(screen.getByLabelText('Número de referencia')).toHaveAttribute('inputmode', 'numeric');
     expect(checkedIn('Moneda')).toBe('VES');
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1.275,00');
     expect(screen.getByText('J-12345678-9', { exact: false })).toBeInTheDocument();
@@ -93,12 +97,16 @@ it('preselecciona la única cuenta, su método y la sugerencia en su moneda', ()
 it('con varias cuentas no elige ninguna, y elegir una pone su método', () => {
     renderPage({ paymentAccounts: [PAGO_MOVIL, ZELLE] });
 
-    expect(checkedIn('Cuenta a la que pagaste')).toBe('');
-    expect(screen.getByLabelText('Método de pago')).toHaveValue('');
+    expect(checkedIn('¿A cuál cuenta vas a pagar?')).toBe('');
+    startUpload();
+    expect(screen.getByRole('group', { name: '¿A cuál cuenta vas a pagar?' })).toHaveTextContent('Elige la cuenta a la que vas a pagar.');
+    expect(screen.queryByLabelText('Captura o PDF del pago')).toBeNull();
 
-    pick('Cuenta a la que pagaste', '9');
+    pick('¿A cuál cuenta vas a pagar?', '9');
+    startUpload();
 
-    expect(screen.getByLabelText('Método de pago')).toHaveValue('zelle');
+    expect(screen.queryByLabelText('Método de pago')).toBeNull();
+    expect(screen.getByLabelText('Número de referencia')).toHaveAttribute('inputmode', 'text');
     expect(checkedIn('Moneda')).toBe('USD');
     expect(screen.getAllByText('pagos@oriente.com')).toHaveLength(2);
 });
@@ -106,12 +114,15 @@ it('con varias cuentas no elige ninguna, y elegir una pone su método', () => {
 it('sin cuentas de cobro, quita el campo y avisa', () => {
     renderPage({ paymentAccounts: [] });
 
-    expect(screen.queryByRole('group', { name: 'Cuenta a la que pagaste' })).toBeNull();
-    expect(screen.getByRole('alert')).toHaveTextContent('Este negocio no tiene cuentas de cobro publicadas: indica en la nota a dónde pagaste.');
+    expect(screen.queryByRole('group', { name: '¿A cuál cuenta vas a pagar?' })).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent('Ferretería Oriente todavía no publicó sus cuentas de cobro.');
+    startUpload();
+    expect(screen.getByLabelText('Método de pago')).toHaveValue('');
 });
 
 it('acota la fecha del pago y arranca en hoy', () => {
     renderPage();
+    startUpload();
 
     const date = screen.getByLabelText('Fecha del pago');
     expect(date).toHaveTextContent('05/10/2026');
@@ -125,6 +136,7 @@ it('acota la fecha del pago y arranca en hoy', () => {
 
 it('enseña el monto sugerido como ayuda', () => {
     renderPage();
+    startUpload();
 
     expect(screen.getByText(/Te sugerimos la cuota 2:/)).toHaveTextContent('Te sugerimos la cuota 2: $30,00. Si pagaste otro monto, escríbelo.');
 });
@@ -132,6 +144,7 @@ it('enseña el monto sugerido como ayuda', () => {
 it('con parte de la inicial abonada, sugiere lo que falta de la inicial', () => {
     const suggestion = receiptProps().suggestion!;
     renderPage({ suggestion: { ...suggestion, kind: 'down_payment', installmentNumber: null, started: true } });
+    startUpload();
 
     expect(screen.getByText(/Te sugerimos lo que falta de la inicial:/)).toHaveTextContent(
         'Te sugerimos lo que falta de la inicial: $30,00. Si pagaste otro monto, escríbelo.',
@@ -143,6 +156,7 @@ it('lee el comprobante, rellena lo que encontró y envía multipart con los nomb
     const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ reading }), { status: 200 }));
     vi.stubGlobal('fetch', fetch);
     renderPage();
+    startUpload();
 
     const capture = fakeFile('captura.png', 'image/png');
     fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [capture] } });
@@ -152,6 +166,8 @@ it('lee el comprobante, rellena lo que encontró y envía multipart con los nomb
     expect(screen.getByRole('button', { name: 'Enviar comprobante' })).toBeDisabled();
 
     await waitFor(() => expect(screen.getByLabelText('Número de referencia')).toHaveValue('00123456'));
+    expect(screen.getByRole('status')).toHaveTextContent('Tomamos de tu captura el monto, la fecha, el banco y la referencia.');
+    expect(screen.getAllByText('captura.png')).toHaveLength(1);
     expect(fetch).toHaveBeenCalledWith('/mi-cuenta/apartados/AP-7K3M9QRT/comprobante/leer', expect.objectContaining({ method: 'POST' }));
     expect(screen.queryByText(/\bIA\b|inteligencia artificial/)).toBeNull();
 
@@ -180,6 +196,7 @@ it('lo que no se pudo leer queda vacío para que el cliente lo complete', async 
     const reading = { amount: null, currency: null, paidAt: null, reference: null, bank: null };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ reading }), { status: 200 })));
     renderPage();
+    startUpload();
 
     fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '999' } });
     fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('captura.png', 'image/png')] } });
@@ -190,35 +207,13 @@ it('lo que no se pudo leer queda vacío para que el cliente lo complete', async 
     expect(screen.getByRole('button', { name: 'Enviar comprobante' })).toBeEnabled();
 });
 
-it('un PDF no se lee: el cliente escribe los datos', () => {
-    const fetch = vi.fn();
-    vi.stubGlobal('fetch', fetch);
+it('pinta los errores del servidor junto a su campo', async () => {
+    const reading = { amount: '30.00', currency: 'USD', paidAt: '2026-10-05', reference: '0012', bank: 'Mercantil' };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ reading }), { status: 200 })));
     renderPage();
-
-    fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('pago.pdf', 'application/pdf')] } });
-
-    expect(fetch).not.toHaveBeenCalled();
-    expect(screen.queryByText(/validando/)).toBeNull();
-});
-
-it('sin cuentas, envía la cuenta como null', () => {
-    renderPage({ paymentAccounts: [] });
-
-    fireEvent.change(screen.getByLabelText('Método de pago'), { target: { value: 'efectivo_usd' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar comprobante' }));
-
-    expect(lastVisit()[1].data).toMatchObject({
-        paymentAccount: null,
-        method: 'efectivo_usd',
-        bank: '',
-        reference: '',
-        currency: 'USD',
-        amount: '30,00',
-    });
-});
-
-it('pinta los errores del servidor junto a su campo', () => {
-    renderPage();
+    startUpload();
+    fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('captura.png', 'image/png')] } });
+    await waitFor(() => expect(screen.getByLabelText('Número de referencia')).toHaveValue('0012'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Enviar comprobante' }));
     const options = lastVisit()[1];

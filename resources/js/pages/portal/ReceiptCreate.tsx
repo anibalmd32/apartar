@@ -1,68 +1,49 @@
 import { Alert } from '@/components/ui/alert';
 import { BackLink } from '@/components/ui/back-link';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { PayInstructions } from '@/features/receipts/components/PayInstructions';
 import { ReceiptForm } from '@/features/receipts/components/ReceiptForm';
+import { ReceiptLayawayCard } from '@/features/receipts/components/ReceiptLayawayCard';
 import { useReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
 import PortalLayout from '@/layouts/portal-layout';
 import { formatDate } from '@/lib/dates';
-import { LAYAWAY_TONES } from '@/lib/status-tones';
+import { afterPaint } from '@/lib/reveal-first-error';
 import { type PortalSessionView } from '@/types/portal';
 import { type ReceiptCreateProps } from '@/types/receipt';
-import { cilBasket } from '@coreui/icons';
+import { cilCheckAlt } from '@coreui/icons';
 import { usePage } from '@inertiajs/react';
+import { useRef, useState } from 'react';
 
-export default function ReceiptCreate({
-    business,
-    layaway,
-    suggestion,
-    paymentAccounts,
-    methods,
-    currencies,
-    paidAt,
-    file,
-    storeUrl,
-    readUrl,
-    backUrl,
-    replaces,
-}: ReceiptCreateProps) {
+export default function ReceiptCreate(props: ReceiptCreateProps) {
+    const { business, layaway, suggestion, paymentAccounts, backUrl, replaces } = props;
     const { auth } = usePage<{ auth: { portal: PortalSessionView | null } }>().props;
+    const form = useReceiptForm(props);
+    const [paid, setPaid] = useState(replaces !== null);
+    const uploadHeading = useRef<HTMLHeadingElement>(null);
+    const open = paid || Object.keys(form.errors).some((field) => field !== 'paymentAccount');
 
-    const form = useReceiptForm({ paymentAccounts, methods, currencies, suggestion, paidAt, file, storeUrl, readUrl });
+    const startUpload = () => {
+        if (paymentAccounts.length > 1 && form.data.paymentAccount === null) {
+            form.setError('paymentAccount', 'Elige la cuenta a la que vas a pagar.');
+
+            return;
+        }
+
+        form.clearErrors('paymentAccount');
+        setPaid(true);
+        afterPaint(() => {
+            uploadHeading.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+            uploadHeading.current?.focus({ preventScroll: true });
+        });
+    };
 
     return (
-        <PortalLayout
-            title={`Comprobante · ${layaway.code} · ${business.name}`}
-            businessName={business.name}
-            customerName={auth.portal?.fullName ?? ''}
-        >
+        <PortalLayout title={`Pagar · ${layaway.code} · ${business.name}`} businessName={business.name} customerName={auth.portal?.fullName ?? ''}>
             <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 lg:gap-6">
                 <BackLink href={backUrl}>Volver al apartado</BackLink>
 
-                <header className="flex flex-col gap-1">
-                    <h1 className="tracking-heading text-[24px] leading-tight font-extrabold lg:text-[30px]">Subir comprobante</h1>
-                    <p className="text-ink-2 text-sm">
-                        Sube la captura de tu pago a {business.name}. Lo revisarán y te descontarán lo que corresponda.
-                    </p>
-                </header>
-
-                <section className="border-line bg-base-100 flex flex-wrap items-center gap-3 rounded-[14px] border p-3.5" aria-label="Apartado">
-                    <span aria-hidden="true" className="bg-surface-2 text-ink-3 flex size-11 shrink-0 items-center justify-center rounded-lg">
-                        <Icon icon={cilBasket} size={18} />
-                    </span>
-                    <div className="flex min-w-0 flex-1 basis-48 flex-col gap-px">
-                        <p className="line-clamp-2 text-sm font-bold">
-                            {layaway.productName} · <span className="whitespace-nowrap">{layaway.code}</span>
-                        </p>
-                        <p className="text-ink-3 text-xs">
-                            Te falta: <MoneyLabel money={layaway.remaining} className="text-base-content font-semibold" />
-                        </p>
-                    </div>
-                    <Badge tone={LAYAWAY_TONES[layaway.status]} className="shrink-0 max-sm:ml-14">
-                        {layaway.statusLabel}
-                    </Badge>
-                </section>
+                <ReceiptLayawayCard layaway={layaway} />
 
                 {replaces !== null ? (
                     <Alert
@@ -79,18 +60,37 @@ export default function ReceiptCreate({
                     </Alert>
                 ) : null}
 
-                <section className="border-line bg-base-100 shadow-card rounded-2xl border p-5" aria-label="Tu pago">
-                    <ReceiptForm
+                <div className="border-line bg-base-100 shadow-card flex flex-col gap-4 rounded-2xl border p-5">
+                    <PayInstructions
                         form={form}
                         paymentAccounts={paymentAccounts}
-                        methods={methods}
-                        currencies={currencies}
                         suggestion={suggestion}
-                        paidAt={paidAt}
-                        file={file}
+                        remaining={layaway.remaining}
                         businessName={business.name}
                     />
-                </section>
+
+                    {open ? null : (
+                        <Button variant="primary" size="lg" block onClick={startUpload}>
+                            <Icon icon={cilCheckAlt} size={18} />
+                            Ya pagué, subir el comprobante
+                        </Button>
+                    )}
+                </div>
+
+                {open ? (
+                    <section
+                        className="border-line bg-base-100 shadow-card flex flex-col gap-3 rounded-2xl border p-5"
+                        aria-labelledby="upload-heading"
+                    >
+                        <header className="flex flex-col gap-1">
+                            <h2 id="upload-heading" ref={uploadHeading} tabIndex={-1} className="text-[17px] font-bold outline-none">
+                                Sube el comprobante
+                            </h2>
+                            <p className="text-ink-2 text-[13px]">{business.name} lo revisará y te descontará lo que corresponda.</p>
+                        </header>
+                        <ReceiptForm {...props} form={form} businessName={business.name} />
+                    </section>
+                ) : null}
             </div>
         </PortalLayout>
     );

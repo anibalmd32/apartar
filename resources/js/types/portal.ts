@@ -61,6 +61,7 @@ export interface PortalTotals {
     readonly overdueInstallments: number;
     readonly catchUp?: MoneyView;
     readonly paymentInReview?: boolean;
+    readonly nextAmount?: MoneyView;
     readonly nextDueDate: string | null;
     readonly nextDueDateLabel: string | null;
 }

@@ -4,6 +4,7 @@ import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { PortalLayawayHero } from '@/features/layaway/components/PortalLayawayHero';
 import { PortalNextPayment } from '@/features/layaway/components/PortalNextPayment';
 import { ScheduleTable } from '@/features/layaway/components/ScheduleTable';
+import { paidOnly } from '@/features/layaway/lib/paid-money';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import { ReceiptHistory } from '@/features/receipts/components/ReceiptHistory';
 import PortalLayout from '@/layouts/portal-layout';
@@ -55,7 +56,8 @@ export default function LayawayShow({
                             </h2>
                             {layaway.downPaymentProgress !== null ? (
                                 <p className="text-ink-2 text-sm">
-                                    Ya abonaste <MoneyLabel money={layaway.downPaymentProgress.paid} className="text-base-content font-semibold" /> de
+                                    Ya abonaste{' '}
+                                    <MoneyLabel money={paidOnly(layaway.downPaymentProgress.paid)} className="text-base-content font-semibold" /> de
                                     la inicial de <MoneyLabel money={layaway.downPayment} />: te faltan{' '}
                                     <MoneyLabel money={layaway.downPaymentProgress.missing} className="text-base-content font-semibold" />. Tu
                                     apartado ya está reservado y no vence; cuando completes la inicial, verás aquí tu cronograma de cuotas.

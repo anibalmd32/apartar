@@ -32,11 +32,11 @@ beforeEach(() => {
 it('con cuotas vencidas pide ponerse al día con el total y ofrece la cuota más antigua', () => {
     render(<PortalNextPayment suggestion={OVERDUE} receiptUrl="/comprobante" />);
 
-    expect(screen.getByRole('heading', { name: 'Ponte al día' })).toBeInTheDocument();
-    expect(screen.getByText(/Tus 2 cuotas vencidas/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ponte al día con tus 2 cuotas vencidas' })).toBeInTheDocument();
+    expect(screen.queryByText(/Tus 2 cuotas vencidas:/)).toBeNull();
     expect(screen.getByText('$45,00')).toBeInTheDocument();
     expect(screen.getByText(/paga al menos la cuota 1/)).toHaveTextContent('$22,50');
-    expect(screen.getByRole('link', { name: 'Subir comprobante' })).toHaveClass('btn-primary');
+    expect(screen.getByRole('link', { name: 'Pagar' })).toHaveClass('btn-primary');
 });
 
 it('descuenta lo que está en revisión y dice cuándo se envió', () => {
@@ -53,7 +53,7 @@ it('descuenta lo que está en revisión y dice cuándo se envió', () => {
         />,
     );
 
-    expect(screen.getByText(/Lo que falta de tus 2 cuotas vencidas/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ponte al día con lo que falta de tus 2 cuotas vencidas' })).toBeInTheDocument();
     expect(screen.getByText(/Ya enviaste/)).toHaveTextContent('Ya enviaste $25,00 el 1 nov; lo están revisando.');
     expect(screen.queryByText(/paga al menos/)).toBeNull();
 });

@@ -28,7 +28,12 @@ final class PayAccountTest extends TestCase
         $this->linkTo($account, $dress);
         $this->withoutOrganization();
 
-        $this->actingAs($account, 'account')->get(route('portal.access', ['codigo' => $tool->code]))->assertRedirect(route('portal.pay'));
+        $this->actingAs($account, 'account')->get(route('portal.access', ['codigo' => $tool->code]))
+            ->assertRedirect(route('portal.pay', ['codigo' => $tool->code]));
+
+        $this->actingAs($account, 'account')
+            ->get(route('portal.pay', ['codigo' => $tool->code]))
+            ->assertRedirect(route('portal.receipts.create', ['code' => $tool->code]));
 
         $this->actingAs($account, 'account')
             ->get(route('portal.pay'))

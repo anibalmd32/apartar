@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
+import { paidOnly } from '@/features/layaway/lib/paid-money';
 import { LAYAWAY_TONES } from '@/lib/status-tones';
 import { cn } from '@/lib/utils';
 import { type PortalLayawayShowProps } from '@/types/portal';
@@ -23,9 +24,16 @@ export function PortalLayawayHero({ layaway, businessName, className }: PortalLa
         <section className={cn('border-line bg-base-100 shadow-card flex flex-col gap-4 rounded-2xl border p-5', className)}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span aria-hidden="true" className="bg-surface-2 text-ink-3 flex size-16 shrink-0 items-center justify-center rounded-xl">
-                        <Icon icon={cilBasket} size={26} />
-                    </span>
+                    {layaway.imageUrl ? (
+                        <img src={layaway.imageUrl} alt="" className="border-line size-16 shrink-0 rounded-xl border object-cover" />
+                    ) : (
+                        <span
+                            aria-hidden="true"
+                            className="border-line bg-surface-2 text-ink-3 flex size-16 shrink-0 items-center justify-center rounded-xl border"
+                        >
+                            <Icon icon={cilBasket} size={26} />
+                        </span>
+                    )}
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <h1 className="text-[18px] leading-snug font-bold">
                             {layaway.quantity > 1 ? `${layaway.quantity} × ` : ''}
@@ -44,7 +52,7 @@ export function PortalLayawayHero({ layaway, businessName, className }: PortalLa
             <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <Amount label="Total" money={layaway.total} />
                 <Amount label="Inicial" money={layaway.downPayment} zeroLabel="Sin inicial" />
-                <Amount label="Pagado" money={layaway.paid} className="text-success" />
+                <Amount label="Pagado" money={paidOnly(layaway.paid)} className="text-success" />
                 <Amount label="Te falta" money={layaway.remaining} />
             </dl>
 

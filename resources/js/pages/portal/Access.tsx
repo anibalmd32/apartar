@@ -11,8 +11,8 @@ import { useState } from 'react';
 type Way = 'code' | 'link';
 
 const WAYS: { value: Way; label: string }[] = [
-    { value: 'code', label: 'Con mi código' },
-    { value: 'link', label: 'Recibir enlace por correo' },
+    { value: 'code', label: 'Con código' },
+    { value: 'link', label: 'Por correo' },
 ];
 
 export default function Access({ status, code = null, googleUrl }: PortalAccessProps) {
@@ -34,7 +34,7 @@ export default function Access({ status, code = null, googleUrl }: PortalAccessP
                     </h1>
                     <p className="text-ink-2 text-[15px] leading-normal">
                         {code
-                            ? `Escribe tu cédula para seguir: el código ${code} ya va puesto. Luego eliges qué apartado pagar y subes el comprobante.`
+                            ? `Escribe tu cédula para seguir: el código ${code} ya va puesto. Luego ves cuánto pagar, a dónde, y subes el comprobante.`
                             : 'Consulta tus pagos, tus cuotas y sube comprobantes de cualquier negocio donde hayas apartado.'}
                     </p>
                 </header>

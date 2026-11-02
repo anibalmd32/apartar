@@ -24,7 +24,7 @@ it('pide cédula y código y envía al reclamo', () => {
     expect(screen.getByLabelText('Cédula o RIF')).toBeInTheDocument();
     expect(screen.getByLabelText('Código de apartado')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Recuperar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar a mi cuenta' }));
 
     expect(post).toHaveBeenCalledWith('/mi-cuenta/reclamar');
 });

@@ -51,7 +51,7 @@ final class LayawayShowController extends Controller
 
     public function __invoke(Request $request, string $code, PortalContext $portal): Response
     {
-        $layaway = $portal->findLayaway($code);
+        $layaway = $portal->findLayaway($code)->loadMissing('product.media');
         $organization = $this->context->organization();
         $timezone = new DateTimeZone($organization->timezone);
         $calendar = DueCalendar::of($organization, $this->settings);

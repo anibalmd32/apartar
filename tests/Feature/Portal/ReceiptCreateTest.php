@@ -16,9 +16,11 @@ use App\Models\ExchangeRate;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\PaymentAccount;
+use App\Models\Product;
 use App\Models\Receipt;
 use App\Models\Subscription;
 use App\Providers\AppServiceProvider;
+use App\Support\Media\TenantPathGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +68,25 @@ final class ReceiptCreateTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_la_ficha_del_apartado_trae_la_foto_del_producto(): void
+    {
+        Storage::fake('public');
+        $path = sys_get_temp_dir().'/'.uniqid('apartar-', true).'-foto.png';
+        imagepng(imagecreatetruecolor(4, 4), $path);
+
+        $this->withinOrganization($this->organization, fn () => Product::query()->findOrFail($this->layaway->product_id)
+            ->addMedia(new UploadedFile($path, 'foto.png', 'image/png', null, true))
+            ->withCustomProperties([TenantPathGenerator::ORGANIZATION_PROPERTY => $this->organization->getKey()])
+            ->toMediaCollection(Product::IMAGES));
+        $this->withoutOrganization();
+
+        $this->get($this->formUrl())->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.imageUrl', fn (?string $url): bool => is_string($url) && $url !== ''));
+
+        $this->get(route('portal.layaways.show', ['code' => $this->layaway->code]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('layaway.imageUrl', fn (?string $url): bool => is_string($url) && $url !== ''));
+    }
+
     public function test_the_form_arrives_with_everything_resolved(): void
     {
         $this->withinOrganization($this->organization, fn () => PaymentAccount::factory()->inactive()->create());
@@ -75,6 +96,8 @@ final class ReceiptCreateTest extends TestCase
             ->where('business.name', 'Ferretería Oriente')
             ->where('layaway.code', $this->layaway->code)
             ->where('layaway.remaining.cents', 20_000)
+            ->where('layaway.status', 'pending_down_payment')
+            ->where('layaway.imageUrl', null)
             ->where('suggestion.kind', 'down_payment')
             ->where('suggestion.amount.cents', 5_000)
             ->where('suggestion.amountUsd', '50.00')

@@ -4,6 +4,7 @@ import { FeedList } from '@/features/account/components/FeedList';
 import { PortalSummary } from '@/features/account/components/PortalSummary';
 import { BusinessBlock } from '@/features/layaway/components/BusinessBlock';
 import { PortalAlerts } from '@/features/layaway/components/PortalAlerts';
+import { todayIn } from '@/features/layaway/lib/today';
 import { PushOptIn } from '@/features/notifications/components/PushOptIn';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalDashboardProps } from '@/types/portal';
@@ -11,6 +12,8 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 export const VISIBLE_BUSINESSES = 5;
+
+const SUMMARIZED_ALERTS: readonly string[] = ['overdue', 'due_soon'];
 
 export default function Dashboard({
     session,
@@ -38,7 +41,7 @@ export default function Dashboard({
                 Hola, {firstName} <span aria-hidden="true">👋</span>
             </h1>
 
-            <PortalAlerts alerts={alerts} />
+            <PortalAlerts alerts={summary === null ? alerts : alerts.filter((alert) => !SUMMARIZED_ALERTS.includes(alert.kind))} />
 
             {claimUrl !== null && unclaimedBusinesses > 0 ? (
                 <Alert tone="info">
@@ -54,7 +57,12 @@ export default function Dashboard({
             <PushOptIn publicKey={push.publicKey} subscribeUrl={push.subscribeUrl} hasEmail={push.hasEmail} />
 
             {summary !== null ? (
-                <PortalSummary totals={summary} label={businesses.length > 1 ? 'Resumen de todos tus negocios' : 'Resumen de tus apartados'} />
+                <PortalSummary
+                    totals={summary}
+                    label={businesses.length > 1 ? 'Resumen de todos tus negocios' : 'Resumen de tus apartados'}
+                    payUrl={route('portal.pay')}
+                    today={todayIn()}
+                />
             ) : null}
 
             {businesses.length === 0 ? (
@@ -62,7 +70,7 @@ export default function Dashboard({
             ) : (
                 <>
                     {visible.map((block) => (
-                        <BusinessBlock key={block.business.slug} block={block} />
+                        <BusinessBlock key={block.business.slug} block={block} showDue={businesses.length > 1} />
                     ))}
 
                     {!showAll && businesses.length > VISIBLE_BUSINESSES ? (
@@ -77,7 +85,7 @@ export default function Dashboard({
                 <p className="text-ink-2 text-sm">
                     ¿Falta algún apartado de antes?{' '}
                     <Link href={claimUrl} className="text-primary-ink font-semibold hover:underline">
-                        Recupéralo con tu cédula y su código
+                        Agrégalo a tu cuenta con tu cédula y su código
                     </Link>
                 </p>
             ) : null}
@@ -122,12 +130,12 @@ function EmptyAccount({ isAccount, subscriptionsUrl, claimUrl }: { isAccount: bo
         <div className="border-line bg-base-100 flex flex-col items-start gap-2 rounded-2xl border p-6 text-sm">
             <p className="text-base font-bold">Aquí verás tus apartados de todos los negocios.</p>
             <p className="text-ink-2">
-                Los que hagas con esta cuenta abierta aparecen solos. Si ya apartaste antes sin ella, tráelo con tu cédula y el código de ese
+                Los que hagas con esta cuenta abierta aparecen solos. Si ya apartaste antes sin ella, agrégalo con tu cédula y el código de ese
                 apartado.
             </p>
             {claimUrl !== null ? (
                 <Link href={claimUrl} className="btn btn-primary btn-sm mt-1">
-                    Recuperar mi historial
+                    Agregar un apartado
                 </Link>
             ) : null}
             {subscriptionsUrl !== null ? (

@@ -49,7 +49,7 @@ final class PayTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('portal/Access')
                 ->where('code', $this->newer->code)
-                ->where('googleUrl', route('account.google.redirect', ['luego' => route('portal.pay', absolute: false)])));
+                ->where('googleUrl', route('account.google.redirect', ['luego' => route('portal.pay', ['codigo' => $this->newer->code], absolute: false)])));
     }
 
     public function test_a_malformed_code_is_not_filled(): void
@@ -65,7 +65,10 @@ final class PayTest extends TestCase
     {
         $this->get(route('portal.access', ['codigo' => $this->newer->code]));
 
-        $this->enter('V-12.345.678', $this->newer->code)->assertRedirect(route('portal.pay'));
+        $this->enter('V-12.345.678', $this->newer->code)->assertRedirect(route('portal.pay', ['codigo' => $this->newer->code]));
+
+        $this->get(route('portal.pay', ['codigo' => $this->newer->code]))
+            ->assertRedirect(route('portal.receipts.create', ['code' => $this->newer->code]));
 
         $this->get(route('portal.pay'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->component('portal/Pay')
@@ -73,6 +76,8 @@ final class PayTest extends TestCase
             ->where('layaways.0.code', $this->newer->code)
             ->where('layaways.0.businessName', 'Ferretería Oriente')
             ->where('layaways.0.payUrl', route('portal.receipts.create', ['code' => $this->newer->code]))
+            ->where('layaways.0.suggestion.kind', 'down_payment')
+            ->where('layaways.0.suggestion.amount.usd', '$50,00')
             ->where('layaways.1.code', $this->older->code)
             ->missing('layaways.0.id'));
     }
@@ -88,7 +93,7 @@ final class PayTest extends TestCase
     {
         $this->enter('V-12.345.678', $this->newer->code);
 
-        $this->get(route('portal.access', ['codigo' => $this->newer->code]))->assertRedirect(route('portal.pay'));
+        $this->get(route('portal.access', ['codigo' => $this->newer->code]))->assertRedirect(route('portal.pay', ['codigo' => $this->newer->code]));
         $this->get(route('portal.access'))->assertRedirect(route('portal.dashboard'));
     }
 
@@ -105,7 +110,22 @@ final class PayTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->component('portal/Access')->where('code', $this->newer->code));
         $this->assertGuest('customer');
 
-        $this->enter('V-12.345.678', $this->newer->code)->assertRedirect(route('portal.pay'));
+        $this->enter('V-12.345.678', $this->newer->code)->assertRedirect(route('portal.pay', ['codigo' => $this->newer->code]));
+    }
+
+    public function test_con_un_solo_apartado_por_pagar_va_directo_a_su_comprobante(): void
+    {
+        DB::table('layaways')->where('id', $this->older->getKey())->update(['status' => LayawayStatus::Completed->value]);
+        $this->enter('V-12.345.678', $this->newer->code);
+
+        $this->get(route('portal.pay'))->assertRedirect(route('portal.receipts.create', ['code' => $this->newer->code]));
+    }
+
+    public function test_un_codigo_que_no_es_suyo_muestra_la_lista(): void
+    {
+        $this->enter('V-12.345.678', $this->newer->code);
+
+        $this->get(route('portal.pay', ['codigo' => 'AP-ZZZZZZZZ']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('portal/Pay')->has('layaways', 2));
     }
 
     public function test_the_list_needs_a_session(): void

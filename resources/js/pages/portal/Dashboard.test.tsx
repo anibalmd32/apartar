@@ -104,7 +104,24 @@ it('separa el historial y enlaza cada apartado con su detalle por código', () =
 
     expect(screen.getByText('Historial (1)')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Nevera Mabe/ })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QRT');
-    expect(screen.getByText('Próximo vencimiento: 25 de septiembre')).toBeInTheDocument();
+    expect(screen.queryByText('Próximo vencimiento: 25 de septiembre')).not.toBeInTheDocument();
+});
+
+it('con un negocio, lo vencido lo dice una sola vez el resumen y no un aviso aparte', () => {
+    const overdue = {
+        kind: 'overdue' as const,
+        count: 1,
+        amount: money('$30,00'),
+        businessName: 'Ferretería Oriente',
+        actionUrl: '/mi-cuenta/pagar',
+    };
+    const [first] = PROPS.businesses;
+    const totals = { ...first!.totals, catchUp: money('$30,00') };
+    render(<Dashboard {...PROPS} businesses={[{ ...first!, totals }]} alerts={[overdue]} />);
+
+    expect(screen.queryByRole('region', { name: 'Avisos' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Resumen de tus apartados' })).toHaveTextContent('Debes $30,00');
+    expect(screen.getAllByText(/25 de septiembre/)).toHaveLength(1);
 });
 
 it('pinta las alertas encima de los bloques, y nada si no hay', () => {
@@ -117,9 +134,8 @@ it('pinta las alertas encima de los bloques, y nada si no hay', () => {
             {...PROPS}
             alerts={[
                 {
-                    kind: 'overdue',
-                    count: 1,
-                    amount: money('$30,00'),
+                    kind: 'receipt_rejected',
+                    layawayCode: 'AP-7K3M9QRT',
                     businessName: 'Ferretería Oriente',
                     actionUrl: '/mi-cuenta/apartados/AP-7K3M9QRT',
                 },
@@ -159,7 +175,7 @@ it('con la cuenta y sin fichas, explica el vacío y enlaza lo que sigue', () => 
 
     expect(screen.getByText('Aquí verás tus apartados de todos los negocios.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ver los catálogos que sigues' })).toHaveAttribute('href', '/mi-cuenta/suscripciones');
-    expect(screen.getByRole('link', { name: 'Recuperar mi historial' })).toHaveAttribute('href', '/mi-cuenta/reclamar');
+    expect(screen.getByRole('link', { name: 'Agregar un apartado' })).toHaveAttribute('href', '/mi-cuenta/reclamar');
     expect(screen.queryByRole('link', { name: 'Conectar Google' })).toBeNull();
 });
 
