@@ -1,7 +1,7 @@
 import { DateField } from '@/components/ui/date-field';
 import { TextField } from '@/components/ui/text-field';
 import { CurrencyChoice } from '@/features/receipts/components/ReceiptChoiceFields';
-import { type ReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
+import { type ReceiptForm, suggestedAmount } from '@/features/receipts/hooks/useReceiptForm';
 import { typedAmount } from '@/lib/amount-typing';
 import { type ReceiptCurrencyOption, type ReceiptSuggestion } from '@/types/receipt';
 
@@ -16,6 +16,7 @@ const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = { USD: '$', VES: 'Bs.
 
 export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: ReceiptAmountFieldsProps) {
     const { data, errors } = form;
+    const showsSuggestion = data.amount !== '' && data.amount === suggestedAmount(suggestion, data.currency);
 
     return (
         <>
@@ -46,7 +47,7 @@ export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: Re
                 required
             />
 
-            {suggestion !== null ? <p className="text-ink-2 text-sm">Ya pusimos el monto que te toca. Si pagaste otro monto, escríbelo.</p> : null}
+            {showsSuggestion ? <p className="text-ink-2 text-sm">Ya pusimos el monto que te toca. Si pagaste otro monto, escríbelo.</p> : null}
         </>
     );
 }

@@ -3,7 +3,7 @@ import { useReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
 import { fakeFile, receiptProps, stubObjectUrls } from '@/test/receipt-fixtures';
 import { type ReceiptCreateProps } from '@/types/receipt';
 import type * as InertiaReact from '@inertiajs/react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const { usePage } = vi.hoisted(() => ({ usePage: vi.fn() }));
@@ -184,4 +184,17 @@ it('el selector acepta solo los tipos del servidor', () => {
     renderForm();
 
     expect(screen.getByLabelText('Captura o PDF del pago')).toHaveAttribute('accept', '.jpg,.jpeg,.png,.webp,.pdf');
+});
+
+it('si la captura trae otro monto, ya no dice que pusimos el monto que te toca', async () => {
+    const reading = { amount: '14.50', currency: 'VES', paidAt: null, reference: null, bank: null };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ reading }), { status: 200 })));
+    renderForm();
+    expect(screen.getByText(/Ya pusimos el monto que te toca/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Captura o PDF del pago'), { target: { files: [fakeFile('captura.png', 'image/png')] } });
+
+    await waitFor(() => expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('14,50'));
+    expect(screen.queryByText(/Ya pusimos el monto que te toca/)).toBeNull();
+    vi.unstubAllGlobals();
 });
