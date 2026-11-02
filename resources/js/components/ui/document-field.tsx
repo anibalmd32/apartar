@@ -1,6 +1,6 @@
 import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
-import { splitDocument, useCatalogs } from '@/lib/venezuela-catalogs';
+import { readTypedDocument, splitDocument, useCatalogs } from '@/lib/venezuela-catalogs';
 import { cilChevronBottom } from '@coreui/icons';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { type ReactNode, useId, useState } from 'react';
@@ -75,7 +75,6 @@ export function DocumentField({ label, value, onChange, name, error, hint, place
                     inputMode="numeric"
                     autoComplete="off"
                     placeholder={placeholder}
-                    maxLength={10}
                     required={required}
                     autoFocus={autoFocus}
                     value={digits}
@@ -83,9 +82,10 @@ export function DocumentField({ label, value, onChange, name, error, hint, place
                     aria-describedby={describedBy === '' ? undefined : describedBy}
                     className={cn('input min-w-0 grow tabular-nums', error && 'input-error')}
                     onChange={(event) => {
-                        const next = event.target.value.replace(/\D/g, '').slice(0, 10);
-                        setDigits(next);
-                        emit(prefix, next);
+                        const next = readTypedDocument(prefixes, event.target.value, prefix);
+                        setPrefix(next.prefix);
+                        setDigits(next.digits);
+                        emit(next.prefix, next.digits);
                     }}
                 />
             </div>

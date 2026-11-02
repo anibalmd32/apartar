@@ -63,3 +63,12 @@ export function splitDocument(prefixes: readonly DocumentPrefix[], value: string
 
     return { prefix: known ? letter : fallback, digits: compact.replace(/\D/g, '') };
 }
+
+const DOCUMENT_MAX_DIGITS = 10;
+
+export function readTypedDocument(prefixes: readonly DocumentPrefix[], typed: string, current: string): { prefix: string; digits: string } {
+    const letter = typed.trim().charAt(0).toUpperCase();
+    const known = prefixes.some((option) => option.code === letter);
+
+    return { prefix: known ? letter : current, digits: typed.replace(/\D/g, '').slice(0, DOCUMENT_MAX_DIGITS) };
+}

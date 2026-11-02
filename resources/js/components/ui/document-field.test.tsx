@@ -56,6 +56,45 @@ it('cambia el prefijo desde el catálogo', () => {
     expect(latest).toBe('J26777308');
 });
 
+function paste(text: string) {
+    const input = screen.getByLabelText<HTMLInputElement>('Cédula o RIF');
+    const allowed = input.maxLength >= 0 ? text.slice(0, input.maxLength) : text;
+
+    fireEvent.change(input, { target: { value: allowed } });
+}
+
+it.each([
+    ['V-21.234.567', 'V', '21234567'],
+    ['V 21.234.567', 'V', '21234567'],
+    ['e 81234567', 'E', '81234567'],
+    ['j-41234567-8', 'J', '412345678'],
+    ['21.234.567', 'V', '21234567'],
+])('al pegar "%s" elige el prefijo %s y deja solo los dígitos', (text, prefix, digits) => {
+    render(<Harness />);
+
+    paste(text);
+
+    expect(latest).toBe(`${prefix}${digits}`);
+    expect(screen.getByRole('button', { name: new RegExp(`Tipo de documento ${prefix}`) })).toBeInTheDocument();
+    expect(screen.getByLabelText('Cédula o RIF')).toHaveValue(digits);
+});
+
+it('conserva el prefijo elegido cuando se pegan solo números', () => {
+    render(<Harness initial="E81234567" />);
+
+    paste('12.345.678');
+
+    expect(latest).toBe('E12345678');
+});
+
+it('limita a diez dígitos lo que queda después de limpiar', () => {
+    render(<Harness />);
+
+    paste('V-1234.5678.9012');
+
+    expect(latest).toBe('V1234567890');
+});
+
 it('separa un valor guardado con guiones y puntos', () => {
     render(<Harness initial="J-41234567-8" />);
 
