@@ -149,6 +149,7 @@ final class DevSeeder extends Seeder
             $this->travelTo($start);
 
             $this->call(DatabaseSeeder::class);
+            $this->publishPaidPlans();
             $this->seedExchangeRates($start);
             $operator = $this->seedOperator();
 
@@ -192,6 +193,16 @@ final class DevSeeder extends Seeder
             '--stop-when-empty' => true,
             '--tries' => 1,
         ]);
+    }
+
+    /**
+     * El escenario de prueba necesita negocios con plan de pago (facturas, recibos y
+     * aprobaciones), pero los planes de pago están escondidos para el MVP. Se publican
+     * solo aquí, sin tocar la matriz de planes que rige el resto del sistema.
+     */
+    private function publishPaidPlans(): void
+    {
+        Plan::query()->whereIn('code', ['pro', 'business'])->update(['is_public' => true]);
     }
 
     private function seedExchangeRates(CarbonImmutable $start): void
