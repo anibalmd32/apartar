@@ -98,7 +98,7 @@ export function DirectoryFilters({ filters, search, onSearch, options, onChange,
                         name="q"
                         className="lg:w-80"
                         value={search}
-                        placeholder="Nombre, cédula o teléfono"
+                        placeholder="Buscar cliente"
                         title="Cédula, teléfono, correo o nombre: se busca por lo que escribas."
                         onChange={(event) => onSearch(event.target.value)}
                     />

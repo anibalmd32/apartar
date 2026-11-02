@@ -98,6 +98,28 @@ it('avisa de los apartados que esperan la inicial y lleva a su filtro', () => {
     );
 });
 
+it('en el celular el resumen y el aviso de la inicial ocupan una línea cada uno, sin tarjeta', () => {
+    render(
+        <CollectionIndex
+            {...collectionProps([installmentRow()])}
+            summary={{ installments: 18, pending: { cents: centsUsd(124_000), usd: '$1.240,00', ves: 'Bs. 48.236,00' }, customers: 11 }}
+            awaitingDownPayment={{ count: 2, missing: { cents: centsUsd(8_000), usd: '$80,00', ves: null } }}
+        />,
+    );
+
+    expect(screen.getByLabelText('Resumen')).toHaveClass('max-lg:bg-transparent', 'max-lg:p-0');
+    expect(screen.getByText('(Bs. 48.236,00)')).toHaveClass('max-lg:hidden');
+    expect(screen.getByRole('link', { name: /2 apartados esperan la inicial/ })).toHaveClass('max-lg:flex-nowrap', 'hit-area');
+});
+
+it('al filtrar recarga también el resumen y el aviso de la inicial', () => {
+    render(<CollectionIndex {...collectionProps([installmentRow()])} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vencen hoy' }));
+
+    expect(routerGet.mock.calls[0]?.[2]?.only).toEqual(expect.arrayContaining(['rows', 'summary', 'awaitingDownPayment']));
+});
+
 it('el filtro «Esperando inicial» lista el apartado con lo que falta y su plazo', () => {
     const base = collectionProps([], { preset: 'awaiting_down_payment' });
     render(

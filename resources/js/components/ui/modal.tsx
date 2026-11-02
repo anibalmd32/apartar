@@ -15,9 +15,10 @@ interface ModalProps {
     actions?: ReactNode;
     footnote?: ReactNode;
     size?: 'md' | 'lg' | 'xl';
+    fillActions?: boolean;
 }
 
-export function Modal({ open, onClose, title, description, children, actions, footnote, size = 'lg' }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, actions, footnote, size = 'lg', fillActions = false }: ModalProps) {
     return (
         <Dialog open={open} onClose={onClose} className="relative z-50">
             <div className="fixed inset-0 bg-[rgb(10_13_26/0.55)]" aria-hidden="true" />
@@ -38,12 +39,26 @@ export function Modal({ open, onClose, title, description, children, actions, fo
                         </button>
                     </div>
 
-                    <div className="flex flex-col gap-4 overflow-y-auto px-6 pt-1 pb-5">{children}</div>
+                    <div
+                        className={cn(
+                            'flex flex-col gap-4 overflow-y-auto px-6 pt-1',
+                            actions || footnote ? 'pb-5' : 'pb-[max(env(safe-area-inset-bottom),1.25rem)]',
+                        )}
+                    >
+                        {children}
+                    </div>
 
                     {actions || footnote ? (
-                        <div className="bg-surface-2 border-line flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4">
-                            <span className="text-ink-3 text-xs">{footnote}</span>
-                            <div className="flex flex-wrap items-center gap-2">{actions}</div>
+                        <div className="bg-surface-2 border-line flex flex-wrap items-center justify-between gap-3 border-t px-6 pt-4 pb-[max(env(safe-area-inset-bottom),1rem)]">
+                            {footnote || !fillActions ? <span className="text-ink-3 text-xs">{footnote}</span> : null}
+                            <div
+                                data-fill={fillActions || undefined}
+                                className={cn(
+                                    fillActions ? 'grid w-full auto-cols-fr grid-flow-col gap-3 *:w-full' : 'flex flex-wrap items-center gap-2',
+                                )}
+                            >
+                                {actions}
+                            </div>
                         </div>
                     ) : null}
                 </DialogPanel>

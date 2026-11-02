@@ -1,5 +1,6 @@
 import { useCurrencyDisplay } from '@/features/currency/hooks/useCurrencyDisplay';
 import { hasVes } from '@/lib/money';
+import { cn } from '@/lib/utils';
 import { type MoneyView } from '@/types/money';
 
 interface MoneyLabelProps {
@@ -7,9 +8,10 @@ interface MoneyLabelProps {
     className?: string;
     stacked?: boolean;
     compact?: boolean;
+    secondaryClassName?: string;
 }
 
-export function MoneyLabel({ money, className, stacked = false, compact = false }: MoneyLabelProps) {
+export function MoneyLabel({ money, className, stacked = false, compact = false, secondaryClassName }: MoneyLabelProps) {
     const { isVesPrimary } = useCurrencyDisplay();
 
     if (!hasVes(money)) {
@@ -39,7 +41,7 @@ export function MoneyLabel({ money, className, stacked = false, compact = false 
 
     return (
         <span className={className}>
-            {primary} <span className="opacity-70">({secondary})</span>
+            {primary} <span className={cn('opacity-70', secondaryClassName)}>({secondary})</span>
         </span>
     );
 }

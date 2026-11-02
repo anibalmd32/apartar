@@ -70,3 +70,23 @@ it('en el celular los selects de la fila ocupan todo el ancho y en la computador
     expect(select).toHaveClass('max-lg:w-full', 'lg:w-auto', 'max-lg:appearance-none');
     expect(select.closest('fieldset')).toHaveClass('max-lg:w-full');
 });
+
+it('Todos va primero para que Por revisar se lea sin deslizar', () => {
+    setup();
+
+    const tabs = within(screen.getByRole('group', { name: 'Estado' })).getAllByRole('button');
+
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Todos', 'Por revisar']);
+});
+
+it('la hoja de filtros reparte Limpiar y Aplicar a todo el ancho y respeta el borde inferior del celular', () => {
+    setup();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }));
+    const sheet = screen.getByRole('dialog', { name: 'Filtros' });
+    const actions = within(sheet).getByRole('button', { name: 'Aplicar' }).parentElement!;
+
+    expect(actions).toHaveAttribute('data-fill');
+    expect(actions).toHaveClass('grid', 'w-full', 'auto-cols-fr');
+    expect(actions.parentElement!.className).toContain('safe-area-inset-bottom');
+});

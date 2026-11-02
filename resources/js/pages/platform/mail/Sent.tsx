@@ -6,6 +6,7 @@ import { PlatformListFilters } from '@/features/platform/components/PlatformList
 import { count, dateTime, statusTone } from '@/features/platform/mail/format';
 import { MailTabs } from '@/features/platform/mail/MailTabs';
 import PlatformLayout from '@/layouts/platform-layout';
+import { compactQuery } from '@/lib/compact-query';
 import { pf } from '@/lib/surfaces';
 import { type SentMailRow } from '@/types/mail';
 import { cilEnvelopeClosed, cilSearch } from '@coreui/icons';
@@ -32,7 +33,10 @@ interface SentProps {
 export default function SentMails({ mails, hasMore, page, filters, statuses, categories }: SentProps) {
     const [search, setSearch] = useState(filters.q ?? '');
     const visit = (changes: Partial<Record<keyof SentFilters | 'pagina', string | number | null>>) =>
-        router.get(pf('/correos/enviados'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/correos/enviados'), compactQuery({ ...filters, pagina: 1, ...changes }, { pagina: 1 }), {
+            preserveState: true,
+            replace: true,
+        });
     const filtered = Object.values(filters).some((value) => value !== null);
 
     return (

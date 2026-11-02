@@ -1,10 +1,9 @@
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageActions } from '@/components/ui/page-actions';
 import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
-import { CollectionSummary } from '@/features/collections/components/CollectionSummary';
+import { AwaitingDownPaymentLink, CollectionSummary } from '@/features/collections/components/CollectionSummary';
 import { downPaymentColumns, installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
 import { useCollectionFilters } from '@/features/collections/hooks/useCollectionFilters';
-import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useExportAction } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -17,7 +16,6 @@ import {
 } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
 import { cilPlus, cilWallet } from '@coreui/icons';
-import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
 export default function CollectionIndex(props: CollectionIndexProps) {
@@ -93,23 +91,11 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
                         onChangeMany={table.setFilters}
                         counts={props.presetCounts}
                     />
-                    {props.summary ? <CollectionSummary summary={props.summary} /> : null}
-                    {props.awaitingDownPayment ? (
-                        <Link
-                            href={bo('/cobranza?preset=awaiting_down_payment')}
-                            className="bg-warning-soft hover:border-line-strong flex flex-wrap items-center justify-between gap-2 rounded-xl border border-transparent px-[18px] py-3 text-sm"
-                        >
-                            <span>
-                                <strong>
-                                    {props.awaitingDownPayment.count === 1
-                                        ? '1 apartado espera la inicial'
-                                        : `${props.awaitingDownPayment.count} apartados esperan la inicial`}
-                                </strong>
-                                {' · '}
-                                <MoneyLabel money={props.awaitingDownPayment.missing} /> por cobrar
-                            </span>
-                            <span className="text-primary-ink font-semibold">Ver cuáles →</span>
-                        </Link>
+                    {props.summary || props.awaitingDownPayment ? (
+                        <div className="flex flex-col gap-2 lg:gap-3">
+                            {props.summary ? <CollectionSummary summary={props.summary} /> : null}
+                            {props.awaitingDownPayment ? <AwaitingDownPaymentLink awaiting={props.awaitingDownPayment} /> : null}
+                        </div>
                     ) : null}
                 </>
             }

@@ -42,6 +42,7 @@ export function FilterSheet({ count, onOpen, onApply, onClear, children }: Filte
                 onClose={() => setOpen(false)}
                 title="Filtros"
                 size="md"
+                fillActions
                 actions={
                     <>
                         <Button variant="secondary" onClick={finish(onClear)}>
@@ -69,9 +70,9 @@ interface FilterBarProps extends Omit<FilterSheetProps, 'count' | 'children'> {
 export function FilterBar({ search, quick, inline, sheet, chips, className, ...sheetProps }: FilterBarProps) {
     return (
         <>
-            <div className={cn('flex flex-wrap items-center gap-2', className)}>
+            <div className={cn('flex flex-wrap items-center gap-2 max-lg:gap-y-3', className)}>
                 {search}
-                {quick ? <div className="max-lg:order-last max-lg:w-full lg:contents">{quick}</div> : null}
+                {quick ? <div className="max-lg:order-first max-lg:w-full lg:contents">{quick}</div> : null}
                 <div className="max-lg:hidden lg:contents">{inline}</div>
                 <FilterSheet count={chips.length} {...sheetProps}>
                     {sheet}

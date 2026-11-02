@@ -3,6 +3,7 @@ import { Pager } from '@/features/platform/components/Pager';
 import { PlatformListFilters } from '@/features/platform/components/PlatformListFilters';
 import PlatformLayout from '@/layouts/platform-layout';
 import { PlatformSupportTabs } from '@/layouts/platform/nav';
+import { compactQuery } from '@/lib/compact-query';
 import { pf } from '@/lib/surfaces';
 import { type PlatformAuditEntry } from '@/types/platform';
 import { cilHistory } from '@coreui/icons';
@@ -27,7 +28,7 @@ interface AuditIndexProps {
 export default function AuditIndex({ entries, hasMore, page, filters, operators, actions }: AuditIndexProps) {
     const time = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
     const visit = (changes: Partial<Record<keyof AuditFilters | 'pagina', string | number | null>>) =>
-        router.get(pf('/auditoria'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
+        router.get(pf('/auditoria'), compactQuery({ ...filters, pagina: 1, ...changes }, { pagina: 1 }), { preserveState: true, replace: true });
     const filtered = Object.values(filters).some((value) => value !== null);
 
     return (

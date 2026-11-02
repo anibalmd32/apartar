@@ -136,12 +136,12 @@ export function InboxFilters({ filters, options, onChange, onChangeMany, pending
     ]);
 
     const tabs: FilterTab<string | null>[] = [
+        { value: null, label: 'Todos' },
         ...options.statuses.map((status) => ({
             value: status.value,
             label: STATUS_TAB_LABELS[status.value] ?? status.label,
             count: status.value === 'pending_review' ? (pending ?? counts[status.value] ?? null) : (counts[status.value] ?? null),
         })),
-        { value: null, label: 'Todos' },
     ];
 
     return (

@@ -39,3 +39,9 @@ it('en la hoja del celular el plan y las cerradas se aplican juntos', () => {
 
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ plan: 'pro', cerradas: true });
 });
+
+it('en el celular los filtros rápidos van arriba de la búsqueda, como en Cobranza', () => {
+    render(<OrganizationFilters filters={{}} plans={{}} onChange={vi.fn()} />);
+
+    expect(screen.getByRole('group', { name: 'Filtros rápidos' }).parentElement).toHaveClass('max-lg:order-first');
+});
