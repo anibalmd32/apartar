@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { SelectField } from '@/components/ui/select-field';
+import { TextField } from '@/components/ui/text-field';
 import { formatAmountTyping, RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
@@ -7,6 +9,11 @@ import { type PendingSubscriptionReceipt } from '@/types/platform';
 import { cilCheckAlt, cilX } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
+
+const SETTLED_CURRENCIES = [
+    { value: 'USD', label: 'USD' },
+    { value: 'VES', label: 'VES' },
+] as const;
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -66,32 +73,30 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
                         approve.post(pf(`/comprobantes/${receipt.id}/aprobar`));
                     }}
                 >
-                    <div className="grid grid-cols-[1fr_88px_1fr] gap-2">
-                        <input
-                            className="input w-full"
-                            aria-label="Importe conciliado"
+                    <div className="grid grid-cols-[minmax(0,1fr)_96px] items-end gap-2">
+                        <TextField
+                            label="Importe conciliado"
                             inputMode="decimal"
+                            autoComplete="off"
+                            className="tabular-nums"
                             value={approve.data.settledAmount}
                             onChange={(event) => approve.setData('settledAmount', typedAmount(event))}
                         />
-                        <select
-                            className="select w-full"
-                            aria-label="Moneda"
+                        <SelectField
+                            label="Moneda"
+                            options={SETTLED_CURRENCIES}
                             value={approve.data.settledCurrency}
                             onChange={(event) => approve.setData('settledCurrency', event.target.value)}
-                        >
-                            <option value="USD">USD</option>
-                            <option value="VES">VES</option>
-                        </select>
-                        <input
-                            className="input w-full"
-                            aria-label="Tasa (opcional)"
-                            placeholder="Tasa"
-                            inputMode="decimal"
-                            value={approve.data.rate}
-                            onChange={(event) => approve.setData('rate', typedAmount(event, RATE_DECIMALS))}
                         />
                     </div>
+                    <TextField
+                        label="Tasa (opcional)"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        className="tabular-nums"
+                        value={approve.data.rate}
+                        onChange={(event) => approve.setData('rate', typedAmount(event, RATE_DECIMALS))}
+                    />
                     {Object.values(approve.errors).map((error) => (
                         <p key={error} className="text-error text-xs">
                             {error}
