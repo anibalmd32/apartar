@@ -102,6 +102,53 @@ final class LayawayShowTest extends TestCase
             ->missing('paymentAccounts'));
     }
 
+    public function test_con_cuotas_vencidas_sugiere_ponerse_al_dia_y_ofrece_la_cuota_mas_antigua(): void
+    {
+        $this->activate();
+        CarbonImmutable::setTestNow('2026-10-15 12:00:00');
+
+        $this->show()->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('nextPaymentSuggestion.kind', 'overdue')
+            ->where('nextPaymentSuggestion.installmentNumber', null)
+            ->where('nextPaymentSuggestion.overdueInstallments', 2)
+            ->where('nextPaymentSuggestion.amount.cents', 6_000)
+            ->where('nextPaymentSuggestion.amount.usd', '$60,00')
+            ->where('nextPaymentSuggestion.covered', false)
+            ->where('nextPaymentSuggestion.alternative.installmentNumber', 1)
+            ->where('nextPaymentSuggestion.alternative.amount.cents', 3_000)
+            ->where('nextPaymentSuggestion.inReview', null));
+    }
+
+    public function test_un_comprobante_en_revision_se_descuenta_de_la_sugerencia_y_dice_cuando_se_envio(): void
+    {
+        $this->activate();
+        CarbonImmutable::setTestNow('2026-10-15 12:00:00');
+        $remaining = (int) DB::table('layaways')->where('id', $this->layaway->getKey())->value('remaining_cents');
+        $this->receiptFor($this->layaway, attributes: ['declared_amount' => '25.00', 'declared_currency' => Currency::USD, 'created_at' => CarbonImmutable::parse('2026-10-14 20:30:00')]);
+        $this->withoutOrganization();
+
+        $this->show()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('nextPaymentSuggestion.kind', 'overdue')
+            ->where('nextPaymentSuggestion.amount.cents', 3_500)
+            ->where('nextPaymentSuggestion.covered', false)
+            ->where('nextPaymentSuggestion.alternative.amount.cents', 500)
+            ->where('nextPaymentSuggestion.inReview.amount.cents', 2_500)
+            ->where('nextPaymentSuggestion.inReview.count', 1)
+            ->where('nextPaymentSuggestion.inReview.submittedOn', '14 oct')
+            ->where('nextPaymentSuggestion.payOff.cents', $remaining - 2_500));
+
+        $this->receiptFor($this->layaway, attributes: ['declared_amount' => '35.00', 'declared_currency' => Currency::USD, 'created_at' => CarbonImmutable::parse('2026-10-15 09:00:00')]);
+        $this->withoutOrganization();
+
+        $this->show()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('nextPaymentSuggestion.amount.cents', 0)
+            ->where('nextPaymentSuggestion.covered', true)
+            ->where('nextPaymentSuggestion.alternative', null)
+            ->where('nextPaymentSuggestion.inReview.amount.cents', 6_000)
+            ->where('nextPaymentSuggestion.inReview.count', 2)
+            ->where('nextPaymentSuggestion.inReview.submittedOn', '15 oct'));
+    }
+
     public function test_days_until_due_follow_the_local_midnight(): void
     {
         $this->activate();

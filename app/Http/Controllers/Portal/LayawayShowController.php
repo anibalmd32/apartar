@@ -6,11 +6,14 @@ namespace App\Http\Controllers\Portal;
 
 use App\Domain\Account\PortalContext;
 use App\Domain\Catalog\CatalogVisibility;
+use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\NextPayment;
+use App\Domain\Money\Money;
 use App\Domain\Payment\LayawayReceipts;
 use App\Domain\Payment\PaymentNotApplicableException;
+use App\Domain\Payment\ReceiptsInReview;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\OrganizationBrand;
@@ -19,6 +22,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Http\Resources\InstallmentRowResource;
 use App\Http\Resources\LayawaySummaryResource;
+use App\Http\Resources\NextPaymentResource;
 use App\Http\Resources\PaymentRowResource;
 use App\Http\Resources\ReceiptRowResource;
 use App\Models\Catalog;
@@ -42,6 +46,7 @@ final class LayawayShowController extends Controller
         private readonly Settings $settings,
         private readonly LimitEnforcer $limits,
         private readonly LayawayReceipts $receipts,
+        private readonly ExchangeRateService $rates,
     ) {}
 
     public function __invoke(Request $request, string $code, PortalContext $portal): Response
@@ -70,7 +75,7 @@ final class LayawayShowController extends Controller
                 ->map(fn (Installment $installment): array => (new InstallmentRowResource($installment, $calendar))->resolve($request))
                 ->values()
                 ->all(),
-            'nextPaymentSuggestion' => $this->suggestion($layaway, $installments->all()),
+            'nextPaymentSuggestion' => $this->suggestion($request, $layaway, $installments->all(), $calendar, $timezone),
             'catalogUrl' => $this->catalogUrl($layaway),
             'receiptUrl' => $layaway->status->acceptsPayments() && $organization->status->acceptsCustomerReceipts()
                 ? route('portal.receipts.create', ['code' => $layaway->code])
@@ -100,16 +105,14 @@ final class LayawayShowController extends Controller
      * @param  list<Installment>  $installments
      * @return array<string, mixed>|null
      */
-    private function suggestion(Layaway $layaway, array $installments): ?array
+    private function suggestion(Request $request, Layaway $layaway, array $installments, DueCalendar $calendar, DateTimeZone $timezone): ?array
     {
-        $next = NextPayment::for($layaway, $installments);
+        $inReview = ReceiptsInReview::of($layaway, $this->context->organization(), $this->rates);
+        $next = NextPayment::for($layaway, $installments, $calendar->today, $inReview->amount);
 
         return $next === null ? null : [
-            'kind' => $next->kind->value,
-            'installmentNumber' => $next->installmentNumber,
-            'amount' => $this->money($next->amount),
-            'started' => $next->started,
-            'payOff' => $this->money($layaway->remaining_cents),
+            ...(new NextPaymentResource($next, $inReview, $timezone))->resolve($request),
+            'payOff' => $this->money(new Money(max(0, $layaway->remaining_cents->cents - $inReview->amount->cents))),
         ];
     }
 

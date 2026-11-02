@@ -96,6 +96,22 @@ it('precarga la sugerencia en la moneda elegida, en dólares y en bolívares', (
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('30,00');
 });
 
+it('con cuotas vencidas propone ponerse al día con el total', () => {
+    const base = receiptProps();
+    const suggestion = base.suggestion && {
+        ...base.suggestion,
+        kind: 'overdue' as const,
+        installmentNumber: null,
+        overdueInstallments: 2,
+        amount: { ...base.suggestion.amount, usd: '$60,00' },
+        amountUsd: '60.00',
+    };
+    renderForm({ paymentAccounts: [], suggestion });
+
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('60,00');
+    expect(screen.getByText(/Para ponerte al día te sugerimos tus 2 cuotas vencidas/)).toHaveTextContent('$60,00');
+});
+
 it('la moneda va en su fila, antes del monto, y el monto muestra el símbolo de la moneda elegida', () => {
     renderForm({ paymentAccounts: [] });
 

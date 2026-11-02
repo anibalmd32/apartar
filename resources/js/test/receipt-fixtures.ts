@@ -41,8 +41,12 @@ export function receiptProps(overrides: Partial<ReceiptCreateProps> = {}): Recei
         suggestion: {
             kind: 'installment',
             installmentNumber: 2,
+            overdueInstallments: 0,
             amount: { cents: centsUsd(3_000), usd: '$30,00', ves: null },
             started: false,
+            covered: false,
+            alternative: null,
+            inReview: null,
             amountUsd: '30.00',
             amountVes: '1275.00',
         },

@@ -8,4 +8,5 @@ enum NextPaymentKind: string
 {
     case DownPayment = 'down_payment';
     case Installment = 'installment';
+    case Overdue = 'overdue';
 }

@@ -132,11 +132,21 @@ export interface InstallmentRow {
     readonly tone: InstallmentTone;
 }
 
+export interface NextPaymentInReview {
+    readonly amount: MoneyView;
+    readonly count: number;
+    readonly submittedOn: string | null;
+}
+
 export interface NextPaymentSuggestion {
-    readonly kind: 'down_payment' | 'installment';
+    readonly kind: 'down_payment' | 'installment' | 'overdue';
     readonly installmentNumber: number | null;
+    readonly overdueInstallments: number;
     readonly amount: MoneyView;
     readonly started: boolean;
+    readonly covered: boolean;
+    readonly alternative: { readonly installmentNumber: number; readonly amount: MoneyView } | null;
+    readonly inReview: NextPaymentInReview | null;
     readonly payOff: MoneyView;
 }
 

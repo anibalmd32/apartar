@@ -8,6 +8,8 @@ use App\Actions\Payment\ReadReceiptAction;
 use App\Actions\Payment\SubmitReceiptAction;
 use App\Domain\Account\PortalContext;
 use App\Domain\Exchange\CurrentRate;
+use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\NextPayment;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
@@ -18,6 +20,7 @@ use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Payment\ReceiptReading;
+use App\Domain\Payment\ReceiptsInReview;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Tenancy\CrossTenantRelationException;
@@ -27,9 +30,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Http\Resources\LayawaySummaryResource;
+use App\Http\Resources\NextPaymentResource;
 use App\Models\Layaway;
 use App\Models\Receipt;
 use App\Queries\ActivePaymentAccountsQuery;
+use App\Support\Settings;
 use DateTimeZone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -52,6 +57,8 @@ final class ReceiptController extends Controller
         private readonly ActivePaymentAccountsQuery $paymentAccounts,
         private readonly CurrentRate $rate,
         private readonly LayawayReceipts $layawayReceipts,
+        private readonly ExchangeRateService $rates,
+        private readonly Settings $settings,
     ) {}
 
     public function create(Request $request, string $code, PortalContext $portal): Response
@@ -74,7 +81,7 @@ final class ReceiptController extends Controller
                 'statusLabel' => $summary['statusLabel'],
                 'remaining' => $summary['remaining'],
             ],
-            'suggestion' => $this->suggestion($layaway),
+            'suggestion' => $this->suggestion($request, $layaway),
             'paymentAccounts' => array_map(fn (PaymentAccountView $account): array => $account->toArray(), $this->paymentAccounts->all()),
             'methods' => array_map(fn (PaymentMethod $method): array => [
                 'value' => $method->value,
@@ -136,21 +143,20 @@ final class ReceiptController extends Controller
     /**
      * @return array<string, mixed>|null
      */
-    private function suggestion(Layaway $layaway): ?array
+    private function suggestion(Request $request, Layaway $layaway): ?array
     {
-        $next = NextPayment::for($layaway, $layaway->installments()->get()->all());
+        $organization = $this->context->organization();
+        $inReview = ReceiptsInReview::of($layaway, $organization, $this->rates);
+        $next = NextPayment::for($layaway, $layaway->installments()->get()->all(), DueCalendar::of($organization, $this->settings)->today, $inReview->amount);
 
-        if ($next === null) {
+        if ($next === null || $next->covered()) {
             return null;
         }
 
         $snapshot = $this->rate->snapshot();
 
         return [
-            'kind' => $next->kind->value,
-            'installmentNumber' => $next->installmentNumber,
-            'amount' => $this->money($next->amount),
-            'started' => $next->started,
+            ...(new NextPaymentResource($next, $inReview, new DateTimeZone($organization->timezone)))->resolve($request),
             'amountUsd' => self::decimal($next->amount),
             'amountVes' => $snapshot === null ? null : self::decimal($next->amount->convertTo(Currency::VES, $snapshot)),
         ];

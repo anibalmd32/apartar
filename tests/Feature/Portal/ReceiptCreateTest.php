@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Portal;
 
+use App\Actions\Layaway\ActivateLayawayAction;
 use App\Domain\Layaway\LayawayStatus;
+use App\Domain\Money\Currency;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Tenancy\OrganizationStatus;
@@ -115,6 +117,32 @@ final class ReceiptCreateTest extends TestCase
         $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page
             ->where('suggestion.amountUsd', '50.00')
             ->where('suggestion.amountVes', '2125.00'));
+    }
+
+    public function test_con_cuotas_vencidas_el_formulario_propone_ponerse_al_dia_menos_lo_que_esta_en_revision(): void
+    {
+        CarbonImmutable::setTestNow('2026-09-10 10:00:00');
+        $this->withinOrganization($this->organization, fn () => app(ActivateLayawayAction::class)->handle($this->layaway));
+        $this->withoutOrganization();
+        CarbonImmutable::setTestNow('2026-10-15 12:00:00');
+
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('suggestion.kind', 'overdue')
+            ->where('suggestion.overdueInstallments', 2)
+            ->where('suggestion.amount.cents', 6_000)
+            ->where('suggestion.amountUsd', '60.00'));
+
+        $this->receiptFor($this->layaway, attributes: ['declared_amount' => '30.00', 'declared_currency' => Currency::USD]);
+        $this->withoutOrganization();
+
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('suggestion.kind', 'overdue')
+            ->where('suggestion.amountUsd', '30.00'));
+
+        $this->receiptFor($this->layaway, attributes: ['declared_amount' => '30.00', 'declared_currency' => Currency::USD]);
+        $this->withoutOrganization();
+
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page->where('suggestion', null));
     }
 
     public function test_foreign_terminal_and_anonymous_are_turned_away(): void

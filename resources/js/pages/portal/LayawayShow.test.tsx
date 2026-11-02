@@ -1,7 +1,7 @@
 import { centsUsd } from '@/lib/money';
 import LayawayShow from '@/pages/portal/LayawayShow';
 import { fakeRoute } from '@/test/fakes';
-import { type PortalLayawayShowProps } from '@/types/portal';
+import { type NextPaymentSuggestion, type PortalLayawayShowProps } from '@/types/portal';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,21 @@ vi.mock('@inertiajs/react', async () => ({ usePage, Head: () => null, Link: (awa
 
 function money(usd: string, cents = 100) {
     return { cents: centsUsd(cents), usd, ves: null };
+}
+
+function suggestion(overrides: Partial<NextPaymentSuggestion> = {}): NextPaymentSuggestion {
+    return {
+        kind: 'installment',
+        installmentNumber: 1,
+        overdueInstallments: 0,
+        amount: money('$30,00'),
+        started: false,
+        covered: false,
+        alternative: null,
+        inReview: null,
+        payOff: money('$150,00'),
+        ...overrides,
+    };
 }
 
 function props(overrides: Partial<PortalLayawayShowProps> = {}, layaway: Partial<PortalLayawayShowProps['layaway']> = {}): PortalLayawayShowProps {
@@ -50,7 +65,7 @@ function props(overrides: Partial<PortalLayawayShowProps> = {}, layaway: Partial
                 tone: 'soon',
             },
         ],
-        nextPaymentSuggestion: { kind: 'installment', installmentNumber: 1, amount: money('$30,00'), started: false, payOff: money('$150,00') },
+        nextPaymentSuggestion: suggestion(),
         catalogUrl: null,
         receiptUrl: null,
         payments: [],
@@ -104,13 +119,7 @@ it('avisa de que liquidar no tiene descuento y de que los bolívares se fijan al
     rerender(
         <LayawayShow
             {...props({
-                nextPaymentSuggestion: {
-                    kind: 'installment',
-                    installmentNumber: 1,
-                    amount: money('$30,00'),
-                    started: false,
-                    payOff: { cents: centsUsd(15_000), usd: '$150,00', ves: 'Bs. 6.375,00' },
-                },
+                nextPaymentSuggestion: suggestion({ payOff: { cents: centsUsd(15_000), usd: '$150,00', ves: 'Bs. 6.375,00' } }),
             })}
         />,
     );
@@ -196,13 +205,7 @@ it('con parte de la inicial abonada, dice cuánto abonó y cuánto falta', () =>
             {...props(
                 {
                     installments: [],
-                    nextPaymentSuggestion: {
-                        kind: 'down_payment',
-                        installmentNumber: null,
-                        amount: money('$30,00'),
-                        started: true,
-                        payOff: money('$180,00'),
-                    },
+                    nextPaymentSuggestion: suggestion({ kind: 'down_payment', installmentNumber: null, started: true, payOff: money('$180,00') }),
                 },
                 {
                     status: 'pending_down_payment',
