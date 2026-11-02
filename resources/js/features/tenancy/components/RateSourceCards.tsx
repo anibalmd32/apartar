@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { publishedAgo } from '@/features/currency/lib/rateAge';
 import { cn } from '@/lib/utils';
 import { type RateSource, type RateView } from '@/types/exchange';
@@ -82,11 +83,7 @@ export function RateSourceCards({ value, onChange, sourceOptions, rateSources, m
             <p id={`${id}-hint`} className="label text-xs">
                 {hint}
             </p>
-            {error ? (
-                <p id={`${id}-error`} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
         </fieldset>
     );
 }

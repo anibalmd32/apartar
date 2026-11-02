@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { type InputHTMLAttributes, type ReactNode, useId } from 'react';
 
@@ -40,11 +41,7 @@ export function TextField({ label, error, hint, prefix, id, className, ...props 
                 </p>
             ) : null}
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

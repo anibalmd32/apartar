@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { cilLockLocked, cilLowVision } from '@coreui/icons';
 import { type InputHTMLAttributes, type ReactNode, useId, useState } from 'react';
@@ -61,11 +62,7 @@ export function IconTextField({ label, error, hint, icon, revealable = false, de
                 </p>
             ) : null}
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs whitespace-normal">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

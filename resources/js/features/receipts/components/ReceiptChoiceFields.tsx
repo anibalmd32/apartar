@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { IconChip } from '@/components/ui/icon-chip';
 import { PAYMENT_METHOD_ICONS } from '@/features/catalog/components/PaymentMethodsCard';
 import { cn } from '@/lib/utils';
@@ -6,11 +7,7 @@ import { type ReceiptCurrencyOption } from '@/types/receipt';
 import { useId } from 'react';
 
 function FieldErrors({ id, error }: { id: string; error?: string }) {
-    return error ? (
-        <p id={`${id}-error`} role="alert" className="label text-error text-xs">
-            {error}
-        </p>
-    ) : null;
+    return error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null;
 }
 
 interface AccountChoiceProps {

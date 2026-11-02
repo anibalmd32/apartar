@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { splitMobile, useCatalogs } from '@/lib/venezuela-catalogs';
 import { cilChevronBottom } from '@coreui/icons';
@@ -92,11 +93,7 @@ export function PhoneField({ label, value, onChange, name, error, hint, required
                     {hint}
                 </p>
             ) : null}
-            {error ? (
-                <p id={`${id}-error`} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
         </fieldset>
     );
 }

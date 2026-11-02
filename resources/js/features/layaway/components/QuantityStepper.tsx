@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { Icon } from '@/components/ui/icon';
 import { useNumberDraft } from '@/hooks/use-number-draft';
 import { cn } from '@/lib/utils';
@@ -52,11 +53,7 @@ export function QuantityStepper({ value, max, onChange, hint, error }: QuantityS
             <p id={`${id}-hint`} className="label text-xs">
                 {hint}
             </p>
-            {error ? (
-                <p id={`${id}-error`} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
         </fieldset>
     );
 }

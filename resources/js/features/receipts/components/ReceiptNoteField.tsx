@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { useId } from 'react';
 
@@ -36,11 +37,7 @@ export function ReceiptNoteField({ value, onChange, error }: ReceiptNoteFieldPro
                 Hasta {NOTE_MAX_LENGTH} caracteres. Cualquier detalle que ayude al negocio a reconocer tu pago.
             </p>
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

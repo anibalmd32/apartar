@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { cilCloudUpload } from '@coreui/icons';
 import { type ChangeEvent, type InputHTMLAttributes, type ReactNode, useId, useState } from 'react';
@@ -67,11 +68,7 @@ export function FileField({ label, hint, error, preview, id, className, buttonLa
                 </p>
             ) : null}
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

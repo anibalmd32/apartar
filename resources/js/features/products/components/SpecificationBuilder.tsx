@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
@@ -57,11 +58,7 @@ export function SpecificationBuilder({ rows: sheet, errors }: SpecificationBuild
 
     return (
         <SectionCard title="Características" subtitle="Escribe una por línea. En la página del producto se muestran como una lista, en este orden.">
-            {errors.specifications ? (
-                <p role="alert" className="label text-error text-xs">
-                    {errors.specifications}
-                </p>
-            ) : null}
+            {errors.specifications ? <FieldError>{errors.specifications}</FieldError> : null}
 
             {rows.length === 0 ? (
                 <p className="text-ink-3 text-sm">Sin características. Puedes publicar el producto igual: la lista se omite cuando está vacía.</p>

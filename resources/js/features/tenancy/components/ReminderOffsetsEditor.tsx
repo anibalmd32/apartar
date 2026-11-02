@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { cilPlus, cilX } from '@coreui/icons';
@@ -132,11 +133,7 @@ export function ReminderOffsetsEditor({ label, value, onChange, hint, error }: R
                     {hint}
                 </p>
             ) : null}
-            {error ? (
-                <p id={`${id}-error`} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
         </fieldset>
     );
 }

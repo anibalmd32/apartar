@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { cilCloudUpload } from '@coreui/icons';
@@ -101,11 +102,7 @@ export function ImageUploader({ url, remaining, error }: ImageUploaderProps) {
                     : `Puedes subir ${remaining} ${remaining === 1 ? 'imagen más' : 'imágenes más'}. JPG, PNG o WebP, hasta 8 MB cada una.`}
             </p>
 
-            {error ? (
-                <p role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError>{error}</FieldError> : null}
 
             {previews.length > 0 ? (
                 <>

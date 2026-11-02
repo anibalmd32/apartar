@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { RichTextToolbar } from '@/components/ui/rich-text-toolbar';
 import { editorHtml, editorTextLength, richTextContentClass } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
@@ -122,11 +123,7 @@ export function RichTextField({ label, value, onChange, error, hint, maxLength, 
                 </p>
             ) : null}
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs whitespace-normal">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

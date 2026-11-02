@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { cilCloudUpload, cilDescription } from '@coreui/icons';
@@ -69,11 +70,7 @@ export function ReceiptDropzone({ label, accept, hint, file, onFile, error }: Re
                 {hint}
             </p>
 
-            {error ? (
-                <p id={`${id}-error`} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
         </fieldset>
     );
 }

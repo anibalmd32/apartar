@@ -1,4 +1,5 @@
 import { Chip } from '@/components/ui/chip';
+import { FieldError } from '@/components/ui/field-error';
 import { SectionCard } from '@/components/ui/section-card';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
@@ -77,11 +78,7 @@ export function ProductTaxonomyFields({ data, setData, errors, categories, tags 
                         </div>
                     )}
 
-                    {errors.tag_ids ? (
-                        <p role="alert" className="label text-error text-xs">
-                            {errors.tag_ids}
-                        </p>
-                    ) : null}
+                    {errors.tag_ids ? <FieldError>{errors.tag_ids}</FieldError> : null}
                 </div>
 
                 <div>

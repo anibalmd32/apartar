@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { IMAGE_TYPES, type PendingImages } from '@/features/products/hooks/usePendingImages';
@@ -55,11 +56,7 @@ export function PendingImagePicker({ photos, errors }: PendingImagePickerProps) 
                     : `Puedes agregar ${remaining} ${remaining === 1 ? 'foto más' : 'fotos más'}. JPG, PNG o WebP, hasta 8 MB cada una. La IA también las mira para sugerir la descripción.`}
             </p>
 
-            {error ? (
-                <p role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError>{error}</FieldError> : null}
 
             {photos.images.length > 0 ? (
                 <ul className="flex flex-wrap gap-3">

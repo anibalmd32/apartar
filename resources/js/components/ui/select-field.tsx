@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
 import { type ReactNode, type SelectHTMLAttributes, useId } from 'react';
 
@@ -49,11 +50,7 @@ export function SelectField({ label, options, error, hint, hideLabel = false, in
                 </p>
             ) : null}
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

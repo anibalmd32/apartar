@@ -670,12 +670,30 @@
     }
 }
 
-@media (pointer: coarse) {
-    .btn:not(.btn-xs, .btn-link),
+@media (pointer: coarse), (width < 64rem) {
+    .input,
+    .select,
+    .textarea,
+    .file-input {
+        min-height: 2.75rem;
+    }
+}
+
+@media (width < 64rem) {
     .input,
     .select,
     .textarea,
     .file-input,
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='hidden']),
+    select,
+    textarea,
+    [contenteditable='true'] {
+        font-size: 1rem;
+    }
+}
+
+@media (pointer: coarse) {
+    .btn:not(.btn-xs, .btn-link),
     .tab {
         min-height: 2.75rem;
     }

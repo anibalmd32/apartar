@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { type ReactNode, useId } from 'react';
 import { DateInput } from './date-input';
 
@@ -45,11 +46,7 @@ export function DateField({ label, value, onChange, name, min, max, required, di
                 </p>
             ) : null}
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }

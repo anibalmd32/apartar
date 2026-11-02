@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/ui/field-error';
 import { type LayawayConsentView } from '@/types/layaway';
 import { useId } from 'react';
 
@@ -44,11 +45,7 @@ export function TermsConsentField({ checked, onChange, consent, error }: TermsCo
                 Guardamos la fecha y la IP de esta aceptación como constancia.
             </p>
 
-            {error ? (
-                <p id={errorId} role="alert" className="label text-error text-xs">
-                    {error}
-                </p>
-            ) : null}
+            {error ? <FieldError id={errorId}>{error}</FieldError> : null}
         </fieldset>
     );
 }
