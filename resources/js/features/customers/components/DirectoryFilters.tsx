@@ -1,10 +1,17 @@
 import { Chip } from '@/components/ui/chip';
 import { DateRangeField } from '@/components/ui/date-range-field';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { Icon } from '@/components/ui/icon';
+import { ScrollRow } from '@/components/ui/scroll-row';
+import { SearchField } from '@/components/ui/search-field';
 import { SelectField } from '@/components/ui/select-field';
+import { useFilterDraft } from '@/hooks/use-filter-draft';
+import { dateChip, optionChip, present } from '@/lib/filter-chips';
 import { type CustomerDirectoryFilters, type CustomerIndexProps } from '@/types/customers';
-import { cilFilter, cilSearch } from '@coreui/icons';
+import { cilFilter } from '@coreui/icons';
 import { useState } from 'react';
+
+type SheetValues = Pick<CustomerDirectoryFilters, 'from' | 'to' | 'catalog'>;
 
 interface DirectoryFiltersProps {
     filters: CustomerDirectoryFilters;
@@ -32,73 +39,112 @@ const TOGGLES: readonly { key: 'overdue' | 'due_soon' | 'without_active'; label:
     { key: 'without_active', label: 'Sin apartados activos' },
 ];
 
-export function DirectoryFilters({ filters, search, onSearch, options, onChange, onChangeMany, counts }: DirectoryFiltersProps) {
-    const pick = (key: keyof CustomerDirectoryFilters) => (event: { target: { value: string } }) =>
-        onChange(key, event.target.value === '' ? null : event.target.value);
+function Fields({
+    values,
+    options,
+    onPick,
+    stacked = false,
+}: {
+    values: SheetValues;
+    options: CustomerIndexProps['options'];
+    onPick: (key: keyof SheetValues, value: string | null) => void;
+    stacked?: boolean;
+}) {
+    const pick = (key: keyof SheetValues) => (event: { target: { value: string } }) =>
+        onPick(key, event.target.value === '' ? null : event.target.value);
 
+    return (
+        <>
+            <DateRangeField
+                label="Próximo vencimiento"
+                fromLabel="Vence desde"
+                toLabel="Vence hasta"
+                showLabel={stacked}
+                from={values.from ?? ''}
+                to={values.to ?? ''}
+                onFromChange={pick('from')}
+                onToChange={pick('to')}
+            />
+            <SelectField
+                label="Catálogo de origen"
+                hideLabel={!stacked}
+                inline={!stacked}
+                name="catalog"
+                options={[{ value: '', label: stacked ? 'Todos' : 'Catálogo de origen' }, ...options.catalogs]}
+                value={values.catalog ?? ''}
+                onChange={pick('catalog')}
+            />
+        </>
+    );
+}
+
+export function DirectoryFilters({ filters, search, onSearch, options, onChange, onChangeMany, counts }: DirectoryFiltersProps) {
+    const applied: SheetValues = { from: filters.from, to: filters.to, catalog: filters.catalog };
+    const sheet = useFilterDraft(applied);
     const [more, setMore] = useState(filters.from !== null || filters.to !== null || filters.catalog !== null);
+    const allActive = TOGGLES.every((toggle) => filters[toggle.key] !== '1');
+    const chips = present([
+        dateChip('from', 'Vence desde', filters.from),
+        dateChip('to', 'Vence hasta', filters.to),
+        optionChip('catalog', 'Catálogo', filters.catalog, options.catalogs),
+    ]);
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-                <label className="input w-full sm:w-80">
-                    <Icon icon={cilSearch} className="text-ink-3" />
-                    <span className="sr-only">Buscar</span>
-                    <input
+            <FilterBar
+                search={
+                    <SearchField
+                        label="Buscar"
                         name="q"
+                        className="lg:w-80"
                         value={search}
-                        placeholder="Nombre, cédula/RIF, teléfono o correo"
+                        placeholder="Nombre, cédula o teléfono"
                         title="Cédula, teléfono, correo o nombre: se busca por lo que escribas."
                         onChange={(event) => onSearch(event.target.value)}
                     />
-                </label>
-
-                <div className="flex flex-wrap gap-2" role="group" aria-label="Filtros rápidos">
-                    <Chip
-                        active={TOGGLES.every((toggle) => filters[toggle.key] !== '1')}
-                        count={counts?.all}
-                        onClick={() => onChangeMany(Object.fromEntries(TOGGLES.map((toggle) => [toggle.key, null])))}
+                }
+                quick={
+                    <ScrollRow
+                        role="group"
+                        aria-label="Filtros rápidos"
+                        activeKey={allActive ? 'all' : 'some'}
+                        className="flex gap-2 lg:flex-wrap lg:overflow-visible"
                     >
-                        Todos
-                    </Chip>
-                    {TOGGLES.map((toggle) => (
                         <Chip
-                            key={toggle.key}
-                            active={filters[toggle.key] === '1'}
-                            count={counts?.[toggle.key]}
-                            onClick={() => onChange(toggle.key, filters[toggle.key] === '1' ? null : '1')}
+                            active={allActive}
+                            count={counts?.all}
+                            onClick={() => onChangeMany(Object.fromEntries(TOGGLES.map((toggle) => [toggle.key, null])))}
                         >
-                            {toggle.label}
+                            Todos
                         </Chip>
-                    ))}
-                </div>
-
-                <button type="button" className="btn lg:ml-auto" aria-expanded={more} onClick={() => setMore(!more)}>
-                    <Icon icon={cilFilter} />
-                    Más filtros
-                </button>
-            </div>
+                        {TOGGLES.map((toggle) => (
+                            <Chip
+                                key={toggle.key}
+                                active={filters[toggle.key] === '1'}
+                                count={counts?.[toggle.key]}
+                                onClick={() => onChange(toggle.key, filters[toggle.key] === '1' ? null : '1')}
+                            >
+                                {toggle.label}
+                            </Chip>
+                        ))}
+                    </ScrollRow>
+                }
+                inline={
+                    <button type="button" className="btn lg:ml-auto" aria-expanded={more} onClick={() => setMore(!more)}>
+                        <Icon icon={cilFilter} />
+                        Más filtros
+                    </button>
+                }
+                sheet={<Fields values={sheet.draft} options={options} onPick={sheet.set} stacked />}
+                chips={chips.map((chip) => ({ ...chip, onRemove: () => onChange(chip.key, null) }))}
+                onOpen={sheet.reset}
+                onApply={() => onChangeMany(sheet.changes())}
+                onClear={() => onChangeMany({ from: null, to: null, catalog: null })}
+            />
 
             {more ? (
-                <div className="flex flex-wrap items-center gap-2">
-                    <DateRangeField
-                        label="Próximo vencimiento"
-                        fromLabel="Vence desde"
-                        toLabel="Vence hasta"
-                        from={filters.from ?? ''}
-                        to={filters.to ?? ''}
-                        onFromChange={pick('from')}
-                        onToChange={pick('to')}
-                    />
-                    <SelectField
-                        label="Catálogo de origen"
-                        hideLabel
-                        inline
-                        name="catalog"
-                        options={[{ value: '', label: 'Catálogo de origen' }, ...options.catalogs]}
-                        value={filters.catalog ?? ''}
-                        onChange={pick('catalog')}
-                    />
+                <div className="flex flex-wrap items-center gap-2 max-lg:hidden">
+                    <Fields values={applied} options={options} onPick={onChange} />
                 </div>
             ) : null}
         </div>

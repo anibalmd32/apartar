@@ -85,6 +85,15 @@ it('vuelve a la primera página al cambiar un filtro, y quita los vacíos', () =
     expect(lastVisit().query).toEqual({ sort: '-created' });
 });
 
+it('aplica varios filtros y el orden en una sola visita', () => {
+    const { result } = hook();
+
+    act(() => result.current.setFilters({ category: '7', status: null }, 'name'));
+
+    expect(get).toHaveBeenCalledOnce();
+    expect(lastVisit().query).toEqual({ sort: 'name', category: '7' });
+});
+
 it('solo pide tamaños de página que el servidor acepta', () => {
     const { result } = hook();
 

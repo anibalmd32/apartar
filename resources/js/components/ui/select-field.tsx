@@ -25,14 +25,14 @@ export function SelectField({ label, options, error, hint, hideLabel = false, in
     const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ');
 
     return (
-        <fieldset className={inline ? 'fieldset w-auto py-0' : 'fieldset w-full'}>
+        <fieldset className={inline ? 'fieldset min-w-0 py-0 max-lg:w-full lg:w-auto' : 'fieldset w-full'}>
             <label className={hideLabel ? 'sr-only' : 'fieldset-legend'} htmlFor={fieldId}>
                 {label}
             </label>
 
             <select
                 id={fieldId}
-                className={cn('select', inline ? 'w-auto' : 'w-full', error && 'select-error', className)}
+                className={cn('select max-lg:appearance-none', inline ? 'max-lg:w-full lg:w-auto' : 'w-full', error && 'select-error', className)}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={describedBy === '' ? undefined : describedBy}
                 {...props}

@@ -757,6 +757,33 @@
     }
 }
 
+@layer components {
+    .scroll-row {
+        --fade: 2.5rem;
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+    }
+
+    .scroll-row::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scroll-row[data-fade-end] {
+        mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+    }
+
+    .scroll-row[data-fade-start] {
+        mask-image: linear-gradient(to right, transparent, #000 var(--fade));
+    }
+
+    .scroll-row[data-fade-start][data-fade-end] {
+        mask-image: linear-gradient(to right, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent);
+    }
+}
+
 @media (width < 48rem) {
     .table-stack {
         overflow: visible;

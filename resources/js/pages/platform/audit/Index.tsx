@@ -1,7 +1,6 @@
-import { DateRangeField } from '@/components/ui/date-range-field';
 import { EmptyState } from '@/components/ui/empty-state';
-import { SelectField } from '@/components/ui/select-field';
 import { Pager } from '@/features/platform/components/Pager';
+import { PlatformListFilters } from '@/features/platform/components/PlatformListFilters';
 import PlatformLayout from '@/layouts/platform-layout';
 import { PlatformSupportTabs } from '@/layouts/platform/nav';
 import { pf } from '@/lib/surfaces';
@@ -35,30 +34,22 @@ export default function AuditIndex({ entries, hasMore, page, filters, operators,
         <PlatformLayout title="Auditoría" description="Todo lo que hacen los operadores de Apartar. No se edita ni se borra.">
             <PlatformSupportTabs />
 
-            <section aria-label="Filtros" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[220px_260px_minmax(0,1fr)]">
-                <SelectField
-                    label="Operador"
-                    value={filters.operador === null ? '' : String(filters.operador)}
-                    onChange={(event) => visit({ operador: event.target.value === '' ? null : Number(event.target.value) })}
-                    options={[{ value: '', label: 'Todos' }, ...operators.map((operator) => ({ value: String(operator.id), label: operator.name }))]}
-                />
-                <SelectField
-                    label="Acción"
-                    value={filters.accion ?? ''}
-                    onChange={(event) => visit({ accion: event.target.value === '' ? null : event.target.value })}
-                    options={[{ value: '', label: 'Todas' }, ...actions]}
-                />
-                <DateRangeField
-                    label="Fechas"
-                    fromLabel="Desde"
-                    from={filters.desde ?? ''}
-                    to={filters.hasta ?? ''}
-                    fromName="desde"
-                    toName="hasta"
-                    onFromChange={(event) => visit({ desde: event.target.value === '' ? null : event.target.value })}
-                    onToChange={(event) => visit({ hasta: event.target.value === '' ? null : event.target.value })}
-                />
-            </section>
+            <PlatformListFilters
+                className="lg:grid lg:grid-cols-[220px_260px_minmax(0,1fr)] lg:items-stretch lg:gap-3"
+                values={{ ...filters, operador: filters.operador === null ? null : String(filters.operador) }}
+                onChange={(changes) =>
+                    visit({ ...changes, ...('operador' in changes ? { operador: changes.operador === null ? null : Number(changes.operador) } : {}) })
+                }
+                selects={[
+                    {
+                        key: 'operador',
+                        label: 'Operador',
+                        all: 'Todos',
+                        options: operators.map((operator) => ({ value: String(operator.id), label: operator.name })),
+                    },
+                    { key: 'accion', label: 'Acción', all: 'Todas', options: actions },
+                ]}
+            />
 
             <section aria-label="Registro" className="border-line bg-base-100 shadow-card overflow-hidden rounded-2xl border">
                 {entries.length === 0 ? (

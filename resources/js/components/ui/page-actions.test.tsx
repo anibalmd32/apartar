@@ -1,6 +1,6 @@
 import { PageActions } from '@/components/ui/page-actions';
 import { cilBan, cilPlus } from '@coreui/icons';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { expect, it, vi } from 'vitest';
 
@@ -101,4 +101,24 @@ it('en el celular la acción a la vista se pinta como principal aunque en escrit
 
     expect(screen.getByRole('button', { name: 'Cambiar plan' })).toHaveAttribute('data-page-primary');
     expect(screen.getByRole('button', { name: 'Suspender' })).not.toHaveAttribute('data-page-primary');
+});
+
+it('en el celular Exportar queda junto a la acción principal como botón de icono de 44 px con nombre', () => {
+    render(
+        <PageActions
+            actions={[
+                { label: 'Exportar a Excel', icon: cilBan, onClick: vi.fn(), variant: 'secondary', mobile: 'icon' },
+                { label: 'Nuevo cliente', icon: cilPlus, onClick: vi.fn(), variant: 'primary', primary: true },
+            ]}
+        />,
+    );
+
+    const exportButton = screen.getByRole('button', { name: 'Exportar a Excel' });
+
+    expect(exportButton).toHaveAttribute('aria-label', 'Exportar a Excel');
+    expect(exportButton).toHaveClass('max-lg:btn-square', 'max-lg:size-11');
+    expect(exportButton).not.toHaveClass('max-lg:hidden');
+    expect(within(exportButton).getByText('Exportar a Excel')).toHaveClass('max-lg:sr-only');
+    expect(screen.getByRole('button', { name: 'Nuevo cliente' })).toHaveClass('max-lg:flex-1');
+    expect(screen.queryByRole('button', { name: 'Más acciones' })).not.toBeInTheDocument();
 });

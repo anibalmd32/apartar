@@ -1,3 +1,4 @@
+import { ScrollRow } from '@/components/ui/scroll-row';
 import { cn } from '@/lib/utils';
 
 export interface FilterTab<T extends string | null> {
@@ -16,14 +17,7 @@ interface FilterTabsProps<T extends string | null> {
 
 export function FilterTabs<T extends string | null>({ tabs, value, onChange, label, className }: FilterTabsProps<T>) {
     return (
-        <div
-            role="group"
-            aria-label={label}
-            className={cn(
-                'border-line flex gap-1 overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-                className,
-            )}
-        >
+        <ScrollRow role="group" aria-label={label} activeKey={value ?? 'all'} className={cn('border-line flex gap-1 border-b', className)}>
             {tabs.map((tab) => {
                 const active = tab.value === value;
 
@@ -50,6 +44,6 @@ export function FilterTabs<T extends string | null>({ tabs, value, onChange, lab
                     </button>
                 );
             })}
-        </div>
+        </ScrollRow>
     );
 }

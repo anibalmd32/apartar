@@ -1,12 +1,12 @@
 import { EmptyState } from '@/components/ui/empty-state';
-import { Icon } from '@/components/ui/icon';
+import { PageActions } from '@/components/ui/page-actions';
 import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
 import { CollectionSummary } from '@/features/collections/components/CollectionSummary';
 import { downPaymentColumns, installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
 import { useCollectionFilters } from '@/features/collections/hooks/useCollectionFilters';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { DataTable } from '@/features/data-table/components/DataTable';
-import { ExportButton } from '@/features/exports/components/ExportButton';
+import { useExportAction } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import {
@@ -21,18 +21,19 @@ import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
 export default function CollectionIndex(props: CollectionIndexProps) {
+    const exportAction = useExportAction('collections', props.meta.filters);
+
     return (
         <BackofficeLayout
             title="Cobranza"
             description="Lo que tienes por cobrar, cuota por cuota, con el teléfono de cada cliente a la vista."
             actions={
-                <>
-                    <ExportButton type="collections" filters={props.meta.filters} />
-                    <Link href={bo('/apartados/nuevo')} className="btn btn-primary">
-                        <Icon icon={cilPlus} />
-                        Nuevo apartado
-                    </Link>
-                </>
+                <PageActions
+                    actions={[
+                        exportAction,
+                        { label: 'Nuevo apartado', icon: cilPlus, href: bo('/apartados/nuevo'), variant: 'primary', primary: true },
+                    ]}
+                />
             }
         >
             {props.kind === 'down_payments' ? (
@@ -85,7 +86,13 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
             empty={emptyMessage(props, narrowed)}
             toolbar={
                 <>
-                    <CollectionFilters filters={filters} options={props.options} onChange={change} counts={props.presetCounts} />
+                    <CollectionFilters
+                        filters={filters}
+                        options={props.options}
+                        onChange={change}
+                        onChangeMany={table.setFilters}
+                        counts={props.presetCounts}
+                    />
                     {props.summary ? <CollectionSummary summary={props.summary} /> : null}
                     {props.awaitingDownPayment ? (
                         <Link

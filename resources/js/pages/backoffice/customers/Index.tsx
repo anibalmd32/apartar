@@ -1,12 +1,12 @@
 import { EmptyState } from '@/components/ui/empty-state';
-import { Icon } from '@/components/ui/icon';
+import { PageActions } from '@/components/ui/page-actions';
 import { DIRECTORY_FILTER_LABELS, DirectoryFilters } from '@/features/customers/components/DirectoryFilters';
 import { NewCustomerDialog } from '@/features/customers/components/NewCustomerDialog';
 import { directoryColumns } from '@/features/customers/components/directoryColumns';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useDebouncedFilter } from '@/features/data-table/hooks/useDebouncedFilter';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
-import { ExportButton } from '@/features/exports/components/ExportButton';
+import { useExportAction } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { type CustomerDirectoryFilters, type CustomerIndexProps } from '@/types/customers';
@@ -20,19 +20,26 @@ export default function CustomerIndex({ rows, meta, options, filterCounts }: Cus
     const [search, setSearch] = useDebouncedFilter(filters.q, (value) => table.setFilter('q', value));
     const narrowed = Object.values(meta.filters).some((value) => value !== null);
     const [adding, setAdding] = useState(false);
+    const exportAction = useExportAction('customers', meta.filters);
 
     return (
         <BackofficeLayout
             title="Clientes"
             description="Llegan solos cuando alguien aparta desde tu catálogo, y también puedes agregarlos tú."
             actions={
-                <>
-                    <ExportButton type="customers" filters={meta.filters} />
-                    <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
-                        <Icon icon={cilPlus} />
-                        Nuevo cliente
-                    </button>
-                </>
+                <PageActions
+                    actions={[
+                        exportAction,
+                        {
+                            label: 'Nuevo cliente',
+                            icon: cilPlus,
+                            onClick: () => setAdding(true),
+                            opensDialog: true,
+                            variant: 'primary',
+                            primary: true,
+                        },
+                    ]}
+                />
             }
         >
             <DataTable

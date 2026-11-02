@@ -83,6 +83,7 @@ function InboxContent({ rows, meta, options, overdueAfterHours, newestPending, n
                         filters={filters}
                         options={options}
                         onChange={table.setFilter}
+                        onChangeMany={table.setFilters}
                         pending={teamMember?.pendingReceipts ?? null}
                         counts={statusCounts}
                     />

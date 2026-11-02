@@ -2,6 +2,7 @@ import { formatIsoDate, isWithin, todayIso } from '@/lib/iso-date';
 import { cn } from '@/lib/utils';
 import { cilCalendar } from '@coreui/icons';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { type ReactNode } from 'react';
 import { Calendar } from './calendar';
 import { Icon } from './icon';
 
@@ -19,6 +20,7 @@ export interface DateInputProps {
     ariaLabel?: string;
     placeholder?: string;
     bare?: boolean;
+    leading?: ReactNode;
     className?: string;
 }
 
@@ -36,6 +38,7 @@ export function DateInput({
     ariaLabel,
     placeholder = 'dd/mm/aaaa',
     bare = false,
+    leading,
     className,
 }: DateInputProps) {
     const shown = formatIsoDate(value);
@@ -57,11 +60,12 @@ export function DateInput({
                     className,
                 )}
             >
+                {leading}
                 <span className={cn('min-w-0 grow truncate', shown ? 'text-base-content' : 'text-ink-3')}>{shown ?? placeholder}</span>
-                {bare ? null : <Icon icon={cilCalendar} size={16} className="text-ink-3 shrink-0" />}
+                {bare || leading ? null : <Icon icon={cilCalendar} size={16} className="text-ink-3 shrink-0" />}
             </PopoverButton>
             <PopoverPanel
-                anchor={{ to: 'bottom start', gap: 6 }}
+                anchor={{ to: 'bottom start', gap: 6, padding: 12 }}
                 className="bg-base-100 border-line shadow-pop z-50 rounded-2xl border p-3 focus:outline-none"
             >
                 {({ close }) => (

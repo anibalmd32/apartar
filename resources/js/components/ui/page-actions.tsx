@@ -24,7 +24,7 @@ export interface PageAction {
     variant?: ButtonVariant;
     danger?: boolean;
     primary?: boolean;
-    mobile?: 'hidden';
+    mobile?: 'hidden' | 'icon';
     loading?: boolean;
     disabled?: boolean;
     disabledReason?: string;
@@ -36,7 +36,7 @@ function ActionContent({ action }: { action: PageAction }) {
         <>
             {action.loading ? <span className="loading loading-spinner loading-sm" aria-hidden="true" /> : null}
             {!action.loading && action.icon ? <Icon icon={action.icon} /> : null}
-            {action.label}
+            {action.mobile === 'icon' ? <span className="max-lg:sr-only">{action.label}</span> : action.label}
         </>
     );
 }
@@ -131,21 +131,27 @@ function OverflowMenu({ actions }: { actions: readonly PageAction[] }) {
 
 export function PageActions({ actions }: { actions: readonly PageAction[] }) {
     const primary = actions.find((action) => action.primary && action.mobile !== 'hidden');
-    const overflow = actions.filter((action) => action !== primary && action.mobile !== 'hidden');
+    const overflow = actions.filter((action) => action !== primary && action.mobile === undefined);
+    const visible = primary !== undefined || actions.some((action) => action.mobile === 'icon');
 
     return (
         <>
-            <div data-page-actions className={cn('flex flex-wrap items-center gap-2', primary === undefined && 'max-lg:hidden')}>
+            <div data-page-actions className={cn('flex flex-wrap items-center gap-2 max-lg:flex-nowrap', !visible && 'max-lg:hidden')}>
                 {actions.map((action) => (
                     <ActionControl
                         key={action.label}
                         action={action}
                         ref={action === primary ? action.elementRef : undefined}
                         data-page-primary={action === primary || undefined}
+                        aria-label={action.mobile === 'icon' ? action.label : undefined}
                         className={cn(
                             buttonClass(action.variant ?? 'secondary'),
                             action.danger && 'text-error',
-                            action === primary ? 'max-lg:btn-primary max-lg:w-full' : 'max-lg:hidden',
+                            action === primary
+                                ? 'max-lg:btn-primary max-lg:w-full max-lg:flex-1'
+                                : action.mobile === 'icon'
+                                  ? 'max-lg:btn-square max-lg:order-last max-lg:size-11'
+                                  : 'max-lg:hidden',
                         )}
                     />
                 ))}

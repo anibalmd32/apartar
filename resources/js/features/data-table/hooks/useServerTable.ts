@@ -26,7 +26,7 @@ export interface ServerTable<TRow extends RowData> {
     toggleSort: (sortKey: string) => void;
     setSort: (sort: string | null) => void;
     setFilter: (key: string, value: string | string[] | null) => void;
-    setFilters: (patch: Readonly<Record<string, string | string[] | null>>) => void;
+    setFilters: (patch: Readonly<Record<string, string | string[] | null>>, sort?: string | null) => void;
     clearFilters: () => void;
 }
 
@@ -145,7 +145,7 @@ export function useServerTable<TRow extends RowData>({ rows, meta, columns, only
         toggleSort: (sortKey) => visit({ page: 1, sort: nextSort(meta.sort, sortKey) }),
         setSort: (sort) => visit({ page: 1, sort }),
         setFilter: (key, value) => visit({ page: 1, filters: { ...state.filters, [key]: value } }),
-        setFilters: (patch) => visit({ page: 1, filters: { ...state.filters, ...patch } }),
+        setFilters: (patch, sort) => visit({ page: 1, filters: { ...state.filters, ...patch }, ...(sort === undefined ? {} : { sort }) }),
         clearFilters: () => visit({ page: 1, filters: Object.fromEntries(Object.keys(state.filters).map((key) => [key, null])) }),
     };
 }

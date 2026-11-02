@@ -26,6 +26,7 @@ export function useExportAction(type: ExportType, filters: ExportFilters): PageA
         variant: 'secondary',
         loading: sending,
         disabled: !available,
+        mobile: available ? 'icon' : undefined,
         disabledReason: available
             ? undefined
             : `${plan.featureLabel('excel_export')} no está incluida en tu plan${upgrade !== null ? `; la incluye ${upgrade.planName}` : ''}.`,
@@ -37,9 +38,16 @@ export function ExportButton({ type, filters }: { type: ExportType; filters: Exp
     const action = useExportAction(type, filters);
 
     const button = (
-        <Button variant="secondary" disabled={action.disabled} loading={action.loading} onClick={action.onClick}>
-            <Icon icon={cilCloudDownload} />
-            {action.label}
+        <Button
+            variant="secondary"
+            aria-label={action.label}
+            className="max-lg:btn-square max-lg:size-11"
+            disabled={action.disabled}
+            loading={action.loading}
+            onClick={action.onClick}
+        >
+            {action.loading ? null : <Icon icon={cilCloudDownload} />}
+            <span className="max-lg:sr-only">{action.label}</span>
         </Button>
     );
 

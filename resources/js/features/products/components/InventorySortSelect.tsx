@@ -15,11 +15,12 @@ const SORT_OPTIONS = [
 interface InventorySortSelectProps {
     sort: string | null;
     onChange: (sort: string | null) => void;
+    stacked?: boolean;
 }
 
 const DEFAULT_SORT = '-created';
 
-export function InventorySortSelect({ sort: applied, onChange }: InventorySortSelectProps) {
+export function InventorySortSelect({ sort: applied, onChange, stacked = false }: InventorySortSelectProps) {
     const sort = applied === DEFAULT_SORT ? null : applied;
     const known = SORT_OPTIONS.some((option) => option.value === (sort ?? ''));
     const options = known ? SORT_OPTIONS : [...SORT_OPTIONS, { value: sort ?? '', label: 'Por columna' }];
@@ -27,10 +28,10 @@ export function InventorySortSelect({ sort: applied, onChange }: InventorySortSe
     return (
         <SelectField
             label="Ordenar"
-            hideLabel
-            inline
+            hideLabel={!stacked}
+            inline={!stacked}
             name="sort"
-            options={options.map((option) => ({ value: option.value, label: `Ordenar: ${option.label}` }))}
+            options={options.map((option) => ({ value: option.value, label: stacked ? option.label : `Ordenar: ${option.label}` }))}
             value={sort ?? ''}
             onChange={(event) => onChange(event.target.value === '' ? null : event.target.value)}
         />
