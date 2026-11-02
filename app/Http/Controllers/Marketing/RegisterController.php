@@ -8,6 +8,7 @@ use App\Actions\Organization\RegisterOrganizationAction;
 use App\Domain\Tenancy\SlugTakenException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Marketing\RegisterOrganizationRequest;
+use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,9 +18,13 @@ use Inertia\Response;
 
 final class RegisterController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('marketing/Register');
+        $plan = $this->chosenPlan($request->query('plan'));
+
+        return Inertia::render('marketing/Register', [
+            'plan' => $plan === null ? null : ['code' => $plan->code, 'name' => $plan->name],
+        ]);
     }
 
     /**
@@ -42,7 +47,20 @@ final class RegisterController extends Controller
 
         $this->startFreshSession($request);
 
+        if ($this->chosenPlan($request->input('plan')) !== null) {
+            return redirect()->route('subscription.show');
+        }
+
         return redirect()->intended(route('dashboard'));
+    }
+
+    private function chosenPlan(mixed $code): ?Plan
+    {
+        if (! is_string($code) || $code === '') {
+            return null;
+        }
+
+        return Plan::query()->public()->where('code', $code)->where('price_cents', '>', 0)->first();
     }
 
     private function startFreshSession(Request $request): void

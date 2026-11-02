@@ -20,7 +20,7 @@ export function PasswordStrength({ id, value }: PasswordStrengthProps) {
                     <span key={index} className={cn('h-1 flex-1 rounded-sm', value !== '' && index < met ? tone : 'bg-base-300')} />
                 ))}
             </div>
-            <p className="text-ink-3 text-xs">{status ? `${status} · ` : null}mínimo 6 caracteres, con letras y números</p>
+            <p className="text-ink-3 text-xs">{status ? `${status}. ` : null}Mínimo 6 caracteres, con letras y números.</p>
         </div>
     );
 }

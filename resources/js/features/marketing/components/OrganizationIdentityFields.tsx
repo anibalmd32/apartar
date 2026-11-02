@@ -1,6 +1,6 @@
 import { TextField } from '@/components/ui/text-field';
 import { useSlugAvailability } from '@/features/marketing/hooks/useSlugAvailability';
-import { suggestSlug } from '@/lib/slug';
+import { suggestSlug, toSlug, toSlugWhileTyping } from '@/lib/slug';
 import { useState } from 'react';
 
 export interface OrganizationIdentity {
@@ -24,7 +24,15 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
 
     const changeSlug = (slug: string) => {
         setSlugEdited(true);
-        onChange({ ...value, organization_slug: slug });
+        onChange({ ...value, organization_slug: toSlugWhileTyping(slug) });
+    };
+
+    const tidySlug = () => {
+        const tidy = toSlug(value.organization_slug);
+
+        if (tidy !== value.organization_slug) {
+            onChange({ ...value, organization_slug: tidy });
+        }
     };
 
     return (
@@ -46,6 +54,7 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
                 prefix="apartar.app/"
                 value={value.organization_slug}
                 onChange={(event) => changeSlug(event.target.value)}
+                onBlur={tidySlug}
                 error={errors.organization_slug}
                 hint={
                     availability.state === 'free' ? (
@@ -71,6 +80,9 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
                     )
                 }
                 inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
             />
         </>

@@ -48,7 +48,10 @@ export default function Login({ status }: LoginProps) {
                     </p>
                     <p className="text-ink-3 text-[13px]">
                         ¿Eres cliente?{' '}
-                        <Link href={route('portal.access')} className="text-ink-2 link-hover ml-1 font-semibold">
+                        <Link
+                            href={route('portal.access')}
+                            className="text-ink-2 link-hover touch:min-h-11 ml-1 inline-flex items-center font-semibold"
+                        >
                             Entra a Mi cuenta
                         </Link>
                     </p>

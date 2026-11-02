@@ -49,7 +49,9 @@ final class PricingPageTest extends TestCase
                 ->where('plans.0.limits.0', ['key' => 'users', 'label' => 'usuario', 'limit' => 1])
                 ->where('plans.0.limits.3', ['key' => 'products_per_catalog', 'label' => 'productos por catálogo', 'limit' => 20])
                 ->where('plans.2.limits.2', ['key' => 'products', 'label' => 'productos', 'limit' => 2000])
-                ->where('plans.1.limits.5', ['key' => 'storage_mb', 'label' => 'MB de almacenamiento', 'limit' => 5120]));
+                ->where('plans.0.limits.5', ['key' => 'storage_mb', 'label' => 'MB de almacenamiento', 'limit' => 200])
+                ->where('plans.1.limits.5', ['key' => 'storage_mb', 'label' => 'GB de almacenamiento', 'limit' => 5])
+                ->where('plans.2.limits.5', ['key' => 'storage_mb', 'label' => 'GB de almacenamiento', 'limit' => 25]));
     }
 
     public function test_a_change_in_the_table_is_what_the_page_shows(): void
@@ -129,22 +131,35 @@ final class PricingPageTest extends TestCase
         );
 
         $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('plans.0.priceLabel', 'Gratis')
-            ->where('plans.1.priceLabel', '$15,00 al mes')
+            ->where('plans.0.price', '$0')
+            ->where('plans.0.period', 'para siempre')
+            ->where('plans.1.price', '$15')
+            ->where('plans.1.period', 'al mes')
             ->where('plans.1.isFree', false)
-            ->where('plans.2.priceLabel', '$39,00 al mes'));
+            ->where('plans.2.price', '$39'));
     }
 
     public function test_a_price_is_written_with_its_period(): void
     {
         Plan::query()->update(['is_public' => true]);
         Plan::factory()->create(['price_cents' => 2_900, 'interval' => 'monthly', 'position' => 99]);
-        Plan::factory()->create(['price_cents' => 1_500, 'interval' => 'weekly', 'position' => 100]);
+        Plan::factory()->create(['price_cents' => 1_550, 'interval' => 'weekly', 'position' => 100]);
 
         $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('plans.3.priceLabel', '$29,00 al mes')
+            ->where('plans.3.price', '$29')
+            ->where('plans.3.period', 'al mes')
             ->where('plans.3.isFree', false)
-            ->where('plans.4.priceLabel', '$15,00'));
+            ->where('plans.4.price', '$15,50')
+            ->where('plans.4.period', ''));
+    }
+
+    public function test_a_storage_that_is_not_whole_gigabytes_stays_in_megabytes(): void
+    {
+        Plan::query()->update(['is_public' => true]);
+        Plan::query()->where('code', 'pro')->update(['max_storage_mb' => 1500]);
+
+        $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('plans.1.limits.5', ['key' => 'storage_mb', 'label' => 'MB de almacenamiento', 'limit' => 1500]));
     }
 
     public function test_it_opens_for_a_visitor_without_a_session(): void

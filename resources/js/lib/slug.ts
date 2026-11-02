@@ -13,6 +13,10 @@ export function toSlug(value: string): string {
         .replace(/-+$/g, '');
 }
 
+export function toSlugWhileTyping(value: string): string {
+    return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(INVALID_CHARACTERS, '-').replace(/^-+/g, '').slice(0, MAX_LENGTH);
+}
+
 /**
  * @param name
  * @param currentSlug

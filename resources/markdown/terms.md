@@ -23,7 +23,7 @@ Para usar Apartar tienes que ser mayor de edad y tener capacidad para contratar.
 3. **Los importes están en dólares.** El monto en bolívares es una referencia calculada con la tasa que usa el negocio. Al aprobar un pago, el negocio registra la tasa de ese pago.
 4. **Pagas fuera de Apartar** a las cuentas del negocio y subes el comprobante. El negocio lo revisa: si lo aprueba, se aplica a tus cuotas más antiguas; si lo rechaza, te dice el motivo. Subir un comprobante falso o ajeno puede ser delito.
 5. **Si no pagas la inicial a tiempo o dejas de pagar las cuotas,** el apartado puede vencer, entrar en mora o ser cancelado según las condiciones del negocio. Lo que pase con lo pagado lo resuelves con el negocio.
-6. **Puedes consultar tus apartados** en [/mi-cuenta](/mi-cuenta) con tu documento y el código del apartado, o con tu cuenta de Google. Tener cuenta nunca es requisito para apartar.
+6. **Puedes consultar tus apartados** en [Mi cuenta](/mi-cuenta), el portal de clientes, con tu documento y el código del apartado, o con tu cuenta de Google. Tener cuenta nunca es requisito para apartar.
 7. **Cualquier reclamo sobre la compra va dirigido al negocio,** por ejemplo por el chat del apartado. Si crees que un negocio usa Apartar de forma fraudulenta, escríbenos.
 
 ## 5. Si usas Apartar para tu negocio
@@ -37,7 +37,7 @@ Para usar Apartar tienes que ser mayor de edad y tener capacidad para contratar.
 
 ## 6. Planes, facturación e impago
 
-1. **Todo negocio empieza en el plan Gratis,** sin pago ni datos de facturación. Los precios y los límites de cada plan están en [/precios](/precios).
+1. **Todo negocio empieza en el plan Gratis,** sin pago ni datos de facturación. Los precios y los límites de cada plan están en la [página de planes y precios](/precios).
 2. **Subir de plan es inmediato** y abre un período de un mes con su factura, que vence ese mismo día. **Bajar** se aplica al terminar el período pagado. No hay prorrateo ni devoluciones.
 3. **Los planes se pagan por comprobante** a las cuentas de Apartar que aparecen en la pantalla de facturas, y lo revisamos a mano. Las facturas están en dólares; un pago en bolívares se convierte con la tasa del día de la aprobación. Para la primera factura hace falta el RIF del negocio.
 4. **La renovación se factura 7 días antes** del fin del período.

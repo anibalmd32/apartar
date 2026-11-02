@@ -6,6 +6,7 @@ import { TextField } from '@/components/ui/text-field';
 import { OrganizationIdentityFields } from '@/features/marketing/components/OrganizationIdentityFields';
 import { RegisterBrandPanel } from '@/features/marketing/components/RegisterBrandPanel';
 import { PasswordStrength } from '@/layouts/auth/password-strength';
+import { type RegisterProps } from '@/types/marketing';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 
@@ -17,6 +18,7 @@ interface RegisterForm {
     owner_email: string;
     owner_password: string;
     owner_password_confirmation: string;
+    plan: string;
 }
 
 const EMPTY_FORM: RegisterForm = {
@@ -26,10 +28,11 @@ const EMPTY_FORM: RegisterForm = {
     owner_email: '',
     owner_password: '',
     owner_password_confirmation: '',
+    plan: '',
 };
 
-export default function Register() {
-    const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({ ...EMPTY_FORM });
+export default function Register({ plan = null }: RegisterProps) {
+    const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({ ...EMPTY_FORM, plan: plan?.code ?? '' });
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -51,7 +54,7 @@ export default function Register() {
                         <BrandMark />
                         <span className="text-lg font-extrabold tracking-[-0.6px]">apartar</span>
                     </Link>
-                    <Link href={route('login')} className="btn btn-ghost btn-sm">
+                    <Link href={route('login')} className="btn btn-ghost btn-sm touch:h-11 touch:px-4 rounded-full">
                         Entrar
                     </Link>
                 </header>
@@ -61,6 +64,11 @@ export default function Register() {
                         <header className="flex flex-col gap-4">
                             <h1 className="tracking-heading text-[28px] font-extrabold lg:text-[32px]">Crea tu cuenta</h1>
                             <p className="text-ink-2 text-[15px]">Empiezas en el plan Gratis, sin tarjeta y sin período de prueba que se acabe.</p>
+                            {plan !== null ? (
+                                <Alert tone="info">
+                                    Elegiste {plan.name}. Al crear tu cuenta te llevamos a Suscripción para pasar a {plan.name} cuando quieras.
+                                </Alert>
+                            ) : null}
                         </header>
 
                         {errors.organization_slug ? <Alert tone="warning">{errors.organization_slug}</Alert> : null}
@@ -118,7 +126,19 @@ export default function Register() {
                                 required
                             />
 
-                            <Button type="submit" block loading={processing} className="h-12 text-[15px]">
+                            <p className="text-ink-2 text-[13px] leading-normal">
+                                Al crear tu cuenta aceptas los{' '}
+                                <a className="link link-primary" href={route('legal.terms')} target="_blank" rel="noopener noreferrer">
+                                    Términos de servicio
+                                </a>{' '}
+                                y la{' '}
+                                <a className="link link-primary" href={route('legal.privacy')} target="_blank" rel="noopener noreferrer">
+                                    Política de privacidad
+                                </a>{' '}
+                                de Apartar.
+                            </p>
+
+                            <Button type="submit" block loading={processing}>
                                 Crear mi cuenta gratis
                             </Button>
                         </form>

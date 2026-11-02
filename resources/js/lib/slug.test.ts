@@ -1,4 +1,4 @@
-import { suggestSlug, toSlug } from '@/lib/slug';
+import { suggestSlug, toSlug, toSlugWhileTyping } from '@/lib/slug';
 import { describe, expect, it } from 'vitest';
 
 describe('sugerencia del enlace del negocio', () => {
@@ -33,5 +33,17 @@ describe('sugerencia del enlace del negocio', () => {
 
     it('deja de sugerir en cuanto el enlace se edita a mano', () => {
         expect(suggestSlug('Ferretería El Tornillo', 'el-tornillo', true)).toBe('el-tornillo');
+    });
+});
+
+describe('enlace escrito a mano', () => {
+    it('se normaliza mientras se escribe', () => {
+        expect(toSlugWhileTyping('Moda Valentina')).toBe('moda-valentina');
+        expect(toSlugWhileTyping('Peluquería Ñandú')).toBe('peluqueria-nandu');
+    });
+
+    it('deja el guion final para poder seguir escribiendo la palabra siguiente', () => {
+        expect(toSlugWhileTyping('moda ')).toBe('moda-');
+        expect(toSlugWhileTyping(' -moda')).toBe('moda');
     });
 });

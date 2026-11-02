@@ -1,5 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { PlanCard } from '@/features/marketing/components/PlanCard';
+import { SignupCta } from '@/features/marketing/components/SignupCta';
 import MarketingLayout from '@/layouts/marketing-layout';
 import { type PricingProps } from '@/types/marketing';
 import { cilMinus, cilPlus } from '@coreui/icons';
@@ -38,7 +39,7 @@ export default function Pricing({ plans }: PricingProps) {
 
             <ul className="mx-auto grid max-w-[1440px] grid-cols-1 items-start gap-5 px-4 pb-14 md:grid-cols-2 lg:auto-cols-fr lg:grid-flow-col lg:grid-cols-none lg:px-20">
                 {plans.map((plan, index) => (
-                    <PlanCard key={plan.code} plan={plan} featured={index === featuredIndex} />
+                    <PlanCard key={plan.code} plan={plan} previous={plans[index - 1]} featured={index === featuredIndex} />
                 ))}
             </ul>
 
@@ -55,6 +56,18 @@ export default function Pricing({ plans }: PricingProps) {
                             <p className="text-ink-2 mt-2 text-sm leading-[1.55]">{faq.answer}</p>
                         </details>
                     ))}
+                </div>
+            </section>
+
+            <section aria-labelledby="pricing-closing" className="px-4 py-16 lg:px-20 lg:py-20">
+                <div className="bg-primary text-primary-content mx-auto flex max-w-[880px] flex-col items-start gap-4 rounded-3xl p-7 lg:items-center lg:p-12 lg:text-center">
+                    <h2 id="pricing-closing" className="tracking-heading text-[26px] leading-tight font-extrabold lg:text-[32px]">
+                        Abre tu catálogo hoy
+                    </h2>
+                    <p className="text-primary-content/85 max-w-[520px] text-base leading-normal">
+                        Crea tu cuenta en minutos, comparte el enlace por WhatsApp y empieza a recibir apartados.
+                    </p>
+                    <SignupCta tone="inverse" className="mt-1" />
                 </div>
             </section>
         </MarketingLayout>

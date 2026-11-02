@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Marketing;
 
 use App\Models\Organization;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Support\Facades\DB;
@@ -230,5 +232,33 @@ final class RegisterOrganizationTest extends TestCase
             'organization_slug' => 'negocio-'.$number,
             'owner_email' => 'ana'.$number.'@ejemplo.test',
         ]);
+    }
+
+    public function test_a_paid_plan_chosen_in_the_pricing_reaches_the_form(): void
+    {
+        Plan::query()->update(['is_public' => true]);
+
+        $this->get('/registro?plan=pro')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('plan', ['code' => 'pro', 'name' => 'Pro']));
+    }
+
+    public function test_a_free_hidden_or_unknown_plan_is_not_preselected(): void
+    {
+        Plan::query()->where('code', 'business')->update(['is_public' => false]);
+        Plan::query()->where('code', 'pro')->update(['is_public' => true]);
+
+        foreach (['', '?plan=free', '?plan=business', '?plan=inventado'] as $query) {
+            $this->get('/registro'.$query)->assertInertia(fn (AssertableInertia $page) => $page->where('plan', null));
+        }
+    }
+
+    public function test_after_registering_with_a_chosen_plan_it_lands_on_the_subscription(): void
+    {
+        Plan::query()->update(['is_public' => true]);
+
+        $this->post('/registro', [...self::VALID, 'plan' => 'pro'])->assertRedirect(route('subscription.show'));
+
+        $organization = Organization::query()->sole();
+        $this->assertSame('free', $this->withinOrganization($organization, fn (): string => Subscription::query()->sole()->plan->code));
     }
 }

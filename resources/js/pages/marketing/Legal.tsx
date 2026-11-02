@@ -1,3 +1,5 @@
+import { BackToTop } from '@/features/marketing/components/BackToTop';
+import { LegalContents } from '@/features/marketing/components/LegalContents';
 import MarketingLayout from '@/layouts/marketing-layout';
 import { cn } from '@/lib/utils';
 import { type LegalProps } from '@/types/marketing';
@@ -10,7 +12,7 @@ const DOCUMENTS = [
 
 const PROSE = cn(
     'text-ink-2 flex flex-col gap-4 text-[15px] leading-[1.7]',
-    '[&_h2]:text-base-content [&_h2]:mt-4 [&_h2]:text-xl [&_h2]:font-bold',
+    '[&_h2]:text-base-content [&_h2]:mt-4 [&_h2]:scroll-mt-6 [&_h2]:text-xl [&_h2]:font-bold',
     '[&_ol]:flex [&_ol]:list-decimal [&_ol]:flex-col [&_ol]:gap-2 [&_ol]:pl-5',
     '[&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-2 [&_ul]:pl-5',
     '[&_strong]:text-base-content [&_a]:text-primary [&_a]:underline [&_code]:text-[13px]',
@@ -46,7 +48,11 @@ export default function Legal({ document }: LegalProps) {
                     <p className="text-ink-3 text-sm">Última actualización: {document.updatedOn}</p>
                 </header>
 
+                <LegalContents sections={document.sections} />
+
                 <div className={PROSE} dangerouslySetInnerHTML={{ __html: document.html }} />
+
+                <BackToTop />
             </article>
         </MarketingLayout>
     );

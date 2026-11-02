@@ -41,7 +41,10 @@ export function SiteHeader() {
                     </Link>
                 ) : (
                     <div className="flex items-center gap-2 lg:gap-4">
-                        <Link href={route('login')} className="btn btn-ghost btn-sm rounded-full lg:h-12 lg:px-5 lg:text-[15px]">
+                        <Link
+                            href={route('login')}
+                            className="btn btn-ghost btn-sm touch:h-11 touch:px-4 rounded-full lg:h-12 lg:px-5 lg:text-[15px]"
+                        >
                             Entrar
                         </Link>
                         <SignupCta className="hidden lg:inline-flex" />

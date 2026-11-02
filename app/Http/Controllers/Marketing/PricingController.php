@@ -15,6 +15,8 @@ use Inertia\Response;
 
 final class PricingController extends Controller
 {
+    private const MB_PER_GB = 1024;
+
     /**
      * @var list<string>
      */
@@ -41,14 +43,15 @@ final class PricingController extends Controller
     }
 
     /**
-     * @return array{code: string, name: string, priceLabel: string, isFree: bool, limits: list<array{key: string, label: string, limit: int|null}>, features: list<string>}
+     * @return array{code: string, name: string, price: string, period: string, isFree: bool, limits: list<array{key: string, label: string, limit: int|null}>, features: list<string>}
      */
     private function planView(Plan $plan): array
     {
         return [
             'code' => $plan->code,
             'name' => $plan->name,
-            'priceLabel' => $this->priceLabel($plan),
+            'price' => $this->price($plan),
+            'period' => $this->period($plan),
             'isFree' => $plan->price_cents === 0,
             'limits' => array_map(fn (string $key): array => $this->limit($plan, $key), self::LIMITS),
             'features' => array_map(
@@ -58,18 +61,23 @@ final class PricingController extends Controller
         ];
     }
 
-    private function priceLabel(Plan $plan): string
+    private function price(Plan $plan): string
     {
-        if ($plan->price_cents === 0) {
-            return 'Gratis';
-        }
-
         $amount = MoneyFormatter::format(new Money($plan->price_cents));
 
+        return $plan->price_cents % 100 === 0 ? (string) preg_replace('/,00$/', '', $amount) : $amount;
+    }
+
+    private function period(Plan $plan): string
+    {
+        if ($plan->price_cents === 0) {
+            return 'para siempre';
+        }
+
         return match ($plan->interval) {
-            'monthly' => $amount.' al mes',
-            'yearly' => $amount.' al año',
-            default => $amount,
+            'monthly' => 'al mes',
+            'yearly' => 'al año',
+            default => '',
         };
     }
 
@@ -90,6 +98,10 @@ final class PricingController extends Controller
 
         $metric = UsageMetric::from($key);
         $limit = $plan->limitFor($metric);
+
+        if ($metric === UsageMetric::StorageMb && $limit !== null && $limit >= self::MB_PER_GB && $limit % self::MB_PER_GB === 0) {
+            return ['key' => $key, 'label' => 'GB de almacenamiento', 'limit' => intdiv($limit, self::MB_PER_GB)];
+        }
 
         return [
             'key' => $key,

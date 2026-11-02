@@ -14,12 +14,14 @@ const TONES = {
 interface SignupCtaProps {
     tone?: keyof typeof TONES;
     className?: string;
+    href?: string;
+    label?: string;
 }
 
-export function SignupCta({ tone = 'primary', className }: SignupCtaProps) {
+export function SignupCta({ tone = 'primary', className, href, label = SIGNUP_LABEL }: SignupCtaProps) {
     return (
-        <Link href={route('register')} className={cn(CTA_SHAPE, 'max-sm:w-full', TONES[tone], className)}>
-            {SIGNUP_LABEL}
+        <Link href={href ?? route('register')} className={cn(CTA_SHAPE, 'max-sm:w-full', TONES[tone], className)}>
+            {label}
         </Link>
     );
 }

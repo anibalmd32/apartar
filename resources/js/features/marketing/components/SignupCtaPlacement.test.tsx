@@ -53,3 +53,18 @@ it('el acceso al negocio invita a registrarse con «Empezar gratis»', () => {
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveTextContent(/^Empezar gratis$/);
 });
+
+it('«Entrar» en la cabecera del sitio mide 44px en el celular', () => {
+    render(<SiteHeader />);
+
+    const login = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="/login"]'));
+
+    expect(login).toHaveLength(1);
+    expect(login[0]).toHaveClass('touch:h-11');
+});
+
+it('«Entra a Mi cuenta» del acceso al negocio es un objetivo de 44px', () => {
+    render(<Login />);
+
+    expect(document.querySelector('a[href="/portal.access"]')).toHaveClass('touch:min-h-11', 'inline-flex');
+});
