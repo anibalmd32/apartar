@@ -105,3 +105,24 @@ it('las sugerencias de cuota y saldo rellenan el importe en dólares', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Saldo · $58,00' }));
     expect(screen.getByLabelText('Importe')).toHaveValue('58,00');
 });
+
+it('no deja registrar el pago hasta que la nota tenga el mínimo de caracteres', async () => {
+    vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
+    withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
+
+    fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
+    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30,00' } });
+    await act(async () => {
+        await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
+    });
+
+    const record = screen.getByRole('button', { name: 'Registrar el pago' });
+    expect(record).toBeDisabled();
+    expect(screen.getByText(/Obligatoria, de al menos 10 caracteres/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'En tienda' } });
+    expect(record).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Recibido en tienda por Ana.' } });
+    await vi.waitFor(() => expect(record).toBeEnabled());
+});

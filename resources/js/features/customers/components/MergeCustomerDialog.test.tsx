@@ -53,12 +53,12 @@ it('cuenta en singular cuando mueve un solo apartado', async () => {
     expect(screen.getByText('Movería 1 apartado y 2 comprobantes.')).toBeInTheDocument();
 });
 
-it('pide el documento con un ejemplo que no se corta y un botón destructivo que se desactiva sin texto', async () => {
+it('pide el documento con el ejemplo solo dentro del campo y un botón destructivo que se desactiva sin texto', async () => {
     await choose();
 
     const field = screen.getByLabelText('Para confirmar, escribe su documento');
     expect(field).toHaveAttribute('placeholder', 'V-24.567.890');
-    expect(screen.getByText('V-24.567.890', { selector: '.whitespace-nowrap.font-semibold' })).toBeInTheDocument();
+    expect(screen.queryByText(/Tal como aparece/)).not.toBeInTheDocument();
 
     const merge = screen.getByRole('button', { name: 'Fusionar las fichas' });
     expect(merge).toHaveClass('btn-error');

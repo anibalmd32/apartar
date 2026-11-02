@@ -12,6 +12,7 @@ import { useManageCustomer } from '@/features/customers/components/ManageCustome
 import { MergeCustomerDialog } from '@/features/customers/components/MergeCustomerDialog';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
+import { countOf } from '@/lib/plural';
 import { bo } from '@/lib/surfaces';
 import { type CustomerShowProps } from '@/types/customers';
 import { cilBell, cilChatBubble, cilLibrary, cilLink, cilPlus } from '@coreui/icons';
@@ -93,7 +94,7 @@ export default function CustomerShow(props: CustomerShowProps) {
                             {layaways.history.length > 0 ? (
                                 <SectionCard
                                     title="Historial"
-                                    subtitle={`${layaways.historyTotal} apartados cerrados`}
+                                    subtitle={countOf(layaways.historyTotal, 'apartado cerrado', 'apartados cerrados')}
                                     aria-label={`Historial de apartados (${layaways.historyTotal})`}
                                 >
                                     <CustomerLayaways layaways={layaways.history} empty="" />

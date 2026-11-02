@@ -336,10 +336,12 @@
     }
 
     .btn.btn-error:is(:disabled, [disabled], [aria-disabled='true']):not(.btn-ghost) {
-        background-color: var(--surface-2);
-        border-color: var(--line-strong);
-        color: var(--ink-3);
+        background-color: color-mix(in oklab, var(--error-soft) 60%, var(--color-base-100));
+        border-color: color-mix(in oklab, var(--color-error) 30%, var(--color-base-100));
+        border-style: dashed;
+        color: color-mix(in oklab, var(--color-error) 70%, var(--ink-3));
         opacity: 1;
+        cursor: not-allowed;
     }
 
     .btn-sm {

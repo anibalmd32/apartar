@@ -1,4 +1,5 @@
 import { type ReadingState } from '@/features/receipts/hooks/useReceiptReading';
+import { NOTE_MIN_LENGTH } from '@/features/receipts/lib/payment-fields';
 import { useId } from 'react';
 
 export function ReadingStatus({ state }: { state: ReadingState }) {
@@ -38,7 +39,7 @@ export function PaymentNoteField({ value, error, onChange }: { value: string; er
                 aria-describedby={`${noteId}-hint`}
             />
             <span id={`${noteId}-hint`} className="text-ink-3 text-xs">
-                Obligatoria: quién lo recibió, dónde y cómo.
+                Obligatoria, de al menos {NOTE_MIN_LENGTH} caracteres: quién lo recibió, dónde y cómo.
             </span>
             {error !== undefined ? <span className="text-error text-sm">{error}</span> : null}
         </div>

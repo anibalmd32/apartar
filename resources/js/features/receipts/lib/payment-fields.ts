@@ -21,6 +21,8 @@ export interface PaymentFieldValues {
     confirm_rate_deviation: string | null;
 }
 
+export const NOTE_MIN_LENGTH = 10;
+
 export type PaymentFieldErrors = Partial<Record<keyof PaymentFieldValues, string>>;
 
 export function emptyPaymentValues(options: PaymentFieldOptions): PaymentFieldValues {
@@ -57,6 +59,7 @@ export function paymentPending(options: PaymentFieldOptions, values: PaymentFiel
     return (
         loading ||
         values.method === '' ||
+        values.note.trim().length < NOTE_MIN_LENGTH ||
         referencePending ||
         fileTooLarge(options, values.file) ||
         excessPending ||

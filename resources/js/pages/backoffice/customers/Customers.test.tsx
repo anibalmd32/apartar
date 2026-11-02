@@ -96,6 +96,29 @@ it('el perfil ofrece ver más en las listas cortadas', () => {
     expect(within(screen.getByRole('region', { name: 'Pagos' })).queryByRole('link', { name: 'Ver más' })).not.toBeInTheDocument();
 });
 
+it('el historial cuenta en singular un solo apartado cerrado', () => {
+    const closed = {
+        code: 'AP-CERRADO1',
+        url: '/backoffice/apartados/AP-CERRADO1',
+        status: 'completed',
+        statusLabel: 'Completado',
+        productName: 'Licuadora',
+        catalogName: null,
+        total: profileProps().totals.paid,
+        paid: profileProps().totals.paid,
+        remaining: profileProps().totals.paid,
+        nextDueDate: null,
+        createdAt: '2026-08-01',
+        cancellationReason: null,
+        cancelledBy: null,
+        resendCodeUrl: null,
+    };
+    render(<CustomerShow {...profileProps({ layaways: { active: [], history: [closed], historyTotal: 1 } })} />);
+
+    expect(screen.getByText('1 apartado cerrado')).toBeInTheDocument();
+    expect(screen.queryByText(/1 apartados/)).not.toBeInTheDocument();
+});
+
 it('la fusión se confirma escribiendo el documento de la absorbida', async () => {
     vi.mocked(fetch).mockResolvedValue(
         new Response(

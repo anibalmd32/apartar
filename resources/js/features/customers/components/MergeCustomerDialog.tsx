@@ -85,11 +85,6 @@ export function MergeCustomerDialog({ merge }: { merge: CustomerShowProps['merge
                         name="confirmation"
                         placeholder={chosen.document ?? chosen.name}
                         autoComplete="off"
-                        hint={
-                            <>
-                                Tal como aparece: <span className="font-semibold whitespace-nowrap">{chosen.document ?? chosen.name}</span>
-                            </>
-                        }
                         value={form.data.confirmation}
                         onChange={(event) => form.setData('confirmation', event.target.value)}
                         error={form.errors.confirmation}
