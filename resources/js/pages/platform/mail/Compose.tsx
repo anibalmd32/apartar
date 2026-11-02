@@ -6,6 +6,7 @@ import { RichTextField } from '@/components/ui/rich-text-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { dateTime } from '@/features/platform/mail/format';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type ComposeSource } from '@/types/mail';
@@ -22,6 +23,10 @@ interface ComposeProps {
 
 export default function MailCompose({ mode, modeLabel, from, source, defaults }: ComposeProps) {
     const form = useForm({ mode, source: source?.id ?? null, to: defaults.to, cc: defaults.cc, subject: defaults.subject, body: '' });
+    const leaveGuard = useLeaveGuard(form.isDirty && !form.processing, {
+        title: '¿Salir sin enviar?',
+        description: 'Tienes un correo a medio escribir. Si sales ahora, se pierde.',
+    });
     const back = source === null ? pf('/correos/bandeja') : pf(`/correos/bandeja/${source.threadId}`);
 
     return (
@@ -98,6 +103,7 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
                     </SectionCard>
                 )}
             </div>
+            {leaveGuard}
         </PlatformLayout>
     );
 }

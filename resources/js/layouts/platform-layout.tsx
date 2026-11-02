@@ -1,6 +1,7 @@
 import { Brand } from '@/components/shell/brand';
 import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
+import { DOCKED_BAR_PADDING } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { PAGE_ACTIONS_CLASS, PAGE_HEADER_CLASS, PAGE_TITLE_CLASS } from '@/components/ui/page-actions';
@@ -91,7 +92,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                     <RatePill />
                 </div>
 
-                <main className="flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12">
+                <main className={`flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12 ${DOCKED_BAR_PADDING}`}>
                     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 lg:gap-6">
                         <section className={PAGE_HEADER_CLASS}>
                             <div className={PAGE_TITLE_CLASS}>

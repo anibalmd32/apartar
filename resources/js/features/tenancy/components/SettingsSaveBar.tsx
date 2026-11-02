@@ -57,7 +57,7 @@ export function useSettingsForms() {
     const linkOf = (id: SettingsFormId): SettingsSectionLink => ({
         formId: SETTINGS_FORMS.find((form) => form.id === id)?.formId,
         onStateChange: reporters[id],
-        savesFromBar: owner === id,
+        savesFromBar: owner !== null,
     });
 
     return {

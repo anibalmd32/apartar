@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils';
 import { type ReactNode } from 'react';
 
+export const DOCKED_BAR_PADDING = 'max-lg:has-[[data-form-action-bar][data-sticky]]:pb-[calc(var(--overlay-bottom)+var(--consent-height))]';
+
 interface FormActionBarProps {
     sticky: boolean;
     children: ReactNode;

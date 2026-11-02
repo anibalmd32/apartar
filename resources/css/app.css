@@ -296,6 +296,15 @@
         --btn-color: var(--surface-2);
     }
 
+    @media (width < 64rem) {
+        .btn[data-page-primary],
+        .btn[data-page-primary]:hover:not(:disabled) {
+            --btn-color: var(--color-primary);
+            --btn-fg: var(--color-primary-content);
+            --btn-border: var(--color-primary);
+        }
+    }
+
     .btn-danger-soft {
         --btn-color: var(--error-soft);
         --btn-fg: var(--color-error);

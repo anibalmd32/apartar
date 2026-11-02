@@ -6,6 +6,7 @@ import { OrganizationSwitcher } from '@/components/shell/organization-switcher';
 import { RatePill } from '@/components/shell/rate-pill';
 import { menuItemClass, UserMenu } from '@/components/shell/user-menu';
 import { BackLink } from '@/components/ui/back-link';
+import { DOCKED_BAR_PADDING } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { PAGE_ACTIONS_CLASS, PAGE_HEADER_CLASS, PAGE_TITLE_CLASS } from '@/components/ui/page-actions';
 import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
@@ -152,7 +153,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                     </div>
                 ) : null}
 
-                <main className="flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12">
+                <main className={`flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12 ${DOCKED_BAR_PADDING}`}>
                     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 lg:gap-6">
                         <PastDueBanner />
 

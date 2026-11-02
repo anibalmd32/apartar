@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { FormActionBar } from '@/components/ui/form-action-bar';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import { pf } from '@/lib/surfaces';
 import { type PlatformSettingRow } from '@/types/platform';
 import { useForm } from '@inertiajs/react';
@@ -11,6 +12,10 @@ export function PlatformSettingsForm({ settings }: { settings: readonly Platform
         settings: Object.fromEntries(settings.map((setting) => [setting.key, String(setting.value)])),
     });
     const errors = form.errors as Record<string, string | undefined>;
+    const leaveGuard = useLeaveGuard(form.isDirty && !form.processing, {
+        title: '¿Salir sin guardar?',
+        description: 'Tienes cambios en los parámetros que todavía no guardaste. Si sales ahora, se pierden.',
+    });
 
     return (
         <SectionCard title="Parámetros" subtitle="Valores globales. Un valor fuera de rango se lee como el valor por defecto.">
@@ -18,7 +23,7 @@ export function PlatformSettingsForm({ settings }: { settings: readonly Platform
                 className="flex flex-col gap-4"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.put(pf('/ajustes'), { preserveScroll: true });
+                    form.put(pf('/ajustes'), { preserveScroll: true, onSuccess: () => form.setDefaults() });
                 }}
             >
                 <div className="grid gap-x-5 sm:grid-cols-2">
@@ -46,6 +51,7 @@ export function PlatformSettingsForm({ settings }: { settings: readonly Platform
                     </Button>
                 </FormActionBar>
             </form>
+            {leaveGuard}
         </SectionCard>
     );
 }

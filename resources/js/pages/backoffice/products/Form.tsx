@@ -20,6 +20,7 @@ import { useSpecificationRows } from '@/features/products/hooks/useSpecification
 import { type PreviewSource } from '@/features/products/lib/preview';
 import { withSuggestedTags } from '@/features/products/lib/tags';
 import { useLeaveGuard } from '@/hooks/use-leave-guard';
+import { useSubmitDock } from '@/hooks/use-submit-dock';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import {
@@ -100,6 +101,8 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
         description: 'Tienes cambios en este producto que todavía no guardaste. Si sales ahora, se pierden.',
     });
 
+    const dock = useSubmitDock(product === null || dirty);
+
     const submitLabel = product === null ? 'Crear producto' : 'Guardar cambios';
 
     const onSubmit: FormEventHandler = (event) => {
@@ -132,7 +135,15 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                             : []),
                         { label: 'Vista previa', icon: cilScreenDesktop, onClick: preview.open, opensDialog: true, variant: 'ghost' },
                         { label: 'Cancelar', href: bo('/productos'), mobile: 'hidden' },
-                        { label: submitLabel, icon: cilCheckAlt, form: FORM_ID, loading: processing, variant: 'primary', mobile: 'hidden' },
+                        {
+                            label: submitLabel,
+                            icon: cilCheckAlt,
+                            form: FORM_ID,
+                            loading: processing,
+                            variant: 'primary',
+                            primary: true,
+                            elementRef: dock.headerRef,
+                        },
                     ]}
                 />
             }
@@ -175,7 +186,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                         {product !== null ? <ArchiveToggle productId={product.id} archived={product.status === 'archived'} /> : null}
                     </div>
 
-                    <FormActionBar sticky={product === null || dirty} className="order-6 max-lg:-mx-4 max-lg:px-4 lg:hidden">
+                    <FormActionBar sticky={dock.sticky} className="order-6 max-lg:-mx-4 max-lg:px-4 lg:hidden">
                         <Button type="submit" loading={processing}>
                             <Icon icon={cilCheckAlt} />
                             {submitLabel}

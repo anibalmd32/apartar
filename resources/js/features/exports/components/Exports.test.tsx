@@ -1,4 +1,5 @@
-import { ExportButton } from '@/features/exports/components/ExportButton';
+import { PageActions } from '@/components/ui/page-actions';
+import { ExportButton, useExportAction } from '@/features/exports/components/ExportButton';
 import ExportsIndex from '@/pages/backoffice/exports/Index';
 import { planState } from '@/test/plan-fixtures';
 import { type ExportRow } from '@/types/exports';
@@ -127,4 +128,26 @@ it('exporta desde la tarjeta los tipos permitidos', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Exportar Cobranza' }));
 
     expect(post).toHaveBeenCalledWith('/backoffice/exportaciones', { type: 'collections', filters: {} }, { preserveScroll: true });
+});
+
+it('como acción de cabecera exporta con los filtros y, sin la función, dice por qué no se puede', () => {
+    function Header({ filters }: { filters: Record<string, unknown> }) {
+        return (
+            <PageActions actions={[useExportAction('inventory', filters), { label: 'Nuevo producto', href: '/productos/crear', primary: true }]} />
+        );
+    }
+
+    const { unmount } = render(<Header filters={{ q: 'bolso' }} />);
+    expect(screen.getByRole('button', { name: 'Exportar a Excel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Exportar a Excel' })).toHaveAttribute(
+        'title',
+        'Exportación a Excel no está incluida en tu plan; la incluye Pro.',
+    );
+    unmount();
+
+    features = ['excel_export'];
+    render(<Header filters={{ q: 'bolso', status: null }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar a Excel' }));
+
+    expect(post).toHaveBeenCalledWith('/backoffice/exportaciones', { type: 'inventory', filters: { q: 'bolso' } }, expect.any(Object));
 });

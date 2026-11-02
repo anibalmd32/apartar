@@ -88,3 +88,17 @@ it('la acción que abre un diálogo lo anuncia', () => {
 
     expect(screen.getAllByRole('button', { name: 'Vista previa' })[0]).toHaveAttribute('aria-haspopup', 'dialog');
 });
+
+it('en el celular la acción a la vista se pinta como principal aunque en escritorio sea un botón con borde', () => {
+    render(
+        <PageActions
+            actions={[
+                { label: 'Cambiar plan', onClick: vi.fn(), primary: true },
+                { label: 'Suspender', onClick: vi.fn(), danger: true },
+            ]}
+        />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Cambiar plan' })).toHaveAttribute('data-page-primary');
+    expect(screen.getByRole('button', { name: 'Suspender' })).not.toHaveAttribute('data-page-primary');
+});

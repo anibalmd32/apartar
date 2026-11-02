@@ -5,12 +5,13 @@ import { Icon } from '@/components/ui/icon';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import { PasswordRequirements } from '@/layouts/auth/password-requirements';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { cilEnvelopeClosed, cilInfo, cilLockLocked } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
-import { type FormEventHandler } from 'react';
+import { type FormEventHandler, useEffect, useState } from 'react';
 
 interface ProfileProps {
     profile: {
@@ -34,12 +35,15 @@ interface PasswordForm {
     password_confirmation: string;
 }
 
-function ProfileDetails({ profile }: ProfileProps) {
+type ReportDirty = (dirty: boolean) => void;
+
+function ProfileDetails({ profile, onDirty }: ProfileProps & { onDirty: ReportDirty }) {
     const form = useForm<ProfileForm>({ name: profile.name, email: profile.email });
+    useEffect(() => onDirty(form.isDirty && !form.processing), [onDirty, form.isDirty, form.processing]);
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
-        form.patch(bo('/perfil'), { preserveScroll: true });
+        form.patch(bo('/perfil'), { preserveScroll: true, onSuccess: () => form.setDefaults() });
     };
 
     const changingEmail = form.data.email.trim().toLowerCase() !== profile.email;
@@ -86,8 +90,10 @@ function ProfileDetails({ profile }: ProfileProps) {
     );
 }
 
-function PasswordChange() {
+function PasswordChange({ onDirty }: { onDirty: ReportDirty }) {
     const form = useForm<PasswordForm>({ current_password: '', password: '', password_confirmation: '' });
+    const typed = form.data.current_password !== '' || form.data.password !== '';
+    useEffect(() => onDirty(typed && !form.processing), [onDirty, typed, form.processing]);
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -148,16 +154,24 @@ function PasswordChange() {
 }
 
 export default function ProfileEdit({ profile }: ProfileProps) {
+    const [detailsDirty, setDetailsDirty] = useState(false);
+    const [passwordDirty, setPasswordDirty] = useState(false);
+    const leaveGuard = useLeaveGuard(detailsDirty || passwordDirty, {
+        title: '¿Salir sin guardar?',
+        description: 'Tienes cambios en tu perfil que todavía no guardaste. Si sales ahora, se pierden.',
+    });
+
     return (
         <BackofficeLayout title="Mi perfil" description="Tus datos para entrar a Apartar y tu contraseña.">
             <div className="flex w-full max-w-2xl flex-col gap-4 lg:gap-6">
-                <ProfileDetails profile={profile} />
-                <PasswordChange />
+                <ProfileDetails profile={profile} onDirty={setDetailsDirty} />
+                <PasswordChange onDirty={setPasswordDirty} />
                 <p className="text-ink-3 flex items-center gap-2 text-xs">
                     <Icon icon={cilInfo} />
                     El tema claro u oscuro se cambia desde el menú de tu foto, arriba a la derecha.
                 </p>
             </div>
+            {leaveGuard}
         </BackofficeLayout>
     );
 }

@@ -1,9 +1,10 @@
 import { Alert } from '@/components/ui/alert';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/components/ui/icon';
+import { PageActions } from '@/components/ui/page-actions';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useServerTable } from '@/features/data-table/hooks/useServerTable';
-import { ExportButton } from '@/features/exports/components/ExportButton';
+import { useExportAction } from '@/features/exports/components/ExportButton';
 import { LimitBanner } from '@/features/plan/components/LimitBanner';
 import { BulkPublishButton } from '@/features/products/components/BulkPublishButton';
 import { INVENTORY_FILTER_LABELS, InventoryFilters } from '@/features/products/components/InventoryFilters';
@@ -59,19 +60,19 @@ export default function ProductsIndex({ rows, meta, categories, tags, statuses, 
     const selection = useDraftSelection(rows);
     const filters = meta.filters as unknown as ProductFilters;
     const narrowed = Object.values(meta.filters).some((value) => value !== null);
+    const exportAction = useExportAction('inventory', meta.filters);
 
     return (
         <BackofficeLayout
             title="Productos"
             description="Lo que vendes. Desde aquí lo creas, lo editas y lo archivas cuando deja de estar a la venta."
             actions={
-                <>
-                    <ExportButton type="inventory" filters={meta.filters} />
-                    <Link className="btn btn-primary" href={bo('/productos/crear')}>
-                        <Icon icon={cilPlus} />
-                        Nuevo producto
-                    </Link>
-                </>
+                <PageActions
+                    actions={[
+                        exportAction,
+                        { label: 'Nuevo producto', icon: cilPlus, href: bo('/productos/crear'), variant: 'primary', primary: true },
+                    ]}
+                />
             }
         >
             {errors.status ? <Alert tone="warning">{errors.status}</Alert> : null}

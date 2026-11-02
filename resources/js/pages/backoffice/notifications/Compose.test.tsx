@@ -13,6 +13,7 @@ vi.mock('@/lib/json', () => ({
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => ({ url: '/backoffice/avisos', props: { errors: {}, teamMember: { organization: { name: 'Boutique Mariela' } } } }),
+    router: { on: () => () => undefined },
 }));
 
 vi.mock('@/layouts/backoffice-layout', () => ({

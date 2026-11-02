@@ -63,3 +63,19 @@ it('la barra guarda la sección con cambios y desaparece cuando el guardado sale
 
     expect(screen.getAllByRole('button', { name: 'Guardar identidad' })).toHaveLength(1);
 });
+
+it('mientras la barra está a la vista, en el celular se ocultan los botones de las secciones sin cambios para que no haya dos guardados', () => {
+    renderSettings();
+
+    fireEvent.change(screen.getByLabelText(/Nombre del negocio/), { target: { value: 'Moda Valentina C.A.' } });
+
+    expect(screen.getByRole('button', { name: 'Guardar fuente' }).parentElement).toHaveClass('max-lg:hidden');
+    expect(screen.getByRole('button', { name: 'Guardar ajustes' }).parentElement).toHaveClass('max-lg:hidden');
+});
+
+it('sin cambios, cada sección conserva su botón de guardar en el celular', () => {
+    renderSettings();
+
+    expect(screen.getByRole('button', { name: 'Guardar fuente' }).parentElement).not.toHaveClass('max-lg:hidden');
+    expect(screen.getByRole('button', { name: 'Guardar identidad' }).parentElement).not.toHaveClass('max-lg:hidden');
+});

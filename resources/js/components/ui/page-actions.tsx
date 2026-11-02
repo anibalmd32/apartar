@@ -28,6 +28,7 @@ export interface PageAction {
     loading?: boolean;
     disabled?: boolean;
     disabledReason?: string;
+    elementRef?: Ref<HTMLElement>;
 }
 
 function ActionContent({ action }: { action: PageAction }) {
@@ -139,6 +140,8 @@ export function PageActions({ actions }: { actions: readonly PageAction[] }) {
                     <ActionControl
                         key={action.label}
                         action={action}
+                        ref={action === primary ? action.elementRef : undefined}
+                        data-page-primary={action === primary || undefined}
                         className={cn(
                             buttonClass(action.variant ?? 'secondary'),
                             action.danger && 'text-error',

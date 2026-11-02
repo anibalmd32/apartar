@@ -56,7 +56,7 @@ export default function CustomerShow(props: CustomerShowProps) {
                             icon: cilPlus,
                             href: bo(`/apartados/nuevo?cliente=${customer.id}`),
                             variant: 'soft',
-                            primary: chat === null,
+                            primary: true,
                         },
                         { label: 'Notificar', icon: cilBell, href: bo(`/avisos?cliente=${customer.id}`), variant: 'soft' },
                         ...(chat !== null
@@ -66,7 +66,6 @@ export default function CustomerShow(props: CustomerShowProps) {
                                       icon: cilChatBubble,
                                       href: bo(`/chat/${chat}`),
                                       variant: 'primary' as const,
-                                      primary: true,
                                   },
                               ]
                             : []),

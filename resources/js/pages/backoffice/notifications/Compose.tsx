@@ -11,6 +11,7 @@ import { PushPreview } from '@/features/notifications/components/PushPreview';
 import { PushReach, type PushReport } from '@/features/notifications/components/PushReach';
 import { RecipientPicker, type RecipientOption } from '@/features/notifications/components/RecipientPicker';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { JsonRequestError, postJson } from '@/lib/json';
 import { type BackofficeSharedData } from '@/types/backoffice';
@@ -56,6 +57,10 @@ export default function Compose({ available, limits, previewUrl, sendUrl, recipi
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const bodyId = useId();
+    const leaveGuard = useLeaveGuard((title !== '' || body !== '') && result === null && !busy, {
+        title: '¿Salir sin enviar?',
+        description: 'Tienes un aviso a medio escribir. Si sales ahora, se pierde.',
+    });
 
     const audience = mode === 'selection' ? { customers: chosen.map((option) => option.id) } : { segment: { preset: segment } };
     const payload = () => ({ title, body, url: url.trim() === '' ? null : url.trim(), ...audience });
@@ -188,6 +193,7 @@ export default function Compose({ available, limits, previewUrl, sendUrl, recipi
                     <PushHistory history={history} />
                 </div>
             </div>
+            {leaveGuard}
         </BackofficeLayout>
     );
 }

@@ -69,3 +69,9 @@ it('ningún componente depende solo del puntero grueso para su tamaño táctil',
 
     expect($offenders)->toBe([]);
 });
+
+it('en el celular la acción de cabecera que queda a la vista se pinta como principal aunque en escritorio tenga borde', function (): void {
+    $mobile = cssBlocksAfter(appStylesheet(), '@media (width < 64rem)', true);
+
+    expect($mobile)->toMatch('/\.btn\[data-page-primary\],\s*\.btn\[data-page-primary\]:hover:not\(:disabled\)\s*\{\s*--btn-color: var\(--color-primary\);\s*--btn-fg: var\(--color-primary-content\);/');
+});
