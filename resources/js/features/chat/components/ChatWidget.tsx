@@ -74,11 +74,11 @@ export function ChatWidget({ chat }: { chat: CatalogChatState }) {
                 onClick={() => setOpen(true)}
                 className={cn(
                     'btn bg-neutral text-neutral-content shadow-pop h-14 min-w-14 rounded-full border-0 px-0 text-sm font-bold transition-[padding] duration-200',
-                    !collapsed && 'px-5',
+                    !collapsed && 'lg:px-5',
                 )}
             >
                 <Icon icon={cilChatBubble} size={20} />
-                <span aria-hidden="true" className={cn(collapsed && 'sr-only')}>
+                <span aria-hidden="true" data-chat-label className={cn('sr-only', !collapsed && 'lg:not-sr-only')}>
                     Escribir al negocio
                 </span>
             </button>

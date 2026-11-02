@@ -28,6 +28,22 @@ it('arriba enseña el texto y al bajar se recoge en un botón redondo', () => {
     expect(button).toHaveClass('rounded-full');
 });
 
+it('en el celular empieza como icono redondo y el texto solo se ve en escritorio', () => {
+    render(<ChatDock chat={CHAT} />);
+
+    const button = screen.getByRole('button', { name: 'Escribir al negocio' });
+    const label = button.querySelector('[data-chat-label]');
+
+    expect(button).not.toHaveClass('px-5');
+    expect(button).toHaveClass('lg:px-5');
+    expect(label).toHaveClass('sr-only', 'lg:not-sr-only');
+
+    scrollTo(400);
+
+    expect(button).not.toHaveClass('lg:px-5');
+    expect(label).not.toHaveClass('lg:not-sr-only');
+});
+
 it('abierto se puede cerrar y vuelve el botón', () => {
     render(<ChatDock chat={CHAT} />);
 

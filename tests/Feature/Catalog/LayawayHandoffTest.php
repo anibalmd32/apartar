@@ -68,7 +68,7 @@ final class LayawayHandoffTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_continuar_al_pago_abre_el_portal_del_apartado_sin_pedir_la_cedula(): void
+    public function test_continuar_al_pago_abre_el_portal_del_apartado_sin_pedir_la_cédula(): void
     {
         $code = $this->reserve();
 
@@ -102,7 +102,7 @@ final class LayawayHandoffTest extends TestCase
         $this->assertGuest('customer');
     }
 
-    public function test_otra_sesion_no_puede_entrar_con_el_codigo(): void
+    public function test_otra_sesión_no_puede_entrar_con_el_código(): void
     {
         $code = $this->reserve();
 
@@ -112,7 +112,7 @@ final class LayawayHandoffTest extends TestCase
         $this->assertGuest('customer');
     }
 
-    public function test_cambiar_el_codigo_del_enlace_no_abre_otro_apartado(): void
+    public function test_cambiar_el_código_del_enlace_no_abre_otro_apartado(): void
     {
         $mine = $this->reserve();
         $theirs = $this->reserve(['documentNumber' => '20.123.456', 'email' => 'otra@ejemplo.test']);
@@ -129,7 +129,7 @@ final class LayawayHandoffTest extends TestCase
         $this->get($this->continueUrl($mine))->assertRedirect(route('portal.pay', ['codigo' => $mine]));
     }
 
-    public function test_el_codigo_de_un_apartado_de_otro_catalogo_no_entra(): void
+    public function test_el_código_de_un_apartado_de_otro_catálogo_no_entra(): void
     {
         $code = $this->reserve();
         $other = $this->withinOrganization($this->organization, fn (): Catalog => Catalog::factory()->published()->create());
@@ -148,7 +148,7 @@ final class LayawayHandoffTest extends TestCase
         $this->assertGuest('customer');
     }
 
-    public function test_si_hay_que_escribir_la_cedula_el_acceso_muestra_el_negocio_del_apartado_recien_hecho(): void
+    public function test_si_hay_que_escribir_la_cédula_el_acceso_muestra_el_negocio_del_apartado_recién_hecho(): void
     {
         $code = $this->reserve();
 
