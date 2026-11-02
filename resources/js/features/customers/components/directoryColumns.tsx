@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
+import { dueDateMeta } from '@/features/collections/components/collectionMobile';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
 import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
@@ -97,7 +98,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
     {
         id: 'next',
         header: 'Próximo vencimiento',
-        mobile: { meta: (row) => (row.nextDueDate === null ? null : `Vence el ${formatDay(row.nextDueDate)}`) },
+        mobile: { meta: (row) => dueDateMeta(row.nextDueDate) },
         cell: (row) => (row.nextDueDate === null ? <span className="text-ink-3">—</span> : formatDay(row.nextDueDate)),
     },
 ];

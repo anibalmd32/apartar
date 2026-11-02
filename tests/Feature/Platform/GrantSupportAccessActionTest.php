@@ -8,6 +8,7 @@ use App\Actions\Platform\GrantSupportAccessAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Models\AuditEntry;
 use App\Models\Customer;
+use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\PlatformActivity;
 use App\Models\User;
@@ -84,6 +85,22 @@ final class GrantSupportAccessActionTest extends TestCase
         $this->actingAs($this->owner)->get('/backoffice')->assertInertia(fn (AssertableInertia $page) => $page
             ->where('teamMember.supportAccess.0.operator', $operator->name)
             ->where('teamMember.supportAccess.0.reason', self::REASON));
+    }
+
+    public function test_los_montos_de_los_apartados_llegan_como_centimos_enteros(): void
+    {
+        Notification::fake();
+        $this->withinOrganization($this->organization, fn () => Layaway::factory()->create());
+        $this->withoutOrganization();
+        $this->asOperator();
+
+        $this->post($this->base().'/soporte', ['reason' => self::REASON])->assertRedirect();
+
+        $this->get($this->data('apartados'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('platform/support/Layaways')
+            ->where('layaways.0.totalCents', 20_000)
+            ->where('layaways.0.paidCents', 0)
+            ->where('layaways.0.remainingCents', 20_000));
     }
 
     public function test_an_expired_grant_stops_working_on_the_next_request(): void

@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
-import { customerMobile, DueBadge, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
+import { customerMobile, DueBadge, dueDateMeta, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
 import { type CollectionDownPaymentRow, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
@@ -116,7 +116,7 @@ export const downPaymentColumns: DataTableColumn<CollectionDownPaymentRow>[] = [
         header: 'Vence',
         mobile: {
             status: (row) => expiryBadge(row.expiresAt),
-            meta: (row) => dueMeta(row.expiresAt, 'Vence el'),
+            meta: (row) => dueDateMeta(row.expiresAt),
         },
         cell: (row) => <ExpiryCell expiresAt={row.expiresAt} />,
     },

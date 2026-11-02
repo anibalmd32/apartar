@@ -26,9 +26,9 @@ final class SupportDataController extends Controller
                 'customer' => $layaway->customer->full_name ?? '—',
                 'product' => $layaway->product_name_snapshot,
                 'status' => $layaway->status->label(),
-                'totalCents' => $layaway->total_cents,
-                'paidCents' => $layaway->paid_cents,
-                'remainingCents' => $layaway->remaining_cents,
+                'totalCents' => $layaway->total_cents->cents,
+                'paidCents' => $layaway->paid_cents->cents,
+                'remainingCents' => $layaway->remaining_cents->cents,
                 'createdAt' => $layaway->created_at?->toIso8601String(),
             ])->all();
 

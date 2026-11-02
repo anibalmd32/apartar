@@ -2,6 +2,7 @@ import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { formatDay } from '@/features/receipts/lib/inbox-format';
+import { todayIso } from '@/lib/iso-date';
 import { type CollectionCustomer, type CollectionInstallmentRow } from '@/types/collections';
 import { type MobileLayout } from '@/types/data-table';
 import { cilPhone } from '@coreui/icons';
@@ -64,4 +65,14 @@ export function customerMobile<TRow extends { customer: CollectionCustomer | nul
 
 export function dueMeta(day: string | null, prefix: string): string | null {
     return day === null ? null : `${prefix} ${formatDay(day.slice(0, 10))}`;
+}
+
+export function dueDateMeta(day: string | null): string | null {
+    if (day === null) {
+        return null;
+    }
+
+    const date = day.slice(0, 10);
+
+    return `${date < todayIso() ? 'Venció' : 'Vence'} el ${formatDay(date)}`;
 }

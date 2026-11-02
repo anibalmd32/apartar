@@ -98,7 +98,7 @@ export function CompactRow({
             {media ? <div className={cn('shrink-0', muted && 'opacity-60')}>{media}</div> : null}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-start justify-between gap-3">
-                    <p className={cn('min-w-0 truncate text-[15px] leading-snug font-semibold', muted && 'text-ink-2')}>
+                    <p className={cn('line-clamp-2 min-w-0 text-[15px] leading-snug font-semibold break-words', muted && 'text-ink-2')}>
                         <Title title={title} href={href} external={external} onActivate={onActivate} activateLabel={activateLabel} />
                     </p>
                     {filled(amount) ? <p className="shrink-0 text-[15px] leading-snug font-bold whitespace-nowrap tabular-nums">{amount}</p> : null}

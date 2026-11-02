@@ -116,3 +116,12 @@ it('mantener pulsada una tarjeta elegible entra en modo selección con ella marc
     expect(within(cards()[0]!).getByRole('checkbox', { name: 'Seleccionar Mochila' })).toBeChecked();
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
 });
+
+it('en el celular el título de la fila ocupa hasta dos líneas en vez de cortarse en una', () => {
+    render(<Harness />);
+
+    const title = within(cards()[0]!).getByRole('link', { name: 'Mochila' }).closest('p');
+
+    expect(title).toHaveClass('line-clamp-2');
+    expect(title).not.toHaveClass('truncate');
+});

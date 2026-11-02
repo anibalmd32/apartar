@@ -97,6 +97,8 @@ it('en Clientes la tarjeta muestra nombre y cédula, y esconde los montos en cer
 });
 
 it('en Clientes el pendiente y las cuotas vencidas se ven en la tarjeta', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 2, 10));
     render(
         <List
             rows={[{ ...CUSTOMER, inArrears: true, remaining: usd(4_350, '$43,50'), overdueInstallments: 1, nextDueDate: '2026-10-28' }]}
@@ -107,6 +109,17 @@ it('en Clientes el pendiente y las cuotas vencidas se ven en la tarjeta', () => 
 
     expect(card()).toHaveTextContent('$43,50');
     expect(card()).toHaveTextContent('1 cuota vencida');
-    expect(card()).toHaveTextContent('Vence el 28/10/2026');
+    expect(card()).toHaveTextContent('Venció el 28/10/2026');
+    expect(card()).not.toHaveTextContent('Vence el');
     expect(card()).not.toHaveTextContent('En mora');
+    vi.useRealTimers();
+});
+
+it('en Clientes una cuota que aún no llega dice Vence el', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 2, 10));
+    render(<List rows={[{ ...CUSTOMER, nextDueDate: '2026-11-02' }]} columns={directoryColumns} href={(row) => row.url} />);
+
+    expect(card()).toHaveTextContent('Vence el 02/11/2026');
+    vi.useRealTimers();
 });
