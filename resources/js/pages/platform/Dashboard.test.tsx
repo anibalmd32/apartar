@@ -67,3 +67,28 @@ it('resume el correo de los últimos 30 días y enlaza a sus métricas', () => {
     expect(within(card).getByText('—')).toBeInTheDocument();
     expect(within(card).getByRole('link', { name: 'Ver métricas' }).getAttribute('href')).toBe('/plataforma/correos');
 });
+
+it('en el celular destaca el MRR y lista las demás cifras en filas, sin fichas dentro de las tarjetas', () => {
+    render(
+        <PlatformDashboard
+            metrics={{ ...metrics, gmv: { committedLast30Days: money('$1.897,00'), collectedLast30Days: money('$280,00') } }}
+            mail={{ sent: 1200, deliveryRate: 0.98, openRate: 0.4, bounceRate: null, unreadThreads: 3 }}
+        />,
+    );
+
+    const stack = screen.getByRole('region', { name: 'MRR' }).parentElement!;
+
+    expect(stack).toHaveClass('stat-stack', 'lg:grid');
+    expect(stack).not.toHaveClass('grid-cols-2');
+    expect(stack.firstElementChild).toHaveAccessibleName('MRR');
+
+    ['Correo', 'Red y volumen'].forEach((name) => {
+        const card = screen.getByRole('region', { name });
+
+        expect(card.querySelectorAll('.figure-item').length).toBeGreaterThan(0);
+        card.querySelectorAll('.figure-item').forEach((item) => {
+            expect(item).not.toHaveClass('bg-surface-2');
+            expect(item).toHaveClass('max-lg:justify-between', 'lg:bg-surface-2');
+        });
+    });
+});

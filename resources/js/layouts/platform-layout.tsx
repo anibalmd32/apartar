@@ -97,7 +97,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                         <section className={PAGE_HEADER_CLASS}>
                             <div className={PAGE_TITLE_CLASS}>
                                 {back}
-                                <h1 className="text-h1 max-lg:text-[22px]">{title}</h1>
+                                <h1 className="text-h1">{title}</h1>
                                 {description ? <div className="text-ink-2 text-sm">{description}</div> : null}
                             </div>
                             {actions ? <div className={PAGE_ACTIONS_CLASS}>{actions}</div> : null}

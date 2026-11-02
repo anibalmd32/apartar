@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
+import { SIGNUP_LABEL } from '@/features/marketing/components/SignupCta';
 import AccessLayout from '@/layouts/backoffice/access-layout';
 import { bo } from '@/lib/surfaces';
 import { cilEnvelopeClosed, cilLockLocked } from '@coreui/icons';
@@ -42,7 +43,7 @@ export default function Login({ status }: LoginProps) {
                     <p>
                         ¿Aún no tienes cuenta?{' '}
                         <Link href={route('register')} className="link link-primary link-hover ml-1 font-bold">
-                            Crear negocio gratis
+                            {SIGNUP_LABEL}
                         </Link>
                     </p>
                     <p className="text-ink-3 text-[13px]">

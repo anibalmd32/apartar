@@ -1,3 +1,4 @@
+import { FigureItem, FigureList } from '@/components/ui/figure-list';
 import { Meter } from '@/components/ui/meter';
 import { SectionCard } from '@/components/ui/section-card';
 import { StatCard } from '@/components/ui/stat-card';
@@ -10,19 +11,9 @@ import { type MailSummary } from '@/types/mail';
 import { type PlatformMetrics } from '@/types/platform';
 import { cilBan, cilBuilding, cilDescription, cilDollar } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
-import { type ReactNode } from 'react';
 
 const DASH = '—';
 const count = (value: number) => new Intl.NumberFormat('es-VE').format(value);
-
-function Tile({ label, children }: { label: string; children: ReactNode }) {
-    return (
-        <div className="bg-surface-2 flex flex-col gap-0.5 rounded-xl px-3.5 py-3">
-            <span className="text-ink-3 text-xs">{label}</span>
-            <span className="text-lg font-extrabold">{children}</span>
-        </div>
-    );
-}
 
 const PERIOD_LABELS: Record<number, string> = { 30: '30 días', 90: '90 días', 365: '12 meses' };
 
@@ -60,7 +51,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                 </nav>
             }
         >
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+            <div className="stat-stack lg:grid lg:grid-cols-4 lg:gap-4">
                 <section aria-label="MRR" className="flex">
                     <StatCard label="MRR" value={mrr?.usd ?? DASH} icon={cilDollar} tone="success" className="flex-1">
                         {versusLastMonth(metrics.monthly ?? null) ?? 'Suscripciones activas, en gracia y vencidas; sin suspendidas ni canceladas.'}
@@ -139,17 +130,17 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
             </div>
 
             <SectionCard title="Red y volumen" aria-label="Red y volumen">
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[3fr_2fr]">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr] lg:gap-3">
                     <section aria-label="Red" className="flex flex-col gap-2">
                         <p className="text-ink-3 text-xs">Cuentas multi-negocio: las que siguen catálogos de más de un negocio.</p>
                         {network === null ? (
                             <p>{DASH}</p>
                         ) : (
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                <Tile label="Cuentas de clientes">{count(network.accounts)}</Tile>
-                                <Tile label="Seguimientos a catálogos">{count(network.subscriptions)}</Tile>
-                                <Tile label="Multi-negocio">{count(network.multiBusinessAccounts)}</Tile>
-                            </div>
+                            <FigureList className="lg:grid-cols-3">
+                                <FigureItem label="Cuentas de clientes" value={count(network.accounts)} />
+                                <FigureItem label="Seguimientos a catálogos" value={count(network.subscriptions)} />
+                                <FigureItem label="Multi-negocio" value={count(network.multiBusinessAccounts)} />
+                            </FigureList>
                         )}
                     </section>
 
@@ -158,10 +149,10 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                         {gmv === null ? (
                             <p>{DASH}</p>
                         ) : (
-                            <div className="grid grid-cols-2 gap-3">
-                                <Tile label="Comprometido (GMV)">{gmv.committedLast30Days.usd}</Tile>
-                                <Tile label="Cobrado">{gmv.collectedLast30Days.usd}</Tile>
-                            </div>
+                            <FigureList className="lg:grid-cols-2">
+                                <FigureItem label="Comprometido (GMV)" value={gmv.committedLast30Days.usd} />
+                                <FigureItem label="Cobrado" value={gmv.collectedLast30Days.usd} />
+                            </FigureList>
                         )}
                     </section>
                 </div>

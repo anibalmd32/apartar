@@ -1,17 +1,9 @@
+import { FigureItem, FigureList } from '@/components/ui/figure-list';
 import { SectionCard } from '@/components/ui/section-card';
 import { pf } from '@/lib/surfaces';
 import { type MailSummary } from '@/types/mail';
 import { Link } from '@inertiajs/react';
 import { count, DASH, percent } from './format';
-
-function Figure({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="bg-surface-2 flex flex-col gap-0.5 rounded-xl px-3.5 py-3">
-            <span className="text-ink-3 text-xs">{label}</span>
-            <span className="text-lg font-extrabold">{value}</span>
-        </div>
-    );
-}
 
 export function MailSummaryCard({ summary }: { summary: MailSummary | null }) {
     return (
@@ -28,19 +20,13 @@ export function MailSummaryCard({ summary }: { summary: MailSummary | null }) {
             {summary === null ? (
                 <p>{DASH}</p>
             ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    <Figure label="Enviados" value={count(summary.sent)} />
-                    <Figure label="Entrega" value={percent(summary.deliveryRate)} />
-                    <Figure label="Apertura" value={percent(summary.openRate)} />
-                    <Figure label="Rebote" value={percent(summary.bounceRate)} />
-                    <Link
-                        href={pf('/correos/bandeja?filtro=no-leidos')}
-                        className="bg-surface-2 hover:bg-base-300 flex flex-col gap-0.5 rounded-xl px-3.5 py-3"
-                    >
-                        <span className="text-ink-3 text-xs">Sin leer</span>
-                        <span className="text-lg font-extrabold">{count(summary.unreadThreads)}</span>
-                    </Link>
-                </div>
+                <FigureList className="lg:grid-cols-5">
+                    <FigureItem label="Enviados" value={count(summary.sent)} />
+                    <FigureItem label="Entrega" value={percent(summary.deliveryRate)} />
+                    <FigureItem label="Apertura" value={percent(summary.openRate)} />
+                    <FigureItem label="Rebote" value={percent(summary.bounceRate)} />
+                    <FigureItem label="Sin leer" value={count(summary.unreadThreads)} href={pf('/correos/bandeja?filtro=no-leidos')} />
+                </FigureList>
             )}
         </SectionCard>
     );

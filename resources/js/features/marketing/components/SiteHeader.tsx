@@ -1,6 +1,6 @@
 import { Brand } from '@/components/shell/brand';
 import { Icon } from '@/components/ui/icon';
-import { SIGNUP_LABEL, SignupCta } from '@/features/marketing/components/SignupCta';
+import { SignupCta } from '@/features/marketing/components/SignupCta';
 import { type SharedData } from '@/types';
 import { cilMenu, cilX } from '@coreui/icons';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
@@ -36,17 +36,15 @@ export function SiteHeader() {
                 </div>
 
                 {loggedIn ? (
-                    <Link href={route('dashboard')} className="btn btn-primary btn-sm rounded-full lg:h-10 lg:px-4 lg:text-sm">
+                    <Link href={route('dashboard')} className="btn btn-primary btn-sm rounded-full lg:h-12 lg:px-6 lg:text-[15px] lg:font-bold">
                         Ir al backoffice
                     </Link>
                 ) : (
                     <div className="flex items-center gap-2 lg:gap-4">
-                        <Link href={route('login')} className="btn btn-ghost btn-sm lg:h-10 lg:px-4 lg:text-sm">
+                        <Link href={route('login')} className="btn btn-ghost btn-sm rounded-full lg:h-12 lg:px-5 lg:text-[15px]">
                             Entrar
                         </Link>
-                        <Link href={route('register')} className="btn btn-primary hidden h-10 rounded-full px-4 text-sm lg:inline-flex">
-                            {SIGNUP_LABEL}
-                        </Link>
+                        <SignupCta className="hidden lg:inline-flex" />
                     </div>
                 )}
 

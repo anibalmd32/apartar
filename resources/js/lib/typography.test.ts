@@ -21,4 +21,13 @@ describe('tipografía de la app', () => {
 
         expect(offending(/tracking-\[-/, wordmark)).toEqual([]);
     });
+
+    it('ningún estilo con espaciado negativo se achica por debajo de 24px en el celular', () => {
+        const tight = /(?<![\w:-])(text-h1|text-figure|text-display|tracking-heading)\b/;
+        const small = /(?<![\w-])(?:max-[\w]+:)?text-(?:\[(?:1\d|2[0-3])px\]|xs|sm|base|lg|xl)(?![\w-])/;
+
+        const shrinks = (line: string) => (line.match(/"[^"]*"|'[^']*'/g) ?? []).some((classes) => tight.test(classes) && small.test(classes));
+
+        expect(offending(/./, (lines, index) => !shrinks(lines[index] ?? ''))).toEqual([]);
+    });
 });
