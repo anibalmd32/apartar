@@ -44,7 +44,8 @@ final class FoundOrganizationTest extends TestCase
 
         $this->actingAs($owner)->get(route('organizations.create'))
             ->assertRedirect(route('dashboard'))
-            ->assertSessionHas('status', 'Ya tienes un negocio propio. Por ahora cada persona puede tener uno solo.');
+            ->assertSessionHas('status', 'Ya tienes un negocio propio. Por ahora cada persona puede tener uno solo.')
+            ->assertSessionHas('statusTone', 'info');
 
         $this->actingAs($owner)->post(route('organizations.store'), ['organization_name' => 'Otra', 'organization_slug' => ''])
             ->assertSessionHasErrors(['organization_name' => 'Ya tienes un negocio propio. Por ahora cada persona puede tener uno solo.']);

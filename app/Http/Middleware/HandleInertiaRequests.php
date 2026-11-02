@@ -66,6 +66,7 @@ class HandleInertiaRequests extends Middleware
             'platformOperator' => fn (): ?array => $this->platformOperator($request),
             'currency' => $this->currency($request),
             'status' => $request->session()->get('status'),
+            'statusTone' => $request->session()->get('statusTone'),
             'planState' => fn (): ?array => $this->planState($request),
             'pastDue' => fn (): ?array => $this->pastDue($request),
             'planLimit' => $request->session()->get('planLimit'),

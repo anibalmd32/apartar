@@ -5,8 +5,15 @@ import { type Page } from '@inertiajs/core';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-function page(component: string, status?: string): Page {
-    return { component, props: { status, errors: {} }, url: '/', version: null, clearHistory: false, encryptHistory: false } as unknown as Page;
+function page(component: string, status?: string, statusTone?: string): Page {
+    return {
+        component,
+        props: { status, statusTone, errors: {} },
+        url: '/',
+        version: null,
+        clearHistory: false,
+        encryptHistory: false,
+    } as unknown as Page;
 }
 
 afterEach(() => {
@@ -18,6 +25,13 @@ describe('los avisos', () => {
         render(<Toaster initialPage={page('backoffice/products/Index', 'Producto guardado.')} />);
 
         expect(screen.getByRole('status')).toHaveTextContent('Producto guardado.');
+    });
+
+    it('usan el tono que manda el servidor en vez de pintar todo de verde', () => {
+        render(<Toaster initialPage={page('backoffice/Dashboard', 'Ya tienes un negocio propio.', 'info')} />);
+
+        expect(screen.getByRole('status')).toHaveClass('alert-info');
+        expect(screen.getByRole('status')).not.toHaveClass('alert-success');
     });
 
     it('no repiten el mensaje en las pantallas que ya lo muestran en línea', () => {

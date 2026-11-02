@@ -27,7 +27,13 @@ function announceStatus(page: Page): void {
     const status = page.props.status;
 
     if (typeof status === 'string' && status !== '' && !INLINE_STATUS.some((pattern) => pattern.test(page.component))) {
-        toast.success(status);
+        const tone = page.props.statusTone;
+
+        if (tone === 'info' || tone === 'error') {
+            toast[tone](status);
+        } else {
+            toast.success(status);
+        }
     }
 }
 

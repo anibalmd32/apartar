@@ -28,7 +28,9 @@ final class OrganizationFoundingController extends Controller
         $user = $request->user();
 
         if (! $memberships->mayFound($user->email)) {
-            return to_route('dashboard')->with('status', OwnedOrganizationLimitException::reached((int) config('platform.max_owned_organizations'))->getMessage());
+            return to_route('dashboard')
+                ->with('status', OwnedOrganizationLimitException::reached((int) config('platform.max_owned_organizations'))->getMessage())
+                ->with('statusTone', 'info');
         }
 
         return Inertia::render('backoffice/organizations/Create');

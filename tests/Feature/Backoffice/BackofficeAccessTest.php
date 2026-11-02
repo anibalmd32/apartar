@@ -9,6 +9,7 @@ use App\Domain\Tenancy\OrganizationStatus;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\ReusesMigratedDatabase;
@@ -93,6 +94,22 @@ final class BackofficeAccessTest extends TestCase
         $this->get('/backoffice/cambiar-contrasena')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->component('backoffice/auth/ChangePassword'));
+    }
+
+    public function test_sin_cambio_pendiente_la_pantalla_de_cambiar_contrasena_lleva_al_perfil(): void
+    {
+        $actor = $this->teamMember();
+
+        $this->actingAs($actor)->get('/backoffice/cambiar-contrasena')
+            ->assertRedirect(route('profile.edit'))
+            ->assertSessionHas('statusTone', 'info');
+
+        $this->post('/backoffice/cambiar-contrasena', [
+            'password' => 'Zapatos-Del-Valle-2026',
+            'password_confirmation' => 'Zapatos-Del-Valle-2026',
+        ])->assertRedirect(route('profile.edit'));
+
+        $this->assertFalse(Hash::check('Zapatos-Del-Valle-2026', (string) $actor->fresh()?->password));
     }
 
     public function test_changing_the_password_releases_the_navigation(): void
