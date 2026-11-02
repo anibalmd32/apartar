@@ -102,3 +102,66 @@ it('compara con el período anterior y ofrece elegir catálogo', () => {
     expect(screen.getByText('+0% vs. período anterior')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Catálogo' })).toHaveValue('');
 });
+
+it('sin visitas ni apartados enseña un solo estado vacío en vez de cifras en cero', () => {
+    const empty = props(true);
+    render(
+        <AnalyticsIndex
+            {...empty}
+            analytics={{
+                ...empty.analytics,
+                totals: { visits: 0, visitors: 0, layaways: 0 },
+                monthly: [{ month: '2026-10', visits: 0, subscriptions: 0 }],
+            }}
+        />,
+    );
+
+    expect(screen.getByText('Sin visitas en los últimos 30 días')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Cifras' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Embudo' })).not.toBeInTheDocument();
+});
+
+it('los meses van del más reciente al más antiguo, con la misma abreviatura y sin filas en cero', () => {
+    const full = props(true);
+    render(
+        <AnalyticsIndex
+            {...full}
+            analytics={{
+                ...full.analytics,
+                monthly: [
+                    { month: '2026-08', visits: 0, subscriptions: 0 },
+                    { month: '2026-09', visits: 4, subscriptions: 1 },
+                    { month: '2026-10', visits: 340, subscriptions: 5 },
+                ],
+            }}
+        />,
+    );
+
+    const rows = within(screen.getByRole('region', { name: 'Últimos 12 meses' }))
+        .getAllByRole('row')
+        .slice(1);
+    expect(rows.map((row) => row.firstElementChild?.textContent)).toEqual(['oct 2026', 'sept 2026']);
+});
+
+it('si un paso tiene más que el anterior no dice 0 % sino que lo explica', () => {
+    const full = props(true);
+    render(
+        <AnalyticsIndex
+            {...full}
+            analytics={{
+                ...full.analytics,
+                funnel: [
+                    { event: 'catalog_viewed', count: 3 },
+                    { event: 'product_viewed', count: 2 },
+                    { event: 'layaway_form_started', count: 0 },
+                    { event: 'layaway_created', count: 8 },
+                ],
+            }}
+        />,
+    );
+
+    const funnel = screen.getByRole('region', { name: 'Embudo' });
+    expect(within(funnel).getByText(/Más que el paso anterior/)).toBeInTheDocument();
+    expect(within(funnel).getAllByText(/del paso anterior/)).toHaveLength(2);
+    expect(within(funnel).queryByText(/267 %/)).toBeNull();
+});

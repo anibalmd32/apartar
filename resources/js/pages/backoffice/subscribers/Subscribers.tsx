@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { BarChart } from '@/components/ui/bar-chart';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Meter } from '@/components/ui/meter';
 import { SectionCard } from '@/components/ui/section-card';
 import { StatCard } from '@/components/ui/stat-card';
@@ -25,6 +26,23 @@ export default function Subscribers({ subscribers, nextPageUrl, stats }: Subscri
     const catalogs = stats.byCatalog?.length ?? null;
     const top = Math.max(1, ...(stats.byCatalog ?? []).map((row) => row.count));
     const byCatalog = stats.byCatalog !== null && stats.byCatalog.length > 0;
+
+    if (stats.total === 0 && subscribers.length === 0) {
+        return (
+            <BackofficeLayout title="Suscriptores" description="Quién sigue tus catálogos para enterarse de lo nuevo.">
+                <div className="bg-base-100 border-line shadow-card rounded-2xl border p-6">
+                    <EmptyState icon={cilUserPlus} title="Todavía nadie sigue tus catálogos">
+                        Cuando compartas el enlace de un catálogo, quien lo abra podrá seguirlo y aquí verás cuántos son y cómo crecen.
+                    </EmptyState>
+                    {stats.people === null ? (
+                        <div className="text-ink-2 mt-4 text-sm">
+                            <UpgradePrompt feature="full_analytics" />
+                        </div>
+                    ) : null}
+                </div>
+            </BackofficeLayout>
+        );
+    }
 
     return (
         <BackofficeLayout
@@ -57,7 +75,7 @@ export default function Subscribers({ subscribers, nextPageUrl, stats }: Subscri
                 ) : null}
             </section>
 
-            {stats.weekly ? (
+            {stats.weekly && stats.weekly.some((value) => value > 0) ? (
                 <SectionCard title="Crecimiento semanal" subtitle="Suscripciones nuevas de cada semana, de las últimas 12.">
                     <BarChart
                         label="Suscripciones nuevas por semana"

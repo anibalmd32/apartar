@@ -39,3 +39,25 @@ it('compara con la semana pasada, dice cuántos ya son clientes y dibuja las sem
     expect(screen.getByText('Esta')).toBeInTheDocument();
     expect(screen.getByText('Esta: 28')).toBeInTheDocument();
 });
+
+it('sin suscriptores enseña un solo estado vacío en vez de cifras y semanas en cero', () => {
+    render(
+        <Subscribers
+            subscribers={[]}
+            nextPageUrl={null}
+            stats={{
+                total: 0,
+                people: 0,
+                last7Days: 0,
+                previous7Days: 0,
+                customers: 0,
+                byCatalog: [],
+                weekly: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            }}
+        />,
+    );
+
+    expect(screen.getByText('Todavía nadie sigue tus catálogos')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Cifras' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Esta')).not.toBeInTheDocument();
+});

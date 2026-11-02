@@ -40,7 +40,9 @@ export function FunnelCard({ funnel }: { funnel: NonNullable<Analytics['funnel']
                             <li key={step.event} className="flex flex-col gap-1.5">
                                 {previous !== undefined ? (
                                     <p className="text-ink-3 -mt-2 text-[11px]" data-step-conversion>
-                                        ↓ {percent(step.count, previous.count)} del paso anterior
+                                        {step.count <= previous.count
+                                            ? `↓ ${percent(step.count, previous.count)} del paso anterior`
+                                            : 'Más que el paso anterior: no todos aceptan que midamos sus visitas'}
                                     </p>
                                 ) : null}
                                 <Meter
@@ -48,7 +50,9 @@ export function FunnelCard({ funnel }: { funnel: NonNullable<Analytics['funnel']
                                     value={
                                         <>
                                             {NUMBER.format(step.count)}{' '}
-                                            <span className="text-ink-3 ms-1 text-xs font-normal">{percent(step.count, top)}</span>
+                                            {step.count <= top ? (
+                                                <span className="text-ink-3 ms-1 text-xs font-normal">{percent(step.count, top)}</span>
+                                            ) : null}
                                         </>
                                     }
                                     percentage={share(step.count, top)}
@@ -125,35 +129,6 @@ export function CatalogsCard({ catalogs }: { catalogs: NonNullable<Analytics['ca
                     ))}
                 </ol>
             )}
-        </SectionCard>
-    );
-}
-
-const MONTH = new Intl.DateTimeFormat('es', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-
-export function MonthlyCard({ monthly }: { monthly: NonNullable<Analytics['monthly']> }) {
-    return (
-        <SectionCard title="Últimos 12 meses" aria-label="Últimos 12 meses" flush>
-            <div className="overflow-x-auto">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Mes</th>
-                            <th className="text-right">Visitas</th>
-                            <th className="text-right">Suscriptores (neto)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {monthly.map((row) => (
-                            <tr key={row.month}>
-                                <td className="first-letter:uppercase">{MONTH.format(new Date(`${row.month}-01T00:00:00Z`))}</td>
-                                <td className="text-right font-semibold">{NUMBER.format(row.visits)}</td>
-                                <td className="text-right">{row.subscriptions}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
         </SectionCard>
     );
 }

@@ -86,6 +86,18 @@ final class CatalogAnalyticsTest extends TestCase
         $this->assertSame(2, $months['2026-10']);
     }
 
+    public function test_el_embudo_no_cuenta_los_apartados_creados_desde_el_panel(): void
+    {
+        $this->onPlan(Plan::factory()->unlimited()->withEveryFeature()->create());
+        $this->event('layaway_created', ServerTelemetry::NO_VISITOR, payload: ['source' => 'backoffice']);
+        $this->event('layaway_created', ServerTelemetry::NO_VISITOR, payload: ['source' => 'catalog']);
+
+        $analytics = $this->props()['analytics'];
+
+        $this->assertSame(3, $analytics['totals']['layaways']);
+        $this->assertSame([2, 1, 1, 2], array_column($analytics['funnel'], 'count'));
+    }
+
     public function test_nothing_identifies_a_person_or_leaks_another_business(): void
     {
         $this->onPlan(Plan::factory()->unlimited()->withEveryFeature()->create());

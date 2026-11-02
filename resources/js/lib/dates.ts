@@ -157,3 +157,10 @@ export function formatMoment(value: string | Date, { now = new Date(), timeZone 
 
     return dateOf(moment, moment.year === today.year ? 'dayMonth' : 'short');
 }
+
+export function formatMonth(yearMonth: string): string {
+    const match = /^(\d{4})-(\d{2})/.exec(yearMonth);
+    const month = match === null ? undefined : SHORT_MONTHS[Number(match[2]) - 1];
+
+    return match === null || month === undefined ? yearMonth : `${month} ${match[1]}`;
+}

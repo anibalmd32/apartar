@@ -43,6 +43,8 @@ final class CatalogAnalyticsQuery
             ->pluck('aggregate', 'event_name');
 
         $count = fn (TelemetryEventName $name): int => (int) ($counts[$name->value] ?? 0);
+        $fromCatalog = $this->layawaysFromCatalog($from, $to);
+        $step = fn (TelemetryEventName $name): int => $name === TelemetryEventName::LayawayCreated ? $fromCatalog : $count($name);
 
         return [
             'totals' => [
@@ -50,7 +52,7 @@ final class CatalogAnalyticsQuery
                 'visitors' => $this->visitors($from, $to),
                 'layaways' => $count(TelemetryEventName::LayawayCreated),
             ],
-            'funnel' => array_map(fn (TelemetryEventName $name): array => ['event' => $name->value, 'count' => $count($name)], self::FUNNEL),
+            'funnel' => array_map(fn (TelemetryEventName $name): array => ['event' => $name->value, 'count' => $step($name)], self::FUNNEL),
             'catalogs' => $this->catalogs($from, $to),
             'topProducts' => $this->topProducts($from, $to),
             'searchesWithoutResults' => $this->searchesWithoutResults($from, $to),
@@ -77,6 +79,14 @@ final class CatalogAnalyticsQuery
             'visitors' => $this->visitors($from, $to),
             'layaways' => (int) ($counts[TelemetryEventName::LayawayCreated->value] ?? 0),
         ];
+    }
+
+    private function layawaysFromCatalog(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return $this->between($from, $to)
+            ->where('event_name', TelemetryEventName::LayawayCreated->value)
+            ->where(fn (Builder $query) => $query->whereNull('payload->source')->orWhere('payload->source', '!=', 'backoffice'))
+            ->count();
     }
 
     private function visitors(CarbonImmutable $from, CarbonImmutable $to): int

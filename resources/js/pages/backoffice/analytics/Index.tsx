@@ -1,11 +1,13 @@
+import { EmptyState } from '@/components/ui/empty-state';
 import { SelectField } from '@/components/ui/select-field';
 import { StatCard } from '@/components/ui/stat-card';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
-import { CatalogsCard, FunnelCard, MonthlyCard, SearchesCard, TopProductsCard } from '@/features/telemetry/components/AnalyticsSections';
+import { CatalogsCard, FunnelCard, SearchesCard, TopProductsCard } from '@/features/telemetry/components/AnalyticsSections';
+import { MonthlyCard } from '@/features/telemetry/components/MonthlyCard';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { cn } from '@/lib/utils';
 import { type AnalyticsPageProps } from '@/types/analytics';
-import { cilCart, cilLibrary, cilPeople } from '@coreui/icons';
+import { cilCart, cilChartLine, cilLibrary, cilPeople } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 
 const NUMBER = new Intl.NumberFormat('es-VE');
@@ -63,17 +65,8 @@ export default function AnalyticsIndex({
             />
         ) : null;
 
-    return (
-        <BackofficeLayout
-            title="Analítica"
-            description="Cómo se usan tus catálogos. Solo totales: nunca quién hizo qué."
-            actions={
-                <div className="flex flex-wrap items-center gap-2">
-                    {periodPicker}
-                    {catalogPicker}
-                </div>
-            }
-        >
+    const body = (
+        <>
             <section aria-label="Cifras" className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
                 <StatCard label="Visitas a catálogos" value={NUMBER.format(totals.visits)} icon={cilLibrary}>
                     {versus(totals.visits, previous?.visits, context)}
@@ -107,6 +100,34 @@ export default function AnalyticsIndex({
                     {monthly !== null ? <MonthlyCard monthly={monthly} /> : null}
                 </div>
             ) : null}
+        </>
+    );
+
+    return (
+        <BackofficeLayout
+            title="Analítica"
+            description="Cómo se usan tus catálogos. Solo totales: nunca quién hizo qué."
+            actions={
+                <div className="flex flex-wrap items-center gap-2">
+                    {periodPicker}
+                    {catalogPicker}
+                </div>
+            }
+        >
+            {totals.visits === 0 && totals.layaways === 0 ? (
+                <div className="bg-base-100 border-line shadow-card rounded-2xl border p-6">
+                    <EmptyState icon={cilChartLine} title={`Sin visitas ${context}`}>
+                        Cuando compartas el enlace de un catálogo, aquí verás cuántos lo abren, qué productos miran y cuántos apartan.
+                    </EmptyState>
+                    {!full ? (
+                        <div className="text-ink-2 mt-4 text-sm">
+                            <UpgradePrompt feature="full_analytics" />
+                        </div>
+                    ) : null}
+                </div>
+            ) : (
+                body
+            )}
         </BackofficeLayout>
     );
 }
