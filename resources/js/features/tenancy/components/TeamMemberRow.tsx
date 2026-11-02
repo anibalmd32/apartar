@@ -59,7 +59,7 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
 
     return (
         <tr className={member.isActive ? undefined : 'opacity-60'}>
-            <td>
+            <td data-cell="primary">
                 <div className="flex items-center gap-3">
                     <Avatar name={member.name} size={32} tone={member.role === 'owner' ? 'primary' : 'accent'} />
                     <div className="flex min-w-0 flex-col">
@@ -67,12 +67,12 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                             {member.name}
                             {member.isSelf ? <span className="badge badge-primary badge-count">Tú</span> : null}
                         </span>
-                        <span className="text-ink-3 text-xs">{member.email}</span>
+                        <span className="text-ink-3 text-xs break-all">{member.email}</span>
                     </div>
                 </div>
             </td>
 
-            <td>
+            <td data-label="Rol">
                 {member.isActive ? (
                     <SelectField
                         label={`Rol de ${member.name}`}
@@ -90,7 +90,7 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                 )}
             </td>
 
-            <td>
+            <td data-label="Estado">
                 <div className="flex flex-wrap gap-1">
                     {member.isActive ? null : <Badge tone="neutral">Inactivo</Badge>}
                     {member.isPending ? <Badge tone="warning">Invitación pendiente</Badge> : null}
@@ -98,9 +98,11 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                 </div>
             </td>
 
-            <td className="text-ink-2 whitespace-nowrap">{lastAccess(member)}</td>
+            <td data-label="Último acceso" className="text-ink-2 whitespace-nowrap">
+                {lastAccess(member)}
+            </td>
 
-            <td>
+            <td data-cell="actions">
                 <div className="flex flex-wrap justify-end gap-1">
                     {member.isPending ? (
                         <>

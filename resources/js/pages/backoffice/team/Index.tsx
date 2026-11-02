@@ -111,7 +111,7 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
                         error={errors.role}
                     />
 
-                    <Button type="submit" loading={processing} disabled={usage.isAtLimit} className="md:mt-[34px]">
+                    <Button type="submit" loading={processing} disabled={usage.isAtLimit} className="mt-3 md:mt-[34px]">
                         <Icon icon={cilEnvelopeClosed} />
                         Enviar invitación
                     </Button>
@@ -122,7 +122,7 @@ export default function TeamIndex({ members, usage }: TeamPageProps) {
                 </p>
             </section>
 
-            <section aria-label="Personas con acceso" className="table-frame">
+            <section aria-label="Personas con acceso" className="table-frame table-stack">
                 <table className="table">
                     <thead>
                         <tr>

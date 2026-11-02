@@ -704,6 +704,94 @@
     }
 }
 
+@media (width < 48rem) {
+    .table-stack {
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    .table-stack table {
+        display: block;
+    }
+
+    .table-stack thead {
+        display: none;
+    }
+
+    .table-stack tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .table-stack tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.625rem 0.75rem;
+        padding: 1rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background-color: var(--color-base-100);
+        box-shadow: var(--card-shadow);
+    }
+
+    .table-stack tbody td {
+        display: flex;
+        flex: 1 1 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        text-align: start;
+        font-size: 0.875rem;
+    }
+
+    .table-stack tbody td[data-label]::before {
+        content: attr(data-label);
+        color: var(--ink-3);
+        font-size: 0.8125rem;
+    }
+
+    .table-stack tbody td[data-cell='primary'] {
+        display: block;
+        flex: 1 1 0;
+    }
+
+    .table-stack tbody td[data-cell='shrink'] {
+        flex: none;
+    }
+
+    .table-stack tbody tr:has(> td[data-cell='actions']) {
+        padding-bottom: 0.5rem;
+    }
+
+    .table-stack tbody td[data-cell='actions'] {
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--line);
+    }
+
+    .table-stack tbody td[data-cell='actions'] > div {
+        flex: 1 1 auto;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+
+    .table-stack tbody .btn:not(.btn-link) {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
+
+    .table-stack tbody td[data-cell='actions'] .btn {
+        flex: 1 1 0;
+    }
+}
+
 @layer utilities {
     .hit-area {
         position: relative;

@@ -27,43 +27,45 @@ export function CategoryRow({ category, others, onEdit }: CategoryRowProps) {
         <SortableRow id={category.id} label={category.name}>
             {({ containerProps, handleProps }) => (
                 <tr ref={containerProps.ref} style={containerProps.style} className={containerProps.className}>
-                    <td className="w-10 pr-0">
+                    <td data-cell="shrink" className="w-10 pr-0">
                         <SortableHandle handleProps={handleProps} />
                     </td>
 
-                    <td>
-                        <div className="flex flex-col">
+                    <td data-cell="primary">
+                        <div className="flex min-w-0 flex-col">
                             <span className="font-semibold">{category.name}</span>
-                            <span className="text-ink-3 text-xs">/{category.slug}</span>
+                            <span className="text-ink-3 truncate text-xs">/{category.slug}</span>
                         </div>
                     </td>
 
-                    <td>
+                    <td data-cell="shrink">
                         <Badge count tone={category.productsCount > 0 ? 'neutral' : 'warning'}>
                             {category.productsCount === 1 ? '1 producto' : `${category.productsCount} productos`}
                         </Badge>
                     </td>
 
-                    <td className="text-right">
+                    <td data-cell="actions" className="text-right">
                         <div className="flex flex-wrap items-end justify-end gap-1">
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="btn-square text-ink-2"
+                                className="text-ink-2 md:btn-square"
                                 onClick={onEdit}
                                 aria-label={`Editar ${category.name}`}
                             >
                                 <Icon icon={cilPencil} />
+                                <span className="md:sr-only">Editar</span>
                             </Button>
 
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="btn-square text-ink-2 hover:text-error"
+                                className="text-ink-2 hover:text-error md:btn-square"
                                 onClick={remove}
                                 aria-label={`Eliminar ${category.name}`}
                             >
                                 <Icon icon={cilTrash} />
+                                <span className="md:sr-only">Eliminar</span>
                             </Button>
                         </div>
                         {canReassign ? (

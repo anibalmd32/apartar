@@ -79,12 +79,20 @@ export default function CategoriesIndex({ categories }: CategoriesPageProps) {
                     Arrastra las filas para cambiar el orden y pulsa «Guardar orden».
                 </p>
 
-                <SectionCard flush aria-label="Tus categorías" className="overflow-hidden">
+                <SectionCard
+                    flush
+                    aria-label="Tus categorías"
+                    className={
+                        order.length === 0
+                            ? 'overflow-hidden'
+                            : 'max-md:overflow-visible max-md:border-0 max-md:bg-transparent max-md:shadow-none md:overflow-hidden'
+                    }
+                >
                     {order.length === 0 ? (
                         <p className="text-ink-3 p-5 text-sm">Todavía no tienes ninguna. Añade la primera arriba.</p>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="table min-w-[640px]">
+                        <div className="table-stack md:overflow-x-auto">
+                            <table className="table md:min-w-[640px]">
                                 <thead>
                                     <tr>
                                         <th scope="col">
