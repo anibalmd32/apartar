@@ -1,7 +1,5 @@
 import { Alert } from '@/components/ui/alert';
 import { BackLink } from '@/components/ui/back-link';
-import { Button } from '@/components/ui/button';
-import { Modal } from '@/components/ui/modal';
 import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { InvoiceList } from '@/features/platform/components/InvoiceList';
@@ -11,11 +9,11 @@ import { RiskBadges } from '@/features/platform/components/OrganizationRowParts'
 import { ReactivateDialog } from '@/features/platform/components/ReactivateDialog';
 import { type CourtesyState, SubscriptionActions } from '@/features/platform/components/SubscriptionActions';
 import { SupportAccessPanel } from '@/features/platform/components/SupportAccessPanel';
+import { SuspendDialog } from '@/features/platform/components/SuspendDialog';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type InvoiceRow, type OrganizationRow, type SupportGrantRow } from '@/types/platform';
 import { cilBan, cilCheckCircle, cilSwapHorizontal } from '@coreui/icons';
-import { router } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
 interface ShowProps {
@@ -162,30 +160,7 @@ export default function OrganizationShow({
                     />
                 </div>
             </div>
-            <Modal
-                open={confirming}
-                onClose={() => setConfirming(false)}
-                size="md"
-                title={`Suspender ${organization.name}`}
-                description="Sus catálogos se despublican y su equipo solo podrá cobrar y aprobar comprobantes hasta que pague. Sus clientes no pierden nada."
-                actions={
-                    <>
-                        <Button variant="ghost" onClick={() => setConfirming(false)}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            variant="danger"
-                            onClick={() =>
-                                router.post(pf(`/organizaciones/${organization.slug}/pausar`), {}, { onFinish: () => setConfirming(false) })
-                            }
-                        >
-                            Suspender
-                        </Button>
-                    </>
-                }
-            >
-                <p className="text-ink-2 text-sm">Queda en la auditoría con tu nombre.</p>
-            </Modal>
+            <SuspendDialog open={confirming} onClose={() => setConfirming(false)} slug={organization.slug} name={organization.name} />
             <ReactivateDialog
                 open={reactivating}
                 onClose={() => setReactivating(false)}

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { cilCheckCircle, cilClock, cilInfo, cilWarning } from '@coreui/icons';
+import { cilCheckCircle, cilInfo, cilWarning } from '@coreui/icons';
 import { type ReactNode } from 'react';
 import { Icon } from './icon';
 
@@ -15,7 +15,7 @@ const TONES: Record<AlertTone, string> = {
 const ICONS: Record<AlertTone, string[]> = {
     info: cilInfo,
     success: cilCheckCircle,
-    warning: cilClock,
+    warning: cilWarning,
     error: cilWarning,
 };
 

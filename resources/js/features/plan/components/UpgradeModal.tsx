@@ -38,7 +38,7 @@ export function UpgradeModal({
             description="El cambio es inmediato: los nuevos límites se aplican apenas confirmes."
             actions={
                 <>
-                    <Button variant="ghost" onClick={onClose}>
+                    <Button variant="secondary" onClick={onClose}>
                         Ahora no
                     </Button>
                     <Button

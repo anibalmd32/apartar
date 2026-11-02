@@ -17,7 +17,7 @@ const DEVICES: readonly { value: Device; label: string; icon: string[] }[] = [
 
 function DeviceToggle({ value, onChange }: { value: Device; onChange: (device: Device) => void }) {
     return (
-        <div role="group" aria-label="Ver como en" className="join self-start">
+        <div role="group" aria-label="Ver como en" className="join self-start max-sm:hidden">
             {DEVICES.map((device) => (
                 <button
                     key={device.value}
@@ -43,7 +43,7 @@ function PreviewBody({ source, device }: { source: PreviewSource; device: Device
                 <Alert tone="warning">Para publicarlo todavía falta {listOf(missing)}. Así se vería hoy; complétalo antes de publicarlo.</Alert>
             ) : null}
 
-            <div className="bg-base-200 border-line rounded-2xl border p-4">
+            <div className="bg-base-200 border-line rounded-2xl border p-4 max-sm:p-2">
                 <div
                     data-testid="product-preview-frame"
                     data-device={device}

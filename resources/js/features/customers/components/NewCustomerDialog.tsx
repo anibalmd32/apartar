@@ -20,7 +20,7 @@ export function NewCustomerDialog({ open, onClose }: NewCustomerDialogProps) {
     };
 
     const submit = () => {
-        form.post(bo('/clientes'), { preserveScroll: true, onSuccess: () => form.reset() });
+        form.post(bo('/clientes'), { preserveScroll: true, onSuccess: close });
     };
 
     return (
@@ -32,7 +32,7 @@ export function NewCustomerDialog({ open, onClose }: NewCustomerDialogProps) {
             description="Agrega a alguien que te compra por fuera del catálogo. Luego puedes crearle apartados desde su ficha."
             actions={
                 <>
-                    <button type="button" className="btn btn-ghost" onClick={close}>
+                    <button type="button" className="btn" onClick={close}>
                         Cancelar
                     </button>
                     <button type="button" className="btn btn-primary" onClick={submit} disabled={form.processing}>

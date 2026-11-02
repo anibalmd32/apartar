@@ -32,7 +32,7 @@ vi.mock('@inertiajs/react', async () => {
                 options?.onSuccess?.();
             };
 
-            return { data, setData, reset: () => setState(defaults), errors: {}, processing: false, post: send };
+            return { data, setData, reset: () => setState(defaults), clearErrors: vi.fn(), errors: {}, processing: false, post: send };
         },
     };
 });
@@ -83,7 +83,7 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
     vi.mocked(fetch).mockImplementation(
         async () => new Response(JSON.stringify({ preview: { ...PREVIEW, unallocated: '$10,00', unallocatedCents: 1_000 } }), { status: 200 }),
     );
-    withQueries(<ManualPaymentForm options={OPTIONS} />);
+    withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
     expect(screen.getByLabelText('Moneda')).toHaveValue('VES');
@@ -126,7 +126,7 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
 
 it('tras registrar, el formulario vuelve a empezar con otra clave', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
-    withQueries(<ManualPaymentForm options={OPTIONS} />);
+    withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
     const record = async () => {
         fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
         fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30.00' } });
@@ -155,7 +155,7 @@ it('pide confirmar una tasa de más de 30 días y manda su publicación', async 
             ? new Response(JSON.stringify({ rate: null }), { status: 200 })
             : new Response(JSON.stringify({ preview: { ...PREVIEW, staleRate } }), { status: 200 }),
     );
-    withQueries(<ManualPaymentForm options={OPTIONS} />);
+    withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
     chooseBank('Banesco');
@@ -178,7 +178,7 @@ it('pide confirmar una tasa de más de 30 días y manda su publicación', async 
 
 it('pide banco y referencia solo a los métodos que los llevan y manda el comprobante como formulario', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
-    withQueries(<ManualPaymentForm options={OPTIONS} />);
+    withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
     const record = screen.getByRole('button', { name: 'Registrar el pago' });
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
@@ -206,7 +206,7 @@ it('pide banco y referencia solo a los métodos que los llevan y manda el compro
 
 it('no deja registrar con un comprobante de más del máximo', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
-    withQueries(<ManualPaymentForm options={OPTIONS} />);
+    withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30.00' } });

@@ -60,7 +60,7 @@ export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySugge
             footnote={remainingLabel(suggestion.remaining)}
             actions={
                 <>
-                    <Button variant="ghost" onClick={onDiscard}>
+                    <Button variant="secondary" onClick={onDiscard}>
                         Descartar
                     </Button>
                     <Button onClick={use}>Usar sugerencia</Button>

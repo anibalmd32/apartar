@@ -98,9 +98,10 @@ export function useLeaveGuard(dirty: boolean, copy: LeaveGuardCopy): ReactNode {
             onClose={() => setPending(null)}
             title={copy.title}
             size="md"
+            tone="danger"
             actions={
                 <>
-                    <Button variant="ghost" onClick={() => setPending(null)}>
+                    <Button variant="secondary" onClick={() => setPending(null)}>
                         Seguir editando
                     </Button>
                     <Button variant="danger" onClick={leave}>

@@ -1,6 +1,5 @@
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Modal } from '@/components/ui/modal';
 import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { CancelLayawayDialog } from '@/features/layaway/components/CancelLayawayDialog';
@@ -10,6 +9,7 @@ import { InstallmentPlan, LayawaySummary } from '@/features/layaway/components/L
 import { AllocationEditor } from '@/features/receipts/components/AllocationEditor';
 import { ManualPaymentForm } from '@/features/receipts/components/ManualPaymentForm';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
+import { paymentSuggestions } from '@/features/receipts/lib/payment-suggestions';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { type BackofficeLayawayShowProps } from '@/types/layaway-backoffice';
@@ -101,16 +101,14 @@ export default function LayawayShow({
             </div>
 
             {manualPayment !== null ? (
-                <Modal
+                <ManualPaymentForm
+                    options={manualPayment}
                     open={paying}
                     onClose={() => setPaying(false)}
                     title="Registrar pago manual"
                     description={`${layaway.code}${customer !== null ? ` · ${customer.fullName}` : ''}. Úsalo para pagos que recibiste por fuera del portal; puedes adjuntar el comprobante.`}
-                >
-                    <section aria-label="Registrar un pago">
-                        <ManualPaymentForm options={manualPayment} />
-                    </section>
-                </Modal>
+                    suggestions={paymentSuggestions(layaway, installments)}
+                />
             ) : null}
             {layaway.cancelUrl !== null ? (
                 <CancelLayawayDialog cancelUrl={layaway.cancelUrl} paid={layaway.paid} open={cancelling} onClose={() => setCancelling(false)} />

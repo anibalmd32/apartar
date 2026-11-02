@@ -335,6 +335,13 @@
         opacity: 0.45;
     }
 
+    .btn.btn-error:is(:disabled, [disabled], [aria-disabled='true']):not(.btn-ghost) {
+        background-color: var(--surface-2);
+        border-color: var(--line-strong);
+        color: var(--ink-3);
+        opacity: 1;
+    }
+
     .btn-sm {
         --fontsize: 0.8125rem;
     }

@@ -7,7 +7,7 @@ import { expect, it, vi } from 'vitest';
 const post = vi.fn();
 
 vi.mock('@inertiajs/react', () => ({
-    router: { post: (...args: unknown[]) => post(...args) },
+    router: { visit: (...args: unknown[]) => post(...args) },
     Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
         <a href={href} className={className}>
             {children}
@@ -72,7 +72,7 @@ it('enseña el techo de cada consumo, el perfil y confirma antes de suspender', 
 
     const buttons = screen.getAllByRole('button', { name: 'Suspender' });
     fireEvent.click(buttons[buttons.length - 1]!);
-    expect(post).toHaveBeenCalledWith('/plataforma/organizaciones/tecno-store/pausar', {}, expect.any(Object));
+    expect(post).toHaveBeenCalledWith('/plataforma/organizaciones/tecno-store/pausar', expect.objectContaining({ method: 'post' }));
 });
 
 it('suspender no es un botón rojo relleno junto a cambiar plan y en el celular va al menú de más acciones', () => {

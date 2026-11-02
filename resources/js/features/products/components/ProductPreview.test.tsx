@@ -138,6 +138,14 @@ it('cambia el ancho entre celular y computadora', () => {
     expect(within(dialog).getByRole('button', { name: 'Computadora' })).toHaveAttribute('aria-pressed', 'true');
 });
 
+it('en el celular no ofrece el cambio entre celular y computadora', () => {
+    render(<Harness />);
+
+    const dialog = openPreview();
+
+    expect(within(dialog).getByRole('group', { name: 'Ver como en' })).toHaveClass('max-sm:hidden');
+});
+
 it('avisa de lo que falta para publicar sin impedir la vista previa', () => {
     render(<Harness withPhoto={false} description="<p></p>" categoryName="" plan={null} />);
 

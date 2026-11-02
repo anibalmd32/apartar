@@ -54,7 +54,7 @@ export function useManageCustomer({ customer, manage }: ManageCustomerProps): { 
                 title="Editar cliente"
                 actions={
                     <>
-                        <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>
+                        <button type="button" className="btn" onClick={() => setEditing(false)}>
                             Cancelar
                         </button>
                         <button type="button" className="btn btn-primary" onClick={save} disabled={form.processing}>

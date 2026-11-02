@@ -129,14 +129,14 @@ it('la fusión se confirma escribiendo el documento de la absorbida', async () =
     });
 
     expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/backoffice/clientes/7/fusionar/candidatas?q=mar%C3%ADa');
-    expect(await screen.findByText('Movería 1 apartados y 2 comprobantes.')).toBeInTheDocument();
+    expect(await screen.findByText('Movería 1 apartado y 2 comprobantes.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /María G\. · V-33\.333\.333/ })).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: /María Gonzales · V-22\.222\.222/ }));
     const merge = screen.getByRole('button', { name: 'Fusionar las fichas' });
     expect(merge).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('Para confirmar, escribe el documento V-22.222.222'), { target: { value: 'V-22.222.222' } });
+    fireEvent.change(screen.getByLabelText('Para confirmar, escribe su documento'), { target: { value: 'V-22.222.222' } });
     fireEvent.click(merge);
 
     expect(post).toHaveBeenCalledWith('/backoffice/clientes/7/fusionar', { absorbed: 9, confirmation: 'V-22.222.222' });

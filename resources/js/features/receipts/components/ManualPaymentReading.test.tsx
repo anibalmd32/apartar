@@ -47,7 +47,7 @@ afterEach(() => {
 function renderForm() {
     return render(
         <AppRoot>
-            <ManualPaymentForm options={OPTIONS} />
+            <ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />
         </AppRoot>,
     );
 }

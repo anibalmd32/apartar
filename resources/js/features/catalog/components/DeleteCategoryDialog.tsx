@@ -49,14 +49,15 @@ export function DeleteCategoryDialog({ category, others, open, onClose }: Delete
             open={open}
             onClose={onClose}
             size="md"
+            tone="danger"
             title={`Eliminar «${category.name}»`}
             description={`Esta categoría tiene ${count}. Elige a cuál moverlos antes de eliminarla.`}
             actions={
                 <>
-                    <Button variant="secondary" onClick={onClose}>
+                    <Button variant="ghost" onClick={onClose}>
                         Cancelar
                     </Button>
-                    <Button variant="ghost" onClick={() => reassign(false)} disabled={target === '' || sending}>
+                    <Button variant="secondary" onClick={() => reassign(false)} disabled={target === '' || sending}>
                         Solo mover
                     </Button>
                     <Button variant="danger" onClick={() => reassign(true)} disabled={target === ''} loading={sending}>

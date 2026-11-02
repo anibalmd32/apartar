@@ -55,9 +55,10 @@ export function ConfirmDialog({
             title={title}
             description={description}
             size="md"
+            tone={tone === 'danger' ? 'danger' : 'default'}
             actions={
                 <>
-                    <Button variant="ghost" onClick={onClose} disabled={processing}>
+                    <Button variant="secondary" onClick={onClose} disabled={processing}>
                         Volver
                     </Button>
                     <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={confirm} loading={processing} disabled={confirmDisabled}>
