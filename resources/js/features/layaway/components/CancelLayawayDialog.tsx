@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { type MoneyView } from '@/types/money';
@@ -10,10 +9,11 @@ import { useId, useState, type FormEventHandler } from 'react';
 interface CancelLayawayDialogProps {
     cancelUrl: string;
     paid: MoneyView;
+    open: boolean;
+    onClose: () => void;
 }
 
-export function CancelLayawayDialog({ cancelUrl, paid }: CancelLayawayDialogProps) {
-    const [open, setOpen] = useState(false);
+export function CancelLayawayDialog({ cancelUrl, paid, open, onClose }: CancelLayawayDialogProps) {
     const [acknowledged, setAcknowledged] = useState(false);
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({ reason: '' });
     const titleId = useId();
@@ -21,7 +21,7 @@ export function CancelLayawayDialog({ cancelUrl, paid }: CancelLayawayDialogProp
     const hasPayments = paid.cents > 0;
 
     const close = () => {
-        setOpen(false);
+        onClose();
         setAcknowledged(false);
         reset();
         clearErrors();
@@ -34,11 +34,6 @@ export function CancelLayawayDialog({ cancelUrl, paid }: CancelLayawayDialogProp
 
     return (
         <>
-            <Button variant="ghost" onClick={() => setOpen(true)}>
-                <Icon icon={cilBan} />
-                Cancelar apartado
-            </Button>
-
             {open ? (
                 <div className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby={titleId}>
                     <form className="modal-box flex max-w-[560px] flex-col p-0" onSubmit={submit}>

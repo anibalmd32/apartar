@@ -3,6 +3,7 @@ import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
+import { PAGE_ACTIONS_CLASS, PAGE_HEADER_CLASS, PAGE_TITLE_CLASS } from '@/components/ui/page-actions';
 import { PlatformBell } from '@/features/platform/components/PlatformBell';
 import { useMailActivity } from '@/features/platform/mail/useMailActivity';
 import { pf } from '@/lib/surfaces';
@@ -92,13 +93,13 @@ export default function PlatformLayout({ title, description, actions, back, chil
 
                 <main className="flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12">
                     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 lg:gap-6">
-                        <section className="flex flex-col gap-3.5 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
-                            <div className="flex min-w-0 flex-col gap-1.5">
+                        <section className={PAGE_HEADER_CLASS}>
+                            <div className={PAGE_TITLE_CLASS}>
                                 {back}
                                 <h1 className="text-h1 max-lg:text-[22px]">{title}</h1>
                                 {description ? <div className="text-ink-2 text-sm">{description}</div> : null}
                             </div>
-                            {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+                            {actions ? <div className={PAGE_ACTIONS_CLASS}>{actions}</div> : null}
                         </section>
 
                         {children}

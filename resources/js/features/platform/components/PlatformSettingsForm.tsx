@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { pf } from '@/lib/surfaces';
@@ -39,9 +40,11 @@ export function PlatformSettingsForm({ settings }: { settings: readonly Platform
                     ))}
                 </div>
                 {errors.settings ? <p className="text-error text-sm">{errors.settings}</p> : null}
-                <Button type="submit" className="self-start" loading={form.processing} disabled={!form.isDirty}>
-                    Guardar ajustes
-                </Button>
+                <FormActionBar sticky={form.isDirty}>
+                    <Button type="submit" loading={form.processing} disabled={!form.isDirty}>
+                        Guardar ajustes
+                    </Button>
+                </FormActionBar>
             </form>
         </SectionCard>
     );

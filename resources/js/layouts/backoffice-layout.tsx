@@ -7,6 +7,7 @@ import { RatePill } from '@/components/shell/rate-pill';
 import { menuItemClass, UserMenu } from '@/components/shell/user-menu';
 import { BackLink } from '@/components/ui/back-link';
 import { Icon } from '@/components/ui/icon';
+import { PAGE_ACTIONS_CLASS, PAGE_HEADER_CLASS, PAGE_TITLE_CLASS } from '@/components/ui/page-actions';
 import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { PastDueBanner } from '@/features/plan/components/PastDueBanner';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
@@ -159,8 +160,8 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
 
                         <UpgradePrompt />
 
-                        <section className="flex flex-col gap-3.5 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
-                            <div className="flex min-w-0 flex-col gap-1.5">
+                        <section className={PAGE_HEADER_CLASS}>
+                            <div className={PAGE_TITLE_CLASS}>
                                 {back ? <BackLink href={back.href}>{back.label}</BackLink> : null}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <h1 className="text-h1 max-lg:text-[22px]">{title}</h1>
@@ -168,7 +169,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                                 </div>
                                 {description ? <div className="text-ink-2 text-sm">{description}</div> : null}
                             </div>
-                            {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+                            {actions ? <div className={PAGE_ACTIONS_CLASS}>{actions}</div> : null}
                         </section>
 
                         {children}

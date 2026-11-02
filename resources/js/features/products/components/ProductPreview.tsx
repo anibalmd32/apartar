@@ -6,7 +6,7 @@ import { ProductDetailView } from '@/features/catalog/components/ProductDetailVi
 import { listOf, missingToPublish, previewContent, previewOffer, type PreviewSource } from '@/features/products/lib/preview';
 import { cn } from '@/lib/utils';
 import { cilCart, cilScreenDesktop, cilScreenSmartphone } from '@coreui/icons';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 type Device = 'mobile' | 'desktop';
 
@@ -70,27 +70,19 @@ function PreviewBody({ source, device }: { source: PreviewSource; device: Device
     );
 }
 
-/**
- * The "Vista previa" button and the dialog that shows the product, with the values still unsaved, as the public catalog shows it.
- */
-export function ProductPreview({ source }: { source: () => PreviewSource }) {
-    const [open, setOpen] = useState(false);
+export function useProductPreview(source: () => PreviewSource): { open: () => void; dialog: ReactNode } {
+    const [visible, setVisible] = useState(false);
 
-    return (
-        <>
-            <Button variant="ghost" onClick={() => setOpen(true)} aria-haspopup="dialog">
-                <Icon icon={cilScreenDesktop} />
-                Vista previa
-            </Button>
-
-            <PreviewDialog
-                open={open}
-                onClose={() => setOpen(false)}
-                source={open ? source() : null}
-                description="Con lo que tienes escrito ahora, aunque no lo hayas guardado."
-            />
-        </>
+    const dialog = (
+        <PreviewDialog
+            open={visible}
+            onClose={() => setVisible(false)}
+            source={visible ? source() : null}
+            description="Con lo que tienes escrito ahora, aunque no lo hayas guardado."
+        />
     );
+
+    return { open: () => setVisible(true), dialog };
 }
 
 interface PreviewDialogProps {

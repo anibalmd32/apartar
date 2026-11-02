@@ -1,4 +1,5 @@
-import { ManageCustomer } from '@/features/customers/components/ManageCustomer';
+import { PageActions } from '@/components/ui/page-actions';
+import { useManageCustomer } from '@/features/customers/components/ManageCustomer';
 import { profileProps } from '@/test/t065-fixtures';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
@@ -26,6 +27,17 @@ vi.mock('@inertiajs/react', async () => {
         },
     };
 });
+
+function ManageCustomer(props: Parameters<typeof useManageCustomer>[0]) {
+    const manage = useManageCustomer(props);
+
+    return (
+        <>
+            <PageActions actions={manage.actions} />
+            {manage.dialogs}
+        </>
+    );
+}
 
 it('edita nombre y apellido por separado, cédula, teléfono y correo', () => {
     const { customer, manage } = profileProps();

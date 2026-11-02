@@ -3,11 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { type FilterTab, FilterTabs } from '@/components/ui/filter-tabs';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
+import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { CustomerLayaways } from '@/features/customers/components/CustomerLayaways';
 import { BalanceRow, ContactStrip } from '@/features/customers/components/CustomerProfile';
 import { CustomerReceipts } from '@/features/customers/components/CustomerReceipts';
-import { ManageCustomer } from '@/features/customers/components/ManageCustomer';
+import { useManageCustomer } from '@/features/customers/components/ManageCustomer';
 import { MergeCustomerDialog } from '@/features/customers/components/MergeCustomerDialog';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
@@ -23,6 +24,8 @@ export default function CustomerShow(props: CustomerShowProps) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const { customer, totals, layaways, lists } = props;
     const [tab, setTab] = useState<Tab>('layaways');
+    const manage = useManageCustomer({ customer, manage: props.manage });
+    const chat = props.conversationId;
 
     const tabs: FilterTab<Tab>[] = [
         { value: 'layaways', label: 'Apartados', count: layaways.active.length },
@@ -46,23 +49,30 @@ export default function CustomerShow(props: CustomerShowProps) {
                 </>
             }
             actions={
-                <>
-                    <Link href={bo(`/apartados/nuevo?cliente=${customer.id}`)} className="btn btn-secondary">
-                        <Icon icon={cilPlus} />
-                        Nuevo apartado
-                    </Link>
-                    <Link href={bo(`/avisos?cliente=${customer.id}`)} className="btn btn-secondary">
-                        <Icon icon={cilBell} />
-                        Notificar
-                    </Link>
-                    {props.conversationId !== null ? (
-                        <Link href={bo(`/chat/${props.conversationId}`)} className="btn btn-primary">
-                            <Icon icon={cilChatBubble} />
-                            Abrir la conversación
-                        </Link>
-                    ) : null}
-                    <ManageCustomer customer={customer} manage={props.manage} />
-                </>
+                <PageActions
+                    actions={[
+                        {
+                            label: 'Nuevo apartado',
+                            icon: cilPlus,
+                            href: bo(`/apartados/nuevo?cliente=${customer.id}`),
+                            variant: 'soft',
+                            primary: chat === null,
+                        },
+                        { label: 'Notificar', icon: cilBell, href: bo(`/avisos?cliente=${customer.id}`), variant: 'soft' },
+                        ...(chat !== null
+                            ? [
+                                  {
+                                      label: 'Abrir la conversación',
+                                      icon: cilChatBubble,
+                                      href: bo(`/chat/${chat}`),
+                                      variant: 'primary' as const,
+                                      primary: true,
+                                  },
+                              ]
+                            : []),
+                        ...manage.actions,
+                    ]}
+                />
             }
         >
             {errors.customer !== undefined ? <Alert tone="error">{errors.customer}</Alert> : null}
@@ -141,6 +151,7 @@ export default function CustomerShow(props: CustomerShowProps) {
                     </section>
                 </div>
             </div>
+            {manage.dialogs}
         </BackofficeLayout>
     );
 }

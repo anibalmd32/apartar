@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CheckboxField } from '@/components/ui/checkbox-field';
 import { DocumentField } from '@/components/ui/document-field';
 import { FileField } from '@/components/ui/file-field';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 import { bo } from '@/lib/surfaces';
@@ -32,7 +33,7 @@ interface OrganizationIdentityFormProps {
 }
 
 export function OrganizationIdentityForm({ identity, brand }: OrganizationIdentityFormProps) {
-    const { data, setData, post, processing, errors } = useForm<IdentityForm>({
+    const { data, setData, post, processing, errors, isDirty } = useForm<IdentityForm>({
         _method: 'put',
         name: identity.name,
         slug: identity.slug,
@@ -163,9 +164,11 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                 hint="Con la vitrina encendida, cualquiera que abra tu enlace ve tus catálogos publicados."
             />
 
-            <Button type="submit" loading={processing} className="self-start">
-                Guardar identidad
-            </Button>
+            <FormActionBar sticky={isDirty}>
+                <Button type="submit" loading={processing}>
+                    Guardar identidad
+                </Button>
+            </FormActionBar>
         </form>
     );
 }

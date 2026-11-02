@@ -1,8 +1,8 @@
 import { Alert } from '@/components/ui/alert';
 import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
+import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { InvoiceList } from '@/features/platform/components/InvoiceList';
 import { OrganizationStatusBadge, PlanPill, SubscriptionStatusBadge } from '@/features/platform/components/labels';
@@ -96,24 +96,25 @@ export default function OrganizationShow({
             }
             back={<BackLink href={pf('/organizaciones')}>Organizaciones</BackLink>}
             actions={
-                <>
-                    <a href="#suscripcion" className="btn">
-                        <Icon icon={cilSwapHorizontal} />
-                        Cambiar plan
-                    </a>
-                    {suspendable ? (
-                        <Button variant="danger" onClick={() => setConfirming(true)}>
-                            <Icon icon={cilBan} />
-                            Suspender
-                        </Button>
-                    ) : null}
-                    {reactivable ? (
-                        <Button onClick={() => setReactivating(true)}>
-                            <Icon icon={cilCheckCircle} />
-                            Reactivar
-                        </Button>
-                    ) : null}
-                </>
+                <PageActions
+                    actions={[
+                        { label: 'Cambiar plan', icon: cilSwapHorizontal, href: '#suscripcion', primary: !reactivable },
+                        ...(suspendable
+                            ? [{ label: 'Suspender', icon: cilBan, onClick: () => setConfirming(true), variant: 'ghost' as const, danger: true }]
+                            : []),
+                        ...(reactivable
+                            ? [
+                                  {
+                                      label: 'Reactivar',
+                                      icon: cilCheckCircle,
+                                      onClick: () => setReactivating(true),
+                                      variant: 'primary' as const,
+                                      primary: true,
+                                  },
+                              ]
+                            : []),
+                    ]}
+                />
             }
         >
             {overdue ? (

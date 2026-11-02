@@ -1,8 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
+import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { CancelLayawayDialog } from '@/features/layaway/components/CancelLayawayDialog';
 import { LayawayActivity } from '@/features/layaway/components/LayawayActivity';
@@ -14,7 +13,7 @@ import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { type BackofficeLayawayShowProps } from '@/types/layaway-backoffice';
-import { cilPlus } from '@coreui/icons';
+import { cilBan, cilCheckCircle, cilPlus } from '@coreui/icons';
 import { useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -30,6 +29,7 @@ export default function LayawayShow({
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const delivery = useForm({});
     const [paying, setPaying] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
 
     return (
         <BackofficeLayout
@@ -38,20 +38,36 @@ export default function LayawayShow({
             back={{ href: bo('/cobranza'), label: 'Cobranza' }}
             description={layaway.createdAt !== null ? `Creado el ${layaway.createdAt}` : undefined}
             actions={
-                <>
-                    {layaway.cancelUrl !== null ? <CancelLayawayDialog cancelUrl={layaway.cancelUrl} paid={layaway.paid} /> : null}
-                    {layaway.deliverUrl !== null ? (
-                        <Button loading={delivery.processing} onClick={() => delivery.post(layaway.deliverUrl ?? '', { preserveScroll: true })}>
-                            Marcar entregado
-                        </Button>
-                    ) : null}
-                    {manualPayment !== null ? (
-                        <Button onClick={() => setPaying(true)}>
-                            <Icon icon={cilPlus} />
-                            Registrar pago
-                        </Button>
-                    ) : null}
-                </>
+                <PageActions
+                    actions={[
+                        ...(layaway.cancelUrl !== null
+                            ? [
+                                  {
+                                      label: 'Cancelar apartado',
+                                      icon: cilBan,
+                                      onClick: () => setCancelling(true),
+                                      variant: 'ghost' as const,
+                                      danger: true,
+                                  },
+                              ]
+                            : []),
+                        ...(layaway.deliverUrl !== null
+                            ? [
+                                  {
+                                      label: 'Marcar entregado',
+                                      icon: cilCheckCircle,
+                                      onClick: () => delivery.post(layaway.deliverUrl ?? '', { preserveScroll: true }),
+                                      loading: delivery.processing,
+                                      variant: 'primary' as const,
+                                      primary: manualPayment === null,
+                                  },
+                              ]
+                            : []),
+                        ...(manualPayment !== null
+                            ? [{ label: 'Registrar pago', icon: cilPlus, onClick: () => setPaying(true), variant: 'primary' as const, primary: true }]
+                            : []),
+                    ]}
+                />
             }
         >
             {layaway.cancellationReason !== null ? (
@@ -95,6 +111,9 @@ export default function LayawayShow({
                         <ManualPaymentForm options={manualPayment} />
                     </section>
                 </Modal>
+            ) : null}
+            {layaway.cancelUrl !== null ? (
+                <CancelLayawayDialog cancelUrl={layaway.cancelUrl} paid={layaway.paid} open={cancelling} onClose={() => setCancelling(false)} />
             ) : null}
         </BackofficeLayout>
     );

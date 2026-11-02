@@ -20,6 +20,10 @@ const SIZES: Record<ButtonSize, string> = {
     lg: 'btn-lg',
 };
 
+export function buttonClass(variant: ButtonVariant = 'primary', size: ButtonSize = 'md'): string {
+    return cn('btn', VARIANTS[variant], SIZES[size]);
+}
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant;
     size?: ButtonSize;
@@ -42,7 +46,7 @@ export function Button({
     return (
         <button
             type={type}
-            className={cn('btn', VARIANTS[variant], SIZES[size], block && 'btn-block', className)}
+            className={cn(buttonClass(variant, size), block && 'btn-block', className)}
             disabled={disabled || loading}
             aria-busy={loading || undefined}
             {...props}

@@ -78,12 +78,12 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         form.transform((current) => ({ ...current, specifications, ...(images.length > 0 ? { images: [...images] } : {}) }));
 
         if (product) {
-            form.put(bo(`/productos/${product.id}`), { preserveScroll: true });
+            form.put(bo(`/productos/${product.id}`), { preserveScroll: true, onSuccess: () => form.setDefaults() });
 
             return;
         }
 
-        form.post(bo('/productos'), { preserveScroll: true, forceFormData: images.length > 0 });
+        form.post(bo('/productos'), { preserveScroll: true, forceFormData: images.length > 0, onSuccess: () => form.setDefaults() });
     };
 
     return { ...form, submit };

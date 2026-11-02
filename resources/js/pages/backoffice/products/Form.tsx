@@ -1,14 +1,16 @@
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
+import { PageActions } from '@/components/ui/page-actions';
 import { ArchiveToggle } from '@/features/products/components/ArchiveToggle';
 import { PendingImagePicker } from '@/features/products/components/PendingImagePicker';
 import { ProductCopyAssistant } from '@/features/products/components/ProductCopyAssistant';
 import { ProductIdentityFields } from '@/features/products/components/ProductIdentityFields';
 import { ProductImageGallery } from '@/features/products/components/ProductImageGallery';
 import { ProductInventoryFields } from '@/features/products/components/ProductInventoryFields';
-import { ProductPreview } from '@/features/products/components/ProductPreview';
+import { useProductPreview } from '@/features/products/components/ProductPreview';
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
 import { SpecificationBuilder } from '@/features/products/components/SpecificationBuilder';
@@ -17,6 +19,7 @@ import { useProductForm } from '@/features/products/hooks/useProductForm';
 import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
 import { type PreviewSource } from '@/features/products/lib/preview';
 import { withSuggestedTags } from '@/features/products/lib/tags';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import {
@@ -27,8 +30,7 @@ import {
     type ProductStatus,
     type TaxonomyOption,
 } from '@/types/product';
-import { cilCheckAlt, cilExternalLink } from '@coreui/icons';
-import { Link } from '@inertiajs/react';
+import { cilCheckAlt, cilExternalLink, cilScreenDesktop } from '@coreui/icons';
 import { type FormEventHandler } from 'react';
 
 interface ProductFormPageProps {
@@ -50,7 +52,7 @@ const STATUS_BADGES: Readonly<Record<ProductStatus, { label: string; tone: 'neut
 const FORM_ID = 'product-form';
 
 export default function ProductForm({ product, defaults, categories, tags, plan, ai }: ProductFormPageProps) {
-    const { data, setData, errors, processing, submit } = useProductForm(defaults, product);
+    const { data, setData, errors, processing, submit, isDirty } = useProductForm(defaults, product);
 
     const sheet = useSpecificationRows(product);
 
@@ -89,6 +91,17 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
         fewLeft: defaults.fewLeft,
     });
 
+    const preview = useProductPreview(previewSource);
+
+    const dirty = isDirty || photos.files.length > 0 || JSON.stringify(sheet.payload()) !== JSON.stringify(product?.specifications ?? []);
+
+    const leaveGuard = useLeaveGuard(dirty && !processing, {
+        title: '¿Salir sin guardar?',
+        description: 'Tienes cambios en este producto que todavía no guardaste. Si sales ahora, se pierden.',
+    });
+
+    const submitLabel = product === null ? 'Crear producto' : 'Guardar cambios';
+
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
 
@@ -104,22 +117,24 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
             back={{ href: bo('/productos'), label: 'Productos' }}
             badge={status === null ? undefined : <Badge tone={status.tone}>{status.label}</Badge>}
             actions={
-                <>
-                    {product?.publicUrl ? (
-                        <a className="btn btn-ghost" href={product.publicUrl} target="_blank" rel="noopener noreferrer">
-                            <Icon icon={cilExternalLink} />
-                            Ver en catálogo
-                        </a>
-                    ) : null}
-                    <ProductPreview source={previewSource} />
-                    <Link className="btn" href={bo('/productos')}>
-                        Cancelar
-                    </Link>
-                    <Button type="submit" form={FORM_ID} loading={processing}>
-                        <Icon icon={cilCheckAlt} />
-                        {product === null ? 'Crear producto' : 'Guardar cambios'}
-                    </Button>
-                </>
+                <PageActions
+                    actions={[
+                        ...(product?.publicUrl
+                            ? [
+                                  {
+                                      label: 'Ver en catálogo',
+                                      icon: cilExternalLink,
+                                      href: product.publicUrl,
+                                      external: true,
+                                      variant: 'ghost' as const,
+                                  },
+                              ]
+                            : []),
+                        { label: 'Vista previa', icon: cilScreenDesktop, onClick: preview.open, variant: 'ghost' },
+                        { label: 'Cancelar', href: bo('/productos'), mobile: 'hidden' },
+                        { label: submitLabel, icon: cilCheckAlt, form: FORM_ID, loading: processing, variant: 'primary', mobile: 'hidden' },
+                    ]}
+                />
             }
         >
             {product?.status === 'archived' ? (
@@ -159,6 +174,13 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
 
                         {product !== null ? <ArchiveToggle productId={product.id} archived={product.status === 'archived'} /> : null}
                     </div>
+
+                    <FormActionBar sticky={product === null || dirty} className="order-6 lg:hidden">
+                        <Button type="submit" loading={processing}>
+                            <Icon icon={cilCheckAlt} />
+                            {submitLabel}
+                        </Button>
+                    </FormActionBar>
                 </form>
 
                 {product === null ? null : (
@@ -167,6 +189,8 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                     </div>
                 )}
             </div>
+            {preview.dialog}
+            {leaveGuard}
         </BackofficeLayout>
     );
 }

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { TextField } from '@/components/ui/text-field';
 import { RateSourceCards } from '@/features/tenancy/components/RateSourceCards';
 import { RATE_DECIMALS, typedAmount } from '@/lib/amount-typing';
@@ -22,7 +23,7 @@ interface ExchangeRateFormData {
 }
 
 export function ExchangeRateForm({ source, manualRate, sourceOptions, rateSources }: ExchangeRateFormProps) {
-    const { data, setData, put, processing, errors } = useForm<ExchangeRateFormData>({
+    const { data, setData, put, processing, errors, isDirty } = useForm<ExchangeRateFormData>({
         exchange_rate_source: source,
         exchange_rate_manual: manualRate === null ? null : amountInput(manualRate),
     });
@@ -60,9 +61,11 @@ export function ExchangeRateForm({ source, manualRate, sourceOptions, rateSource
                 />
             </div>
 
-            <Button type="submit" loading={processing} className="self-start">
-                Guardar fuente
-            </Button>
+            <FormActionBar sticky={isDirty}>
+                <Button type="submit" loading={processing}>
+                    Guardar fuente
+                </Button>
+            </FormActionBar>
         </form>
     );
 }

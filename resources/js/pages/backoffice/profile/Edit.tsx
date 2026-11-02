@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { SectionCard } from '@/components/ui/section-card';
@@ -75,11 +76,11 @@ function ProfileDetails({ profile }: ProfileProps) {
                     autoComplete="email"
                     required
                 />
-                <div className="mt-3 flex justify-end">
+                <FormActionBar sticky={form.isDirty} className="mt-3 lg:justify-end">
                     <Button type="submit" loading={form.processing} disabled={!form.isDirty}>
                         Guardar datos
                     </Button>
-                </div>
+                </FormActionBar>
             </form>
         </SectionCard>
     );
@@ -136,11 +137,11 @@ function PasswordChange() {
                     autoComplete="new-password"
                     required
                 />
-                <div className="mt-3 flex justify-end">
+                <FormActionBar sticky={form.data.current_password !== '' || form.data.password !== ''} className="mt-3 lg:justify-end">
                     <Button type="submit" loading={form.processing} disabled={form.data.current_password === '' || form.data.password === ''}>
                         Cambiar contraseña
                     </Button>
-                </div>
+                </FormActionBar>
             </form>
         </SectionCard>
     );

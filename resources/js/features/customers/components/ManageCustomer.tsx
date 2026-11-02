@@ -1,13 +1,13 @@
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { DocumentField } from '@/components/ui/document-field';
-import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
+import { type PageAction } from '@/components/ui/page-actions';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
 import { type CustomerShowProps } from '@/types/customers';
 import { cilPencil, cilTrash } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 type EditValues = { first_name: string; last_name: string; document_number: string; phone: string; email: string };
 
@@ -16,7 +16,7 @@ interface ManageCustomerProps {
     manage: CustomerShowProps['manage'];
 }
 
-export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
+export function useManageCustomer({ customer, manage }: ManageCustomerProps): { actions: PageAction[]; dialogs: ReactNode } {
     const [editing, setEditing] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const form = useForm<EditValues>({
@@ -32,23 +32,21 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
         form.put(manage.updateUrl, { preserveScroll: true, onSuccess: () => setEditing(false) });
     };
 
-    return (
-        <>
-            <button type="button" className="btn btn-secondary" onClick={() => setEditing(true)}>
-                <Icon icon={cilPencil} />
-                Editar
-            </button>
-            <button
-                type="button"
-                className="btn btn-ghost text-error"
-                onClick={() => setDeleting(true)}
-                disabled={blocked}
-                title={blocked ? 'Tiene apartados en curso: cancélalos o espera a que terminen.' : undefined}
-            >
-                <Icon icon={cilTrash} />
-                Eliminar
-            </button>
+    const actions: PageAction[] = [
+        { label: 'Editar', icon: cilPencil, onClick: () => setEditing(true), variant: 'soft' },
+        {
+            label: 'Eliminar',
+            icon: cilTrash,
+            onClick: () => setDeleting(true),
+            variant: 'ghost',
+            danger: true,
+            disabled: blocked,
+            disabledReason: 'Tiene apartados en curso: cancélalos o espera a que terminen.',
+        },
+    ];
 
+    const dialogs = (
+        <>
             <Modal
                 open={editing}
                 onClose={() => setEditing(false)}
@@ -131,4 +129,6 @@ export function ManageCustomer({ customer, manage }: ManageCustomerProps) {
             />
         </>
     );
+
+    return { actions, dialogs };
 }

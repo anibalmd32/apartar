@@ -1,6 +1,7 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { SelectField } from '@/components/ui/select-field';
@@ -163,21 +164,22 @@ export default function Compose({ available, limits, previewUrl, sendUrl, recipi
 
                         <p className="text-ink-3 mt-2 text-xs">Puedes enviar hasta {hourlyLimit} avisos por hora.</p>
 
-                        <div className="mt-3">
-                            {preview === null ? (
+                        {preview === null ? (
+                            <FormActionBar sticky={title !== '' || body !== ''} className="mt-3">
                                 <Button
                                     disabled={!valid}
                                     loading={busy}
-                                    className="w-full sm:w-auto"
                                     onClick={() => void run(async () => setPreview(await postJson<PushReport>(previewUrl, payload())))}
                                 >
                                     <Icon icon={cilPeople} />
                                     Ver a cuántos llega
                                 </Button>
-                            ) : (
+                            </FormActionBar>
+                        ) : (
+                            <div className="mt-3">
                                 <PushReach report={preview} busy={busy} onConfirm={send} onChange={() => setPreview(null)} />
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </fieldset>
                 </SectionCard>
 

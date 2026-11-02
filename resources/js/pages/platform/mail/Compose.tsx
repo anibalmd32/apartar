@@ -1,5 +1,6 @@
 import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { RichTextField } from '@/components/ui/rich-text-field';
 import { SectionCard } from '@/components/ui/section-card';
@@ -68,12 +69,12 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
                             onChange={(html) => form.setData('body', html)}
                             error={form.errors.body}
                         />
-                        <div className="flex justify-end pt-2">
+                        <FormActionBar sticky={form.isDirty} className="mt-2 lg:justify-end">
                             <Button type="submit" loading={form.processing} disabled={form.processing}>
                                 {form.processing ? null : <Icon icon={cilSend} size={16} />}
                                 Enviar
                             </Button>
-                        </div>
+                        </FormActionBar>
                     </form>
                 </SectionCard>
 

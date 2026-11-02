@@ -216,3 +216,15 @@ it('ofrece reasignar un pago solo cuando hay reparto que editar', () => {
     expect(screen.getByRole('form', { name: 'Reasignar un pago' })).toBeInTheDocument();
     expect(screen.getByLabelText('Importe para la cuota 1')).toHaveValue('30,00');
 });
+
+it('en el celular deja a la vista solo la acción principal y lleva cancelar al menú de más acciones', () => {
+    render(<LayawayShow {...props({ deliverUrl: '/backoffice/apartados/AP-7K3M9QRT/entregar' })} />);
+
+    expect(screen.getByRole('button', { name: 'Marcar entregado' })).toHaveClass('btn-primary', 'max-lg:w-full');
+    expect(screen.getByRole('button', { name: 'Cancelar apartado' })).toHaveClass('btn-ghost', 'text-error', 'max-lg:hidden');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Más acciones' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancelar apartado' }));
+
+    expect(screen.getByRole('dialog', { name: 'Cancelar este apartado' })).toBeInTheDocument();
+});

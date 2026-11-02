@@ -1,4 +1,4 @@
-import { ProductPreview } from '@/features/products/components/ProductPreview';
+import { useProductPreview } from '@/features/products/components/ProductPreview';
 import { usePendingImages } from '@/features/products/hooks/usePendingImages';
 import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
 import { type PreviewSource } from '@/features/products/lib/preview';
@@ -64,7 +64,20 @@ function Harness({ withPhoto = true, ...overrides }: Overrides) {
         ...overrides,
     });
 
-    return <ProductPreview source={source} />;
+    return <Preview source={source} />;
+}
+
+function Preview({ source }: { source: () => PreviewSource }) {
+    const preview = useProductPreview(source);
+
+    return (
+        <>
+            <button type="button" onClick={preview.open}>
+                Vista previa
+            </button>
+            {preview.dialog}
+        </>
+    );
 }
 
 function openPreview() {

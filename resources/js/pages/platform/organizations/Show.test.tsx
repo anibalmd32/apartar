@@ -74,3 +74,26 @@ it('enseña el techo de cada consumo, el perfil y confirma antes de suspender', 
     fireEvent.click(buttons[buttons.length - 1]!);
     expect(post).toHaveBeenCalledWith('/plataforma/organizaciones/tecno-store/pausar', {}, expect.any(Object));
 });
+
+it('suspender no es un botón rojo relleno junto a cambiar plan y en el celular va al menú de más acciones', () => {
+    render(
+        <OrganizationShow
+            organization={organization}
+            invoices={[]}
+            grants={[]}
+            myGrant={null}
+            plans={[]}
+            limits={{ products: 2000, users: 15, catalogs: 50, active_layaways: 2000 }}
+            suspendable
+        />,
+    );
+
+    const suspend = screen.getByRole('button', { name: 'Suspender' });
+    expect(suspend).not.toHaveClass('btn-error');
+    expect(suspend).toHaveClass('btn-ghost', 'text-error', 'max-lg:hidden');
+    expect(screen.getByRole('link', { name: 'Cambiar plan' })).toHaveClass('max-lg:w-full');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Más acciones' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Suspender' })).toHaveClass('text-error');
+});

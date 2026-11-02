@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { NumberField } from '@/components/ui/number-field';
 import { SelectField } from '@/components/ui/select-field';
 import { ReminderOffsetsEditor } from '@/features/tenancy/components/ReminderOffsetsEditor';
@@ -35,7 +36,7 @@ interface OperationSettingsFormProps {
 export function OperationSettingsForm({ settings, definitions }: OperationSettingsFormProps) {
     const offsets = Array.isArray(settings.reminder_offsets_days) ? (settings.reminder_offsets_days as number[]) : [];
 
-    const { data, setData, put, processing, errors } = useForm<SettingsForm>({
+    const { data, setData, put, processing, errors, isDirty } = useForm<SettingsForm>({
         settings: { ...settings, reminder_offsets_days: offsets },
     });
 
@@ -98,9 +99,11 @@ export function OperationSettingsForm({ settings, definitions }: OperationSettin
                 hint={scopeOf('reminder_offsets_days')}
             />
 
-            <Button type="submit" loading={processing} className="self-start">
-                Guardar ajustes
-            </Button>
+            <FormActionBar sticky={isDirty}>
+                <Button type="submit" loading={processing}>
+                    Guardar ajustes
+                </Button>
+            </FormActionBar>
         </form>
     );
 }

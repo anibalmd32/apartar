@@ -1,7 +1,6 @@
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { FileField } from '@/components/ui/file-field';
-import { Icon } from '@/components/ui/icon';
+import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { CatalogProductSorter } from '@/features/catalogs/components/CatalogProductSorter';
@@ -59,18 +58,21 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
                     : 'Una campaña con su propio enlace. Elige qué productos entran, en qué orden se ven y cuándo deja de estar disponible.'
             }
             actions={
-                <>
-                    {selling ? (
-                        <a className="btn btn-ghost" href={catalog.shareUrl} target="_blank" rel="noreferrer">
-                            <Icon icon={cilExternalLink} />
-                            Vista previa
-                        </a>
-                    ) : null}
-                    <Button type="submit" form={FORM_ID} loading={form.processing}>
-                        <Icon icon={cilCheckAlt} />
-                        {catalog === null ? 'Crear catálogo' : 'Guardar cambios'}
-                    </Button>
-                </>
+                <PageActions
+                    actions={[
+                        ...(selling
+                            ? [{ label: 'Vista previa', icon: cilExternalLink, href: catalog.shareUrl, external: true, variant: 'ghost' as const }]
+                            : []),
+                        {
+                            label: catalog === null ? 'Crear catálogo' : 'Guardar cambios',
+                            icon: cilCheckAlt,
+                            form: FORM_ID,
+                            loading: form.processing,
+                            variant: 'primary',
+                            primary: true,
+                        },
+                    ]}
+                />
             }
         >
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
