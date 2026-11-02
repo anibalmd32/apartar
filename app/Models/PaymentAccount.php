@@ -8,6 +8,7 @@ use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Models\Concerns\ReferencesBank;
 use App\Models\Concerns\ReferencesMobilePrefix;
+use App\Support\PhoneNumber;
 use Database\Factories\PaymentAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,20 @@ class PaymentAccount extends Model
     public function carriesMobilePhone(): bool
     {
         return $this->method === PaymentMethod::PagoMovil;
+    }
+
+    public function readableIdentifier(): string
+    {
+        if (! $this->carriesMobilePhone()) {
+            return $this->identifier;
+        }
+
+        return PhoneNumber::tryFromInput($this->identifier)?->formatted() ?? $this->identifier;
+    }
+
+    public function describe(): string
+    {
+        return implode(' · ', array_filter([$this->method->label(), $this->bank, $this->readableIdentifier()]));
     }
 
     /**

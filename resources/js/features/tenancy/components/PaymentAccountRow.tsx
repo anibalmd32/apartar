@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { isPagoMovil, PagoMovilData } from '@/features/catalog/components/PagoMovilData';
+import { formatDocumentNumber } from '@/lib/identity-format';
 import { bo } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
@@ -79,7 +80,8 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
                         <>
                             <p className="text-[15px] font-semibold tracking-wide break-all">{account.identifier}</p>
                             <p className="text-ink-3 text-xs break-words">
-                                {account.identifierLabel} · {account.holderName} · {account.holderDocument}
+                                {account.identifierLabel} · {account.holderName} ·{' '}
+                                <span className="whitespace-nowrap">{formatDocumentNumber(account.holderDocument)}</span>
                             </p>
                         </>
                     )}

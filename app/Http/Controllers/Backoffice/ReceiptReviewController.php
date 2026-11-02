@@ -284,7 +284,7 @@ final class ReceiptReviewController extends Controller
             'id' => (int) $receipt->getKey(),
             'status' => $receipt->status->value,
             'statusLabel' => $receipt->status->label(),
-            'submittedAt' => $receipt->created_at === null ? null : HumanDate::longDateTime($receipt->created_at->setTimezone($timezone)),
+            'submittedAt' => $receipt->created_at === null ? null : HumanDate::dateTime($receipt->created_at->setTimezone($timezone)),
             'paidAt' => $receipt->paid_at->toDateString(),
             'method' => $receipt->payment_method->label(),
             'bank' => $receipt->bank,
@@ -352,7 +352,7 @@ final class ReceiptReviewController extends Controller
     {
         return array_map(fn (Installment $installment): array => [
             'number' => $installment->number,
-            'dueDateLabel' => $installment->due_date->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'dueDateLabel' => HumanDate::short($installment->due_date),
             'amount' => $this->money($installment->amount_cents),
             'paid' => $this->money($installment->paid_cents),
             'status' => $installment->status->value,

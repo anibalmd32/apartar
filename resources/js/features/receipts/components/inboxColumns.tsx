@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { formatAge, formatDeclaredAmount } from '@/features/receipts/lib/inbox-format';
 import { formatDate } from '@/lib/dates';
-import { formatDocumentNumber } from '@/lib/identity-format';
+import { formatAccountIdentifier, formatDocumentNumber } from '@/lib/identity-format';
 import { RECEIPT_TONES as STATUS_TONES } from '@/lib/status-tones';
 import { type DataTableColumn } from '@/types/data-table';
 import { type ReceiptInboxRow } from '@/types/receipt';
@@ -81,7 +81,7 @@ function AccountCell({ row }: { row: ReceiptInboxRow }) {
                 {account.methodLabel}
                 {account.bank !== null ? ` · ${account.bank}` : ''}
             </span>
-            <span className="text-ink-3 text-xs">{account.identifier}</span>
+            <span className="text-ink-3 text-xs whitespace-nowrap">{formatAccountIdentifier(account)}</span>
             {account.isActive ? null : (
                 <Badge tone="warning" outline>
                     Cuenta desactivada

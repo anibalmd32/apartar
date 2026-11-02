@@ -1,4 +1,4 @@
-import { formatDocumentNumber, formatPhone, NO_DOCUMENT, phoneAreaCode } from '@/lib/identity-format';
+import { formatAccountIdentifier, formatDocumentNumber, formatPhone, NO_DOCUMENT, phoneAreaCode } from '@/lib/identity-format';
 import { describe, expect, it } from 'vitest';
 import cases from './identity-format.cases.json';
 
@@ -74,5 +74,17 @@ describe('una ficha sin documento', () => {
     it('se muestra como sin cédula', () => {
         expect(formatDocumentNumber(null)).toBe(NO_DOCUMENT);
         expect(NO_DOCUMENT).toBe('Sin cédula');
+    });
+});
+
+describe('el dato de una cuenta de cobro', () => {
+    it('lee el teléfono del pago móvil con el formato de siempre', () => {
+        expect(formatAccountIdentifier({ method: 'pago_movil', identifier: '04141234567' })).toBe('0414-1234567');
+        expect(formatAccountIdentifier({ method: 'pago_movil', identifier: '+584141234567' })).toBe('0414-1234567');
+    });
+
+    it('deja igual el correo de Zelle y el número de cuenta', () => {
+        expect(formatAccountIdentifier({ method: 'zelle', identifier: 'tienda@zelle.test' })).toBe('tienda@zelle.test');
+        expect(formatAccountIdentifier({ method: 'transferencia', identifier: '01020123456789012345' })).toBe('01020123456789012345');
     });
 });

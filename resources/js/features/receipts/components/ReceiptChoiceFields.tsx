@@ -1,6 +1,7 @@
 import { FieldError } from '@/components/ui/field-error';
 import { IconChip } from '@/components/ui/icon-chip';
 import { PAYMENT_METHOD_ICONS } from '@/features/catalog/components/PaymentMethodsCard';
+import { formatAccountIdentifier } from '@/lib/identity-format';
 import { cn } from '@/lib/utils';
 import { type PaymentAccountView } from '@/types/payment';
 import { type ReceiptCurrencyOption } from '@/types/receipt';
@@ -52,7 +53,7 @@ export function PaymentAccountChoice({ accounts, value, onChange, label, error }
                                     {account.methodLabel}
                                     {account.bank !== null ? ` · ${account.bank}` : null}
                                 </span>
-                                <span className="text-ink-3 text-xs break-all">{account.identifier}</span>
+                                <span className="text-ink-3 text-xs break-all">{formatAccountIdentifier(account)}</span>
                             </span>
                         </label>
                     );

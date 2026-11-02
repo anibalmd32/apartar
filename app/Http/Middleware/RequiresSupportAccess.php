@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\PlatformUser;
 use App\Queries\Platform\SupportGrants;
 use App\Support\Auditing\PlatformAudit;
+use App\Support\Auditing\SupportViewSentence;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,14 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class RequiresSupportAccess
 {
-    /**
-     * @var array<string, string>
-     */
-    private const SECTIONS = [
-        'platform.support.layaways' => 'los apartados',
-        'platform.support.customers' => 'los clientes',
-    ];
-
     public function __construct(
         private readonly SupportGrants $grants,
         private readonly TenantContext $context,
@@ -52,7 +45,7 @@ final class RequiresSupportAccess
             throw SupportAccessRequiredException::noGrant($organization);
         }
 
-        PlatformAudit::record(PlatformAudit::SUPPORT_VIEWED, sprintf('Consultó %s con acceso de soporte.', self::SECTIONS[$request->route()?->getName() ?? ''] ?? 'datos del negocio'), $operator, (int) $organization->getKey(), [
+        PlatformAudit::record(PlatformAudit::SUPPORT_VIEWED, SupportViewSentence::for($request->route()?->getName()), $operator, (int) $organization->getKey(), [
             'route' => $request->route()?->getName(),
             'query' => $request->query(),
         ]);

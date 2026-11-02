@@ -208,7 +208,7 @@ final class CustomerShowController extends Controller
             'status' => $receipt->status->value,
             'statusLabel' => $receipt->status->label(),
             'declared' => MoneyFormatter::format(Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency)),
-            'paidToAccount' => $account instanceof PaymentAccount ? implode(' · ', array_filter([$account->method->label(), $account->bank, $account->identifier])) : null,
+            'paidToAccount' => $account instanceof PaymentAccount ? $account->describe() : null,
             'rejectionReason' => $receipt->status === ReceiptStatus::Rejected ? ($receipt->rejection_reason ?? $receipt->rejection_reason_code?->label()) : null,
             'reviewedBy' => $reviewer instanceof User ? $reviewer->name : null,
             'fileUrl' => SignedFileUrl::forBackoffice($receipt),

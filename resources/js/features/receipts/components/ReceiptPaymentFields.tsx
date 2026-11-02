@@ -5,6 +5,7 @@ import { TextField } from '@/components/ui/text-field';
 import { PaymentAccountList } from '@/features/catalog/components/PaymentAccountList';
 import { PaymentAccountChoice } from '@/features/receipts/components/ReceiptChoiceFields';
 import { type ReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
+import { formatAccountIdentifier } from '@/lib/identity-format';
 import { type PaymentAccountView } from '@/types/payment';
 import { type ReceiptMethodOption } from '@/types/receipt';
 
@@ -16,7 +17,7 @@ interface ReceiptPaymentFieldsProps {
 }
 
 function accountLabel(account: PaymentAccountView): string {
-    return [account.methodLabel, account.bank, account.identifier].filter((part) => part !== null && part !== '').join(' · ');
+    return [account.methodLabel, account.bank, formatAccountIdentifier(account)].filter((part) => part !== null && part !== '').join(' · ');
 }
 
 export function ReceiptPaymentFields({ form, paymentAccounts, methods, businessName }: ReceiptPaymentFieldsProps) {

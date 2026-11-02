@@ -79,9 +79,9 @@ export default function LayawayShow({
 
                     <section className={cn(card, 'order-5 flex flex-col gap-3 p-5')} aria-label="Historial">
                         <h2 className="text-[17px] font-bold">Pagos y comprobantes</h2>
-                        <h3 className="text-eyebrow text-ink-3">Tus pagos</h3>
+                        <h3 className="text-ink-2 text-sm font-semibold">Tus pagos</h3>
                         <PaymentHistory payments={payments} empty="Todavía no hay pagos acreditados en este apartado." />
-                        <h3 className="text-eyebrow text-ink-3 mt-2">Tus comprobantes</h3>
+                        <h3 className="text-ink-2 mt-2 text-sm font-semibold">Tus comprobantes</h3>
                         <ReceiptHistory receipts={receipts} />
                     </section>
                 </div>

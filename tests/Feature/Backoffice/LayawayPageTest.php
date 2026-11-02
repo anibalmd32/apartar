@@ -60,6 +60,7 @@ final class LayawayPageTest extends TestCase
             ->where('installments.0.reschedule', null)
             ->where('installments.1.reschedule.earliest', '2026-10-02')
             ->where('installments.1.reschedule.latest', '2026-10-25')
+            ->where('installments.1.dueDateLabel', '10 oct 2026')
             ->where('installments.4.reschedule.latest', null));
     }
 

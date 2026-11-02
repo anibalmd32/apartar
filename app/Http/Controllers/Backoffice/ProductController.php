@@ -537,7 +537,7 @@ final class ProductController extends Controller
             return null;
         }
 
-        return $product->published_at === null ? null : HumanDate::longDateTime($product->published_at->setTimezone($this->context->organization()->timezone));
+        return $product->published_at === null ? null : HumanDate::dateTime($product->published_at->setTimezone($this->context->organization()->timezone));
     }
 
     private function decimals(Money $amount): string

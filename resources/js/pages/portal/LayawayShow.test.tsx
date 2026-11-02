@@ -69,8 +69,8 @@ beforeEach(() => {
     });
 });
 
-it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua', () => {
-    render(<LayawayShow {...props()} />);
+it('dice de qué negocio es, pinta el cronograma y sugiere la cuota más antigua, sin rótulos en mayúsculas', () => {
+    expect(render(<LayawayShow {...props()} />).container.querySelector('.text-eyebrow')).toBeNull();
 
     expect(screen.getByText('Apartado en Ferretería Oriente')).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Cronograma de cuotas' })).toBeInTheDocument();

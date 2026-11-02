@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\PlatformActivity;
 use App\Models\PlatformUser;
 use App\Support\Auditing\PlatformAudit;
+use App\Support\Auditing\SupportViewSentence;
 use Carbon\CarbonImmutable;
 
 final class PlatformActivityLog
@@ -45,7 +46,7 @@ final class PlatformActivityLog
                     'id' => $entry->getKey(),
                     'action' => $entry->action,
                     'label' => PlatformAudit::label($entry->action),
-                    'description' => $entry->description,
+                    'description' => SupportViewSentence::readable($entry->action, $entry->description),
                     'operator' => $entry->platform_user_id === null ? null : ($operators[$entry->platform_user_id] ?? '—'),
                     'organization' => $organization === null ? null : ['name' => $organization->name, 'slug' => $organization->slug],
                     'createdAt' => CarbonImmutable::parse($entry->created_at)->toIso8601String(),

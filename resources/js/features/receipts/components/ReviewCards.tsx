@@ -5,7 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDate } from '@/lib/dates';
-import { formatDocumentNumber, formatPhone } from '@/lib/identity-format';
+import { formatAccountIdentifier, formatDocumentNumber, formatPhone } from '@/lib/identity-format';
 import { LAYAWAY_TONES, toneOf } from '@/lib/status-tones';
 import { type ReceiptReviewProps } from '@/types/receipt';
 import { cilCommentSquare } from '@coreui/icons';
@@ -38,7 +38,7 @@ export function DeclaredCard({ receipt }: Pick<ReceiptReviewProps, 'receipt'>) {
                     <dd className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                         {account === null
                             ? 'Sin indicar'
-                            : `${account.methodLabel}${account.bank !== null ? ` · ${account.bank}` : ''} · ${account.identifier}`}
+                            : `${account.methodLabel}${account.bank !== null ? ` · ${account.bank}` : ''} · ${formatAccountIdentifier(account)}`}
                         {account !== null && !account.isActive ? (
                             <Badge tone="warning" outline>
                                 Cuenta desactivada

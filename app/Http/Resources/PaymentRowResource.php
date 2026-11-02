@@ -9,6 +9,7 @@ use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Support\HumanDate;
 use App\Support\SignedFileUrl;
 use DateTimeZone;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ final class PaymentRowResource extends JsonResource
         $downPayment = $payment->amount_cents_usd->cents - $allocated - $payment->unallocated_cents->cents;
 
         return [
-            'settledAt' => $payment->settled_at->setTimezone($this->timezone)->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'settledAt' => HumanDate::short($payment->settled_at->setTimezone($this->timezone)),
             'amountUsd' => [
                 'cents' => $payment->amount_cents_usd->cents,
                 'usd' => MoneyFormatter::format($payment->amount_cents_usd),

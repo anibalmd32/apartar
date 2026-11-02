@@ -45,7 +45,7 @@ final class ReceiptRowResource extends JsonResource
             'method' => $receipt->payment_method->label(),
             'reference' => $receipt->reference,
             'declaredAmount' => MoneyFormatter::format(Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency)),
-            'paidToAccount' => $account instanceof PaymentAccount ? $this->describe($account) : null,
+            'paidToAccount' => $account instanceof PaymentAccount ? $account->describe() : null,
             'status' => $receipt->status->value,
             'statusLabel' => $this->statusLabel($receipt, $submitted),
             'rejectionReason' => $receipt->status === ReceiptStatus::Rejected
@@ -63,10 +63,5 @@ final class ReceiptRowResource extends JsonResource
         }
 
         return $receipt->status->label();
-    }
-
-    private function describe(PaymentAccount $account): string
-    {
-        return implode(' · ', array_filter([$account->method->label(), $account->bank, $account->identifier]));
     }
 }

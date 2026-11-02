@@ -61,6 +61,25 @@ final class PlatformAuditPageTest extends TestCase
                 ->where('filters.desde', '2026-10-10'));
     }
 
+    public function test_las_consultas_de_soporte_antiguas_se_leen_sin_el_nombre_de_la_ruta(): void
+    {
+        [$organization] = $this->businessWithOwner();
+        $operator = $this->operator();
+        $this->travelTo(CarbonImmutable::parse('2026-10-20 10:00'));
+        PlatformAudit::record(PlatformAudit::SUPPORT_VIEWED, 'Consultó platform.support.layaways.', $operator, (int) $organization->getKey());
+        $this->travelTo(CarbonImmutable::parse('2026-10-20 11:00'));
+        PlatformAudit::record(PlatformAudit::SUPPORT_VIEWED, 'Consultó plataforma/soporte/demo/otra.', $operator, (int) $organization->getKey());
+        $this->travelTo(CarbonImmutable::parse('2026-10-20 12:00'));
+        PlatformAudit::record(PlatformAudit::LOGIN, 'Consultó platform.support.customers.', $operator);
+
+        $this->asOperator();
+
+        $this->get('/plataforma/auditoria')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('entries.0.description', 'Consultó platform.support.customers.')
+            ->where('entries.1.description', 'Consultó datos del negocio con acceso de soporte.')
+            ->where('entries.2.description', 'Consultó los apartados con acceso de soporte.'));
+    }
+
     public function test_unknown_filters_are_ignored(): void
     {
         PlatformAudit::record(PlatformAudit::LOGIN, 'Entrada', $this->operator());

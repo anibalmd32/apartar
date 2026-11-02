@@ -83,6 +83,7 @@ final class LayawayHistoryTest extends TestCase
             ->where('payments.0.rateSource', 'bcv')
             ->where('payments.0.appliedTo', [1, 2])
             ->where('payments.0.registeredByBusiness', false)
+            ->where('payments.0.settledAt', '10 sept 2026')
             ->where('payments.0.downPayment', null)
             ->where('payments.1.declaredAmount', '$50,00')
             ->where('payments.1.downPayment', '$50,00')
@@ -106,7 +107,7 @@ final class LayawayHistoryTest extends TestCase
 
     public function test_receipts_show_their_reason_their_chain_and_their_account(): void
     {
-        $account = $this->withinOrganization($this->organization, fn (): PaymentAccount => PaymentAccount::factory()->create(['bank' => 'Banesco', 'identifier' => '0414-1234567']));
+        $account = $this->withinOrganization($this->organization, fn (): PaymentAccount => PaymentAccount::factory()->create(['bank' => 'Banesco', 'identifier' => '04141234567']));
         $rejected = $this->receiptFor($this->layaway, ReceiptStatus::Rejected, [
             'created_at' => CarbonImmutable::parse('2026-09-05 10:00:00'),
             'rejection_reason_code' => RejectionReasonCode::ReferenceNotFound,

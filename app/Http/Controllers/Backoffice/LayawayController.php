@@ -99,7 +99,7 @@ final class LayawayController extends Controller
                 return [
                     'number' => $installment->number,
                     'dueDate' => $installment->due_date->toDateString(),
-                    'dueDateLabel' => $installment->due_date->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+                    'dueDateLabel' => HumanDate::short($installment->due_date),
                     'amount' => $this->money($installment->amount_cents),
                     'paid' => $this->money($installment->paid_cents),
                     'statusLabel' => $installment->status->label(),
@@ -198,6 +198,6 @@ final class LayawayController extends Controller
 
     private function moment(?DateTimeInterface $at, DateTimeZone $timezone): ?string
     {
-        return $at === null ? null : HumanDate::longDateTime(CarbonImmutable::instance($at)->setTimezone($timezone));
+        return $at === null ? null : HumanDate::dateTime(CarbonImmutable::instance($at)->setTimezone($timezone));
     }
 }

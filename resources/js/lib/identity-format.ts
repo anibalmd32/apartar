@@ -58,6 +58,10 @@ export function formatPhone(raw: string | null): string {
     return splitAt(digits, digits.startsWith('0') ? 4 : 3);
 }
 
+export function formatAccountIdentifier(account: { readonly method: string; readonly identifier: string }): string {
+    return account.method === 'pago_movil' ? formatPhone(account.identifier) : account.identifier;
+}
+
 export function phoneAreaCode(raw: string): string | null {
     const compact = raw.replace(PHONE_SEPARATORS, '');
     const international = compact.startsWith('+');

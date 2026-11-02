@@ -3,6 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CopyButton } from '@/features/catalog/components/CopyButton';
 import { isPagoMovil, PagoMovilData } from '@/features/catalog/components/PagoMovilData';
+import { formatDocumentNumber } from '@/lib/identity-format';
 import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
 import { cilBank, cilDollar, cilMobile, cilMoney, cilWallet } from '@coreui/icons';
 
@@ -58,7 +59,8 @@ export function PaymentMethodsCard({ accounts, businessName }: PaymentMethodsCar
                                         <span className="sr-only">{account.identifierLabel}: </span>
                                         <span className="text-ink-2 font-medium select-all">{account.identifier}</span>
                                         {' · '}
-                                        {account.holderName} · {account.holderDocument}
+                                        {account.holderName} ·{' '}
+                                        <span className="whitespace-nowrap">{formatDocumentNumber(account.holderDocument)}</span>
                                     </p>
                                 )}
                                 {account.instructions !== null ? <p className="text-ink-3 text-xs">{account.instructions}</p> : null}

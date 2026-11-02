@@ -11,6 +11,7 @@ use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Layaway;
 use App\Models\Product;
 use App\Queries\BusinessBalance;
+use App\Support\HumanDate;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
@@ -89,6 +90,6 @@ final class LayawaySummaryResource extends JsonResource
 
     public static function dayLabel(?CarbonInterface $day): ?string
     {
-        return $day?->locale('es')->isoFormat('D [de] MMMM');
+        return $day === null ? null : HumanDate::short($day);
     }
 }

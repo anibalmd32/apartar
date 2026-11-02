@@ -93,6 +93,7 @@ final class LayawayShowTest extends TestCase
             ->has('installments', 5)
             ->where('installments.0.tone', 'paid')
             ->where('installments.1.dueDate', '2026-10-10')
+            ->where('installments.1.dueDateLabel', '10 oct 2026')
             ->where('installments.1.pending.cents', 2_000)
             ->where('nextPaymentSuggestion.kind', 'installment')
             ->where('nextPaymentSuggestion.installmentNumber', 2)

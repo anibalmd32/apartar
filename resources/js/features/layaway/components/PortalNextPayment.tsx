@@ -17,7 +17,7 @@ export function PortalNextPayment({ suggestion, receiptUrl, className }: PortalN
             aria-label="Próximo pago"
             className={cn('bg-base-100 border-primary/50 shadow-card flex flex-col gap-3.5 rounded-2xl border-[1.5px] p-5', className)}
         >
-            <h2 className="text-eyebrow text-ink-3">Te sugerimos pagar</h2>
+            <h2 className="text-ink-2 text-sm font-semibold">Te sugerimos pagar</h2>
             <p className="flex flex-col gap-1">
                 <span className="text-ink-2 text-[13px] font-semibold">
                     {suggestion.kind === 'down_payment'

@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\CustomerMerge;
 use App\Models\Layaway;
 use App\Models\Organization;
+use App\Models\PaymentAccount;
 use App\Models\User;
 use App\Notifications\LayawayCodeNotification;
 use Carbon\CarbonImmutable;
@@ -93,6 +94,18 @@ final class CustomerProfileTest extends TestCase
         $url = $response->viewData('page')['props']['receipts'][0]['fileUrl'];
         parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
         $this->assertSame(CarbonImmutable::now()->addMinutes(15)->getTimestamp(), (int) $query['expires']);
+    }
+
+    public function test_la_cuenta_de_pago_movil_muestra_el_telefono_con_formato(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $customer = $this->customerOf($layaway);
+        $account = $this->withinOrganization($this->organization, fn (): PaymentAccount => PaymentAccount::factory()->create(['bank' => 'Banesco', 'identifier' => '04141234567']));
+        $this->receiptFor($layaway, attributes: ['customer_id' => $customer->getKey(), 'payment_account_id' => $account->getKey()]);
+        $this->withoutOrganization();
+
+        $this->actingAs($this->member)->get(route('customers.show', $customer))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('receipts.0.paidToAccount', 'Pago móvil · Banesco · 0414-1234567'));
     }
 
     public function test_an_absorbed_record_redirects_to_its_survivor(): void

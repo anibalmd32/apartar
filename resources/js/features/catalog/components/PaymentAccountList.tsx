@@ -3,6 +3,7 @@ import { IconChip } from '@/components/ui/icon-chip';
 import { CopyButton } from '@/features/catalog/components/CopyButton';
 import { isPagoMovil, PagoMovilData } from '@/features/catalog/components/PagoMovilData';
 import { PAYMENT_METHOD_ICONS } from '@/features/catalog/components/PaymentMethodsCard';
+import { formatDocumentNumber } from '@/lib/identity-format';
 import { type PaymentAccountView } from '@/types/payment';
 
 interface PaymentAccountListProps {
@@ -45,7 +46,7 @@ export function PaymentAccountList({ accounts, businessName }: PaymentAccountLis
                                     <span className="font-semibold tracking-wide break-all select-all">{account.identifier}</span>
                                 </p>
                                 <p className="text-ink-2">
-                                    {account.holderName} · {account.holderDocument}
+                                    {account.holderName} · <span className="whitespace-nowrap">{formatDocumentNumber(account.holderDocument)}</span>
                                 </p>
                             </>
                         )}

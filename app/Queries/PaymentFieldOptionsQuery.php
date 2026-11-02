@@ -37,7 +37,7 @@ final readonly class PaymentFieldOptionsQuery
                 ->map(fn (PaymentAccount $account): array => [
                     'id' => (int) $account->getKey(),
                     'methodLabel' => $account->method->label(),
-                    'identifier' => $account->identifier,
+                    'identifier' => $account->readableIdentifier(),
                     'isActive' => $account->is_active,
                 ])
                 ->values()

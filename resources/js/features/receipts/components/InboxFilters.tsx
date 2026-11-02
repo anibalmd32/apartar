@@ -5,6 +5,7 @@ import { SelectField } from '@/components/ui/select-field';
 import { ToggleField } from '@/components/ui/toggle-field';
 import { useFilterDraft } from '@/hooks/use-filter-draft';
 import { dateChip, flagChip, optionChip, present } from '@/lib/filter-chips';
+import { formatAccountIdentifier } from '@/lib/identity-format';
 import { type ReceiptInboxFilters, type ReceiptInboxProps } from '@/types/receipt';
 
 type SheetKey = 'method' | 'bank' | 'account' | 'from' | 'to' | 'cancelled';
@@ -41,7 +42,7 @@ const CLEARED: Record<SheetKey, null> = { method: null, bank: null, account: nul
 function accountOptions(options: Options) {
     return options.paymentAccounts.map((account) => ({
         value: String(account.id),
-        label: `${account.methodLabel} · ${account.identifier}${account.isActive ? '' : ' (desactivada)'}`,
+        label: `${account.methodLabel} · ${formatAccountIdentifier(account)}${account.isActive ? '' : ' (desactivada)'}`,
     }));
 }
 
