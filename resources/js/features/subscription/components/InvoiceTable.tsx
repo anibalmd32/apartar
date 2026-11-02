@@ -38,7 +38,7 @@ export function InvoiceTable({
     onSelect: (id: number) => void;
 }) {
     return (
-        <div className="bg-base-100 border-line shadow-card overflow-x-auto rounded-2xl border">
+        <div className="bg-base-100 border-line shadow-card table-stack rounded-2xl border md:overflow-x-auto">
             <table className="table">
                 <thead>
                     <tr>
@@ -56,32 +56,42 @@ export function InvoiceTable({
                 <tbody>
                     {invoices.map((invoice) => (
                         <tr key={invoice.id} className={invoice.id === selectedId ? 'bg-primary-soft/40' : undefined}>
-                            <td>
+                            <td data-cell="primary" className="max-md:-order-2">
                                 <p className="font-bold whitespace-nowrap">{invoice.number}</p>
                                 <p className="text-ink-3 text-xs">{invoice.kind}</p>
                             </td>
-                            <td className="text-ink-2 whitespace-nowrap">
+                            <td data-label="Periodo" className="text-ink-2 whitespace-nowrap">
                                 {formatDay(invoice.periodStart.slice(0, 10))} – {formatDay(invoice.periodEnd.slice(0, 10))}
                             </td>
-                            <td>
-                                <p className="font-semibold whitespace-nowrap">{invoice.amount.usd}</p>
-                                {invoice.amount.ves !== null ? <p className="text-ink-3 text-xs whitespace-nowrap">≈ {invoice.amount.ves}</p> : null}
-                                {invoice.outstanding !== null ? (
-                                    <p className="text-warning text-xs font-semibold whitespace-nowrap">Falta por pagar: {invoice.outstanding.usd}</p>
-                                ) : null}
+                            <td data-label="Monto">
+                                <div className="max-md:text-right">
+                                    <p className="font-semibold whitespace-nowrap">{invoice.amount.usd}</p>
+                                    {invoice.amount.ves !== null ? (
+                                        <p className="text-ink-3 text-xs whitespace-nowrap">≈ {invoice.amount.ves}</p>
+                                    ) : null}
+                                    {invoice.outstanding !== null ? (
+                                        <p className="text-warning text-xs font-semibold whitespace-nowrap">
+                                            Falta por pagar: {invoice.outstanding.usd}
+                                        </p>
+                                    ) : null}
+                                </div>
                             </td>
-                            <td>
+                            <td data-cell="shrink" className="max-md:-order-1">
                                 <Badge tone={STATUS_TONES[invoice.status]}>{STATUS_LABELS[invoice.status]}</Badge>
                             </td>
-                            <td className="text-ink-2 whitespace-nowrap">{formatDay(invoice.dueDate)}</td>
-                            <td>
+                            <td data-label="Vence" className="text-ink-2 whitespace-nowrap">
+                                {formatDay(invoice.dueDate)}
+                            </td>
+                            <td data-label="Comprobante" data-empty={invoice.status !== 'paid' && invoice.receiptStatus === 'none' ? '' : undefined}>
                                 <ReceiptCell invoice={invoice} />
                             </td>
-                            <td className="text-right">
+                            <td data-cell="actions" className="text-right">
                                 {isPayable(invoice) && invoice.id !== selectedId ? (
-                                    <Button size="sm" variant="soft" aria-label={`Pagar ${invoice.number}`} onClick={() => onSelect(invoice.id)}>
-                                        Pagar
-                                    </Button>
+                                    <div>
+                                        <Button size="sm" variant="soft" aria-label={`Pagar ${invoice.number}`} onClick={() => onSelect(invoice.id)}>
+                                            Pagar
+                                        </Button>
+                                    </div>
                                 ) : null}
                             </td>
                         </tr>
@@ -103,10 +113,10 @@ function ReceiptCell({ invoice }: { invoice: InvoiceRow }) {
 
     if (invoice.receiptStatus === 'rejected') {
         return (
-            <>
+            <div className="max-md:text-right">
                 <p className="text-error font-medium">Rechazado</p>
                 {invoice.rejectionReason !== null ? <p className="text-ink-3 text-xs">{invoice.rejectionReason.replace(/\.$/, '')}</p> : null}
-            </>
+            </div>
         );
     }
 

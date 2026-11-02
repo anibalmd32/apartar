@@ -67,7 +67,12 @@ final class GrantSupportAccessActionTest extends TestCase
         $this->get($this->data('clientes'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->component('platform/support/Customers')
             ->where('customers.0.fullName', 'María Cliente')
+            ->where('organization.slug', $this->organization->slug)
             ->missing('customers.0.accountId'));
+
+        $this->get($this->data('apartados'))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('platform/support/Layaways')
+            ->where('organization.slug', $this->organization->slug));
 
         $entry = $this->withinOrganization($this->organization, fn (): AuditEntry => AuditEntry::query()->ofEvent(AuditEvent::SupportAccessGranted)->sole());
         $this->assertSame($operator->getKey(), $entry->causer_id);

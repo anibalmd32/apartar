@@ -13,35 +13,55 @@ interface LayawayRow {
     createdAt: string | null;
 }
 
-const usd = (cents: number) => new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(cents / 100);
+const usd = (cents: number) => `$${(cents / 100).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function SupportLayaways({ organization, layaways }: { organization: { id: number; name: string }; layaways: readonly LayawayRow[] }) {
+export default function SupportLayaways({
+    organization,
+    layaways,
+}: {
+    organization: { id: number; name: string; slug: string };
+    layaways: readonly LayawayRow[];
+}) {
     return (
         <PlatformLayout title={`Apartados de ${organization.name}`} description="Acceso de soporte · solo lectura. Este acceso queda registrado.">
-            <BackLink href={pf('/organizaciones')}>Organizaciones</BackLink>
-            <div className="table-frame">
+            <BackLink href={pf(`/organizaciones/${organization.slug}`)}>{organization.name}</BackLink>
+            <div className="table-frame table-stack md:overflow-x-auto">
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>Código</th>
-                            <th>Cliente</th>
-                            <th>Producto</th>
-                            <th>Estado</th>
-                            <th className="text-right">Total</th>
-                            <th className="text-right">Pagado</th>
-                            <th className="text-right">Falta</th>
+                            <th scope="col">Apartado</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col" className="text-right">
+                                Total
+                            </th>
+                            <th scope="col" className="text-right">
+                                Pagado
+                            </th>
+                            <th scope="col" className="text-right">
+                                Falta
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {layaways.map((row) => (
                             <tr key={row.code}>
-                                <td>{row.code}</td>
-                                <td>{row.customer}</td>
-                                <td>{row.product}</td>
-                                <td>{row.status}</td>
-                                <td className="text-right">{usd(row.totalCents)}</td>
-                                <td className="text-right">{usd(row.paidCents)}</td>
-                                <td className="text-right">{usd(row.remainingCents)}</td>
+                                <td data-cell="primary">
+                                    <p className="font-mono text-[13px] font-semibold whitespace-nowrap">{row.code}</p>
+                                    <p className="font-medium">{row.customer}</p>
+                                    <p className="text-ink-3 text-xs">{row.product}</p>
+                                </td>
+                                <td data-cell="shrink" className="whitespace-nowrap">
+                                    {row.status}
+                                </td>
+                                <td data-label="Total" className="text-right whitespace-nowrap tabular-nums">
+                                    {usd(row.totalCents)}
+                                </td>
+                                <td data-label="Pagado" className="text-right whitespace-nowrap tabular-nums">
+                                    {row.paidCents === 0 ? null : usd(row.paidCents)}
+                                </td>
+                                <td data-label="Falta" className="text-right font-semibold whitespace-nowrap tabular-nums">
+                                    {row.remainingCents === 0 ? null : usd(row.remainingCents)}
+                                </td>
                             </tr>
                         ))}
                     </tbody>

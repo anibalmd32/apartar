@@ -32,7 +32,7 @@ final class SupportDataController extends Controller
                 'createdAt' => $layaway->created_at?->toIso8601String(),
             ])->all();
 
-        return Inertia::render('platform/support/Layaways', ['organization' => ['id' => $organization->getKey(), 'name' => $organization->name], 'layaways' => $rows]);
+        return Inertia::render('platform/support/Layaways', ['organization' => $this->summary($organization), 'layaways' => $rows]);
     }
 
     public function customers(Organization $organization): Response
@@ -46,6 +46,14 @@ final class SupportDataController extends Controller
                 'createdAt' => $customer->created_at?->toIso8601String(),
             ])->all();
 
-        return Inertia::render('platform/support/Customers', ['organization' => ['id' => $organization->getKey(), 'name' => $organization->name], 'customers' => $rows]);
+        return Inertia::render('platform/support/Customers', ['organization' => $this->summary($organization), 'customers' => $rows]);
+    }
+
+    /**
+     * @return array{id: int, name: string, slug: string}
+     */
+    private function summary(Organization $organization): array
+    {
+        return ['id' => (int) $organization->getKey(), 'name' => $organization->name, 'slug' => $organization->slug];
     }
 }

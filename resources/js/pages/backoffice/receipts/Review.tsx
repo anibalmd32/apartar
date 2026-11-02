@@ -2,11 +2,11 @@ import { Alert } from '@/components/ui/alert';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
-import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { ApprovalForm } from '@/features/receipts/components/ApprovalForm';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import { RejectForm } from '@/features/receipts/components/RejectForm';
 import { CustomerCard, DeclaredCard, ReceiptChain, ReceiptViewer } from '@/features/receipts/components/ReviewCards';
+import { ReviewSchedule } from '@/features/receipts/components/ReviewSchedule';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { cn } from '@/lib/utils';
 import { type ReceiptReviewProps, type ReceiptStatus } from '@/types/receipt';
@@ -30,7 +30,7 @@ export default function ReceiptReview(props: ReceiptReviewProps) {
                     <ReceiptChain receipt={receipt} />
                     <ReceiptViewer receipt={receipt} />
                     <DeclaredCard receipt={receipt} />
-                    <Schedule {...props} />
+                    <ReviewSchedule layaway={props.layaway} installments={props.installments} />
                     <SectionCard title="Pagos previos">
                         <PaymentHistory payments={props.payments} empty="Este apartado todavía no tiene pagos." />
                     </SectionCard>
@@ -127,51 +127,5 @@ function Decision({ receipt, layaway, rate, preview, previewError, approval, rej
             ) : null}
             {mode === 'reject' && rejection !== null ? <RejectForm rejection={rejection} /> : null}
         </section>
-    );
-}
-
-function Schedule({ layaway, installments }: ReceiptReviewProps) {
-    return (
-        <SectionCard title="Cronograma" flush>
-            {installments.length === 0 ? (
-                <p className="text-ink-2 px-5 pb-5 text-sm">
-                    Espera la inicial de <MoneyLabel money={layaway.downPayment} />
-                    {layaway.downPaymentProgress !== null ? (
-                        <>
-                            {' '}
-                            (abonado <MoneyLabel money={layaway.downPaymentProgress.paid} />, faltan{' '}
-                            <MoneyLabel money={layaway.downPaymentProgress.missing} />)
-                        </>
-                    ) : null}
-                    : el cronograma nace al completarla.
-                </p>
-            ) : (
-                <div className="border-line overflow-x-auto border-t">
-                    <table className="table">
-                        <caption className="sr-only">Cronograma</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Cuota</th>
-                                <th scope="col">Vence</th>
-                                <th scope="col">Pagado</th>
-                                <th scope="col">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {installments.map((installment) => (
-                                <tr key={installment.number}>
-                                    <td className="font-semibold">{installment.number}</td>
-                                    <td>{installment.dueDateLabel}</td>
-                                    <td>
-                                        <MoneyLabel money={installment.paid} /> de <MoneyLabel money={installment.amount} />
-                                    </td>
-                                    <td>{installment.statusLabel}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </SectionCard>
     );
 }

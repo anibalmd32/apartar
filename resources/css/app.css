@@ -832,6 +832,10 @@
         font-size: 0.875rem;
     }
 
+    .table-stack tbody td:is(:empty, [data-empty]) {
+        display: none;
+    }
+
     .table-stack tbody td[data-label]::before {
         content: attr(data-label);
         color: var(--ink-3);

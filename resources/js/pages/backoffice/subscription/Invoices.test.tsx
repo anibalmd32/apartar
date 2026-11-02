@@ -145,3 +145,18 @@ it('dice que en el plan Gratis no hay facturas', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('en el plan Gratis no se factura nada');
 });
+
+it('en el celular cada factura se apila como tarjeta con sus datos etiquetados y sin comprobante vacío', () => {
+    render(<SubscriptionInvoices {...props([invoice(), invoice({ id: 2, number: 'F-2026-0002', status: 'paid', payUrl: null })])} />);
+
+    const table = screen.getByRole('table');
+    const [first, second] = within(table).getAllByRole('row').slice(1);
+    const cells = within(first!).getAllByRole('cell');
+
+    expect(table.parentElement).toHaveClass('table-stack');
+    expect(cells[0]).toHaveAttribute('data-cell', 'primary');
+    expect(cells.map((cell) => cell.getAttribute('data-label')).filter(Boolean)).toEqual(['Periodo', 'Monto', 'Vence', 'Comprobante']);
+    expect(cells[5]).toHaveAttribute('data-empty');
+    expect(cells[6]).toHaveAttribute('data-cell', 'actions');
+    expect(within(second!).getAllByRole('cell')[5]).not.toHaveAttribute('data-empty');
+});
