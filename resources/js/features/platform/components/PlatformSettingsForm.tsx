@@ -40,7 +40,8 @@ export function PlatformSettingsForm({ settings }: { settings: readonly Platform
                             value={form.data.settings[setting.key] ?? ''}
                             onChange={(event) => form.setData('settings', { ...form.data.settings, [setting.key]: event.target.value })}
                             error={errors[`settings.${setting.key}`]}
-                            hint={`En ${setting.unit}, de ${setting.min} a ${setting.max}. Por defecto, ${setting.default}.`}
+                            suffix={setting.unit}
+                            hint={`De ${setting.min} a ${setting.max}. Por defecto, ${setting.default}.`}
                         />
                     ))}
                 </div>

@@ -69,7 +69,7 @@ export function SupportAccessPanel({ slug, myGrant, grants }: SupportAccessPanel
                     {grants.map((grant) => (
                         <li key={grant.id} className="flex flex-col gap-1 py-2.5">
                             <span className="flex flex-wrap items-center gap-2">
-                                {grant.active ? <Badge tone="warning">Vigente</Badge> : <Badge>Cerrado</Badge>}
+                                {grant.active ? <Badge tone="success">Vigente</Badge> : <Badge>Cerrado</Badge>}
                                 <span className="font-semibold">{grant.operator}</span>
                                 <span className="text-ink-3 text-xs">{formatDateTime(grant.grantedAt)}</span>
                             </span>

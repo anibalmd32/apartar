@@ -33,7 +33,7 @@ it('un bloque que falló dice «—» y el resto carga', () => {
     expect(within(screen.getByRole('region', { name: 'Organizaciones' })).getByText('47')).toBeInTheDocument();
 });
 
-it('dice cuánto cambió frente al mes pasado y los detalles de cada tarjeta', () => {
+it('compara el último mes cerrado con el anterior y no el mes en curso con el MRR', () => {
     render(
         <PlatformDashboard
             metrics={{
@@ -43,6 +43,7 @@ it('dice cuánto cambió frente al mes pasado y los detalles de cada tarjeta', (
                 monthly: [
                     { month: '2026-09', cents: 100_000 },
                     { month: '2026-10', cents: 108_400 },
+                    { month: '2026-11', cents: 0 },
                 ],
                 periodDays: 90,
             }}
@@ -50,7 +51,11 @@ it('dice cuánto cambió frente al mes pasado y los detalles de cada tarjeta', (
         />,
     );
 
-    expect(screen.getByText('+8,4% vs. mes pasado')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'MRR' })).queryByText(/vs\./)).not.toBeInTheDocument();
+    expect(screen.getByText('Facturado en octubre')).toBeInTheDocument();
+    expect(screen.getByText('+8,4% vs. septiembre')).toBeInTheDocument();
+    expect(screen.getByText(/Noviembre, en curso/)).toBeInTheDocument();
+    expect(screen.queryByText(/-100/)).not.toBeInTheDocument();
     expect(screen.getByText('2 con factura vencida > 7 d')).toBeInTheDocument();
     expect(screen.getByText('1 con más de 48 h')).toBeInTheDocument();
     expect(screen.getByText('Oct: $1.084')).toBeInTheDocument();
@@ -91,4 +96,21 @@ it('en el celular destaca el MRR y lista las demás cifras en filas, sin fichas 
             expect(item).toHaveClass('max-lg:justify-between', 'lg:bg-surface-2');
         });
     });
+});
+
+it('con un solo mes facturado avisa que hay pocos datos en vez de dibujar una barra suelta', () => {
+    render(
+        <PlatformDashboard
+            metrics={{
+                ...metrics,
+                monthly: [
+                    { month: '2026-10', cents: 3_000 },
+                    { month: '2026-11', cents: 0 },
+                ],
+            }}
+        />,
+    );
+
+    expect(screen.getByText(/pocos datos/)).toBeInTheDocument();
+    expect(screen.queryByText('Facturado por mes')).not.toBeInTheDocument();
 });

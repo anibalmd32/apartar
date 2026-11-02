@@ -56,8 +56,11 @@ export function PlatformBell({ className }: { className?: string }) {
                 ) : null}
             </MenuButton>
 
-            <MenuItems anchor="bottom end" className="bg-base-100 border-line shadow-pop z-50 mt-2 w-80 rounded-xl border p-1.5 focus:outline-none">
-                <p className="text-label text-ink-3 px-2.5 pt-2 pb-1">Para atender</p>
+            <MenuItems
+                anchor={{ to: 'bottom end', gap: 8, padding: 16 }}
+                className="bg-base-100 border-line shadow-pop z-50 w-80 rounded-xl border p-1.5 focus:outline-none max-lg:w-[calc(100vw-2rem)]"
+            >
+                <p className="text-ink-2 px-2.5 pt-2 pb-1 text-sm font-bold normal-case">Para atender</p>
                 {items.map((item) => {
                     const copy = COPY[item.key];
 

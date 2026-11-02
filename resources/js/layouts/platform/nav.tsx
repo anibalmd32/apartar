@@ -1,27 +1,29 @@
+import { menuItemClass } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
+import { MenuItem, MenuSeparator } from '@headlessui/react';
 import { Link, usePage } from '@inertiajs/react';
 
 export interface PlatformSection {
     readonly label: string;
-    readonly short: string;
     readonly href: string;
+    readonly match?: string;
     readonly icon: string[];
 }
 
 export const PLATFORM_SECTIONS: readonly PlatformSection[] = [
-    { label: 'Resumen', short: 'Resumen', href: pf(''), icon: cilSpeedometer },
-    { label: 'Organizaciones', short: 'Orgs', href: pf('/organizaciones'), icon: cilBuilding },
-    { label: 'Comprobantes', short: 'Comprobantes', href: pf('/facturas'), icon: cilDescription },
-    { label: 'Correos', short: 'Correos', href: pf('/correos'), icon: cilEnvelopeClosed },
+    { label: 'Resumen', href: pf(''), icon: cilSpeedometer },
+    { label: 'Organizaciones', href: pf('/organizaciones'), icon: cilBuilding },
+    { label: 'Comprobantes', href: pf('/facturas'), icon: cilDescription },
+    { label: 'Correos', href: pf('/correos/bandeja'), match: pf('/correos'), icon: cilEnvelopeClosed },
 ];
 
 export const PLATFORM_SUPPORT_SECTIONS: readonly PlatformSection[] = [
-    { label: 'Accesos de soporte', short: 'Accesos', href: pf('/soporte'), icon: cilShieldAlt },
-    { label: 'Auditoría', short: 'Auditoría', href: pf('/auditoria'), icon: cilHistory },
-    { label: 'Ajustes', short: 'Ajustes', href: pf('/ajustes'), icon: cilSettings },
+    { label: 'Accesos de soporte', href: pf('/soporte'), icon: cilShieldAlt },
+    { label: 'Auditoría', href: pf('/auditoria'), icon: cilHistory },
+    { label: 'Ajustes', href: pf('/ajustes'), icon: cilSettings },
 ];
 
 interface OperatorCounts {
@@ -29,6 +31,8 @@ interface OperatorCounts {
     activeSupportGrants: number;
     unreadMail?: number;
 }
+
+const sectionPath = (section: PlatformSection) => section.match ?? section.href;
 
 export function isCurrentPlatformSection(href: string, url: string): boolean {
     const path = url.split('?')[0] ?? url;
@@ -40,7 +44,7 @@ function NavList({ sections, counts, current }: { sections: readonly PlatformSec
     return (
         <ul className="flex flex-col gap-0.5">
             {sections.map((section) => {
-                const active = isCurrentPlatformSection(section.href, current);
+                const active = isCurrentPlatformSection(sectionPath(section), current);
 
                 return (
                     <li key={section.href}>
@@ -56,9 +60,9 @@ function NavList({ sections, counts, current }: { sections: readonly PlatformSec
                         >
                             <Icon icon={section.icon} size={18} />
                             <span className="flex-1 truncate">{section.label}</span>
-                            {(counts[section.href] ?? 0) > 0 ? (
+                            {(counts[sectionPath(section)] ?? 0) > 0 ? (
                                 <span className="bg-surface-2 text-ink-2 rounded-full px-[7px] py-px text-[11px] font-bold">
-                                    {counts[section.href]}
+                                    {counts[sectionPath(section)]}
                                 </span>
                             ) : null}
                         </Link>
@@ -106,7 +110,7 @@ export function PlatformSupportTabs() {
                             active ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                         )}
                     >
-                        {section.short}
+                        {section.label}
                     </Link>
                 );
             })}
@@ -115,10 +119,9 @@ export function PlatformSupportTabs() {
 }
 
 const TAB_BAR_SECTIONS: readonly (PlatformSection & { matches: readonly string[] })[] = [
-    ...PLATFORM_SECTIONS.map((section) => ({ ...section, matches: [section.href] })),
+    ...PLATFORM_SECTIONS.map((section) => ({ ...section, matches: [sectionPath(section)] })),
     {
         label: 'Soporte',
-        short: 'Soporte',
         href: pf('/soporte'),
         icon: cilShieldAlt,
         matches: PLATFORM_SUPPORT_SECTIONS.map((section) => section.href),
@@ -142,15 +145,31 @@ export function PlatformTabBar() {
                         key={section.href}
                         href={section.href}
                         aria-current={active ? 'page' : undefined}
-                        className={cn('flex flex-1 flex-col items-center gap-1 py-1.5', active ? 'text-primary-ink' : 'text-ink-3')}
+                        className={cn('flex flex-auto flex-col items-center gap-1 py-1.5', active ? 'text-primary-ink' : 'text-ink-3')}
                     >
                         <span className={cn('flex h-7 w-12 items-center justify-center rounded-full', active && 'bg-primary-soft')}>
                             <Icon icon={section.icon} size={20} />
                         </span>
-                        <span className={cn('text-[11px] leading-4', active ? 'font-bold' : 'font-medium')}>{section.short}</span>
+                        <span className={cn('text-[11px] leading-4 whitespace-nowrap', active ? 'font-bold' : 'font-medium')}>{section.label}</span>
                     </Link>
                 );
             })}
         </nav>
+    );
+}
+
+export function PlatformMenuLinks() {
+    return (
+        <>
+            {PLATFORM_SUPPORT_SECTIONS.filter((section) => section.href !== pf('/soporte')).map((section) => (
+                <MenuItem key={section.href}>
+                    <Link href={section.href} className={menuItemClass}>
+                        <Icon icon={section.icon} />
+                        {section.label}
+                    </Link>
+                </MenuItem>
+            ))}
+            <MenuSeparator className="bg-line my-1 h-px" />
+        </>
     );
 }

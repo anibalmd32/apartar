@@ -1,14 +1,15 @@
 import { Avatar } from '@/components/shell/avatar';
-import { Icon } from '@/components/ui/icon';
+import { EmptyState } from '@/components/ui/empty-state';
 import { OrganizationStatusBadge, PlanPill, SubscriptionStatusBadge } from '@/features/platform/components/labels';
 import { OrganizationFilters } from '@/features/platform/components/OrganizationFilters';
 import { OrganizationCard, RiskBadges } from '@/features/platform/components/OrganizationRowParts';
+import { Pager } from '@/features/platform/components/Pager';
 import PlatformLayout from '@/layouts/platform-layout';
 import { compactQuery } from '@/lib/compact-query';
 import { formatDate } from '@/lib/dates';
 import { pf } from '@/lib/surfaces';
 import { type OrganizationRow } from '@/types/platform';
-import { cilChevronLeft, cilChevronRight } from '@coreui/icons';
+import { cilBuilding } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 
 interface DirectoryProps {
@@ -23,7 +24,8 @@ interface DirectoryProps {
 export default function OrganizationsIndex({ rows, hasMore, page, filters, plans, total }: DirectoryProps) {
     const visit = (changes: Record<string, string | boolean | number | null>) =>
         router.get(pf('/organizaciones'), compactQuery({ ...filters, pagina: 1, ...changes }, { pagina: 1 }), { preserveState: true, replace: true });
-    const lastActivity = (row: OrganizationRow) => (row.lastActivityAt === null ? 'Nunca' : formatDate(row.lastActivityAt));
+    const lastActivity = (row: OrganizationRow) => (row.lastActivityAt === null ? null : formatDate(row.lastActivityAt));
+    const filtered = Object.values(filters).some((value) => value !== null && value !== false && value !== '');
 
     return (
         <PlatformLayout
@@ -33,12 +35,31 @@ export default function OrganizationsIndex({ rows, hasMore, page, filters, plans
             <OrganizationFilters filters={filters} plans={plans} onChange={visit} />
 
             {rows.length === 0 ? (
-                <p className="border-line bg-base-100 text-ink-2 rounded-2xl border p-6 text-sm">Ninguna organización con estos filtros.</p>
+                <div className="border-line bg-base-100 rounded-2xl border p-6">
+                    <EmptyState
+                        icon={cilBuilding}
+                        title={filtered ? 'Ninguna organización con estos filtros' : 'Todavía no hay organizaciones'}
+                        action={
+                            filtered ? (
+                                <Link href={pf('/organizaciones')} className="btn btn-sm">
+                                    Quitar filtros
+                                </Link>
+                            ) : null
+                        }
+                    >
+                        {filtered ? 'Prueba con otro plan, estado o búsqueda.' : 'Aquí aparecerá cada negocio que se registre.'}
+                    </EmptyState>
+                </div>
             ) : (
                 <div className="lg:border-line lg:bg-base-100 lg:overflow-x-auto lg:rounded-[14px] lg:border">
                     <ul className="flex flex-col gap-2.5 lg:hidden">
                         {rows.map((row) => (
-                            <OrganizationCard key={row.id} row={row} lastActivity={lastActivity(row)} />
+                            <OrganizationCard
+                                key={row.id}
+                                row={row}
+                                planName={row.planCode === null ? null : (plans[row.planCode] ?? row.planCode)}
+                                lastActivity={lastActivity(row)}
+                            />
                         ))}
                     </ul>
 
@@ -87,7 +108,7 @@ export default function OrganizationsIndex({ rows, hasMore, page, filters, plans
                                         <span className="block">{row.volume?.collectedLast30Days.usd ?? '—'}</span>
                                         <span className="text-ink-3 text-xs">cobrado 30 d</span>
                                     </td>
-                                    <td className="whitespace-nowrap">{lastActivity(row)}</td>
+                                    <td className="whitespace-nowrap">{lastActivity(row) ?? 'Nunca'}</td>
                                     <td>
                                         <RiskBadges row={row} dashWhenNone />
                                     </td>
@@ -96,23 +117,7 @@ export default function OrganizationsIndex({ rows, hasMore, page, filters, plans
                         </tbody>
                     </table>
 
-                    <nav aria-label="Páginas" className="lg:border-line flex items-center justify-between gap-2 py-3 lg:border-t lg:px-5">
-                        <span className="text-ink-3 text-[13px]">Página {page}</span>
-                        <span className="flex gap-2">
-                            {page > 1 ? (
-                                <button type="button" className="btn btn-sm" onClick={() => visit({ pagina: page - 1 })}>
-                                    <Icon icon={cilChevronLeft} size={14} />
-                                    Anterior
-                                </button>
-                            ) : null}
-                            {hasMore ? (
-                                <button type="button" className="btn btn-sm" onClick={() => visit({ pagina: page + 1 })}>
-                                    Siguiente
-                                    <Icon icon={cilChevronRight} size={14} />
-                                </button>
-                            ) : null}
-                        </span>
-                    </nav>
+                    <Pager page={page} hasMore={hasMore} onPage={(pagina) => visit({ pagina })} className="max-lg:border-t-0 max-lg:px-0" />
                 </div>
             )}
         </PlatformLayout>

@@ -3,7 +3,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Icon } from '@/components/ui/icon';
 import { Pager } from '@/features/platform/components/Pager';
 import { shortDate } from '@/features/platform/mail/format';
-import { MailTabs } from '@/features/platform/mail/MailTabs';
+import { ComposeAction, MailTabs } from '@/features/platform/mail/MailTabs';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,11 @@ export default function MailInboxPage({ threads, hasMore, page, filters, unreadT
         router.get(pf('/correos/bandeja'), { ...filters, pagina: 1, ...changes }, { preserveState: true, replace: true });
 
     return (
-        <PlatformLayout title="Bandeja" description="Lo que llega a cualquier dirección @apartar.app. Las respuestas salen desde info@.">
+        <PlatformLayout
+            title="Bandeja"
+            description="Lo que llega a cualquier dirección @apartar.app. Las respuestas salen desde info@."
+            actions={<ComposeAction />}
+        >
             <MailTabs />
 
             <section aria-label="Filtros" className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

@@ -44,7 +44,15 @@ export default function SupportIndex({ grants, filter, page, hasMore }: SupportI
             <section aria-label="Accesos" className="border-line bg-base-100 shadow-card overflow-hidden rounded-2xl border">
                 {grants.length === 0 ? (
                     <div className="p-6">
-                        <EmptyState icon={cilShieldAlt} title={filter === 'vigentes' ? 'Ningún acceso abierto' : 'Todavía no hay accesos'}>
+                        <EmptyState
+                            icon={cilShieldAlt}
+                            title={filter === 'vigentes' ? 'Ningún acceso abierto' : 'Todavía no hay accesos'}
+                            action={
+                                <Link href={pf('/organizaciones')} className="btn btn-sm">
+                                    Ir a organizaciones
+                                </Link>
+                            }
+                        >
                             Los accesos se abren desde el detalle de cada organización, con un motivo que el negocio verá.
                         </EmptyState>
                     </div>

@@ -7,9 +7,10 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'pr
     error?: string;
     hint?: ReactNode;
     prefix?: string;
+    suffix?: string;
 }
 
-export function TextField({ label, error, hint, prefix, id, className, ...props }: TextFieldProps) {
+export function TextField({ label, error, hint, prefix, suffix, id, className, ...props }: TextFieldProps) {
     const generatedId = useId();
     const fieldId = id ?? generatedId;
     const errorId = `${fieldId}-error`;
@@ -33,6 +34,8 @@ export function TextField({ label, error, hint, prefix, id, className, ...props 
                     aria-describedby={describedBy === '' ? undefined : describedBy}
                     {...props}
                 />
+
+                {suffix ? <span className="text-ink-3 shrink-0 text-sm">{suffix}</span> : null}
             </label>
 
             {hint ? (

@@ -47,3 +47,14 @@ it('sin avisos, lo dice', () => {
 
     expect(screen.getByText('Nada pendiente. Todo al día.')).toBeInTheDocument();
 });
+
+it('en el celular el panel ocupa el ancho con margen y el título va en minúscula', () => {
+    props = { platformOperator: { pendingReceipts: 1, alerts: [] } };
+
+    render(<PlatformBell />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Avisos: 1' }));
+
+    expect(screen.getByRole('menu')).toHaveClass('max-lg:w-[calc(100vw-2rem)]');
+    expect(screen.getByText('Para atender')).toHaveClass('normal-case');
+});

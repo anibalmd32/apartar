@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { Pager } from '@/features/platform/components/Pager';
 import { PlatformListFilters } from '@/features/platform/components/PlatformListFilters';
 import { count, dateTime, statusTone } from '@/features/platform/mail/format';
-import { MailTabs } from '@/features/platform/mail/MailTabs';
+import { ComposeAction, MailTabs } from '@/features/platform/mail/MailTabs';
 import PlatformLayout from '@/layouts/platform-layout';
 import { compactQuery } from '@/lib/compact-query';
 import { pf } from '@/lib/surfaces';
@@ -40,7 +40,11 @@ export default function SentMails({ mails, hasMore, page, filters, statuses, cat
     const filtered = Object.values(filters).some((value) => value !== null);
 
     return (
-        <PlatformLayout title="Correos enviados" description="Cada correo que salió de la app, con su contenido y lo que Mailtrap nos contó de él.">
+        <PlatformLayout
+            title="Correos enviados"
+            description="Cada correo que salió de la app, con su contenido y lo que Mailtrap nos contó de él."
+            actions={<ComposeAction />}
+        >
             <MailTabs />
 
             <PlatformListFilters

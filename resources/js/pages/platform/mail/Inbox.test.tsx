@@ -5,7 +5,7 @@ import { type ReactNode } from 'react';
 import { expect, it, vi } from 'vitest';
 
 vi.mock('@/layouts/platform-layout', () => ({ default: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
-vi.mock('@/features/platform/mail/MailTabs', () => ({ MailTabs: () => null }));
+vi.mock('@/features/platform/mail/MailTabs', () => ({ MailTabs: () => null, ComposeAction: () => null }));
 vi.mock('@inertiajs/react', () => ({
     router: { get: vi.fn() },
     Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (

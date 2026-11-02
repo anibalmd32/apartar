@@ -11,7 +11,7 @@ import { pf } from '@/lib/surfaces';
 import { cilSearch, cilShieldAlt } from '@coreui/icons';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
-import { PlatformNav, PlatformTabBar } from './platform/nav';
+import { PlatformMenuLinks, PlatformNav, PlatformTabBar } from './platform/nav';
 
 interface PlatformLayoutProps {
     title: string;
@@ -29,8 +29,13 @@ export default function PlatformLayout({ title, description, actions, back, chil
 
     useMailActivity();
 
-    const userMenu = (
-        <UserMenu name={operator?.name ?? 'Operador'} detail={operator?.email ?? 'Plataforma Apartar'} onLogout={() => router.post(pf('/logout'))} />
+    const userMenu = (mobile: boolean) => (
+        <UserMenu
+            name={operator?.name ?? 'Operador'}
+            detail={operator?.email ?? 'Plataforma Apartar'}
+            onLogout={() => router.post(pf('/logout'))}
+            extra={mobile ? <PlatformMenuLinks /> : undefined}
+        />
     );
 
     return (
@@ -76,7 +81,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                     <div className="flex-1" />
                     <RatePill />
                     <PlatformBell />
-                    {userMenu}
+                    {userMenu(false)}
                 </header>
 
                 <header className="bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden">
@@ -86,7 +91,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                         <p className="text-h2 truncate">Plataforma</p>
                     </div>
                     <PlatformBell />
-                    {userMenu}
+                    {userMenu(true)}
                 </header>
                 <div className="flex px-4 pt-1 lg:hidden">
                     <RatePill />

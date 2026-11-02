@@ -22,7 +22,7 @@ export function RiskBadges({ row, dashWhenNone = false }: { row: OrganizationRow
     );
 }
 
-export function OrganizationCard({ row, lastActivity }: { row: OrganizationRow; lastActivity: string }) {
+export function OrganizationCard({ row, planName, lastActivity }: { row: OrganizationRow; planName: string | null; lastActivity: string | null }) {
     return (
         <li>
             <Link
@@ -34,7 +34,7 @@ export function OrganizationCard({ row, lastActivity }: { row: OrganizationRow; 
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-bold">{row.name}</span>
                         <span className="text-ink-3 block truncate text-xs">
-                            {row.planCode ?? '—'} · {lastActivity}
+                            {planName ?? 'Sin plan'} · {lastActivity === null ? 'Sin actividad' : `Última actividad: ${lastActivity}`}
                         </span>
                     </span>
                     <OrganizationStatusBadge status={row.status} />

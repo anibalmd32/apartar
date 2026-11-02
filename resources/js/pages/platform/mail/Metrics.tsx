@@ -2,7 +2,7 @@ import { DateRangeField } from '@/components/ui/date-range-field';
 import { BreakdownTable } from '@/features/platform/mail/BreakdownTable';
 import { DailyChart } from '@/features/platform/mail/DailyChart';
 import { BounceReasons, TopLinks } from '@/features/platform/mail/LinksAndBounces';
-import { MailTabs } from '@/features/platform/mail/MailTabs';
+import { ComposeAction, MailTabs } from '@/features/platform/mail/MailTabs';
 import { MetricTiles } from '@/features/platform/mail/MetricTiles';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
@@ -39,7 +39,11 @@ export default function MailMetricsPage({ metrics, filters }: MetricsProps) {
         );
 
     return (
-        <PlatformLayout title="Correos" description="Todo lo que sale y entra por apartar.app, medido con los avisos de Mailtrap que guardamos.">
+        <PlatformLayout
+            title="Correos"
+            description="Todo lo que sale y entra por apartar.app, medido con los avisos de Mailtrap que guardamos."
+            actions={<ComposeAction />}
+        >
             <MailTabs />
 
             <section aria-label="Fechas" className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

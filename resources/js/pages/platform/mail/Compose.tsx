@@ -5,13 +5,17 @@ import { Icon } from '@/components/ui/icon';
 import { RichTextField } from '@/components/ui/rich-text-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { composeBack } from '@/features/platform/mail/composeBack';
 import { dateTime } from '@/features/platform/mail/format';
 import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type ComposeSource } from '@/types/mail';
 import { cilPaperclip, cilSend } from '@coreui/icons';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+
+const ADDRESS_INPUT = { inputMode: 'email', autoCapitalize: 'off', autoCorrect: 'off', spellCheck: false, autoComplete: 'off' } as const;
 
 interface ComposeProps {
     mode: string;
@@ -27,14 +31,11 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
         title: '¿Salir sin enviar?',
         description: 'Tienes un correo a medio escribir. Si sales ahora, se pierde.',
     });
-    const back = source === null ? pf('/correos/bandeja') : pf(`/correos/bandeja/${source.threadId}`);
+    const back = composeBack(usePage().url, source?.threadId ?? null);
+    const [withCopy, setWithCopy] = useState(defaults.cc !== '');
 
     return (
-        <PlatformLayout
-            title={modeLabel}
-            description={`Sale desde ${from}.`}
-            back={<BackLink href={back}>{source === null ? 'Bandeja' : 'Conversación'}</BackLink>}
-        >
+        <PlatformLayout title={modeLabel} description={`Sale desde ${from}.`} back={<BackLink href={back.href}>{back.label}</BackLink>}>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <SectionCard aria-label="Correo">
                     <form
@@ -50,16 +51,22 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
                             onChange={(event) => form.setData('to', event.target.value)}
                             error={form.errors.to}
                             hint="Separa varias direcciones con comas."
-                            autoComplete="off"
+                            {...ADDRESS_INPUT}
                             required
                         />
-                        <TextField
-                            label="Copia"
-                            value={form.data.cc}
-                            onChange={(event) => form.setData('cc', event.target.value)}
-                            error={form.errors.cc}
-                            autoComplete="off"
-                        />
+                        {withCopy || form.errors.cc ? (
+                            <TextField
+                                label="Copia"
+                                value={form.data.cc}
+                                onChange={(event) => form.setData('cc', event.target.value)}
+                                error={form.errors.cc}
+                                {...ADDRESS_INPUT}
+                            />
+                        ) : (
+                            <button type="button" className="link link-primary touch:min-h-11 self-start text-sm" onClick={() => setWithCopy(true)}>
+                                Añadir copia
+                            </button>
+                        )}
                         <TextField
                             label="Asunto"
                             value={form.data.subject}
@@ -74,8 +81,8 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
                             onChange={(html) => form.setData('body', html)}
                             error={form.errors.body}
                         />
-                        <FormActionBar sticky={form.isDirty} className="mt-2 lg:justify-end">
-                            <Button type="submit" loading={form.processing} disabled={form.processing}>
+                        <FormActionBar sticky className="mt-2 lg:justify-end">
+                            <Button type="submit" loading={form.processing} disabled={form.processing} className="max-lg:min-h-11">
                                 {form.processing ? null : <Icon icon={cilSend} size={16} />}
                                 Enviar
                             </Button>

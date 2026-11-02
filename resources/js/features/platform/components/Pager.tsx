@@ -1,19 +1,21 @@
 import { Icon } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 import { cilChevronLeft, cilChevronRight } from '@coreui/icons';
 
 interface PagerProps {
     page: number;
     hasMore: boolean;
     onPage: (page: number) => void;
+    className?: string;
 }
 
-export function Pager({ page, hasMore, onPage }: PagerProps) {
+export function Pager({ page, hasMore, onPage, className }: PagerProps) {
     if (page === 1 && !hasMore) {
         return null;
     }
 
     return (
-        <nav aria-label="Páginas" className="border-line flex items-center justify-between gap-2 border-t px-5 py-3">
+        <nav aria-label="Páginas" className={cn('border-line flex items-center justify-between gap-2 border-t px-5 py-3', className)}>
             <span className="text-ink-3 text-[13px]">Página {page}</span>
             <span className="flex gap-2">
                 {page > 1 ? (

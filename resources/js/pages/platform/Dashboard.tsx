@@ -2,7 +2,7 @@ import { FigureItem, FigureList } from '@/components/ui/figure-list';
 import { Meter } from '@/components/ui/meter';
 import { SectionCard } from '@/components/ui/section-card';
 import { StatCard } from '@/components/ui/stat-card';
-import { BillingTrend, versusLastMonth } from '@/features/platform/components/BillingTrend';
+import { BillingTrend } from '@/features/platform/components/BillingTrend';
 import { MailSummaryCard } from '@/features/platform/mail/MailSummaryCard';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
@@ -54,7 +54,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
             <div className="stat-stack lg:grid lg:grid-cols-4 lg:gap-4">
                 <section aria-label="MRR" className="flex">
                     <StatCard label="MRR" value={mrr?.usd ?? DASH} icon={cilDollar} tone="success" className="flex-1">
-                        {versusLastMonth(metrics.monthly ?? null) ?? 'Suscripciones activas, en gracia y vencidas; sin suspendidas ni canceladas.'}
+                        Suscripciones activas, en gracia y vencidas; sin suspendidas ni canceladas.
                     </StatCard>
                 </section>
 

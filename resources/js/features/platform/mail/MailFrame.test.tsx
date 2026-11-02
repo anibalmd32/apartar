@@ -39,3 +39,16 @@ it('detecta imágenes remotas en etiquetas y en estilos', () => {
     expect(hasRemoteImages('<img src="data:image/png;base64,AAAA">')).toBe(false);
     expect(frameDocument('<p>x</p>', false)).toContain('<base target="_blank">');
 });
+
+it('el correo se puede ver a pantalla completa y volver', () => {
+    const { container } = render(<MailFrame title="Correo" html="<p>Hola</p>" text={null} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pantalla completa' }));
+
+    expect(container.firstElementChild).toHaveClass('fixed', 'inset-0');
+    expect(screen.getByTitle('Correo')).toHaveClass('flex-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar pantalla completa' }));
+
+    expect(container.firstElementChild).not.toHaveClass('fixed');
+});

@@ -25,7 +25,7 @@ it('agrupa por día los rangos cortos y por semana los largos', () => {
     const short = chartData([day('2026-10-01', 2), day('2026-10-02', 3)], 'sent');
 
     expect(short.map((bar) => bar.value)).toEqual([2, 3]);
-    expect(short[0]?.label).toBe('1');
+    expect(short[0]?.label).toBe('1 oct');
     expect(short[0]?.title).toMatch(/^1 oct.*: 2$/);
 
     const long = chartData(

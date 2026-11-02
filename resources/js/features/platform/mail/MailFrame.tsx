@@ -1,6 +1,6 @@
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { cilImage } from '@coreui/icons';
+import { cilFullscreen, cilFullscreenExit, cilImage } from '@coreui/icons';
 import { useState } from 'react';
 
 const STYLE =
@@ -25,6 +25,7 @@ interface MailFrameProps {
 
 export function MailFrame({ html, text, title, className }: MailFrameProps) {
     const [images, setImages] = useState(false);
+    const [expanded, setExpanded] = useState(false);
 
     if (html === null || html.trim() === '') {
         return (
@@ -33,7 +34,18 @@ export function MailFrame({ html, text, title, className }: MailFrameProps) {
     }
 
     return (
-        <div className={cn('flex flex-col gap-2', className)}>
+        <div
+            data-expanded={expanded || undefined}
+            className={cn(
+                'flex flex-col gap-2',
+                expanded && 'bg-base-100 fixed inset-0 z-50 p-3 pt-[max(env(safe-area-inset-top),0.75rem)]',
+                className,
+            )}
+        >
+            <button type="button" className="btn btn-ghost btn-sm hit-area self-end" onClick={() => setExpanded(!expanded)}>
+                <Icon icon={expanded ? cilFullscreenExit : cilFullscreen} size={14} />
+                {expanded ? 'Cerrar pantalla completa' : 'Pantalla completa'}
+            </button>
             {!images && hasRemoteImages(html) ? (
                 <p className="text-ink-3 flex flex-wrap items-center gap-2 text-xs">
                     <Icon icon={cilImage} size={14} />
@@ -48,7 +60,7 @@ export function MailFrame({ html, text, title, className }: MailFrameProps) {
                 sandbox="allow-popups allow-popups-to-escape-sandbox"
                 referrerPolicy="no-referrer"
                 srcDoc={frameDocument(html, images)}
-                className="border-line h-[60vh] min-h-[360px] w-full rounded-xl border bg-white"
+                className={cn('border-line w-full rounded-xl border bg-white', expanded ? 'min-h-0 flex-1' : 'h-[60vh] min-h-[360px]')}
             />
         </div>
     );
