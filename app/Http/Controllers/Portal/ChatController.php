@@ -16,10 +16,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Chat\SendMessageRequest;
 use App\Models\Conversation;
 use App\Models\Customer;
+use App\Models\Message;
 use App\Models\Organization;
 use App\Queries\ConversationMessagesQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,9 +41,11 @@ final class ChatController extends Controller
 
             $threads[] = $this->context->runFor($organization, function () use ($organization, $customer): array {
                 $conversation = Conversation::query()->where('customer_id', $customer->getKey())->first();
+                $last = $conversation === null ? null : Message::query()->where('conversation_id', $conversation->getKey())->latest('id')->first();
 
                 return [
                     'businessName' => $organization->name,
+                    'excerpt' => $last === null ? '' : ($last->sender_type === MessageSenderType::Customer ? 'Tú: ' : '').Str::limit($last->body, 80),
                     'url' => route('portal.chat.show', ['organization' => $organization->slug]),
                     'unread' => $conversation === null ? 0 : $conversation->customer_unread_count,
                     'lastMessageAt' => $conversation?->last_message_at?->toIso8601String(),

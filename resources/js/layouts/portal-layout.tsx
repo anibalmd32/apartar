@@ -6,6 +6,7 @@ import { PortalNav, portalNavItems, PortalTabBar } from '@/features/account/comp
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
 import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { CookieConsent, CookiePreferencesLink } from '@/features/telemetry/components/CookieConsent';
+import { cn } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
@@ -14,6 +15,7 @@ interface PortalLayoutProps {
     title: string;
     businessName: string;
     customerName: string;
+    immersive?: boolean;
     children: ReactNode;
 }
 
@@ -31,7 +33,7 @@ const PORTAL_CHAT_PROPS = ['auth'];
 
 const NO_CHANNELS: readonly string[] = [];
 
-function PortalFrame({ title, businessName, customerName, children }: PortalLayoutProps) {
+function PortalFrame({ title, businessName, customerName, immersive = false, children }: PortalLayoutProps) {
     const { isAccount, session } = useAccountSession();
     useChatNotifications({
         channels: session?.chatChannels ?? NO_CHANNELS,
@@ -66,7 +68,7 @@ function PortalFrame({ title, businessName, customerName, children }: PortalLayo
                 </div>
             </header>
 
-            <header className="bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden">
+            <header className={cn('bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden', immersive && 'hidden')}>
                 <Link href={route('portal.dashboard')} aria-label="Ir al inicio de tu cuenta" className="hit-area flex shrink-0">
                     <BrandMark className="size-[30px] rounded-lg text-[19px]" />
                 </Link>
@@ -75,15 +77,20 @@ function PortalFrame({ title, businessName, customerName, children }: PortalLayo
                 {userMenu}
             </header>
 
-            <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-4 px-4 pt-2 pb-8 lg:gap-6 lg:px-8 lg:pt-8 lg:pb-14">
+            <main
+                className={cn(
+                    'mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-4 lg:gap-6 lg:px-8 lg:pt-8 lg:pb-14',
+                    !immersive && 'px-4 pt-2 pb-8',
+                )}
+            >
                 {children}
             </main>
 
-            <footer className="flex justify-center pt-2 pb-28 text-sm lg:pb-6">
+            <footer className={cn('flex justify-center pt-2 pb-28 text-sm lg:pb-6', immersive && 'max-lg:hidden')}>
                 <CookiePreferencesLink className="link link-hover text-ink-3" />
             </footer>
 
-            <PortalTabBar items={items} />
+            {immersive ? null : <PortalTabBar items={items} />}
 
             <CookieConsent />
         </div>

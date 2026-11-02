@@ -1,12 +1,10 @@
 import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
-import { formatMoment } from '@/lib/dates';
+import { listTime } from '@/features/chat/lib/list-time';
 import { formatDocumentNumber } from '@/lib/identity-format';
 import { cn } from '@/lib/utils';
 import { type ConversationRow } from '@/types/chat';
 import { Link } from '@inertiajs/react';
-
-const when = (iso: string) => formatMoment(iso);
 
 export function ConversationList({ threads, activeId }: { threads: readonly ConversationRow[]; activeId: number | null }) {
     return (
@@ -20,31 +18,39 @@ export function ConversationList({ threads, activeId }: { threads: readonly Conv
                             href={thread.url}
                             aria-current={activeId === thread.id ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-2.5 px-4 py-3 transition-colors',
+                                'flex items-center gap-3 px-4 py-3 transition-colors',
                                 activeId === thread.id ? 'bg-primary-soft' : 'hover:bg-surface-2',
                             )}
                         >
-                            <Avatar name={thread.customerName} size={40} tone="accent" />
+                            <Avatar name={thread.customerName} size={44} tone="accent" />
                             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                <span className={cn('truncate text-sm', unread ? 'font-bold' : 'font-semibold')}>{thread.customerName}</span>
-                                <span className={cn('truncate text-xs', unread ? 'text-ink-2' : 'text-ink-3')}>
-                                    {thread.customerDocument === '' ? null : (
-                                        <>
-                                            <span className="whitespace-nowrap">{formatDocumentNumber(thread.customerDocument)}</span>
-                                            {' · '}
-                                        </>
-                                    )}
-                                    {thread.excerpt}
+                                <span className="flex items-baseline gap-2">
+                                    <span className={cn('min-w-0 flex-1 truncate text-[15px]', unread ? 'font-bold' : 'font-semibold')}>
+                                        {thread.customerName}
+                                    </span>
+                                    {thread.lastMessageAt !== null ? (
+                                        <span className={cn('shrink-0 text-xs', unread ? 'text-primary font-semibold' : 'text-ink-3')}>
+                                            {listTime(thread.lastMessageAt)}
+                                        </span>
+                                    ) : null}
                                 </span>
-                            </span>
-                            <span className="flex shrink-0 flex-col items-end gap-1">
-                                {thread.lastMessageAt !== null ? <span className="text-ink-3 text-[11px]">{when(thread.lastMessageAt)}</span> : null}
-                                {unread ? (
-                                    <Badge tone="primary" count>
-                                        {thread.unread}
-                                        <span className="sr-only"> sin leer</span>
-                                    </Badge>
-                                ) : null}
+                                <span className="flex items-center gap-2">
+                                    <span className={cn('min-w-0 flex-1 truncate text-[13px]', unread ? 'text-base-content' : 'text-ink-3')}>
+                                        {thread.customerDocument === '' ? null : (
+                                            <>
+                                                <span className="whitespace-nowrap">{formatDocumentNumber(thread.customerDocument)}</span>
+                                                {' · '}
+                                            </>
+                                        )}
+                                        {thread.excerpt}
+                                    </span>
+                                    {unread ? (
+                                        <Badge tone="primary" count>
+                                            {thread.unread}
+                                            <span className="sr-only"> sin leer</span>
+                                        </Badge>
+                                    ) : null}
+                                </span>
                             </span>
                         </Link>
                     </li>

@@ -4,12 +4,16 @@ import { render, screen } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-vi.mock('@inertiajs/react', async () => ({
+vi.mock('@inertiajs/react', () => ({
     usePage: () => ({ props: { auth: { portal: { fullName: 'José Gregorio Martínez' } } } }),
-    Link: (await import('@/test/fakes')).FakeLink,
+    Link: ({ children, ...props }: { children: ReactNode; href: string }) => <a {...props}>{children}</a>,
 }));
 
-vi.mock('@/layouts/portal-layout', () => ({ default: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
+vi.mock('@/layouts/portal-layout', () => ({
+    default: ({ children, immersive }: { children: ReactNode; immersive?: boolean }) => (
+        <main data-immersive={immersive ? 'si' : 'no'}>{children}</main>
+    ),
+}));
 
 vi.mock('@/features/chat/components/ChatThreadView', () => ({ ChatThreadView: () => <textarea aria-label="Mensaje" /> }));
 
@@ -17,13 +21,16 @@ beforeEach(() => {
     vi.stubGlobal('route', (name: string) => `/${name}`);
 });
 
-it('en el celular el chat deja libre la barra inferior y el área segura para que el campo de escribir no quede tapado', () => {
+it('en el celular la conversación ocupa toda la pantalla con una cabecera compacta para volver', () => {
     render(<Chat {...({ businessName: 'Moda Valentina', thread: {} } as unknown as PortalChatProps)} />);
 
-    const section = screen.getByRole('heading', { name: 'Escríbele a Moda Valentina' }).closest('section')!;
-    const mobileHeight = Array.from(section.classList).find((name) => name.startsWith('h-['));
+    expect(screen.getByRole('main')).toHaveAttribute('data-immersive', 'si');
 
-    expect(mobileHeight).toContain('env(safe-area-inset-bottom)');
-    expect(Number(/100dvh_-_(\d+)px/.exec(mobileHeight ?? '')?.[1])).toBeGreaterThanOrEqual(205);
-    expect(section).toHaveClass('min-h-[360px]', 'lg:min-h-[480px]');
+    const heading = screen.getByRole('heading', { level: 1, name: 'Moda Valentina' });
+    const section = heading.closest('section')!;
+
+    expect(section).toHaveClass('h-dvh', 'lg:h-[calc(100dvh-150px)]');
+    expect(screen.getByRole('link', { name: 'Volver a tus conversaciones' })).toHaveAttribute('href', '/portal.chat.index');
+    expect(screen.queryByText('Tus conversaciones')).toBeNull();
+    expect(screen.queryByText(/Escríbele a/)).toBeNull();
 });

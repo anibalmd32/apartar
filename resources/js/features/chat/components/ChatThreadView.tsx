@@ -1,17 +1,13 @@
-import { Icon } from '@/components/ui/icon';
 import { ChatBubble, DaySeparator } from '@/features/chat/components/ChatBubble';
+import { ChatComposer } from '@/features/chat/components/ChatComposer';
 import { useConversation } from '@/features/chat/hooks/useConversation';
 import { useTypingIndicator } from '@/features/chat/hooks/useTypingIndicator';
 import { dayKey, dayLabel } from '@/features/chat/lib/day-label';
+import { placeMessages } from '@/features/chat/lib/group-messages';
 import { formatTime } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { type ChatThread, type MessageSenderType } from '@/types/chat';
-import { cilSend } from '@coreui/icons';
-import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react';
-
-export const MAX_MESSAGE_LENGTH = 2000;
-
-const COUNTER_FROM = 200;
+import { Fragment, useEffect, useMemo, useRef } from 'react';
 
 interface ChatThreadViewProps {
     thread: ChatThread;
@@ -23,55 +19,39 @@ interface ChatThreadViewProps {
 export function ChatThreadView({ thread, me, placeholder, className }: ChatThreadViewProps) {
     const conversation = useConversation(thread, me);
     const indicator = useTypingIndicator(thread.channel, thread.typingUrl, me, conversation.mode === 'live');
-    const [draft, setDraft] = useState('');
-    const remaining = MAX_MESSAGE_LENGTH - draft.length;
     const end = useRef<HTMLDivElement>(null);
     const count = conversation.messages.length + conversation.outgoing.length;
     const last = conversation.messages.at(-1);
     const lastDay = last === undefined ? null : dayKey(last.sentAt);
+    const placements = useMemo(() => placeMessages(conversation.messages), [conversation.messages]);
 
     useEffect(() => {
         end.current?.scrollIntoView?.({ block: 'end' });
     }, [count, indicator.typing]);
 
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-
-        if (draft.trim() === '' || remaining < 0) {
-            return;
-        }
-
-        conversation.send(draft);
-        setDraft('');
-    };
-
     return (
         <div className={cn('flex min-h-0 flex-col', className)}>
-            <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-5 lg:px-6">
-                {conversation.mode === 'polling' ? (
-                    <p className="text-ink-3 self-center text-center text-xs">
-                        Modo sin conexión en vivo: los mensajes se actualizan cada pocos segundos.
-                    </p>
-                ) : null}
-
-                <ol className="flex flex-col gap-3.5" aria-label="Mensajes">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 lg:px-6 lg:py-5">
+                <ol className="flex flex-col gap-1" aria-label="Mensajes">
                     {count === 0 ? <li className="text-ink-3 self-center py-6 text-sm">Todavía no hay mensajes. Escribe el primero.</li> : null}
                     {conversation.messages.map((message, index) => {
-                        const previous = conversation.messages[index - 1];
+                        const place = placements[index];
+                        const mine = conversation.mine(message);
 
                         return (
                             <Fragment key={message.id}>
-                                {previous === undefined || dayKey(previous.sentAt) !== dayKey(message.sentAt) ? (
-                                    <DaySeparator label={dayLabel(message.sentAt)} />
-                                ) : null}
+                                {place?.newDay ? <DaySeparator label={dayLabel(message.sentAt)} /> : null}
                                 <ChatBubble
-                                    mine={conversation.mine(message)}
+                                    mine={mine}
                                     body={message.body}
+                                    startsGroup={place?.startsGroup ?? true}
                                     meta={
-                                        <>
-                                            {meta(message.senderName, message.sentAt)}
-                                            {conversation.mine(message) && message.readAt ? ' · Leído' : null}
-                                        </>
+                                        place?.endsGroup === false ? null : (
+                                            <>
+                                                {`${message.senderName} · ${formatTime(message.sentAt)}`}
+                                                {mine && message.readAt ? ' · Leído' : null}
+                                            </>
+                                        )
                                     }
                                 />
                             </Fragment>
@@ -101,7 +81,7 @@ export function ChatThreadView({ thread, me, placeholder, className }: ChatThrea
                 </ol>
 
                 {indicator.typing !== null ? (
-                    <p className="bg-surface-2 flex items-center gap-1 self-start rounded-2xl px-3.5 py-2.5" role="status">
+                    <p className="bg-surface-2 mt-3 flex items-center gap-1 self-start rounded-2xl px-3.5 py-2.5" role="status">
                         <span aria-hidden="true" className="flex gap-1">
                             <span className="bg-ink-3 size-1.5 animate-pulse rounded-full" />
                             <span className="bg-ink-3 size-1.5 animate-pulse rounded-full [animation-delay:150ms]" />
@@ -113,44 +93,7 @@ export function ChatThreadView({ thread, me, placeholder, className }: ChatThrea
                 <div ref={end} />
             </div>
 
-            <form className="border-line flex items-end gap-2.5 border-t px-4 py-3 lg:px-5" onSubmit={submit}>
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <textarea
-                        className="bg-surface-2 placeholder:text-ink-3 focus:outline-primary min-h-[88px] w-full resize-y rounded-2xl px-4 py-3 text-[15px] leading-normal focus:outline-2 lg:min-h-[104px]"
-                        style={{ maxHeight: '50dvh' }}
-                        aria-label="Mensaje"
-                        rows={3}
-                        value={draft}
-                        placeholder={placeholder ?? 'Escribe tu mensaje'}
-                        onChange={(event) => {
-                            setDraft(event.target.value);
-                            indicator.notify();
-                        }}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                                event.preventDefault();
-                                event.currentTarget.form?.requestSubmit();
-                            }
-                        }}
-                        enterKeyHint="send"
-                    />
-                    {remaining < COUNTER_FROM ? (
-                        <span className={cn('px-4 text-xs', remaining < 0 ? 'text-error' : 'text-ink-3')}>{remaining}</span>
-                    ) : null}
-                </div>
-                <button
-                    type="submit"
-                    className="btn btn-primary btn-circle size-11 shrink-0"
-                    disabled={draft.trim() === '' || remaining < 0}
-                    aria-label="Enviar"
-                >
-                    <Icon icon={cilSend} size={18} />
-                </button>
-            </form>
+            <ChatComposer placeholder={placeholder} onSend={conversation.send} onType={indicator.notify} />
         </div>
     );
-}
-
-function meta(senderName: string, sentAt: string): string {
-    return `${senderName} · ${formatTime(sentAt)}`;
 }

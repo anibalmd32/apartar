@@ -114,6 +114,19 @@ final class ChatTest extends TestCase
         $this->postJson($url, ['body' => 'Uno más', 'idempotencyKey' => (string) Str::uuid()])->assertStatus(429);
     }
 
+    public function test_la_lista_del_portal_muestra_el_ultimo_mensaje_de_cada_conversacion(): void
+    {
+        $this->withinOrganization($this->organization, function (): void {
+            $conversation = Conversation::factory()->create(['customer_id' => $this->customer->getKey()]);
+            Message::factory()->create(['conversation_id' => $conversation->getKey(), 'sender_type' => 'team', 'sender_id' => 1, 'body' => 'Hola, ¿cómo vas?']);
+            Message::factory()->create(['conversation_id' => $conversation->getKey(), 'sender_type' => 'customer', 'sender_id' => $this->customer->getKey(), 'body' => 'Ya pagué la cuota']);
+        });
+        $this->withoutOrganization();
+
+        $this->actingAs($this->customer, 'customer')->get(route('portal.chat.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('threads.0.excerpt', 'Tú: Ya pagué la cuota'));
+    }
+
     public function test_opening_marks_read_and_the_account_lists_one_thread_per_business(): void
     {
         $other = Organization::factory()->create(['name' => 'Boutique Sur']);

@@ -1,5 +1,4 @@
-import { Avatar } from '@/components/shell/avatar';
-import { BackLink } from '@/components/ui/back-link';
+import { ChatHeader } from '@/features/chat/components/ChatHeader';
 import { ChatThreadView } from '@/features/chat/components/ChatThreadView';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalChatProps } from '@/types/chat';
@@ -9,14 +8,15 @@ export default function Chat({ businessName, thread }: PortalChatProps) {
     const { auth } = usePage<{ auth?: { portal?: { fullName: string } | null } }>().props;
 
     return (
-        <PortalLayout title={`Chat · ${businessName}`} businessName={businessName} customerName={auth?.portal?.fullName ?? ''}>
-            <BackLink href={route('portal.chat.index')}>Tus conversaciones</BackLink>
-
-            <section className="border-line bg-base-100 flex h-[calc(100dvh_-_205px_-_max(env(safe-area-inset-bottom),0.75rem))] min-h-[360px] flex-col overflow-hidden border-y max-lg:-mx-4 lg:h-[calc(100dvh-150px)] lg:min-h-[480px] lg:rounded-2xl lg:border">
-                <header className="border-line flex items-center gap-2.5 border-b px-4 py-3.5 lg:px-6">
-                    <Avatar name={businessName} size={40} tone="accent" />
-                    <h1 className="min-w-0 truncate text-[15px] font-bold">Escríbele a {businessName}</h1>
-                </header>
+        <PortalLayout title={`Chat · ${businessName}`} businessName={businessName} customerName={auth?.portal?.fullName ?? ''} immersive>
+            <section className="bg-base-100 lg:border-line flex h-dvh flex-col overflow-hidden lg:h-[calc(100dvh-150px)] lg:min-h-[480px] lg:rounded-2xl lg:border">
+                <ChatHeader
+                    name={businessName}
+                    heading="h1"
+                    backHref={route('portal.chat.index')}
+                    backLabel="Volver a tus conversaciones"
+                    backOnDesktop
+                />
                 <ChatThreadView thread={thread} me="customer" className="flex-1" placeholder={`Escribe a ${businessName}…`} />
             </section>
         </PortalLayout>

@@ -26,6 +26,7 @@ export interface PortalChatProps {
 export interface PortalChatIndexProps {
     readonly threads: readonly {
         readonly businessName: string;
+        readonly excerpt: string;
         readonly url: string;
         readonly unread: number;
         readonly lastMessageAt: string | null;

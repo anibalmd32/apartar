@@ -35,6 +35,7 @@ interface BackofficeLayoutProps {
     actions?: ReactNode;
     back?: { href: string; label: string };
     badge?: ReactNode;
+    immersive?: boolean;
     children: ReactNode;
 }
 
@@ -50,7 +51,7 @@ export default function BackofficeLayout(props: BackofficeLayoutProps) {
 
 const TEAM_CHAT_PROPS = ['teamMember'];
 
-function BackofficeFrame({ title, description, actions, back, badge, children }: BackofficeLayoutProps) {
+function BackofficeFrame({ title, description, actions, back, badge, immersive = false, children }: BackofficeLayoutProps) {
     const { teamMember } = usePage<BackofficeSharedData>().props;
     useChatNotifications({
         channels: teamMember?.chatChannel ? [teamMember.chatChannel] : [],
@@ -139,10 +140,15 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                     {userMenu}
                 </header>
 
-                <MobileHeader organizationName={organization?.name ?? 'Apartar'} pendingReceipts={pendingReceipts} userMenu={userMenu} />
+                {immersive ? null : (
+                    <MobileHeader organizationName={organization?.name ?? 'Apartar'} pendingReceipts={pendingReceipts} userMenu={userMenu} />
+                )}
 
                 {suspended ? (
-                    <div role="alert" className="bg-error text-error-content flex flex-wrap items-center gap-3 px-4 py-3 lg:px-8">
+                    <div
+                        role="alert"
+                        className={`bg-error text-error-content flex flex-wrap items-center gap-3 px-4 py-3 lg:px-8 ${immersive ? 'max-lg:hidden' : ''}`}
+                    >
                         <Icon icon={cilLockLocked} size={18} />
                         <p className="min-w-0 flex-1 text-[13px] font-semibold">
                             Tu suscripción está suspendida por falta de pago. Puedes cobrar y aprobar comprobantes, pero no crear cosas nuevas.
@@ -153,15 +159,21 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                     </div>
                 ) : null}
 
-                <main className={`flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12 ${DOCKED_BAR_PADDING}`}>
+                <main
+                    className={
+                        immersive ? 'flex-1 lg:px-8 lg:pt-7 lg:pb-12' : `flex-1 px-4 pt-2 pb-32 lg:px-8 lg:pt-7 lg:pb-12 ${DOCKED_BAR_PADDING}`
+                    }
+                >
                     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 lg:gap-6">
-                        <PastDueBanner />
+                        <div className={immersive ? 'contents max-lg:hidden' : 'contents'}>
+                            <PastDueBanner />
 
-                        <SupportAccessBanner grants={teamMember?.supportAccess ?? []} />
+                            <SupportAccessBanner grants={teamMember?.supportAccess ?? []} />
 
-                        <UpgradePrompt />
+                            <UpgradePrompt />
+                        </div>
 
-                        <section className={PAGE_HEADER_CLASS}>
+                        <section className={immersive ? `${PAGE_HEADER_CLASS} max-lg:hidden` : PAGE_HEADER_CLASS}>
                             <div className={PAGE_TITLE_CLASS}>
                                 {back ? <BackLink href={back.href}>{back.label}</BackLink> : null}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -178,7 +190,9 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
                 </main>
             </div>
 
-            <TabBar tabs={TABS} capabilities={capabilities} badges={badges} onMore={() => setMenuOpen(true)} moreOpen={menuOpen} />
+            {immersive ? null : (
+                <TabBar tabs={TABS} capabilities={capabilities} badges={badges} onMore={() => setMenuOpen(true)} moreOpen={menuOpen} />
+            )}
 
             <Dialog open={menuOpen} onClose={() => setMenuOpen(false)} className="relative z-50 lg:hidden">
                 <div className="bg-neutral/40 fixed inset-0" aria-hidden="true" />
