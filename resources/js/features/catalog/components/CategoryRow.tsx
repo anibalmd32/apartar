@@ -51,7 +51,7 @@ export function CategoryRow({ category, others, onEdit, onMoveUp, onMoveDown }: 
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="text-ink-2 md:hidden"
+                                className="text-ink-2 disabled:opacity-40 md:hidden"
                                 onClick={onMoveUp}
                                 disabled={onMoveUp === undefined}
                                 aria-label={`Subir ${category.name}`}
@@ -62,7 +62,7 @@ export function CategoryRow({ category, others, onEdit, onMoveUp, onMoveDown }: 
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="text-ink-2 md:hidden"
+                                className="text-ink-2 disabled:opacity-40 md:hidden"
                                 onClick={onMoveDown}
                                 disabled={onMoveDown === undefined}
                                 aria-label={`Bajar ${category.name}`}
