@@ -12,7 +12,7 @@ import {
     type UniqueIdentifier,
 } from '@dnd-kit/core';
 import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { type CSSProperties, type ReactNode } from 'react';
 
@@ -42,9 +42,10 @@ interface SortableListProps {
     onReorder: (from: number, to: number) => void;
     labelOf: LabelOf;
     children: ReactNode;
+    layout?: 'list' | 'grid';
 }
 
-export function SortableList({ ids, onReorder, labelOf, children }: SortableListProps) {
+export function SortableList({ ids, onReorder, labelOf, children, layout = 'list' }: SortableListProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -69,11 +70,11 @@ export function SortableList({ ids, onReorder, labelOf, children }: SortableList
         <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            modifiers={layout === 'grid' ? [restrictToParentElement] : [restrictToVerticalAxis, restrictToParentElement]}
             accessibility={{ announcements: announcementsFor(labelOf), screenReaderInstructions: INSTRUCTIONS }}
             onDragEnd={handleDragEnd}
         >
-            <SortableContext items={[...ids]} strategy={verticalListSortingStrategy}>
+            <SortableContext items={[...ids]} strategy={layout === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}>
                 {children}
             </SortableContext>
         </DndContext>

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Backoffice;
 use App\Actions\Product\ChangeProductStatusAction;
 use App\Actions\Product\PublishProductsAction;
 use App\Actions\Product\SuggestProductCopyAction;
+use App\Actions\Product\SyncImageOrderAction;
 use App\Actions\Product\UpsertProductAction;
 use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
@@ -125,8 +126,15 @@ final class ProductController extends Controller
         ]);
     }
 
-    public function update(UpdateProductRequest $request, Product $product, UpsertProductAction $upsert): RedirectResponse
-    {
+    /**
+     * @throws ValidationException
+     */
+    public function update(
+        UpdateProductRequest $request,
+        Product $product,
+        UpsertProductAction $upsert,
+        SyncImageOrderAction $gallery,
+    ): RedirectResponse {
         /** @var User $actor */
         $actor = $request->user();
 
@@ -135,6 +143,8 @@ final class ProductController extends Controller
         } catch (CrossTenantRelationException) {
             throw $this->asFieldError();
         }
+
+        $this->syncGallery($gallery, $product, $request->gallery(), $actor);
 
         return to_route('products.edit', $product)->with('status', 'Producto guardado.');
     }
@@ -543,6 +553,26 @@ final class ProductController extends Controller
     private function decimals(Money $amount): string
     {
         return number_format($amount->cents / 100, 2, '.', '');
+    }
+
+    /**
+     * @param  list<array{id: int, alt?: string|null}>|null  $images
+     *
+     * @throws ValidationException
+     */
+    private function syncGallery(SyncImageOrderAction $gallery, Product $product, ?array $images, User $actor): void
+    {
+        if ($images === null) {
+            return;
+        }
+
+        try {
+            $gallery->handle($product, $images, $actor);
+        } catch (CrossTenantRelationException) {
+            throw ValidationException::withMessages([
+                'images' => 'Alguna de esas imágenes no es de este producto.',
+            ]);
+        }
     }
 
     private function asFieldError(): ValidationException

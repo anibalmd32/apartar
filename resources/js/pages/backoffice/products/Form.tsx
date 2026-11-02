@@ -14,6 +14,7 @@ import { useProductPreview } from '@/features/products/components/ProductPreview
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
 import { SpecificationBuilder } from '@/features/products/components/SpecificationBuilder';
+import { useGalleryDraft } from '@/features/products/hooks/useGalleryDraft';
 import { usePendingImages } from '@/features/products/hooks/usePendingImages';
 import { useProductForm } from '@/features/products/hooks/useProductForm';
 import { useSpecificationRows } from '@/features/products/hooks/useSpecificationRows';
@@ -60,6 +61,8 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
 
     const photos = usePendingImages(defaults.maxImages ?? 10);
 
+    const gallery = useGalleryDraft(product?.images ?? []);
+
     const fields = { data, setData, errors };
 
     const categoryName = categories.find((category) => String(category.id) === data.category_id)?.name ?? data.category_name;
@@ -95,7 +98,8 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
 
     const preview = useProductPreview(previewSource);
 
-    const dirty = isDirty || photos.files.length > 0 || JSON.stringify(sheet.payload()) !== JSON.stringify(product?.specifications ?? []);
+    const dirty =
+        isDirty || gallery.dirty || photos.files.length > 0 || JSON.stringify(sheet.payload()) !== JSON.stringify(product?.specifications ?? []);
 
     const leaveGuard = useLeaveGuard(dirty && !processing, {
         title: '¿Salir sin guardar?',
@@ -109,7 +113,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
     const onSubmit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        submit(sheet.payload(), product === null ? photos.files : []);
+        submit(sheet.payload(), product === null ? photos.files : [], gallery.dirty ? gallery.order : null);
     };
 
     const status = product === null ? null : STATUS_BADGES[product.status];
@@ -165,18 +169,18 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                     </div>
 
                     <div
-                        className={`flex flex-col gap-4 max-lg:order-3 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-2' : 'lg:row-start-3'}`}
+                        className={`flex flex-col gap-4 max-lg:order-4 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-2' : 'lg:row-start-3'}`}
                     >
                         <SpecificationBuilder rows={sheet} errors={errors} />
                     </div>
 
                     <div
-                        className={`flex flex-col gap-4 max-lg:order-5 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-3' : 'lg:row-start-4'}`}
+                        className={`flex flex-col gap-4 max-lg:order-3 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-3' : 'lg:row-start-4'}`}
                     >
                         <ProductPricingFields {...fields} plan={plan} />
                     </div>
 
-                    <div className="flex flex-col gap-4 max-lg:order-4 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:gap-6">
+                    <div className="flex flex-col gap-4 max-lg:order-5 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:gap-6">
                         <ProductTaxonomyFields {...fields} categories={categories} tags={tags} />
                         <ProductInventoryFields {...fields} saved={product} />
 
@@ -195,7 +199,13 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
 
                 {product === null ? null : (
                     <div className="max-lg:order-1 lg:col-start-1 lg:row-start-1">
-                        <ProductImageGallery productId={product.id} images={product.images} maxImages={product.maxImages} errors={errors} />
+                        <ProductImageGallery
+                            productId={product.id}
+                            images={product.images}
+                            maxImages={product.maxImages}
+                            errors={errors}
+                            gallery={gallery}
+                        />
                     </div>
                 )}
             </div>

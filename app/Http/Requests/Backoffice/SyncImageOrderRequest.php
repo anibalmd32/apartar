@@ -37,8 +37,14 @@ final class SyncImageOrderRequest extends FormRequest
      */
     public function images(): array
     {
-        $images = $this->input('images', []);
+        return self::entries($this->input('images', []));
+    }
 
+    /**
+     * @return list<array{id: int, alt?: string|null}>
+     */
+    public static function entries(mixed $images): array
+    {
         if (! is_array($images)) {
             return [];
         }

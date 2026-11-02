@@ -15,7 +15,22 @@ final class UpdateProductRequest extends StoreProductRequest
     {
         return parent::rules() + [
             'slug' => ['nullable', 'string', 'max:200'],
+            'gallery' => ['sometimes', 'array'],
+            'gallery.*.id' => ['required', 'integer'],
+            'gallery.*.alt' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    /**
+     * @return list<array{id: int, alt?: string|null}>|null
+     */
+    public function gallery(): ?array
+    {
+        if (! $this->has('gallery')) {
+            return null;
+        }
+
+        return SyncImageOrderRequest::entries($this->input('gallery'));
     }
 
     public function toData(): ProductData

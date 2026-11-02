@@ -274,6 +274,46 @@ final class ProductImageTest extends TestCase
         $this->assertSame('dos.png', $remaining->first()?->file_name);
     }
 
+    public function test_saving_the_product_also_saves_the_gallery_order_and_its_texts(): void
+    {
+        $product = $this->product(['name' => 'Taladro Bosch', 'sku' => 'BOSCH-01']);
+        $owner = $this->owner();
+
+        foreach (['una.png', 'dos.png'] as $name) {
+            $this->actingAs($owner)->post($this->url($product), ['images' => [$this->image($name)]]);
+        }
+
+        [$first, $second] = $this->imagesOf($product)->all();
+
+        $this->actingAs($owner)
+            ->put("/backoffice/productos/{$product->getKey()}", $this->productPayload([
+                'gallery' => [
+                    ['id' => $second->getKey(), 'alt' => 'Vista lateral'],
+                    ['id' => $first->getKey(), 'alt' => ''],
+                ],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $images = $this->imagesOf($product);
+
+        $this->assertSame('dos.png', $images->first()?->file_name);
+        $this->assertSame('Vista lateral', $this->inTenant(fn (): string => ImageSet::of($second->refresh())->alt));
+    }
+
+    public function test_saving_the_product_with_an_image_of_another_product_in_the_gallery_is_rejected(): void
+    {
+        $product = $this->product(['name' => 'Taladro Bosch', 'sku' => 'BOSCH-01']);
+        $other = $this->product();
+        $this->actingAs($this->owner())->post($this->url($other), ['images' => [$this->image('ajena.png')]]);
+        $foreign = $this->imagesOf($other)->sole();
+
+        $this->actingAs($this->owner())
+            ->put("/backoffice/productos/{$product->getKey()}", $this->productPayload([
+                'gallery' => [['id' => $foreign->getKey()]],
+            ]))
+            ->assertSessionHasErrors('images');
+    }
+
     public function test_deleting_the_only_image_of_a_published_product_is_rejected(): void
     {
         $media = $this->uploadTo($this->organization, ['status' => 'published']);
@@ -330,6 +370,25 @@ final class ProductImageTest extends TestCase
         $this->actingAs($this->owner())
             ->post($this->url($product), ['images' => [$this->image('foto.png')]])
             ->assertForbidden();
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function productPayload(array $overrides): array
+    {
+        return array_merge([
+            'name' => 'Taladro Bosch',
+            'sku' => 'BOSCH-01',
+            'description' => 'Un taladro.',
+            'price' => '250.00',
+            'compare_at_price' => '',
+            'down_payment' => '50.00',
+            'installments_count' => 4,
+            'frequency_days' => 15,
+            'stock' => 10,
+        ], $overrides);
     }
 
     private function url(Product $product): string

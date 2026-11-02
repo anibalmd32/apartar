@@ -1,3 +1,4 @@
+import { type GalleryEntry } from '@/features/products/hooks/useGalleryDraft';
 import { suggestSku } from '@/features/products/lib/sku';
 import { amountInput } from '@/lib/money';
 import { bo } from '@/lib/surfaces';
@@ -74,8 +75,13 @@ export function useProductForm(defaults: ProductDefaults, product?: ProductFormV
         return () => window.clearTimeout(timer);
     }, [data.price, data.compare_at_price, data.down_payment, data.installments_count, data.frequency_days]);
 
-    const submit = (specifications: string[], images: readonly File[] = []) => {
-        form.transform((current) => ({ ...current, specifications, ...(images.length > 0 ? { images: [...images] } : {}) }));
+    const submit = (specifications: string[], images: readonly File[] = [], gallery: readonly GalleryEntry[] | null = null) => {
+        form.transform((current) => ({
+            ...current,
+            specifications,
+            ...(images.length > 0 ? { images: [...images] } : {}),
+            ...(gallery === null ? {} : { gallery: [...gallery] }),
+        }));
 
         if (product) {
             form.put(bo(`/productos/${product.id}`), { preserveScroll: true, onSuccess: () => form.setDefaults() });

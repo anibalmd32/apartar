@@ -1,71 +1,43 @@
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
-import { SortableHandle, SortableList, SortableRow } from '@/components/ui/sortable';
-import { TextField } from '@/components/ui/text-field';
+import { SortableList } from '@/components/ui/sortable';
+import { GalleryPhotoControls } from '@/features/products/components/GalleryPhotoControls';
+import { GalleryThumb } from '@/features/products/components/GalleryThumb';
 import { ImageUploader } from '@/features/products/components/ImageUploader';
+import { type GalleryDraft } from '@/features/products/hooks/useGalleryDraft';
 import { bo } from '@/lib/surfaces';
 import { type ProductImageView } from '@/types/product';
-import { cilTrash } from '@coreui/icons';
-import { router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface ProductImageGalleryProps {
     productId: number;
     images: readonly ProductImageView[];
     maxImages: number;
     errors: Partial<Record<string, string>>;
+    gallery: GalleryDraft;
 }
 
-interface EditableImage {
-    [key: string]: number | string;
-    id: number;
-    alt: string;
-}
-
-export function ProductImageGallery({ productId, images, maxImages, errors }: ProductImageGalleryProps) {
+export function ProductImageGallery({ productId, images, maxImages, errors, gallery }: ProductImageGalleryProps) {
     const url = bo(`/productos/${productId}/imagenes`);
-
-    const [order, setOrder] = useState<EditableImage[]>(() => images.map((image) => ({ id: image.id, alt: image.set.alt })));
-
-    useEffect(() => setOrder(images.map((image) => ({ id: image.id, alt: image.set.alt }))), [images]);
 
     const byId = new Map(images.map((image) => [image.id, image]));
 
-    const move = (from: number, to: number) => {
-        setOrder((current) => {
-            const next = [...current];
-            const [moved] = next.splice(from, 1);
-
-            if (moved === undefined) {
-                return current;
-            }
-
-            next.splice(to, 0, moved);
-
-            return next;
-        });
-    };
-
-    const describe = (id: number, alt: string) => {
-        setOrder((current) => current.map((image) => (image.id === id ? { ...image, alt } : image)));
-    };
-
-    const save = () => router.patch(`${url}/orden`, { images: order }, { preserveScroll: true });
-
     const [removing, setRemoving] = useState<number | null>(null);
+
+    const { order } = gallery;
+
+    const [selected, setSelected] = useState<number | null>(null);
+
+    const found = order.findIndex((entry) => entry.id === selected);
+    const current = found === -1 ? 0 : found;
+    const chosen = order[current];
 
     return (
         <SectionCard
             title="Imágenes"
-            subtitle="La primera es la principal. Arrastra para ordenar."
-            action={
-                <Button type="button" size="sm" variant="soft" onClick={save} disabled={order.length === 0}>
-                    Guardar galería
-                </Button>
-            }
+            subtitle="La primera es la principal. El orden y los textos se guardan con el producto."
+            action={gallery.dirty ? <Badge tone="warning">Sin guardar</Badge> : undefined}
         >
             <ImageUploader url={url} remaining={maxImages - images.length} error={errors.images} />
 
@@ -74,79 +46,55 @@ export function ProductImageGallery({ productId, images, maxImages, errors }: Pr
                     Todavía no tiene fotos. La primera que subas será la que vean tus clientes en el catálogo y en el enlace que compartas.
                 </p>
             ) : (
-                <ul className="flex flex-col gap-3">
-                    <SortableList
-                        ids={order.map((entry) => entry.id)}
-                        onReorder={move}
-                        labelOf={(id) => `la imagen ${order.findIndex((entry) => entry.id === id) + 1}`}
-                    >
-                        {order.map((entry, index) => {
-                            const image = byId.get(entry.id);
+                <>
+                    <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-6" aria-label="Fotos del producto">
+                        <SortableList
+                            layout="grid"
+                            ids={order.map((entry) => entry.id)}
+                            onReorder={gallery.move}
+                            labelOf={(id) => `la imagen ${order.findIndex((entry) => entry.id === id) + 1}`}
+                        >
+                            {order.map((entry, index) => {
+                                const image = byId.get(entry.id);
 
-                            if (image === undefined) {
-                                return null;
-                            }
+                                return image === undefined ? null : (
+                                    <GalleryThumb
+                                        key={entry.id}
+                                        image={image}
+                                        index={index}
+                                        selected={index === current}
+                                        onSelect={() => setSelected(entry.id)}
+                                    />
+                                );
+                            })}
+                        </SortableList>
+                    </ul>
 
-                            return (
-                                <SortableRow key={entry.id} id={entry.id} label={`la imagen ${index + 1}`}>
-                                    {({ containerProps, handleProps }) => (
-                                        <li
-                                            ref={containerProps.ref}
-                                            style={containerProps.style}
-                                            className={`border-line grid grid-cols-1 gap-x-3 gap-y-2 border-b pb-3 last:border-0 sm:grid-cols-12 ${containerProps.className ?? ''}`}
-                                        >
-                                            <div className="flex items-center gap-1 sm:col-span-2">
-                                                <SortableHandle handleProps={handleProps} />
-                                                <img
-                                                    src={image.set.thumb}
-                                                    alt={image.set.alt}
-                                                    loading="lazy"
-                                                    className="size-24 rounded-xl object-cover"
-                                                />
-                                            </div>
-
-                                            <div className="sm:col-span-6">
-                                                <TextField
-                                                    label="Texto alternativo"
-                                                    name={`images[${index}][alt]`}
-                                                    value={entry.alt}
-                                                    onChange={(event) => describe(entry.id, event.target.value)}
-                                                    hint="Lo que lee quien no ve la imagen. Si lo dejas vacío, volvemos al texto por defecto."
-                                                    maxLength={255}
-                                                    autoComplete="off"
-                                                />
-                                            </div>
-
-                                            <div className="flex flex-wrap items-end gap-1 sm:col-span-4">
-                                                {index === 0 ? <Badge tone="primary">Principal</Badge> : null}
-
-                                                {image.isProcessing ? <Badge tone="info">Procesando</Badge> : null}
-
-                                                {image.needsReview ? <Badge tone="warning">Revisar</Badge> : null}
-
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => setRemoving(entry.id)}
-                                                    aria-label={`Quitar la imagen ${index + 1}`}
-                                                    className="btn-square text-ink-3 hover:text-error"
-                                                >
-                                                    <Icon icon={cilTrash} />
-                                                </Button>
-                                            </div>
-                                        </li>
-                                    )}
-                                </SortableRow>
-                            );
-                        })}
-                    </SortableList>
-                </ul>
+                    {chosen === undefined ? null : (
+                        <GalleryPhotoControls
+                            key={chosen.id}
+                            entry={chosen}
+                            index={current}
+                            count={order.length}
+                            error={errors[`gallery.${current}.alt`]}
+                            onMove={(from, to) => {
+                                setSelected(chosen.id);
+                                gallery.move(from, to);
+                            }}
+                            onMakeMain={() => {
+                                setSelected(chosen.id);
+                                gallery.makeMain(chosen.id);
+                            }}
+                            onDescribe={(alt) => gallery.describe(chosen.id, alt)}
+                            onRemove={() => setRemoving(chosen.id)}
+                        />
+                    )}
+                </>
             )}
 
             <p className="text-ink-3 text-xs">
-                La primera es la que se ve en el catálogo y en el enlace que compartes. Mientras aparezca «Procesando» se sirve la original, así que
-                tu ficha funciona igual.
+                Toca una foto para ordenarla, hacerla principal o describirla. Mientras aparezca «Procesando» se sirve la original, así que tu ficha
+                funciona igual.
             </p>
             <ConfirmDialog
                 open={removing !== null}
