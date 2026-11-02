@@ -10,7 +10,19 @@ it('con cambios sin guardar, en el celular el botón de guardar queda fijo encim
     );
 
     const bar = screen.getByRole('button', { name: 'Guardar ajustes' }).parentElement;
-    expect(bar).toHaveClass('max-lg:sticky', 'max-lg:bottom-[calc(var(--overlay-bottom)+var(--consent-height)+0.75rem)]', 'max-lg:[&>.btn]:w-full');
+    expect(bar).toHaveClass('max-lg:sticky', 'max-lg:bottom-[calc(var(--overlay-bottom)+var(--consent-height))]', 'max-lg:[&>.btn]:w-full');
+});
+
+it('fija, es una barra lisa con solo el borde de arriba y no otra tarjeta', () => {
+    render(
+        <FormActionBar sticky>
+            <button type="submit">Guardar ajustes</button>
+        </FormActionBar>,
+    );
+
+    const bar = screen.getByRole('button', { name: 'Guardar ajustes' }).parentElement;
+    expect(bar).toHaveClass('max-lg:border-t');
+    expect(bar?.className).not.toMatch(/rounded|shadow|max-lg:border(\s|$)/);
 });
 
 it('sin cambios, el botón se queda al final del formulario', () => {

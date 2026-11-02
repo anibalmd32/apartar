@@ -19,6 +19,7 @@ export interface PageAction {
     href?: string;
     external?: boolean;
     onClick?: () => void;
+    opensDialog?: boolean;
     form?: string;
     variant?: ButtonVariant;
     danger?: boolean;
@@ -81,6 +82,7 @@ function ActionControl({ action, className, onClick, ...rest }: ControlProps) {
             }}
             disabled={blocked}
             aria-busy={action.loading || undefined}
+            aria-haspopup={action.opensDialog ? 'dialog' : undefined}
             title={action.disabled ? action.disabledReason : undefined}
         >
             <ActionContent action={action} />
@@ -140,7 +142,7 @@ export function PageActions({ actions }: { actions: readonly PageAction[] }) {
                         className={cn(
                             buttonClass(action.variant ?? 'secondary'),
                             action.danger && 'text-error',
-                            action === primary ? 'max-lg:w-full' : 'max-lg:hidden',
+                            action === primary ? 'max-lg:btn-primary max-lg:w-full' : 'max-lg:hidden',
                         )}
                     />
                 ))}

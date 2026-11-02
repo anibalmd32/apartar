@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { onHistoryPop } from '@/lib/history-guard';
 import { router } from '@inertiajs/react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
@@ -8,14 +9,26 @@ interface LeaveGuardCopy {
     description: string;
 }
 
+type PendingLeave = { kind: 'visit'; url: string } | { kind: 'back' };
+
+function samePage(href: string): boolean {
+    const target = new URL(href, window.location.href);
+
+    return target.pathname === window.location.pathname && target.search === window.location.search;
+}
+
 export function useLeaveGuard(dirty: boolean, copy: LeaveGuardCopy): ReactNode {
-    const [pending, setPending] = useState<string | null>(null);
+    const [pending, setPending] = useState<PendingLeave | null>(null);
     const leaving = useRef(false);
 
     useEffect(() => {
         if (!dirty) {
             return;
         }
+
+        leaving.current = false;
+
+        const guarded = { url: window.location.href, state: window.history.state as unknown };
 
         const warn = (event: BeforeUnloadEvent) => {
             if (leaving.current) {
@@ -26,7 +39,25 @@ export function useLeaveGuard(dirty: boolean, copy: LeaveGuardCopy): ReactNode {
             event.returnValue = '';
         };
 
+        const back = () => {
+            if (leaving.current) {
+                return false;
+            }
+
+            if (samePage(guarded.url)) {
+                document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView();
+
+                return true;
+            }
+
+            window.history.pushState(guarded.state, '', guarded.url);
+            setPending({ kind: 'back' });
+
+            return true;
+        };
+
         window.addEventListener('beforeunload', warn);
+        const unguard = onHistoryPop(back);
 
         const stop = router.on('before', (event) => {
             const { visit } = event.detail;
@@ -36,11 +67,12 @@ export function useLeaveGuard(dirty: boolean, copy: LeaveGuardCopy): ReactNode {
             }
 
             event.preventDefault();
-            setPending(visit.url.href);
+            setPending({ kind: 'visit', url: visit.url.href });
         });
 
         return () => {
             window.removeEventListener('beforeunload', warn);
+            unguard();
             stop();
         };
     }, [dirty]);
@@ -51,8 +83,12 @@ export function useLeaveGuard(dirty: boolean, copy: LeaveGuardCopy): ReactNode {
         leaving.current = true;
         setPending(null);
 
-        if (target !== null) {
-            router.visit(target, { onFinish: () => (leaving.current = false) });
+        if (target?.kind === 'visit') {
+            router.visit(target.url, { onFinish: () => (leaving.current = false) });
+        }
+
+        if (target?.kind === 'back') {
+            window.history.back();
         }
     };
 

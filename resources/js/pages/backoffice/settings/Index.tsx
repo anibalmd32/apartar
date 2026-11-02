@@ -3,6 +3,8 @@ import { SectionCard } from '@/components/ui/section-card';
 import { ExchangeRateForm } from '@/features/tenancy/components/ExchangeRateForm';
 import { OperationSettingsForm } from '@/features/tenancy/components/OperationSettingsForm';
 import { OrganizationIdentityForm } from '@/features/tenancy/components/OrganizationIdentityForm';
+import { SettingsSaveBar, useSettingsForms } from '@/features/tenancy/components/SettingsSaveBar';
+import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { type OrganizationBrand, type OrganizationIdentity, type OrganizationSettings, type SettingDefinition } from '@/types/backoffice';
 import { type RateSource, type RateView } from '@/types/exchange';
@@ -27,6 +29,11 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
     const source = (settings.exchange_rate_source ?? 'bcv') as RateSource;
     const manualRate =
         settings.exchange_rate_manual === null || settings.exchange_rate_manual === undefined ? '' : String(settings.exchange_rate_manual);
+    const forms = useSettingsForms();
+    const leaveGuard = useLeaveGuard(forms.dirty && !forms.processing, {
+        title: '¿Salir sin guardar?',
+        description: 'Tienes cambios en tus ajustes que todavía no guardaste. Si sales ahora, se pierden.',
+    });
 
     return (
         <BackofficeLayout
@@ -55,7 +62,7 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
                         subtitle="Cómo te ven tus clientes y cómo te encontramos nosotros."
                     >
                         <div id="identidad" className="-mt-20 pt-20" />
-                        <OrganizationIdentityForm identity={identity} brand={brand} />
+                        <OrganizationIdentityForm identity={identity} brand={brand} {...forms.linkOf('identidad')} />
                     </SectionCard>
 
                     <SectionCard
@@ -63,15 +70,24 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
                         subtitle="Con qué tasa se proyectan tus precios en bolívares. La elección es tuya; la tasa la ingesta la plataforma."
                     >
                         <div id="tasa" className="-mt-20 pt-20" />
-                        <ExchangeRateForm source={source} manualRate={manualRate} sourceOptions={rateSourceOptions} rateSources={rateSources} />
+                        <ExchangeRateForm
+                            source={source}
+                            manualRate={manualRate}
+                            sourceOptions={rateSourceOptions}
+                            rateSources={rateSources}
+                            {...forms.linkOf('tasa')}
+                        />
                     </SectionCard>
 
                     <SectionCard title="Operación" subtitle="Plazos y frecuencia de cuotas. Cada campo dice a qué alcanza el cambio.">
                         <div id="operacion" className="-mt-20 pt-20" />
-                        <OperationSettingsForm settings={settings} definitions={definitions} />
+                        <OperationSettingsForm settings={settings} definitions={definitions} {...forms.linkOf('operacion')} />
                     </SectionCard>
+
+                    <SettingsSaveBar states={forms.states} />
                 </div>
             </div>
+            {leaveGuard}
         </BackofficeLayout>
     );
 }

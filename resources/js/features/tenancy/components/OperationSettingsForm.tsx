@@ -4,6 +4,7 @@ import { NumberField } from '@/components/ui/number-field';
 import { SelectField } from '@/components/ui/select-field';
 import { ReminderOffsetsEditor } from '@/features/tenancy/components/ReminderOffsetsEditor';
 import { SettingScopeBadge } from '@/features/tenancy/components/SettingScopeBadge';
+import { type SettingsSectionLink, useReportFormState } from '@/features/tenancy/components/SettingsSaveBar';
 import { bo } from '@/lib/surfaces';
 import { type OrganizationSettings, type SettingDefinition, type SettingValue } from '@/types/backoffice';
 import { useForm } from '@inertiajs/react';
@@ -28,17 +29,19 @@ interface SettingsForm {
     settings: OrganizationSettings;
 }
 
-interface OperationSettingsFormProps {
+interface OperationSettingsFormProps extends SettingsSectionLink {
     settings: OrganizationSettings;
     definitions: readonly SettingDefinition[];
 }
 
-export function OperationSettingsForm({ settings, definitions }: OperationSettingsFormProps) {
+export function OperationSettingsForm({ settings, definitions, formId, onStateChange, savesFromBar }: OperationSettingsFormProps) {
     const offsets = Array.isArray(settings.reminder_offsets_days) ? (settings.reminder_offsets_days as number[]) : [];
 
-    const { data, setData, put, processing, errors, isDirty } = useForm<SettingsForm>({
+    const { data, setData, setDefaults, put, processing, errors, isDirty } = useForm<SettingsForm>({
         settings: { ...settings, reminder_offsets_days: offsets },
     });
+
+    useReportFormState(onStateChange, isDirty, processing);
 
     const value = (key: string): string => {
         const current = data.settings[key];
@@ -61,11 +64,11 @@ export function OperationSettingsForm({ settings, definitions }: OperationSettin
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        put(bo('/ajustes'), { preserveScroll: true });
+        put(bo('/ajustes'), { preserveScroll: true, onSuccess: () => setDefaults() });
     };
 
     return (
-        <form className="flex flex-col gap-2" onSubmit={submit} noValidate>
+        <form id={formId} className="flex flex-col gap-2" onSubmit={submit} noValidate>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <SelectField
                     label={labelOf('currency_display_default')}
@@ -99,7 +102,7 @@ export function OperationSettingsForm({ settings, definitions }: OperationSettin
                 hint={scopeOf('reminder_offsets_days')}
             />
 
-            <FormActionBar sticky={isDirty}>
+            <FormActionBar sticky={false} className={savesFromBar ? 'max-lg:hidden' : undefined}>
                 <Button type="submit" loading={processing}>
                     Guardar ajustes
                 </Button>

@@ -15,7 +15,7 @@ export function FormActionBar({ sticky, children, className }: FormActionBarProp
             className={cn(
                 'flex gap-2 max-lg:flex-col max-lg:[&>.btn]:w-full',
                 sticky &&
-                    'max-lg:bg-base-100 max-lg:border-line max-lg:shadow-pop max-lg:sticky max-lg:bottom-[calc(var(--overlay-bottom)+var(--consent-height)+0.75rem)] max-lg:z-30 max-lg:rounded-2xl max-lg:border max-lg:p-2',
+                    'max-lg:bg-base-100 max-lg:border-line max-lg:sticky max-lg:bottom-[calc(var(--overlay-bottom)+var(--consent-height))] max-lg:z-30 max-lg:border-t max-lg:py-3',
                 className,
             )}
         >

@@ -6,6 +6,7 @@ import { FileField } from '@/components/ui/file-field';
 import { FormActionBar } from '@/components/ui/form-action-bar';
 import { PhoneField } from '@/components/ui/phone-field';
 import { TextField } from '@/components/ui/text-field';
+import { type SettingsSectionLink, useReportFormState } from '@/features/tenancy/components/SettingsSaveBar';
 import { bo } from '@/lib/surfaces';
 import { type OrganizationBrand, type OrganizationIdentity } from '@/types/backoffice';
 import { useForm } from '@inertiajs/react';
@@ -27,13 +28,13 @@ interface IdentityForm {
     logo: File | null;
 }
 
-interface OrganizationIdentityFormProps {
+interface OrganizationIdentityFormProps extends SettingsSectionLink {
     identity: OrganizationIdentity;
     brand: OrganizationBrand;
 }
 
-export function OrganizationIdentityForm({ identity, brand }: OrganizationIdentityFormProps) {
-    const { data, setData, post, processing, errors, isDirty } = useForm<IdentityForm>({
+export function OrganizationIdentityForm({ identity, brand, formId, onStateChange, savesFromBar }: OrganizationIdentityFormProps) {
+    const { data, setData, setDefaults, post, processing, errors, isDirty } = useForm<IdentityForm>({
         _method: 'put',
         name: identity.name,
         slug: identity.slug,
@@ -48,14 +49,16 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
         logo: null,
     });
 
+    useReportFormState(onStateChange, isDirty, processing);
+
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        post(bo('/ajustes/identidad'), { forceFormData: true, preserveScroll: true });
+        post(bo('/ajustes/identidad'), { forceFormData: true, preserveScroll: true, onSuccess: () => setDefaults() });
     };
 
     return (
-        <form className="flex flex-col gap-2" onSubmit={submit} noValidate>
+        <form id={formId} className="flex flex-col gap-2" onSubmit={submit} noValidate>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <TextField
                     label="Nombre del negocio"
@@ -164,7 +167,7 @@ export function OrganizationIdentityForm({ identity, brand }: OrganizationIdenti
                 hint="Con la vitrina encendida, cualquiera que abra tu enlace ve tus catálogos publicados."
             />
 
-            <FormActionBar sticky={isDirty}>
+            <FormActionBar sticky={false} className={savesFromBar ? 'max-lg:hidden' : undefined}>
                 <Button type="submit" loading={processing}>
                     Guardar identidad
                 </Button>

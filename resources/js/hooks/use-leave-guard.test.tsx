@@ -1,6 +1,7 @@
 import { useLeaveGuard } from '@/hooks/use-leave-guard';
+import { guardHistoryPops } from '@/lib/history-guard';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 type BeforeListener = (event: { detail: { visit: Record<string, unknown> }; preventDefault: () => void }) => void;
 
@@ -36,6 +37,10 @@ function closeTab() {
 
     return unload.defaultPrevented;
 }
+
+beforeAll(() => {
+    guardHistoryPops();
+});
 
 beforeEach(() => {
     listeners.length = 0;
@@ -83,4 +88,44 @@ it('con cambios, el navegador pregunta antes de cerrar o recargar la pestaña', 
     render(<Editor dirty />);
 
     expect(closeTab()).toBe(true);
+});
+
+function goBackTo(path: string) {
+    const inertia = vi.fn();
+    window.addEventListener('popstate', inertia);
+    window.history.replaceState(null, '', path);
+    act(() => {
+        window.dispatchEvent(new PopStateEvent('popstate', { state: { page: 'anterior' } }));
+    });
+    window.removeEventListener('popstate', inertia);
+
+    return inertia;
+}
+
+it('con cambios, el botón atrás del navegador o del celular también pide confirmar antes de irse', () => {
+    window.history.replaceState(null, '', '/backoffice/productos/2/editar');
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    render(<Editor dirty />);
+
+    const inertia = goBackTo('/backoffice/productos');
+
+    expect(inertia).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/backoffice/productos/2/editar');
+    expect(screen.getByRole('dialog', { name: '¿Salir sin guardar?' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salir sin guardar' }));
+
+    expect(back).toHaveBeenCalledOnce();
+    back.mockRestore();
+});
+
+it('volver con el atrás a otra sección de la misma página no pide confirmar ni deja que Inertia recargue y borre lo escrito', () => {
+    window.history.replaceState(null, '', '/backoffice/ajustes#tasa');
+    render(<Editor dirty />);
+
+    const inertia = goBackTo('/backoffice/ajustes#identidad');
+
+    expect(inertia).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe('#identidad');
+    expect(screen.queryByRole('dialog')).toBeNull();
 });

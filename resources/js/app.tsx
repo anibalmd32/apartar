@@ -9,12 +9,15 @@ import { Toaster } from './components/ui/toaster';
 import { initializeTheme } from './hooks/use-appearance';
 import { watchBrokenImages } from './lib/broken-images';
 import { guardCrossOriginVisits } from './lib/cross-origin-visits';
+import { guardHistoryPops } from './lib/history-guard';
 
 declare global {
     const route: typeof routeFn;
 }
 
 const appName = import.meta.env.VITE_APP_NAME || 'Apartar';
+
+guardHistoryPops();
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

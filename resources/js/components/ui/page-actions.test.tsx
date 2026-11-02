@@ -76,3 +76,15 @@ it('una acción bloqueada explica por qué en el menú del celular', () => {
     expect(screen.getByRole('menuitem', { name: 'Eliminar' })).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByText('Tiene apartados en curso.')).toBeInTheDocument();
 });
+
+it('en el celular la acción que queda a la vista siempre se pinta como principal, aunque en escritorio sea suave', () => {
+    render(<PageActions actions={[{ label: 'Nuevo apartado', icon: cilPlus, href: '/apartados/nuevo', variant: 'soft', primary: true }]} />);
+
+    expect(screen.getByRole('link', { name: 'Nuevo apartado' })).toHaveClass('btn-secondary', 'max-lg:btn-primary', 'max-lg:w-full');
+});
+
+it('la acción que abre un diálogo lo anuncia', () => {
+    render(<PageActions actions={[{ label: 'Vista previa', onClick: vi.fn(), opensDialog: true, variant: 'ghost' }]} />);
+
+    expect(screen.getAllByRole('button', { name: 'Vista previa' })[0]).toHaveAttribute('aria-haspopup', 'dialog');
+});

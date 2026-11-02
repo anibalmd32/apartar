@@ -130,7 +130,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                                   },
                               ]
                             : []),
-                        { label: 'Vista previa', icon: cilScreenDesktop, onClick: preview.open, variant: 'ghost' },
+                        { label: 'Vista previa', icon: cilScreenDesktop, onClick: preview.open, opensDialog: true, variant: 'ghost' },
                         { label: 'Cancelar', href: bo('/productos'), mobile: 'hidden' },
                         { label: submitLabel, icon: cilCheckAlt, form: FORM_ID, loading: processing, variant: 'primary', mobile: 'hidden' },
                     ]}
@@ -175,7 +175,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                         {product !== null ? <ArchiveToggle productId={product.id} archived={product.status === 'archived'} /> : null}
                     </div>
 
-                    <FormActionBar sticky={product === null || dirty} className="order-6 lg:hidden">
+                    <FormActionBar sticky={product === null || dirty} className="order-6 max-lg:-mx-4 max-lg:px-4 lg:hidden">
                         <Button type="submit" loading={processing}>
                             <Icon icon={cilCheckAlt} />
                             {submitLabel}
