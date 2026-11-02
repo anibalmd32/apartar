@@ -44,6 +44,7 @@ export const SUBSCRIPTION_TONES = {
     active: 'success',
     past_due: 'warning',
     grace: 'warning',
+    under_review: 'warning',
     suspended: 'error',
     cancelled: 'neutral',
 } as const satisfies ToneMap;

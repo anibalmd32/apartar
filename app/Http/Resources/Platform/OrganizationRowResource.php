@@ -7,7 +7,7 @@ namespace App\Http\Resources\Platform;
 final class OrganizationRowResource
 {
     public const FIELDS = [
-        'id', 'slug', 'name', 'status', 'planCode', 'subscriptionStatus', 'createdAt',
+        'id', 'slug', 'name', 'status', 'planCode', 'subscriptionStatus', 'billingStatus', 'createdAt',
         'counts', 'volume', 'lastActivityAt', 'risks', 'hasActiveSupportAccess',
     ];
 

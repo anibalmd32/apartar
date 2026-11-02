@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { pf } from '@/lib/surfaces';
 import { type OrganizationRow } from '@/types/platform';
 import { Link } from '@inertiajs/react';
-import { OrganizationStatusBadge } from './labels';
+import { BillingBadge, OrganizationStatusBadge } from './labels';
 
 export function RiskBadges({ row, dashWhenNone = false }: { row: OrganizationRow; dashWhenNone?: boolean }) {
     const none = !row.risks.atLimit && !row.risks.inactive && !row.risks.overdueInvoices && !row.hasActiveSupportAccess;
@@ -39,7 +39,10 @@ export function OrganizationCard({ row, planName, lastActivity }: { row: Organiz
                     </span>
                     <OrganizationStatusBadge status={row.status} />
                 </span>
-                <RiskBadges row={row} />
+                <span className="flex flex-wrap gap-1 empty:hidden">
+                    <BillingBadge row={row} />
+                    <RiskBadges row={row} />
+                </span>
             </Link>
         </li>
     );

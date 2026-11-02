@@ -75,6 +75,7 @@ export default function OrganizationShow({
     const volume = organization.volume;
     const overdue = invoices.find((invoice) => invoice.status === 'overdue');
     const created = formatDate(organization.createdAt);
+    const billing = organization.billingStatus ?? organization.subscriptionStatus;
 
     return (
         <PlatformLayout
@@ -84,7 +85,7 @@ export default function OrganizationShow({
                     <span className="flex flex-wrap items-center gap-2">
                         <PlanPill code={organization.planCode} />
                         <OrganizationStatusBadge status={organization.status} />
-                        {organization.subscriptionStatus ? <SubscriptionStatusBadge status={organization.subscriptionStatus} /> : null}
+                        {billing ? <SubscriptionStatusBadge status={billing} /> : null}
                         <RiskBadges row={organization} />
                     </span>
                     <span>

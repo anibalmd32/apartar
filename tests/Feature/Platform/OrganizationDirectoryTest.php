@@ -68,6 +68,30 @@ final class OrganizationDirectoryTest extends TestCase
         $this->assertSame([$overdue->getKey()], array_column($filtered, 'id'));
     }
 
+    public function test_el_estado_de_cobro_coincide_con_las_facturas_aunque_la_suscripcion_siga_al_dia(): void
+    {
+        [$clean] = $this->businessWithOwner();
+        [$late] = $this->businessWithOwner();
+        [$reviewing] = $this->businessWithOwner();
+        $this->withinOrganization($late, fn () => SubscriptionInvoice::factory()->create(['status' => InvoiceStatus::Pending, 'due_date' => now()->subDays(3)->toDateString()]));
+        $this->withinOrganization($reviewing, fn () => SubscriptionInvoice::factory()->create(['status' => InvoiceStatus::UnderReview, 'due_date' => now()->subDays(3)->toDateString()]));
+        $this->withoutOrganization();
+        $this->asOperator();
+
+        $rows = array_column($this->get('/plataforma/organizaciones')->viewData('page')['props']['rows'], null, 'id');
+
+        foreach ([$clean, $late, $reviewing] as $organization) {
+            $this->assertSame('active', $rows[$organization->getKey()]['subscriptionStatus']);
+        }
+
+        $this->assertSame('active', $rows[$clean->getKey()]['billingStatus']);
+        $this->assertSame('past_due', $rows[$late->getKey()]['billingStatus']);
+        $this->assertSame('under_review', $rows[$reviewing->getKey()]['billingStatus']);
+
+        $show = $this->get('/plataforma/organizaciones/'.$reviewing->slug)->viewData('page')['props']['organization'];
+        $this->assertSame('under_review', $show['billingStatus']);
+    }
+
     public function test_order_and_closed_organizations(): void
     {
         [$quiet] = $this->businessWithOwner();

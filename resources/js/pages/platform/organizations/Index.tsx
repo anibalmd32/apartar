@@ -1,6 +1,6 @@
 import { Avatar } from '@/components/shell/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
-import { OrganizationStatusBadge, PlanPill, SubscriptionStatusBadge } from '@/features/platform/components/labels';
+import { BillingBadge, OrganizationStatusBadge, PlanPill } from '@/features/platform/components/labels';
 import { OrganizationFilters } from '@/features/platform/components/OrganizationFilters';
 import { OrganizationCard, RiskBadges } from '@/features/platform/components/OrganizationRowParts';
 import { Pager } from '@/features/platform/components/Pager';
@@ -93,9 +93,7 @@ export default function OrganizationsIndex({ rows, hasMore, page, filters, plans
                                     <td>
                                         <span className="flex flex-col items-start gap-1">
                                             <OrganizationStatusBadge status={row.status} />
-                                            {row.subscriptionStatus !== null && row.subscriptionStatus !== 'active' ? (
-                                                <SubscriptionStatusBadge status={row.subscriptionStatus} />
-                                            ) : null}
+                                            <BillingBadge row={row} />
                                         </span>
                                     </td>
                                     <td>

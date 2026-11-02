@@ -6,6 +6,7 @@ namespace App\Queries\Platform;
 
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Subscription\InvoiceStatus;
+use App\Domain\Subscription\SubscriptionStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\OrganizationStatus;
 use Carbon\CarbonImmutable;
@@ -24,6 +25,8 @@ final class OrganizationDirectoryQuery
     public const AT_LIMIT_RATIO = 0.9;
 
     public const INACTIVE_DAYS = 30;
+
+    public const UNDER_REVIEW = 'under_review';
 
     private const NEVER = '1970-01-01 00:00:00';
 
@@ -178,8 +181,9 @@ final class OrganizationDirectoryQuery
             ->selectRaw('organization_id, COUNT(*) AS total')->pluck('total', 'organization_id'));
         $supported = $this->safely(fn () => $this->grants->organizationsWithActiveGrant($ids)) ?? [];
         $inactiveSince = CarbonImmutable::now()->subDays(self::INACTIVE_DAYS);
+        $billing = $this->safely(fn () => $this->billingDebts($ids)) ?? [];
 
-        return $page->map(function (object $row) use ($usage, $limits, $customers, $subscribers, $volume, $collected, $overdue, $supported, $inactiveSince): array {
+        return $page->map(function (object $row) use ($usage, $limits, $customers, $subscribers, $volume, $collected, $overdue, $supported, $inactiveSince, $billing): array {
             $id = (int) $row->id;
             $metrics = $usage?->get($id) ?? [];
             $plan = $limits?->get($id);
@@ -192,6 +196,7 @@ final class OrganizationDirectoryQuery
                 'status' => (string) $row->status,
                 'planCode' => $row->plan_code === null ? null : (string) $row->plan_code,
                 'subscriptionStatus' => $row->subscription_status === null ? null : (string) $row->subscription_status,
+                'billingStatus' => self::billingStatus($row->subscription_status === null ? null : (string) $row->subscription_status, $billing[$id] ?? []),
                 'createdAt' => CarbonImmutable::parse((string) $row->created_at)->toIso8601String(),
                 'counts' => $usage === null ? null : [
                     'users' => $metrics[UsageMetric::Users->value] ?? 0,
@@ -235,6 +240,47 @@ final class OrganizationDirectoryQuery
         }
 
         return false;
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, array{underReview: bool, overdue: bool}>
+     */
+    private function billingDebts(array $ids): array
+    {
+        $today = CarbonImmutable::now()->toDateString();
+        $debts = [];
+
+        $invoices = DB::table('subscription_invoices')->whereIn('organization_id', $ids)
+            ->whereIn('status', [InvoiceStatus::Pending->value, InvoiceStatus::UnderReview->value, InvoiceStatus::Overdue->value])
+            ->get(['organization_id', 'status', 'due_date']);
+
+        foreach ($invoices as $invoice) {
+            $id = (int) $invoice->organization_id;
+            $debt = $debts[$id] ?? ['underReview' => false, 'overdue' => false];
+            $debt['underReview'] = $debt['underReview'] || $invoice->status === InvoiceStatus::UnderReview->value;
+            $debt['overdue'] = $debt['overdue'] || $invoice->status === InvoiceStatus::Overdue->value
+                || ($invoice->status === InvoiceStatus::Pending->value && substr((string) $invoice->due_date, 0, 10) < $today);
+            $debts[$id] = $debt;
+        }
+
+        return $debts;
+    }
+
+    /**
+     * @param  array{underReview?: bool, overdue?: bool}  $debt
+     */
+    private static function billingStatus(?string $subscription, array $debt): ?string
+    {
+        if ($subscription === null || in_array($subscription, [SubscriptionStatus::Suspended->value, SubscriptionStatus::Cancelled->value], true)) {
+            return $subscription;
+        }
+
+        return match (true) {
+            $debt['underReview'] ?? false => self::UNDER_REVIEW,
+            ($debt['overdue'] ?? false) && $subscription === SubscriptionStatus::Active->value => SubscriptionStatus::PastDue->value,
+            default => $subscription,
+        };
     }
 
     /**

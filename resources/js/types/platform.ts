@@ -7,6 +7,7 @@ export interface OrganizationRow {
     readonly status: string;
     readonly planCode: string | null;
     readonly subscriptionStatus: string | null;
+    readonly billingStatus?: string | null;
     readonly createdAt: string;
     readonly counts: {
         readonly users: number;
