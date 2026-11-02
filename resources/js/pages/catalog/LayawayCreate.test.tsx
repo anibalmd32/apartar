@@ -145,7 +145,7 @@ it('llega con el producto, cantidad 1 y el plan del servidor, sin las cuentas de
 
     expect(screen.getByRole('heading', { name: 'Aparta tu producto' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Nevera Mabe' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Cantidad')).toHaveValue(1);
+    expect(screen.getByLabelText('Cantidad')).toHaveValue('1');
     expect(screen.getByText('$150,00')).toBeInTheDocument();
     expect(screen.getByText('Última cuota')).toBeInTheDocument();
     expect(screen.queryByText(/Cómo pagarle|formas de pago/)).toBeNull();
@@ -203,10 +203,10 @@ it('acota la cantidad al tope que viene del servidor', () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '9' } });
-    expect(screen.getByLabelText('Cantidad')).toHaveValue(3);
+    expect(screen.getByLabelText('Cantidad')).toHaveValue('3');
 
     fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '0' } });
-    expect(screen.getByLabelText('Cantidad')).toHaveValue(1);
+    expect(screen.getByLabelText('Cantidad')).toHaveValue('1');
 });
 
 it('solo ofrece prefijos de celular, con su operadora', () => {

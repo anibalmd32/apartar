@@ -27,6 +27,8 @@ export function useNumberDraft({ value, onChange, min, max }: NumberDraftOptions
     if (value !== synced) {
         setSynced(value);
         setDraft(format(value));
+    } else if (draft !== '' && Number(draft) !== value) {
+        setDraft(format(value));
     }
 
     const change = (event: ChangeEvent<HTMLInputElement>) => {

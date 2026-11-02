@@ -49,17 +49,29 @@ it('borrar la cantidad y escribir 3 deja 3, no 13', () => {
     expect(onQuantity).toHaveBeenLastCalledWith(3);
 });
 
-it('si se sale de la cantidad vacía vuelve a la que había, y una de más se ajusta al máximo', () => {
+it('la cantidad se puede dejar vacía mientras se escribe y al salir vuelve a la que había', () => {
     const onQuantity = vi.fn();
     render(<Stepper max={5} onQuantity={onQuantity} />);
     const input = screen.getByLabelText('Cantidad') as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: '' } });
+    expect(input.value).toBe('');
+    expect(onQuantity).not.toHaveBeenCalled();
+
     fireEvent.blur(input);
     expect(input.value).toBe('1');
+});
 
+it('lo que se escribe fuera del rango muestra la cantidad que de verdad queda', () => {
+    const onQuantity = vi.fn();
+    render(<Stepper max={5} onQuantity={onQuantity} />);
+    const input = screen.getByLabelText('Cantidad') as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: '0' } });
+    expect(input.value).toBe('1');
+
+    fireEvent.change(input, { target: { value: '5' } });
     fireEvent.change(input, { target: { value: '9' } });
-    fireEvent.blur(input);
     expect(input.value).toBe('5');
     expect(onQuantity).toHaveBeenLastCalledWith(5);
 });
