@@ -18,7 +18,10 @@ export function PushHistory({ history }: { history: readonly PushHistoryEntry[] 
     return (
         <SectionCard title="Historial de envíos">
             {history.length === 0 ? (
-                <p className="text-ink-3 text-[13px]">Todavía no has enviado ningún aviso.</p>
+                <div className="text-[13px]">
+                    <p className="font-semibold">Todavía no has enviado avisos</p>
+                    <p className="text-ink-3">Cuando mandes uno, aquí verás a cuántos clientes les llegó y quién lo envió.</p>
+                </div>
             ) : (
                 <ul className="divide-line flex flex-col divide-y">
                     {history.map((entry) => (

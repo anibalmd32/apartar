@@ -35,7 +35,7 @@ export const SECTIONS: NavSection[] = [
     { label: 'Categorías', href: bo('/categorias'), capability: 'products', icon: cilFolder, group: 'Catálogo' },
     { label: 'Etiquetas', href: bo('/etiquetas'), capability: 'products', icon: cilTag, group: 'Catálogo' },
     { label: 'Suscriptores', href: bo('/suscriptores'), capability: 'customers', icon: cilUserFollow, group: 'Crecimiento' },
-    { label: 'Notificaciones', href: bo('/avisos'), capability: 'customers', icon: cilBullhorn, group: 'Crecimiento' },
+    { label: 'Avisos', href: bo('/avisos'), capability: 'customers', icon: cilBullhorn, group: 'Crecimiento' },
     { label: 'Analítica', href: bo('/analitica'), capability: 'customers', icon: cilChartLine, group: 'Crecimiento' },
     { label: 'Equipo', href: bo('/equipo'), capability: 'team', icon: cilGroup, group: 'Negocio' },
     { label: 'Cuentas de cobro', href: bo('/cuentas-de-cobro'), capability: 'payment_accounts', icon: cilBank, group: 'Negocio' },

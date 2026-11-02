@@ -1,8 +1,12 @@
 import { BrandMark } from '@/components/shell/brand';
+import { cn } from '@/lib/utils';
 
-export function PushPreview({ businessName, title, body }: { businessName: string; title: string; body: string }) {
+export function PushPreview({ businessName, title, body, className }: { businessName: string; title: string; body: string; className?: string }) {
     return (
-        <section aria-label="Vista previa" className="bg-neutral text-neutral-content shadow-card flex flex-col gap-3 rounded-2xl p-5">
+        <section
+            aria-label="Vista previa"
+            className={cn('bg-neutral text-neutral-content shadow-card flex flex-col gap-3 rounded-2xl p-5', className)}
+        >
             <h2 className="text-xs font-bold opacity-70">Vista previa</h2>
             <div className="bg-base-100/95 text-base-content flex gap-3 rounded-[18px] p-3.5">
                 <BrandMark className="size-9 rounded-[10px] text-[22px]" />

@@ -5,8 +5,8 @@ import { FormActionBar } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { SelectField } from '@/components/ui/select-field';
-import { TextField } from '@/components/ui/text-field';
 import { PushHistory, type PushHistoryEntry } from '@/features/notifications/components/PushHistory';
+import { PushMessageFields } from '@/features/notifications/components/PushMessageFields';
 import { PushPreview } from '@/features/notifications/components/PushPreview';
 import { PushReach, type PushReport } from '@/features/notifications/components/PushReach';
 import { RecipientPicker, type RecipientOption } from '@/features/notifications/components/RecipientPicker';
@@ -17,7 +17,7 @@ import { JsonRequestError, postJson } from '@/lib/json';
 import { type BackofficeSharedData } from '@/types/backoffice';
 import { cilPeople } from '@coreui/icons';
 import { usePage } from '@inertiajs/react';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 
 const SEGMENTS = [
     { value: 'due_today', label: 'Vencen hoy' },
@@ -46,17 +46,16 @@ const MODES = [
 
 export default function Compose({ available, limits, previewUrl, sendUrl, recipientsUrl, preselected, hourlyLimit, history }: ComposeProps) {
     const { teamMember } = usePage<BackofficeSharedData>().props;
+    const businessName = teamMember?.organization?.name ?? 'Tu negocio';
     const [mode, setMode] = useState<Mode>(preselected !== null ? 'selection' : 'segment');
     const [chosen, setChosen] = useState<RecipientOption[]>(preselected !== null ? [preselected] : []);
     const [segment, setSegment] = useState<string>(SEGMENTS[0].value);
-    const [title, setTitle] = useState('');
-    const [body, setBody] = useState('');
-    const [url, setUrl] = useState('');
+    const [message, setMessage] = useState({ title: '', body: '', url: '' });
+    const { title, body, url } = message;
     const [preview, setPreview] = useState<PushReport | null>(null);
     const [result, setResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
-    const bodyId = useId();
     const leaveGuard = useLeaveGuard((title !== '' || body !== '') && result === null && !busy, {
         title: '¿Salir sin enviar?',
         description: 'Tienes un aviso a medio escribir. Si sales ahora, se pierde.',
@@ -92,10 +91,7 @@ export default function Compose({ available, limits, previewUrl, sendUrl, recipi
         });
 
     return (
-        <BackofficeLayout
-            title="Notificaciones"
-            description="Manda un aviso al teléfono de tus clientes. Les llega aunque no tengan la página abierta."
-        >
+        <BackofficeLayout title="Avisos" description="Manda un aviso al teléfono de tus clientes. Les llega aunque no tengan la página abierta.">
             {!available ? <UpgradePrompt feature="web_push" /> : null}
             {result !== null ? <Alert tone="success">{result}</Alert> : null}
             {error !== null ? <Alert tone="error">{error}</Alert> : null}
@@ -134,38 +130,7 @@ export default function Compose({ available, limits, previewUrl, sendUrl, recipi
                                 }}
                             />
                         )}
-                        <TextField
-                            label="Título"
-                            value={title}
-                            onChange={(event) => setTitle(event.target.value)}
-                            hint={`${title.length} / ${limits.title} caracteres`}
-                        />
-                        <fieldset className="fieldset w-full">
-                            <label className="fieldset-legend" htmlFor={bodyId}>
-                                Texto
-                            </label>
-                            <textarea
-                                id={bodyId}
-                                className="textarea w-full"
-                                rows={3}
-                                value={body}
-                                onChange={(event) => setBody(event.target.value)}
-                            />
-                            <p className="label text-xs">
-                                {body.length} / {limits.body} caracteres
-                            </p>
-                        </fieldset>
-                        <TextField
-                            label="Enlace (opcional)"
-                            type="url"
-                            value={url}
-                            onChange={(event) => setUrl(event.target.value)}
-                            hint={
-                                url.trim() !== '' && !url.includes(window.location.host)
-                                    ? 'Ese enlace se abrirá fuera de la plataforma.'
-                                    : 'Lo que se abre al tocar el aviso.'
-                            }
-                        />
+                        <PushMessageFields message={message} limits={limits} businessName={businessName} onChange={setMessage} />
 
                         <p className="text-ink-3 mt-2 text-xs">Puedes enviar hasta {hourlyLimit} avisos por hora.</p>
 
@@ -189,7 +154,7 @@ export default function Compose({ available, limits, previewUrl, sendUrl, recipi
                 </SectionCard>
 
                 <div className="flex flex-col gap-4">
-                    <PushPreview businessName={teamMember?.organization?.name ?? 'Tu negocio'} title={title} body={body} />
+                    <PushPreview businessName={businessName} title={title} body={body} className="max-lg:hidden" />
                     <PushHistory history={history} />
                 </div>
             </div>

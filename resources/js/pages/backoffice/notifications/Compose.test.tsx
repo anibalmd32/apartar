@@ -81,3 +81,40 @@ it('enseña el historial de envíos', () => {
     expect(screen.getByText('Tu cuota vence pronto')).toBeInTheDocument();
     expect(screen.getByText(/Segmento · 8 de 11/)).toBeInTheDocument();
 });
+
+it('en el celular la vista previa queda justo debajo del texto mientras se escribe', () => {
+    render(<Compose {...base} preselected={null} history={[]} />);
+
+    fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'Tu pedido llegó.' } });
+
+    const [inline, aside] = screen.getAllByRole('region', { name: 'Vista previa' });
+    const text = screen.getByLabelText('Texto');
+
+    expect(inline).toHaveClass('lg:hidden');
+    expect(aside).toHaveClass('max-lg:hidden');
+    expect(text.compareDocumentPosition(inline as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByLabelText('Enlace (opcional)').compareDocumentPosition(inline as Node) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(within(inline as HTMLElement).getByText('Tu pedido llegó.')).toBeInTheDocument();
+});
+
+it('en la selección manual la búsqueda va primero, los elegidos debajo y el teléfono con formato', async () => {
+    const { getJson } = await import('@/lib/json');
+    vi.mocked(getJson).mockResolvedValueOnce({ customers: [{ id: 9, name: 'Luis Rojas', detail: '04141234567', reachable: false }] });
+    render(<Compose {...base} preselected={{ id: 7, name: 'Ana Pérez', detail: null, reachable: true }} history={[]} />);
+
+    const search = screen.getByLabelText('Buscar clientes');
+    const chosen = screen.getByRole('list', { name: 'Elegidos' });
+
+    expect(search.compareDocumentPosition(chosen) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.change(search, { target: { value: 'Luis' } });
+
+    expect(await screen.findByText('0414-1234567')).toBeInTheDocument();
+    expect(screen.getByText('No recibe avisos')).toBeInTheDocument();
+});
+
+it('explica el historial vacío en vez de una línea suelta', () => {
+    render(<Compose {...base} preselected={null} history={[]} />);
+
+    expect(screen.getByText('Todavía no has enviado avisos')).toBeInTheDocument();
+});
