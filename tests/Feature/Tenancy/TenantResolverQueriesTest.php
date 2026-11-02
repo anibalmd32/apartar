@@ -38,6 +38,7 @@ final class TenantResolverQueriesTest extends TestCase
             $catalog = Catalog::factory()->published()->create();
             $product = Product::factory()->published()->create();
             $catalog->products()->attach($product, ['position' => 1]);
+            Catalog::factory()->published()->create()->products()->attach($product, ['position' => 1]);
 
             return [$catalog, $product];
         });
