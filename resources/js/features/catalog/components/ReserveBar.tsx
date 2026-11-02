@@ -19,7 +19,7 @@ export function ReserveBar({ product, href }: ReserveBarProps) {
         >
             <div className="mx-auto flex h-14 max-w-xl items-center gap-3">
                 <div className="flex min-w-0 flex-1 flex-col">
-                    <PrimaryAmount money={product.price} className="tracking-heading truncate text-lg leading-tight font-extrabold" />
+                    <PrimaryAmount money={product.price} className="truncate text-lg leading-tight font-extrabold" />
                     <span className="text-ink-2 truncate text-xs">
                         {withoutDownPayment ? (
                             'Sin inicial'
