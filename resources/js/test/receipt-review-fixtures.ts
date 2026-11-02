@@ -78,6 +78,13 @@ export function reviewProps(overrides: Partial<ReceiptReviewProps> = {}): Receip
                 { value: 'USD', label: 'Dólares' },
                 { value: 'VES', label: 'Bolívares' },
             ],
+            destinations: [
+                { value: 'team_member', label: 'Una persona del equipo', requiresNote: false },
+                { value: 'tip', label: 'Propina', requiresNote: false },
+                { value: 'petty_cash', label: 'Caja chica', requiresNote: false },
+                { value: 'other', label: 'Otro', requiresNote: true },
+            ],
+            teamMembers: [{ id: 7, name: 'Irma Rojas' }],
         },
         rejection: {
             url: '/backoffice/comprobantes/9/rechazar',

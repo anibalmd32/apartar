@@ -7,6 +7,7 @@ namespace App\Http\Requests\Backoffice;
 use App\Actions\Payment\ApproveReceiptData;
 use App\Domain\Money\Currency;
 use App\Domain\Money\InvalidRateException;
+use App\Http\Requests\Backoffice\Concerns\ValidatesSurplusDestination;
 use App\Models\Receipt;
 use App\Support\DecimalInput;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,6 +17,8 @@ use InvalidArgumentException;
 
 final class ApproveReceiptRequest extends FormRequest
 {
+    use ValidatesSurplusDestination;
+
     public const AMOUNT_PATTERN = '/^\d{1,14}(\.\d{1,2})?$/';
 
     public const RATE_PATTERN = '/^\d{1,10}(\.\d{1,8})?$/';
@@ -45,6 +48,7 @@ final class ApproveReceiptRequest extends FormRequest
             'confirm_excess' => ['nullable', 'integer', 'min:1'],
             'confirm_stale_rate' => ['nullable', 'string', 'max:100'],
             'confirm_rate_deviation' => ['nullable', 'string', 'max:100'],
+            ...$this->surplusRules(),
         ];
     }
 
@@ -58,6 +62,7 @@ final class ApproveReceiptRequest extends FormRequest
             'currency' => 'moneda',
             'rate' => 'tasa',
             'note' => 'nota',
+            ...$this->surplusAttributes(),
         ];
     }
 
@@ -78,6 +83,7 @@ final class ApproveReceiptRequest extends FormRequest
                 confirmedExcessCents: $this->filled('confirm_excess') ? $this->integer('confirm_excess') : null,
                 confirmedStaleRate: $this->filled('confirm_stale_rate') ? $this->string('confirm_stale_rate')->toString() : null,
                 confirmedRateDeviation: $this->filled('confirm_rate_deviation') ? $this->string('confirm_rate_deviation')->toString() : null,
+                surplusDestination: $this->surplusDestination(),
             );
         } catch (InvalidRateException $exception) {
             throw ValidationException::withMessages(['rate' => $exception->getMessage()]);

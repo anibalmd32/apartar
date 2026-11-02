@@ -17,10 +17,12 @@ use App\Domain\Payment\AppliedPayment;
 use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\DuplicateReceipts;
 use App\Domain\Payment\IdempotencyKeyReusedException;
+use App\Domain\Payment\InvalidSurplusDestinationException;
 use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\PaymentAttachment;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptFile;
+use App\Domain\Payment\SurplusDestination;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
@@ -55,6 +57,7 @@ final class RegisterManualPaymentAction
         private readonly ExchangeRateService $rates,
         private readonly TenantContext $context,
         private readonly UsageCalculator $usage,
+        private readonly AssignPaymentSurplusAction $surplus,
     ) {}
 
     /**
@@ -67,6 +70,7 @@ final class RegisterManualPaymentAction
      * @throws UnconfirmedStaleRateException
      * @throws UnconfirmedRateDeviationException
      * @throws DuplicateReceiptException
+     * @throws InvalidSurplusDestinationException
      */
     public function handle(Layaway $layaway, ManualPaymentData $data, User $actor, bool $notifyCustomer = true): Payment
     {
@@ -166,6 +170,15 @@ final class RegisterManualPaymentAction
             actor: $actor,
             after: $this->detailOf($applied, $data),
         );
+
+        if ($data->surplusDestination instanceof SurplusDestination && $excess > 0) {
+            $this->surplus->handle(
+                $applied->payment,
+                $data->surplusDestination,
+                $actor,
+                $data->note,
+            );
+        }
 
         if ($notifyCustomer) {
             $credited = $applied->payment->amount_cents_usd;

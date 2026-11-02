@@ -14,10 +14,12 @@ use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Money;
 use App\Domain\Notification\CustomerNotices;
 use App\Domain\Payment\AppliedPayment;
+use App\Domain\Payment\InvalidSurplusDestinationException;
 use App\Domain\Payment\PaymentApplier;
 use App\Domain\Payment\PaymentNotApplicableException;
 use App\Domain\Payment\ReceiptAlreadyProcessedException;
 use App\Domain\Payment\ReceiptStatus;
+use App\Domain\Payment\SurplusDestination;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Installment;
@@ -39,6 +41,7 @@ final class ApproveReceiptAction
         private readonly PaymentApplier $applier,
         private readonly ExchangeRateService $rates,
         private readonly TenantContext $context,
+        private readonly AssignPaymentSurplusAction $surplus,
     ) {}
 
     /**
@@ -49,6 +52,7 @@ final class ApproveReceiptAction
      * @throws UnconfirmedExcessException
      * @throws UnconfirmedStaleRateException
      * @throws UnconfirmedRateDeviationException
+     * @throws InvalidSurplusDestinationException
      */
     public function handle(Receipt $receipt, ApproveReceiptData $data, User $actor): AppliedPayment
     {
@@ -100,6 +104,15 @@ final class ApproveReceiptAction
                 before: ['status' => ReceiptStatus::PendingReview->value],
                 after: $this->detailOf($applied, $data),
             );
+
+            if ($data->surplusDestination instanceof SurplusDestination && $excess > 0) {
+                $this->surplus->handle(
+                    $applied->payment,
+                    $data->surplusDestination,
+                    $actor,
+                    $data->note ?? 'El sobrante se asignó al aprobar el comprobante.',
+                );
+            }
 
             ModelState::adopt($receipt, $locked->getAttributes());
 

@@ -1,6 +1,6 @@
 import { type DownPaymentProgressView, type LayawayPlanView } from '@/types/layaway';
 import { type Currency, type MoneyView } from '@/types/money';
-import { type PaymentMethod } from '@/types/payment';
+import { type PaymentMethod, type SurplusDestinationOption, type SurplusTeamMember } from '@/types/payment';
 import { type LayawayStatus } from '@/types/portal';
 import { type PaymentRow } from '@/types/receipt';
 
@@ -59,6 +59,8 @@ export interface PaymentFieldOptions {
     readonly file: { readonly accept: string; readonly maxMb: number };
     readonly readUrl: string;
     readonly rateOfDayUrl: string;
+    readonly destinations: readonly SurplusDestinationOption[];
+    readonly teamMembers: readonly SurplusTeamMember[];
 }
 
 export interface ManualPaymentOptions extends PaymentFieldOptions {

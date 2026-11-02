@@ -36,7 +36,7 @@ final class ManualPaymentPageTest extends TestCase
 
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-09-10 12:00:00', 'America/Caracas'));
         $this->organization = $this->subscribe(Organization::factory()->create(['timezone' => 'Asia/Tokyo']));
-        $this->member = $this->withinOrganization($this->organization, fn (): User => User::factory()->create());
+        $this->member = $this->withinOrganization($this->organization, fn (): User => User::factory()->create(['name' => 'Ana Pérez']));
         ExchangeRate::factory()->create(['source' => RateSource::Bcv, 'rate' => '42.50000000', 'published_at' => CarbonImmutable::now()->subHour()]);
         $this->withoutOrganization();
     }
@@ -251,6 +251,68 @@ final class ManualPaymentPageTest extends TestCase
 
         $this->actingAs($this->member)->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '50.00']))
             ->assertRedirect(route('layaways.show', $layaway));
+    }
+
+    public function test_the_form_offers_the_destinations_of_the_surplus_and_the_team(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $irma = $this->withinOrganization($this->organization, fn (): User => User::factory()->create(['name' => 'Irma Rojas']));
+        $this->withinOrganization($this->organization, fn (): User => User::factory()->disabled()->create(['name' => 'Luis Mora']));
+        $this->withoutOrganization();
+
+        $this->actingAs($this->member)->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('manualPayment.destinations.0.value', 'team_member')
+            ->where('manualPayment.destinations.1.value', 'tip')
+            ->where('manualPayment.destinations.2.value', 'petty_cash')
+            ->where('manualPayment.destinations.3.value', 'other')
+            ->where('manualPayment.destinations.3.requiresNote', true)
+            ->has('manualPayment.teamMembers', 2)
+            ->where('manualPayment.teamMembers.0.name', 'Ana Pérez')
+            ->where('manualPayment.teamMembers.1.name', 'Irma Rojas'));
+    }
+
+    public function test_the_surplus_can_be_assigned_when_the_payment_is_recorded(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $irma = $this->withinOrganization($this->organization, fn (): User => User::factory()->create(['name' => 'Irma Rojas']));
+        $this->withoutOrganization();
+        $this->actingAs($this->member);
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload([
+            'amount' => '250.00',
+            'confirm_excess' => '5000',
+            'surplus_destination' => 'team_member',
+            'surplus_user_id' => (string) $irma->getKey(),
+        ]))->assertRedirect(route('layaways.show', $layaway));
+
+        $payment = $this->withinOrganization($this->organization, fn (): Payment => Payment::query()->sole());
+
+        $this->assertSame('team_member', $payment->surplus_destination_type?->value);
+        $this->assertSame('Irma Rojas', $payment->surplus_team_member_name);
+        $this->assertSame(5_000, $payment->unallocated_cents->cents);
+    }
+
+    public function test_the_surplus_destination_is_refused_when_it_is_not_valid(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $foreign = $this->withinOrganization($this->neighbourOrganization(), fn (): User => User::factory()->create());
+        $this->withoutOrganization();
+        $this->actingAs($this->member)->from(route('layaways.show', $layaway));
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload([
+            'amount' => '250.00',
+            'confirm_excess' => '5000',
+            'surplus_destination' => 'team_member',
+            'surplus_user_id' => (string) $foreign->getKey(),
+        ]))->assertSessionHasErrors('surplus_user_id');
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload([
+            'amount' => '250.00',
+            'confirm_excess' => '5000',
+            'surplus_destination' => 'other',
+        ]))->assertSessionHasErrors('surplus_note');
+
+        $this->assertSame(0, DB::table('payments')->count());
     }
 
     /**

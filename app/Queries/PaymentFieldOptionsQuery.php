@@ -17,6 +17,7 @@ final readonly class PaymentFieldOptionsQuery
     public function __construct(
         private TenantContext $context,
         private ExchangeRateService $rates,
+        private SurplusDestinationOptionsQuery $surplus,
     ) {}
 
     /**
@@ -48,6 +49,7 @@ final readonly class PaymentFieldOptionsQuery
             'file' => ['maxMb' => ReceiptFile::maxSizeMb(), 'accept' => ReceiptFile::ACCEPT],
             'readUrl' => route('payments.read', ['desde' => $earliest, 'hasta' => $latest]),
             'rateOfDayUrl' => route('payments.rate-of-day'),
+            ...$this->surplus->for(),
         ];
     }
 }

@@ -18,6 +18,13 @@ export const MANUAL_PAYMENT_OPTIONS: ManualPaymentOptions = {
     file: { accept: '.jpg,.jpeg,.png,.webp,.pdf', maxMb: 5 },
     readUrl: '/backoffice/pagos/leer-comprobante?desde=2026-09-01&hasta=2026-10-05',
     rateOfDayUrl: '/backoffice/pagos/tasa-del-dia',
+    destinations: [
+        { value: 'team_member', label: 'Una persona del equipo', requiresNote: false },
+        { value: 'tip', label: 'Propina', requiresNote: false },
+        { value: 'petty_cash', label: 'Caja chica', requiresNote: false },
+        { value: 'other', label: 'Otro', requiresNote: true },
+    ],
+    teamMembers: [{ id: 7, name: 'Irma Rojas' }],
 };
 
 export function chooseBank(name: string) {

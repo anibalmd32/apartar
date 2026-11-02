@@ -3,7 +3,8 @@ import { type OrganizationBrand } from '@/types/backoffice';
 import { type RateView } from '@/types/exchange';
 import { type DownPaymentProgressView } from '@/types/layaway';
 import { type MoneyView } from '@/types/money';
-import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
+import { type PaymentRow } from '@/types/receipt';
+import { type ReceiptRow } from '@/types/receipt-row';
 
 export type PortalMode = 'account' | 'scoped';
 

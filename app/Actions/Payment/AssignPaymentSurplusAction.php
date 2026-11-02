@@ -13,6 +13,7 @@ use App\Models\Layaway;
 use App\Models\Payment;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\ModelState;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +60,8 @@ final class AssignPaymentSurplusAction
                 'surplus_assigned_by' => $actor->getKey(),
                 'surplus_assigned_at' => CarbonImmutable::now(),
             ])->save();
+
+            ModelState::adopt($payment, $lockedPayment->getAttributes());
 
             $this->audit(
                 AuditEvent::PaymentSurplusAssigned,
@@ -111,6 +114,8 @@ final class AssignPaymentSurplusAction
                 'surplus_assigned_by' => $actor->getKey(),
                 'surplus_assigned_at' => CarbonImmutable::now(),
             ])->save();
+
+            ModelState::adopt($payment, $lockedPayment->getAttributes());
 
             $this->audit(
                 AuditEvent::PaymentSurplusAssigned,
