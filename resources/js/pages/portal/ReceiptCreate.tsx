@@ -9,14 +9,17 @@ import { useReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
 import PortalLayout from '@/layouts/portal-layout';
 import { formatDate } from '@/lib/dates';
 import { afterPaint } from '@/lib/reveal-first-error';
-import { type PortalSessionView } from '@/types/portal';
+import { type NextPaymentInReview, type PortalSessionView } from '@/types/portal';
 import { type ReceiptCreateProps } from '@/types/receipt';
-import { cilCheckAlt } from '@coreui/icons';
+import { cilCheckAlt, cilCloudUpload } from '@coreui/icons';
 import { usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
-export default function ReceiptCreate(props: ReceiptCreateProps) {
-    const { business, layaway, suggestion, paymentAccounts, backUrl, replaces } = props;
+export type ReceiptCreatePageProps = ReceiptCreateProps & { readonly coveredByReview?: NextPaymentInReview | null };
+
+export default function ReceiptCreate(props: ReceiptCreatePageProps) {
+    const { business, layaway, suggestion, coveredByReview = null, paymentAccounts, backUrl, replaces } = props;
+    const covered = suggestion === null && coveredByReview !== null;
     const { auth } = usePage<{ auth: { portal: PortalSessionView | null } }>().props;
     const form = useReceiptForm(props);
     const [paid, setPaid] = useState(replaces !== null);
@@ -65,14 +68,14 @@ export default function ReceiptCreate(props: ReceiptCreateProps) {
                         form={form}
                         paymentAccounts={paymentAccounts}
                         suggestion={suggestion}
-                        remaining={layaway.remaining}
+                        coveredByReview={coveredByReview}
                         businessName={business.name}
                     />
 
                     {open ? null : (
-                        <Button variant="primary" size="lg" block onClick={startUpload}>
-                            <Icon icon={cilCheckAlt} size={18} />
-                            Ya pagué, subir el comprobante
+                        <Button variant={covered ? 'secondary' : 'primary'} size="lg" block onClick={startUpload}>
+                            <Icon icon={covered ? cilCloudUpload : cilCheckAlt} size={18} />
+                            {covered ? 'Subir otro comprobante' : 'Ya pagué, subir el comprobante'}
                         </Button>
                     )}
                 </div>

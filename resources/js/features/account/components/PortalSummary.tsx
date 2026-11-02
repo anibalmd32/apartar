@@ -43,12 +43,12 @@ export function dueOf(totals: PortalTotals, today: string): Due {
     return totals.paymentInReview ? { kind: 'review' } : null;
 }
 
-function Detail({ label, money, className }: { label: string; money: MoneyView; className?: string }) {
+function Detail({ label, money, className, stacked = false }: { label: string; money: MoneyView; className?: string; stacked?: boolean }) {
     return (
         <div className="flex min-w-0 flex-col gap-0.5">
             <dt className="text-ink-3 text-xs">{label}</dt>
             <dd className={cn('text-sm font-bold tabular-nums', className)}>
-                <MoneyLabel money={money} compact />
+                {stacked ? <MoneyLabel money={money} stacked /> : <MoneyLabel money={money} compact />}
             </dd>
         </div>
     );
@@ -99,9 +99,9 @@ export function PortalSummary({ totals, label, payUrl, today }: PortalSummaryPro
             <Headline due={due} payUrl={payUrl} />
 
             <dl className={cn('grid grid-cols-3 gap-3', due !== null && 'border-line border-t pt-3')}>
-                <Detail label="Comprometido" money={totals.committed} />
+                <Detail label="Comprometido" money={paidOnly(totals.committed)} />
                 <Detail label="Pagado" money={paidOnly(totals.paid)} className="text-success" />
-                <Detail label="Restante" money={totals.remaining} />
+                <Detail label="Restante" money={totals.remaining} stacked />
             </dl>
             <p className="text-ink-3 -mt-1 text-xs">
                 {totals.activeLayaways} {plural(totals.activeLayaways, 'apartado activo', 'apartados activos')}

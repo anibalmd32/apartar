@@ -76,11 +76,14 @@ it('si el próximo pago ya está cubierto por un comprobante en revisión no rep
 it('en bolívares, lo pagado se muestra en dólares y no reconvertido a la tasa de hoy', () => {
     usePage.mockReturnValue({ props: { currency: { display: 'ves_primary', timezone: 'America/Caracas', rate: { rate: null } } } });
     renderSummary({
+        committed: { cents: centsUsd(12_000), usd: '$120,00', ves: 'Bs. 6.000,00' },
         paid: { cents: centsUsd(3_000), usd: '$30,00', ves: 'Bs. 1.500,00' },
         remaining: { cents: centsUsd(9_000), usd: '$90,00', ves: 'Bs. 4.500,00' },
     });
 
     expect(screen.getByText('Pagado').nextElementSibling).toHaveTextContent('$30,00');
     expect(screen.getByText('Pagado').nextElementSibling).not.toHaveTextContent('Bs.');
-    expect(screen.getByText('Restante').nextElementSibling).toHaveTextContent('Bs. 4.500,00');
+    expect(screen.getByText('Comprometido').nextElementSibling).toHaveTextContent('$120,00');
+    expect(screen.getByText('Comprometido').nextElementSibling).not.toHaveTextContent('Bs.');
+    expect(screen.getByText('Restante').nextElementSibling).toHaveTextContent('Bs. 4.500,00$90,00');
 });

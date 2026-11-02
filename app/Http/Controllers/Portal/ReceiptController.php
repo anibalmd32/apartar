@@ -73,6 +73,8 @@ final class ReceiptController extends Controller
         $layaway->loadMissing('product.media');
         $summary = (new LayawaySummaryResource($layaway))->resolve($request);
         [$min, $max] = StoreReceiptRequest::boundsFor($layaway, new DateTimeZone($organization->timezone));
+        $next = $this->nextPayment($request, $layaway);
+        $covered = $next !== null && $next['covered'] === true;
 
         return Inertia::render('portal/ReceiptCreate', [
             'business' => OrganizationBrand::of($organization, $this->limits->hasFeature(PlanFeature::Branding))->toArray(),
@@ -84,7 +86,8 @@ final class ReceiptController extends Controller
                 'statusLabel' => $summary['statusLabel'],
                 'remaining' => $summary['remaining'],
             ],
-            'suggestion' => $this->suggestion($request, $layaway),
+            'suggestion' => $covered ? null : $next,
+            'coveredByReview' => $covered ? $next['inReview'] : null,
             'paymentAccounts' => array_map(fn (PaymentAccountView $account): array => $account->toArray(), $this->paymentAccounts->all()),
             'methods' => array_map(fn (PaymentMethod $method): array => [
                 'value' => $method->value,
@@ -146,13 +149,13 @@ final class ReceiptController extends Controller
     /**
      * @return array<string, mixed>|null
      */
-    private function suggestion(Request $request, Layaway $layaway): ?array
+    private function nextPayment(Request $request, Layaway $layaway): ?array
     {
         $organization = $this->context->organization();
         $inReview = ReceiptsInReview::of($layaway, $organization, $this->rates);
         $next = NextPayment::for($layaway, $layaway->installments()->get()->all(), DueCalendar::of($organization, $this->settings)->today, $inReview->amount);
 
-        if ($next === null || $next->covered()) {
+        if ($next === null) {
             return null;
         }
 

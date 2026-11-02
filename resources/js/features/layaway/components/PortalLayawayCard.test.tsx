@@ -5,8 +5,10 @@ import { type LayawaySummary } from '@/types/portal';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+const display = vi.hoisted(() => ({ value: 'usd_primary' }));
+
 vi.mock('@inertiajs/react', async () => ({
-    usePage: () => ({ props: { currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: null } } }),
+    usePage: () => ({ props: { currency: { display: display.value, timezone: 'America/Caracas', rate: null } } }),
     Link: (await import('@/test/fakes')).FakeLink,
 }));
 
@@ -16,7 +18,10 @@ beforeEach(() => {
     vi.setSystemTime(new Date('2026-10-20T12:00:00-04:00'));
 });
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+    vi.useRealTimers();
+    display.value = 'usd_primary';
+});
 
 function money(usd: string) {
     return { cents: centsUsd(100), usd, ves: null };
@@ -157,4 +162,23 @@ it('si el resumen ya dice el próximo pago, la tarjeta no lo repite', () => {
     );
 
     expect(screen.queryByText(/28 de octubre/)).not.toBeInTheDocument();
+});
+
+it('en bolívares, lo pagado y el total se comparan en la misma moneda', () => {
+    display.value = 'ves_primary';
+    render(
+        <ul>
+            <PortalLayawayCard
+                layaway={summary({
+                    total: { cents: centsUsd(16_000), usd: '$160,00', ves: 'Bs. 8.000,00' },
+                    paid: { cents: centsUsd(12_500), usd: '$125,00', ves: 'Bs. 6.250,00' },
+                    remaining: { cents: centsUsd(3_500), usd: '$35,00', ves: 'Bs. 1.750,00' },
+                })}
+                showStep={false}
+            />
+        </ul>,
+    );
+
+    expect(screen.getByText(/^Pagado/)).toHaveTextContent('Pagado $125,00 de $160,00');
+    expect(screen.getByText(/^Resta/)).toHaveTextContent('Resta Bs. 1.750,00');
 });

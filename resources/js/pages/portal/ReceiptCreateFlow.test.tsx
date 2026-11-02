@@ -1,7 +1,7 @@
-import ReceiptCreate from '@/pages/portal/ReceiptCreate';
+import { centsUsd } from '@/lib/money';
+import ReceiptCreate, { type ReceiptCreatePageProps } from '@/pages/portal/ReceiptCreate';
 import { fakeRoute } from '@/test/fakes';
-import { fakeFile, receiptProps, stubObjectUrls } from '@/test/receipt-fixtures';
-import { type ReceiptCreateProps } from '@/types/receipt';
+import { fakeFile, PAGO_MOVIL, receiptProps, stubObjectUrls, ZELLE } from '@/test/receipt-fixtures';
 import { router } from '@inertiajs/core';
 import type * as InertiaReact from '@inertiajs/react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -29,7 +29,7 @@ let visit: ReturnType<typeof vi.spyOn>;
 
 stubObjectUrls();
 
-function renderPage(overrides: Partial<ReceiptCreateProps> = {}) {
+function renderPage(overrides: Partial<ReceiptCreatePageProps> = {}) {
     return render(<ReceiptCreate {...receiptProps(overrides)} />);
 }
 
@@ -67,7 +67,7 @@ it('primero dice cuánto pagar y a dónde, y el formulario aparece al decir que 
     renderPage();
 
     expect(screen.getByRole('heading', { level: 2, name: /Paga \$30,00 a:/ })).toBeInTheDocument();
-    expect(screen.getByText('La cuota 2')).toBeInTheDocument();
+    expect(screen.getByText('Te toca pagar la cuota 2.')).toBeInTheDocument();
     expect(screen.getByText('J-12345678-9', { exact: false })).toBeInTheDocument();
     expect(screen.queryByLabelText('Captura o PDF del pago')).toBeNull();
     expect(screen.queryByText(/Cuenta a la que pagaste/)).toBeNull();
@@ -160,4 +160,29 @@ it('lo que la captura rellena deja de marcarse como faltante', async () => {
     expect(screen.queryByText('Escribe el número de referencia.')).toBeNull();
     expect(screen.queryByText('Indica el banco desde el que pagaste.')).toBeNull();
     expect(screen.queryByText('Sube la captura o el PDF de tu pago.')).toBeNull();
+});
+
+it('al elegir la cuenta después del aviso, el aviso se va', () => {
+    renderPage({ paymentAccounts: [PAGO_MOVIL, ZELLE] });
+
+    startUpload();
+    expect(screen.getByText('Elige la cuenta a la que vas a pagar.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Zelle/ }));
+
+    expect(screen.queryByText('Elige la cuenta a la que vas a pagar.')).toBeNull();
+    expect(screen.getByRole('radio', { name: /Zelle/ })).toBeChecked();
+});
+
+it('si un comprobante en revisión ya cubre lo que toca, lo dice y no repite lo que falta', () => {
+    renderPage({
+        suggestion: null,
+        coveredByReview: { amount: { cents: centsUsd(3_000), usd: '$30,00', ves: null }, count: 1, submittedOn: '3 oct' },
+    });
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Tu pago está en revisión' })).toBeInTheDocument();
+    expect(screen.getByText(/Ya enviaste/)).toHaveTextContent('Ya enviaste $30,00 el 3 oct y cubre lo que te toca ahora.');
+    expect(screen.getAllByText(/Te falta/)).toHaveLength(1);
+    expect(screen.queryByRole('heading', { name: /Paga/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Subir otro comprobante' })).toBeInTheDocument();
 });

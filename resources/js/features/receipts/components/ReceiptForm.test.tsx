@@ -113,7 +113,7 @@ it('con cuotas vencidas propone ponerse al día con el total', () => {
     renderForm({ paymentAccounts: [], suggestion });
 
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('60,00');
-    expect(screen.getByText(/Para ponerte al día te sugerimos tus 2 cuotas vencidas/)).toHaveTextContent('$60,00');
+    expect(screen.getByText('Ya pusimos el monto que te toca. Si pagaste otro monto, escríbelo.')).toBeInTheDocument();
 });
 
 it('la moneda va en su fila, antes del monto, y el monto muestra el símbolo de la moneda elegida', () => {
@@ -164,7 +164,7 @@ it('sin sugerencia, el monto arranca vacío y no hay ayuda', () => {
     renderForm({ suggestion: null });
 
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('');
-    expect(screen.queryByText(/Te sugerimos/)).toBeNull();
+    expect(screen.queryByText(/Ya pusimos el monto/)).toBeNull();
 });
 
 it('avisa si el archivo pasa del límite, sin bloquear el envío', () => {

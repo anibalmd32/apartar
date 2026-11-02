@@ -40,6 +40,14 @@ function dueText(row: InstallmentRow): string {
     return row.daysUntilDue === 1 ? 'Vence mañana' : `Vence en ${row.daysUntilDue} días`;
 }
 
+function dueDateText(row: InstallmentRow): string {
+    if (row.tone === 'overdue') {
+        return `Venció el ${row.dueDateLabel}`;
+    }
+
+    return `${row.daysUntilDue < 0 ? 'Vencía' : 'Vence'} el ${row.dueDateLabel}`;
+}
+
 interface ScheduleTableProps {
     installments: readonly InstallmentRow[];
 }
@@ -64,9 +72,7 @@ export function ScheduleTable({ installments }: ScheduleTableProps) {
                         </span>
                         <div className="flex min-w-0 flex-col gap-0.5">
                             <span className="text-[15px] font-semibold">Cuota {row.number}</span>
-                            <span className={cn('text-xs', row.tone === 'overdue' ? 'text-error' : 'text-ink-3')}>
-                                {row.daysUntilDue < 0 ? 'Venció' : 'Vence'} el {row.dueDateLabel}
-                            </span>
+                            <span className={cn('text-xs', row.tone === 'overdue' ? 'text-error' : 'text-ink-3')}>{dueDateText(row)}</span>
                             {row.status === 'partially_paid' || (row.paid.cents > 0 && row.tone !== 'paid') ? (
                                 <span className="text-ink-3 text-xs">
                                     pagado <MoneyLabel money={paidOnly(row.paid)} />, falta <MoneyLabel money={row.pending} />

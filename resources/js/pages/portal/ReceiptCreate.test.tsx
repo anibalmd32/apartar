@@ -134,21 +134,21 @@ it('acota la fecha del pago y arranca en hoy', () => {
     expect(screen.getByRole('gridcell', { name: / 6 de octubre de 2026/ })).toBeDisabled();
 });
 
-it('enseña el monto sugerido como ayuda', () => {
+it('el monto sugerido se precarga sin repetir la cuota ni la cifra', () => {
     renderPage();
     startUpload();
 
-    expect(screen.getByText(/Te sugerimos la cuota 2:/)).toHaveTextContent('Te sugerimos la cuota 2: $30,00. Si pagaste otro monto, escríbelo.');
+    expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1.275,00');
+    expect(screen.getByText('Ya pusimos el monto que te toca. Si pagaste otro monto, escríbelo.')).toBeInTheDocument();
+    expect(screen.queryByText(/La cuota 2/)).toBeNull();
+    expect(screen.queryByText(/Te sugerimos/)).toBeNull();
 });
 
-it('con parte de la inicial abonada, sugiere lo que falta de la inicial', () => {
+it('con parte de la inicial abonada, dice que toca lo que falta de la inicial', () => {
     const suggestion = receiptProps().suggestion!;
     renderPage({ suggestion: { ...suggestion, kind: 'down_payment', installmentNumber: null, started: true } });
-    startUpload();
 
-    expect(screen.getByText(/Te sugerimos lo que falta de la inicial:/)).toHaveTextContent(
-        'Te sugerimos lo que falta de la inicial: $30,00. Si pagaste otro monto, escríbelo.',
-    );
+    expect(screen.getByText('Te toca pagar lo que falta de la inicial.')).toBeInTheDocument();
 });
 
 it('lee el comprobante, rellena lo que encontró y envía multipart con los nombres del contrato', async () => {

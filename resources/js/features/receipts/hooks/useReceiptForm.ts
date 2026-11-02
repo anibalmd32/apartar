@@ -91,6 +91,10 @@ export function useReceiptForm({ paymentAccounts, methods, currencies, suggestio
     const selectAccount = (value: string) => {
         const account = paymentAccounts.find((candidate) => String(candidate.id) === value);
 
+        if (account !== undefined) {
+            form.clearErrors('paymentAccount');
+        }
+
         form.setData((data) => {
             const next = { ...data, paymentAccount: account?.id ?? null };
             const changesMethod = account !== undefined && account.method !== data.method && findMethod(account.method) !== undefined;

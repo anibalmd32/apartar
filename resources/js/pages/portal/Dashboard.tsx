@@ -1,19 +1,27 @@
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FeedList } from '@/features/account/components/FeedList';
-import { PortalSummary } from '@/features/account/components/PortalSummary';
+import { dueOf, PortalSummary } from '@/features/account/components/PortalSummary';
 import { BusinessBlock } from '@/features/layaway/components/BusinessBlock';
 import { PortalAlerts } from '@/features/layaway/components/PortalAlerts';
 import { todayIn } from '@/features/layaway/lib/today';
 import { PushOptIn } from '@/features/notifications/components/PushOptIn';
 import PortalLayout from '@/layouts/portal-layout';
-import { type PortalDashboardProps } from '@/types/portal';
+import { type PortalDashboardProps, type PortalTotals } from '@/types/portal';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 export const VISIBLE_BUSINESSES = 5;
 
 const SUMMARIZED_ALERTS: readonly string[] = ['overdue', 'due_soon'];
+
+function summarizedAlerts(summary: PortalTotals | null, today: string): readonly string[] {
+    if (summary === null) {
+        return [];
+    }
+
+    return dueOf(summary, today)?.kind === 'review' ? [...SUMMARIZED_ALERTS, 'receipt_pending'] : SUMMARIZED_ALERTS;
+}
 
 export default function Dashboard({
     session,
@@ -34,6 +42,8 @@ export default function Dashboard({
     const firstName = session.displayName.split(' ')[0] ?? session.displayName;
     const summary =
         totals !== null && businesses.length > 1 ? totals : single !== undefined && single.totals.activeLayaways > 0 ? single.totals : null;
+    const today = todayIn();
+    const hidden = summarizedAlerts(summary, today);
 
     return (
         <PortalLayout title={`Mis apartados · ${businessName}`} businessName={businessName} customerName={session.displayName}>
@@ -41,7 +51,7 @@ export default function Dashboard({
                 Hola, {firstName} <span aria-hidden="true">👋</span>
             </h1>
 
-            <PortalAlerts alerts={summary === null ? alerts : alerts.filter((alert) => !SUMMARIZED_ALERTS.includes(alert.kind))} />
+            <PortalAlerts alerts={alerts.filter((alert) => !hidden.includes(alert.kind))} />
 
             {claimUrl !== null && unclaimedBusinesses > 0 ? (
                 <Alert tone="info">
@@ -61,7 +71,7 @@ export default function Dashboard({
                     totals={summary}
                     label={businesses.length > 1 ? 'Resumen de todos tus negocios' : 'Resumen de tus apartados'}
                     payUrl={route('portal.pay')}
-                    today={todayIn()}
+                    today={today}
                 />
             ) : null}
 

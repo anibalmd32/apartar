@@ -165,7 +165,17 @@ final class ReceiptCreateTest extends TestCase
         $this->receiptFor($this->layaway, attributes: ['declared_amount' => '30.00', 'declared_currency' => Currency::USD]);
         $this->withoutOrganization();
 
-        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page->where('suggestion', null));
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('suggestion', null)
+            ->where('coveredByReview.amount.cents', 6_000)
+            ->where('coveredByReview.count', 2));
+    }
+
+    public function test_sin_comprobantes_en_revision_no_hay_pago_cubierto(): void
+    {
+        $this->get($this->formUrl())->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('suggestion.kind', 'down_payment')
+            ->where('coveredByReview', null));
     }
 
     public function test_foreign_terminal_and_anonymous_are_turned_away(): void

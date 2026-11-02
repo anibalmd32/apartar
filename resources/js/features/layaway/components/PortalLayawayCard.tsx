@@ -129,7 +129,7 @@ export function PortalLayawayCard({ layaway, showStep = true, today = todayIn() 
 
                 <span className="flex items-baseline justify-between gap-2">
                     <span className="text-ink-3 text-xs">
-                        Pagado <PrimaryMoney money={paidOnly(layaway.paid)} /> de <PrimaryMoney money={layaway.total} />
+                        Pagado <PrimaryMoney money={paidOnly(layaway.paid)} /> de <PrimaryMoney money={paidOnly(layaway.total)} />
                     </span>
                     <span className="text-[13px] font-bold whitespace-nowrap">
                         Resta <PrimaryMoney money={layaway.remaining} />

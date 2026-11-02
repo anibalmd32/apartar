@@ -1,7 +1,5 @@
 import { DateField } from '@/components/ui/date-field';
 import { TextField } from '@/components/ui/text-field';
-import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { suggestionWhat } from '@/features/layaway/lib/next-payment';
 import { CurrencyChoice } from '@/features/receipts/components/ReceiptChoiceFields';
 import { type ReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
 import { typedAmount } from '@/lib/amount-typing';
@@ -15,16 +13,6 @@ interface ReceiptAmountFieldsProps {
 }
 
 const CURRENCY_SYMBOLS: Readonly<Record<string, string>> = { USD: '$', VES: 'Bs.' };
-
-function SuggestionHint({ suggestion }: { suggestion: ReceiptSuggestion }) {
-    const lead = suggestion.kind === 'overdue' ? 'Para ponerte al día te sugerimos' : 'Te sugerimos';
-
-    return (
-        <>
-            {lead} {suggestionWhat(suggestion)}: <MoneyLabel money={suggestion.amount} />. Si pagaste otro monto, escríbelo.
-        </>
-    );
-}
 
 export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: ReceiptAmountFieldsProps) {
     const { data, errors } = form;
@@ -58,11 +46,7 @@ export function ReceiptAmountFields({ form, currencies, suggestion, paidAt }: Re
                 required
             />
 
-            {suggestion !== null ? (
-                <p className="text-sm opacity-80">
-                    <SuggestionHint suggestion={suggestion} />
-                </p>
-            ) : null}
+            {suggestion !== null ? <p className="text-ink-2 text-sm">Ya pusimos el monto que te toca. Si pagaste otro monto, escríbelo.</p> : null}
         </>
     );
 }

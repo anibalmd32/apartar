@@ -124,6 +124,16 @@ it('con un negocio, lo vencido lo dice una sola vez el resumen y no un aviso apa
     expect(screen.getAllByText(/25 de septiembre/)).toHaveLength(1);
 });
 
+it('si el resumen ya dice que el pago está en revisión, no hay un aviso aparte', () => {
+    const pending = { kind: 'receipt_pending' as const, count: 1, actionUrl: '/mi-cuenta/apartados/AP-7K3M9QRT' };
+    const [first] = PROPS.businesses;
+    const totals = { ...first!.totals, overdueInstallments: 0, nextDueDate: null, nextDueDateLabel: null, paymentInReview: true };
+    render(<Dashboard {...PROPS} businesses={[{ ...first!, totals }]} alerts={[pending]} />);
+
+    expect(screen.queryByRole('region', { name: 'Avisos' })).toBeNull();
+    expect(screen.getAllByText(/en revisión/)).toHaveLength(1);
+});
+
 it('pinta las alertas encima de los bloques, y nada si no hay', () => {
     const { rerender } = render(<Dashboard {...PROPS} />);
 

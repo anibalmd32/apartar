@@ -46,7 +46,8 @@ it('dice en texto si la cuota está pagada, vencida o por vencer', () => {
 
     expect(screen.getByText('Pagada')).toHaveClass('badge-success');
     expect(screen.getByText('Venció hace 3 días')).toHaveClass('badge-error');
-    expect(screen.getAllByText('Venció el 25 de septiembre')).toHaveLength(2);
+    expect(screen.getAllByText('Venció el 25 de septiembre')).toHaveLength(1);
+    expect(screen.getByText('Vencía el 25 de septiembre')).not.toHaveClass('text-error');
     expect(screen.getAllByText('Vence el 25 de septiembre')).toHaveLength(3);
     expect(screen.getByText('Vence en 2 días')).toHaveClass('badge-warning');
     expect(screen.getByText('Vence hoy')).toBeInTheDocument();

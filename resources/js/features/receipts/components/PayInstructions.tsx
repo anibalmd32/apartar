@@ -1,62 +1,84 @@
 import { Alert } from '@/components/ui/alert';
+import { Icon } from '@/components/ui/icon';
 import { PaymentAccountList } from '@/features/catalog/components/PaymentAccountList';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
-import { capitalized, suggestionWhat } from '@/features/layaway/lib/next-payment';
+import { suggestionWhat } from '@/features/layaway/lib/next-payment';
 import { PaymentAccountChoice } from '@/features/receipts/components/ReceiptChoiceFields';
 import { type ReceiptForm } from '@/features/receipts/hooks/useReceiptForm';
 import { formatAccountIdentifier } from '@/lib/identity-format';
-import { type MoneyView } from '@/types/money';
 import { type PaymentAccountView } from '@/types/payment';
+import { type NextPaymentInReview } from '@/types/portal';
 import { type ReceiptSuggestion } from '@/types/receipt';
+import { cilClock } from '@coreui/icons';
 
 interface PayInstructionsProps {
     form: ReceiptForm;
     paymentAccounts: readonly PaymentAccountView[];
     suggestion: ReceiptSuggestion | null;
-    remaining: MoneyView;
+    coveredByReview?: NextPaymentInReview | null;
     businessName: string;
 }
+
+const HEADING = 'tracking-heading text-[20px] leading-tight font-extrabold lg:text-[24px]';
 
 function accountLabel(account: PaymentAccountView): string {
     return [account.methodLabel, account.bank, formatAccountIdentifier(account)].filter((part) => part !== null && part !== '').join(' · ');
 }
 
-function Lead({ suggestion, remaining }: Pick<PayInstructionsProps, 'suggestion' | 'remaining'>) {
-    if (suggestion === null) {
-        return (
-            <p className="text-ink-2 text-[13px]">
-                Te falta <MoneyLabel money={remaining} className="text-base-content font-semibold" />
-            </p>
-        );
-    }
+function SuggestedHeading({ suggestion }: { suggestion: ReceiptSuggestion }) {
+    const overdue = suggestion.kind === 'overdue';
 
     return (
-        <p className={suggestion.kind === 'overdue' ? 'text-error text-[13px] font-semibold' : 'text-ink-2 text-[13px]'}>
-            {capitalized(suggestionWhat(suggestion))}
-        </p>
+        <>
+            <p className={overdue ? 'text-error text-[13px] font-semibold' : 'text-ink-2 text-[13px]'}>
+                {overdue ? 'Ponte al día con' : 'Te toca pagar'} {suggestionWhat(suggestion)}.
+            </p>
+            <h2 id="pay-heading" className={HEADING}>
+                Paga <MoneyLabel money={suggestion.amount} secondaryClassName="text-[15px] font-semibold" /> a:
+            </h2>
+            {suggestion.inReview !== null ? (
+                <p className="text-ink-3 text-xs">
+                    Ya descontamos los <MoneyLabel money={suggestion.inReview.amount} /> que enviaste y están en revisión.
+                </p>
+            ) : null}
+        </>
     );
 }
 
-export function PayInstructions({ form, paymentAccounts, suggestion, remaining, businessName }: PayInstructionsProps) {
+function CoveredHeading({ inReview, hasAccounts }: { inReview: NextPaymentInReview; hasAccounts: boolean }) {
+    const many = inReview.count > 1;
+
+    return (
+        <>
+            <h2 id="pay-heading" className="flex items-center gap-2 text-[17px] font-bold">
+                <Icon icon={cilClock} size={18} className="text-info shrink-0" />
+                Tu pago está en revisión
+            </h2>
+            <p className="text-ink-2 text-sm">
+                Ya enviaste <MoneyLabel money={inReview.amount} className="text-base-content font-semibold" />
+                {inReview.submittedOn !== null ? ` el ${inReview.submittedOn}` : ''}
+                {many ? ` en ${inReview.count} comprobantes` : ''} y cubre lo que te toca ahora. Cuando lo aprueben, verás aquí lo siguiente que debes
+                pagar.
+            </p>
+            {hasAccounts ? <p className="text-ink-2 text-sm">Si quieres adelantar otro pago, estas son las cuentas:</p> : null}
+        </>
+    );
+}
+
+export function PayInstructions({ form, paymentAccounts, suggestion, coveredByReview = null, businessName }: PayInstructionsProps) {
     const single = paymentAccounts.length === 1;
 
     return (
         <section className="flex flex-col gap-3" aria-labelledby="pay-heading">
             <div className="flex flex-col gap-1">
-                <Lead suggestion={suggestion} remaining={remaining} />
-                <h2 id="pay-heading" className="tracking-heading text-[20px] leading-tight font-extrabold lg:text-[24px]">
-                    {suggestion !== null ? (
-                        <>
-                            Paga <MoneyLabel money={suggestion.amount} secondaryClassName="text-[15px] font-semibold" /> a:
-                        </>
-                    ) : (
-                        'Paga a:'
-                    )}
-                </h2>
-                {suggestion?.inReview != null ? (
-                    <p className="text-ink-3 text-xs">
-                        Ya descontamos los <MoneyLabel money={suggestion.inReview.amount} /> que enviaste y están en revisión.
-                    </p>
+                {suggestion !== null ? <SuggestedHeading suggestion={suggestion} /> : null}
+                {suggestion === null && coveredByReview !== null ? (
+                    <CoveredHeading inReview={coveredByReview} hasAccounts={paymentAccounts.length > 0} />
+                ) : null}
+                {suggestion === null && coveredByReview === null ? (
+                    <h2 id="pay-heading" className={HEADING}>
+                        Cuentas para pagar
+                    </h2>
                 ) : null}
             </div>
 
