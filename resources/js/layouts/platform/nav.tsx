@@ -48,7 +48,7 @@ function NavList({ sections, counts, current }: { sections: readonly PlatformSec
                             href={section.href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex h-[38px] items-center gap-3 rounded-[10px] px-3 text-sm transition-colors',
+                                'touch:h-11 flex h-[38px] items-center gap-3 rounded-[10px] px-3 text-sm transition-colors',
                                 active
                                     ? 'bg-primary-soft text-primary-ink font-bold'
                                     : 'text-ink-2 hover:bg-surface-2 hover:text-base-content font-medium',
@@ -102,7 +102,7 @@ export function PlatformSupportTabs() {
                         href={section.href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'rounded-lg px-3.5 py-2 text-[13px]',
+                            'touch:min-h-11 flex items-center rounded-lg px-3.5 py-2 text-[13px]',
                             active ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                         )}
                     >

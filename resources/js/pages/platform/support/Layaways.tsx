@@ -1,6 +1,6 @@
+import { BackLink } from '@/components/ui/back-link';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
-import { Link } from '@inertiajs/react';
 
 interface LayawayRow {
     code: string;
@@ -18,9 +18,7 @@ const usd = (cents: number) => new Intl.NumberFormat('es', { style: 'currency', 
 export default function SupportLayaways({ organization, layaways }: { organization: { id: number; name: string }; layaways: readonly LayawayRow[] }) {
     return (
         <PlatformLayout title={`Apartados de ${organization.name}`} description="Acceso de soporte · solo lectura. Este acceso queda registrado.">
-            <Link href={pf('/organizaciones')} className="text-ink-2 hover:text-base-content self-start text-[13px]">
-                ← Organizaciones
-            </Link>
+            <BackLink href={pf('/organizaciones')}>Organizaciones</BackLink>
             <div className="table-frame">
                 <table className="table">
                     <thead>

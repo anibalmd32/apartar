@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Modal } from '@/components/ui/modal';
@@ -13,8 +14,8 @@ import { SupportAccessPanel } from '@/features/platform/components/SupportAccess
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type InvoiceRow, type OrganizationRow, type SupportGrantRow } from '@/types/platform';
-import { cilArrowLeft, cilBan, cilCheckCircle, cilSwapHorizontal } from '@coreui/icons';
-import { Link, router } from '@inertiajs/react';
+import { cilBan, cilCheckCircle, cilSwapHorizontal } from '@coreui/icons';
+import { router } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
 interface ShowProps {
@@ -93,15 +94,7 @@ export default function OrganizationShow({
                     </span>
                 </div>
             }
-            back={
-                <Link
-                    href={pf('/organizaciones')}
-                    className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]"
-                >
-                    <Icon icon={cilArrowLeft} size={14} />
-                    Organizaciones
-                </Link>
-            }
+            back={<BackLink href={pf('/organizaciones')}>Organizaciones</BackLink>}
             actions={
                 <>
                     <a href="#suscripcion" className="btn">

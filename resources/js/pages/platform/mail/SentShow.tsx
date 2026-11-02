@@ -1,6 +1,6 @@
+import { BackLink } from '@/components/ui/back-link';
 import { Badge } from '@/components/ui/badge';
 import { FilterTabs } from '@/components/ui/filter-tabs';
-import { Icon } from '@/components/ui/icon';
 import { SectionCard } from '@/components/ui/section-card';
 import { EventTimeline } from '@/features/platform/mail/EventTimeline';
 import { count, dateTime, statusTone } from '@/features/platform/mail/format';
@@ -8,7 +8,6 @@ import { MailFrame } from '@/features/platform/mail/MailFrame';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type SentMailDetail } from '@/types/mail';
-import { cilArrowLeft } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
@@ -35,15 +34,7 @@ export default function SentMailShow({ mail }: { mail: SentMailDetail }) {
     return (
         <PlatformLayout
             title={mail.subject === '' ? '(sin asunto)' : mail.subject}
-            back={
-                <Link
-                    href={pf('/correos/enviados')}
-                    className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]"
-                >
-                    <Icon icon={cilArrowLeft} size={14} />
-                    Enviados
-                </Link>
-            }
+            back={<BackLink href={pf('/correos/enviados')}>Enviados</BackLink>}
             actions={<Badge tone={statusTone(mail.status)}>{mail.statusLabel}</Badge>}
         >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">

@@ -39,7 +39,7 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
                         <a
                             key={section.id}
                             href={`#${section.id}`}
-                            className="text-ink-2 hover:bg-base-100 hover:text-base-content flex h-[38px] shrink-0 items-center gap-3 rounded-[10px] px-3 text-sm font-medium"
+                            className="text-ink-2 hover:bg-base-100 hover:text-base-content touch:h-11 flex h-[38px] shrink-0 items-center gap-3 rounded-[10px] px-3 text-sm font-medium"
                         >
                             <Icon icon={section.icon} size={18} />
                             {section.label}

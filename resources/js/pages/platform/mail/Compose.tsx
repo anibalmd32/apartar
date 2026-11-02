@@ -1,3 +1,4 @@
+import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { RichTextField } from '@/components/ui/rich-text-field';
@@ -7,8 +8,8 @@ import { dateTime } from '@/features/platform/mail/format';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type ComposeSource } from '@/types/mail';
-import { cilArrowLeft, cilPaperclip, cilSend } from '@coreui/icons';
-import { Link, useForm } from '@inertiajs/react';
+import { cilPaperclip, cilSend } from '@coreui/icons';
+import { useForm } from '@inertiajs/react';
 
 interface ComposeProps {
     mode: string;
@@ -26,12 +27,7 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
         <PlatformLayout
             title={modeLabel}
             description={`Sale desde ${from}.`}
-            back={
-                <Link href={back} className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]">
-                    <Icon icon={cilArrowLeft} size={14} />
-                    {source === null ? 'Bandeja' : 'Conversación'}
-                </Link>
-            }
+            back={<BackLink href={back}>{source === null ? 'Bandeja' : 'Conversación'}</BackLink>}
         >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <SectionCard aria-label="Correo">

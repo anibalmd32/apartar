@@ -62,7 +62,7 @@ it('dice de qué apartado es, cuánto falta y enlaza de vuelta', () => {
     expect(summary).toHaveTextContent('AP-7K3M9QRT');
     expect(summary).toHaveTextContent('Al día');
     expect(summary).toHaveTextContent('Te falta: $150,00');
-    expect(screen.getByRole('link', { name: '← Volver al apartado' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QRT');
+    expect(screen.getByRole('link', { name: 'Volver al apartado' })).toHaveAttribute('href', '/mi-cuenta/apartados/AP-7K3M9QRT');
     expect(screen.getByText('María González')).toBeInTheDocument();
 });
 

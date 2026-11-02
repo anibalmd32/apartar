@@ -55,7 +55,10 @@ export function BankField({ label, value, onChange, name, error, hint, required 
                         displayValue={(current: string) => current}
                         onChange={(event) => setQuery(event.target.value)}
                     />
-                    <ComboboxButton aria-label="Ver bancos" className="text-ink-3 absolute inset-y-0 right-0 flex cursor-pointer items-center px-3">
+                    <ComboboxButton
+                        aria-label="Ver bancos"
+                        className="text-ink-3 absolute inset-y-0 right-0 flex min-w-11 cursor-pointer items-center justify-center px-3"
+                    >
                         <Icon icon={cilChevronBottom} size={14} />
                     </ComboboxButton>
                 </div>

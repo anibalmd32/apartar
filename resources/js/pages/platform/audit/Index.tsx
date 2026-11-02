@@ -77,7 +77,7 @@ export default function AuditIndex({ entries, hasMore, page, filters, operators,
                                     {entry.organization ? (
                                         <Link
                                             href={pf(`/organizaciones/${entry.organization.slug}`)}
-                                            className="text-primary text-sm font-semibold hover:underline"
+                                            className="hit-area text-primary text-sm font-semibold hover:underline"
                                         >
                                             {entry.organization.name}
                                         </Link>

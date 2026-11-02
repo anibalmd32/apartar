@@ -53,7 +53,7 @@ export function DateInput({
                 aria-required={required ? true : undefined}
                 className={cn(
                     'flex cursor-pointer items-center gap-2 text-left',
-                    bare ? 'w-full min-w-0' : cn('input w-full', invalid && 'input-error'),
+                    bare ? 'hit-area w-full min-w-0' : cn('input w-full', invalid && 'input-error'),
                     className,
                 )}
             >

@@ -33,7 +33,7 @@ export function MailTabs() {
                             href={tab.href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[13px]',
+                                'touch:min-h-11 flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[13px]',
                                 active ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                             )}
                         >

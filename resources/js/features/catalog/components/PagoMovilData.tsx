@@ -56,7 +56,7 @@ function CopyAllButton({ value }: { value: string }) {
             type="button"
             onClick={() => void copy()}
             className={cn(
-                'border-line hover:bg-base-200 inline-flex min-h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border px-2.5 text-xs font-semibold',
+                'border-line hover:bg-base-200 touch:min-h-11 inline-flex min-h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border px-2.5 text-xs font-semibold',
                 copied ? 'text-success' : 'text-primary-ink',
             )}
         >
@@ -73,7 +73,7 @@ export function PagoMovilData({ account, className }: { account: PaymentAccountV
         <div className={cn('flex flex-col gap-1.5', className)}>
             <dl className="flex flex-col">
                 {fields.map((field) => (
-                    <div key={field.key} className="flex items-center gap-2 text-[13px]">
+                    <div key={field.key} className="touch:min-h-11 flex items-center gap-2 text-[13px]">
                         <dt className="text-ink-3 w-[88px] shrink-0">{field.label}</dt>
                         <dd className="flex min-w-0 grow items-baseline gap-1.5">
                             <span className="font-semibold tracking-wide whitespace-nowrap tabular-nums select-all">{field.display}</span>

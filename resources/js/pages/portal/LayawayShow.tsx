@@ -1,3 +1,4 @@
+import { BackLink } from '@/components/ui/back-link';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { PortalLayawayHero } from '@/features/layaway/components/PortalLayawayHero';
@@ -8,7 +9,7 @@ import { ReceiptHistory } from '@/features/receipts/components/ReceiptHistory';
 import PortalLayout from '@/layouts/portal-layout';
 import { cn } from '@/lib/utils';
 import { type PortalLayawayShowProps } from '@/types/portal';
-import { cilArrowLeft, cilLibrary } from '@coreui/icons';
+import { cilLibrary } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
 const card = 'border-line bg-base-100 shadow-card rounded-2xl border';
@@ -28,13 +29,7 @@ export default function LayawayShow({
 
     return (
         <PortalLayout title={`Apartado ${layaway.code} · ${business.name}`} businessName={business.name} customerName={auth.portal?.fullName ?? ''}>
-            <Link
-                href={route('portal.dashboard')}
-                className="text-ink-3 hover:text-base-content flex items-center gap-1.5 self-start text-[13px] font-semibold"
-            >
-                <Icon icon={cilArrowLeft} size={14} />
-                Mis apartados
-            </Link>
+            <BackLink href={route('portal.dashboard')}>Mis apartados</BackLink>
 
             <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5">
                 <div className="contents lg:flex lg:flex-col lg:gap-4">

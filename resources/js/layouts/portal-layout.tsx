@@ -67,7 +67,7 @@ function PortalFrame({ title, businessName, customerName, children }: PortalLayo
             </header>
 
             <header className="bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden">
-                <Link href={route('portal.dashboard')} aria-label="Ir al inicio de tu cuenta">
+                <Link href={route('portal.dashboard')} aria-label="Ir al inicio de tu cuenta" className="hit-area flex shrink-0">
                     <BrandMark className="size-[30px] rounded-lg text-[19px]" />
                 </Link>
                 <p className="min-w-0 flex-1 truncate text-[17px] font-bold">{businessName}</p>

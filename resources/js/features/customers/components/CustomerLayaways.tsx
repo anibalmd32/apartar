@@ -24,7 +24,7 @@ export function CustomerLayaways({ layaways, empty }: { layaways: readonly Custo
                             <IconChip icon={cilBasket} tone="neutral" size={40} />
                             <div className="flex min-w-0 flex-1 flex-col">
                                 <span className="truncate text-sm font-bold">{layaway.productName}</span>
-                                <Link href={layaway.url} className="text-primary-ink self-start text-xs font-semibold hover:underline">
+                                <Link href={layaway.url} className="hit-area text-primary-ink self-start text-xs font-semibold hover:underline">
                                     {layaway.code}
                                 </Link>
                             </div>

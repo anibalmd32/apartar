@@ -65,12 +65,12 @@ export function ReminderOffsetsEditor({ label, value, onChange, hint, error }: R
                 {value.map((offset) => (
                     <li
                         key={offset}
-                        className="bg-primary-soft text-primary-ink inline-flex items-center gap-1.5 rounded-full py-[3px] pr-1.5 pl-2.5 text-xs font-semibold"
+                        className="bg-primary-soft text-primary-ink touch:h-11 touch:pr-0 touch:pl-3.5 touch:text-[13px] inline-flex items-center gap-1.5 rounded-full py-[3px] pr-1.5 pl-2.5 text-xs font-semibold"
                     >
                         {offsetLabel(offset)}
                         <button
                             type="button"
-                            className="hit-area hover:bg-base-100/60 cursor-pointer rounded-full p-0.5"
+                            className="hover:bg-base-100/60 touch:size-11 inline-flex cursor-pointer items-center justify-center rounded-full p-0.5"
                             onClick={() => onChange(value.filter((other) => other !== offset))}
                             aria-label={`Quitar ${offsetLabel(offset).toLowerCase()}`}
                         >
@@ -83,7 +83,7 @@ export function ReminderOffsetsEditor({ label, value, onChange, hint, error }: R
                     <li>
                         <button
                             type="button"
-                            className="hit-area bg-base-300 text-ink-2 hover:text-base-content inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-[3px] text-xs font-semibold"
+                            className="bg-base-300 text-ink-2 hover:text-base-content touch:h-11 touch:px-3.5 touch:text-[13px] inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-[3px] text-xs font-semibold"
                             onClick={() => setAdding(true)}
                         >
                             <Icon icon={cilPlus} size={10} />

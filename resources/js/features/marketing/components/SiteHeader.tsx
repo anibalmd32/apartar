@@ -22,7 +22,7 @@ export function SiteHeader() {
     return (
         <header className="bg-base-200">
             <nav aria-label="Principal" className="mx-auto flex h-[60px] max-w-[1440px] items-center gap-6 px-4 lg:h-[76px] lg:px-20">
-                <Link href={route('home')} className="mr-auto" aria-label="Apartar, inicio">
+                <Link href={route('home')} className="touch:min-h-11 mr-auto flex items-center" aria-label="Apartar, inicio">
                     <Brand />
                 </Link>
 
@@ -53,14 +53,18 @@ export function SiteHeader() {
                     {({ open }) => (
                         <>
                             <PopoverButton
-                                className="border-line hover:bg-surface-2 pointer-coarse:size-11 flex size-9 cursor-pointer items-center justify-center rounded-[10px] border"
+                                className="border-line hover:bg-surface-2 touch:size-11 flex size-9 cursor-pointer items-center justify-center rounded-[10px] border"
                                 aria-label={open ? 'Cerrar el menú' : 'Abrir el menú'}
                             >
                                 <Icon icon={open ? cilX : cilMenu} size={18} />
                             </PopoverButton>
                             <PopoverPanel className="border-line bg-base-100 shadow-pop absolute right-0 z-40 mt-2 flex w-56 flex-col gap-1 rounded-2xl border p-2">
                                 {links.map((link) => (
-                                    <Link key={link.label} href={link.href} className="hover:bg-surface-2 rounded-lg px-3 py-2.5 text-sm font-medium">
+                                    <Link
+                                        key={link.label}
+                                        href={link.href}
+                                        className="hover:bg-surface-2 touch:min-h-11 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium"
+                                    >
                                         {link.label}
                                     </Link>
                                 ))}

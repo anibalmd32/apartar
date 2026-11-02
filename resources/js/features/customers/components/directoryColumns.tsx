@@ -19,7 +19,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
                 <Avatar name={row.name} size={32} tone={row.inArrears ? 'neutral' : 'accent'} />
                 <div className="flex min-w-0 flex-col items-start gap-0.5">
                     <span className="flex items-center gap-1.5">
-                        <Link href={row.url} className="font-semibold hover:underline">
+                        <Link href={row.url} className="hit-area font-semibold hover:underline">
                             {row.name}
                         </Link>
                         {row.hasLinkedAccount ? (
@@ -42,7 +42,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
             row.phone === null ? (
                 <span className="text-ink-3 whitespace-nowrap">{NO_PHONE}</span>
             ) : (
-                <a href={`tel:${row.phone}`} className="text-ink-2 whitespace-nowrap hover:underline">
+                <a href={`tel:${row.phone}`} className="hit-area text-ink-2 whitespace-nowrap hover:underline">
                     {row.phoneLabel}
                 </a>
             ),

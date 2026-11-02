@@ -1,10 +1,11 @@
+import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ThreadMessage } from '@/features/platform/mail/ThreadMessage';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
 import { type ConversationMessage } from '@/types/mail';
-import { cilArrowLeft, cilEnvelopeClosed } from '@coreui/icons';
+import { cilEnvelopeClosed } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 
 interface ThreadProps {
@@ -19,15 +20,7 @@ export default function MailThreadPage({ thread, messages }: ThreadProps) {
         <PlatformLayout
             title={thread.subject}
             description={`Conversación con ${thread.counterpart}`}
-            back={
-                <Link
-                    href={pf('/correos/bandeja')}
-                    className="text-ink-2 hover:text-base-content inline-flex items-center gap-1.5 self-start text-[13px]"
-                >
-                    <Icon icon={cilArrowLeft} size={14} />
-                    Bandeja
-                </Link>
-            }
+            back={<BackLink href={pf('/correos/bandeja')}>Bandeja</BackLink>}
             actions={
                 <>
                     {lastInbound ? (

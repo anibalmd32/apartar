@@ -65,7 +65,7 @@ export default function Access({ status, code = null, googleUrl }: PortalAccessP
                                 aria-controls={`acceso-${option.value}-panel`}
                                 onClick={() => setWay(option.value)}
                                 className={cn(
-                                    'pointer-coarse:h-11 h-[34px] rounded-lg px-2 text-[13px] transition-colors',
+                                    'touch:h-11 h-[34px] rounded-lg px-2 text-[13px] transition-colors',
                                     way === option.value
                                         ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold'
                                         : 'text-ink-3 hover:text-base-content font-medium',

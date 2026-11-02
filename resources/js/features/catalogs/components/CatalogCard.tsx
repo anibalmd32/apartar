@@ -66,7 +66,7 @@ export function CatalogCard({ catalog }: { catalog: CatalogListItem }) {
 
             <div className="flex flex-1 flex-col gap-2.5 p-4">
                 <h2 className="text-[17px] leading-tight font-bold">
-                    <Link href={editUrl} className="hover:underline">
+                    <Link href={editUrl} className="hit-area hover:underline">
                         {catalog.name}
                     </Link>
                 </h2>
@@ -93,7 +93,7 @@ export function CatalogCard({ catalog }: { catalog: CatalogListItem }) {
                     <button
                         type="button"
                         onClick={() => void copy()}
-                        className="text-ink-3 hover:text-base-content hover:bg-base-100 shrink-0 cursor-pointer rounded-md p-1.5"
+                        className="hit-area text-ink-3 hover:text-base-content hover:bg-base-100 shrink-0 cursor-pointer rounded-md p-1.5"
                         aria-label={copied ? 'Enlace copiado' : `Copiar el enlace de ${catalog.name}`}
                     >
                         <Icon icon={copied ? cilCheckAlt : cilCopy} size={14} />

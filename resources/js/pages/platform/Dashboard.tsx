@@ -50,7 +50,7 @@ export default function PlatformDashboard({ metrics, periods = [30], mail }: Das
                             href={pf(`?periodo=${option}`)}
                             aria-current={option === days ? 'page' : undefined}
                             className={cn(
-                                'pointer-coarse:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
+                                'touch:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
                                 option === days ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                             )}
                         >

@@ -78,7 +78,7 @@ export function CurrencyChoice({ currencies, value, onChange, error }: CurrencyC
         <fieldset className="fieldset w-full" aria-describedby={error ? `${id}-error` : undefined}>
             <legend className="fieldset-legend">Moneda</legend>
 
-            <div className="bg-surface-2 pointer-coarse:h-11 flex h-10 w-full items-center gap-0.5 rounded-[10px] p-[3px] sm:w-fit">
+            <div className="bg-surface-2 touch:h-11 flex h-10 w-full items-center gap-0.5 rounded-[10px] p-[3px] sm:w-fit">
                 {currencies.map((currency) => {
                     const checked = value === currency.value;
 

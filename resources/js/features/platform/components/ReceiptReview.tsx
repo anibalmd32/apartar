@@ -35,7 +35,7 @@ export function ReceiptReview({ receipt }: { receipt: PendingSubscriptionReceipt
             aria-pressed={mode === value}
             onClick={() => setMode(value)}
             className={cn(
-                'pointer-coarse:h-11 h-[34px] flex-1 cursor-pointer rounded-lg text-[13px]',
+                'touch:h-11 h-[34px] flex-1 cursor-pointer rounded-lg text-[13px]',
                 mode === value ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 font-medium',
             )}
         >

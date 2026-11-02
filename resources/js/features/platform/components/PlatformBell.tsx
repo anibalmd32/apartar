@@ -40,7 +40,7 @@ export function PlatformBell({ className }: { className?: string }) {
     return (
         <Menu as="div" className={cn('relative', className)}>
             <MenuButton
-                className="border-line hover:bg-surface-2 relative flex size-10 cursor-pointer items-center justify-center rounded-[10px] border"
+                className="border-line hover:bg-surface-2 touch:size-11 relative flex size-10 cursor-pointer items-center justify-center rounded-[10px] border"
                 aria-label={items.length > 0 ? `Avisos: ${items.length}` : 'Sin avisos'}
             >
                 <Icon icon={cilBell} size={18} />

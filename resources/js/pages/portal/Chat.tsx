@@ -1,23 +1,16 @@
 import { Avatar } from '@/components/shell/avatar';
-import { Icon } from '@/components/ui/icon';
+import { BackLink } from '@/components/ui/back-link';
 import { ChatThreadView } from '@/features/chat/components/ChatThreadView';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalChatProps } from '@/types/chat';
-import { cilArrowLeft } from '@coreui/icons';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 
 export default function Chat({ businessName, thread }: PortalChatProps) {
     const { auth } = usePage<{ auth?: { portal?: { fullName: string } | null } }>().props;
 
     return (
         <PortalLayout title={`Chat · ${businessName}`} businessName={businessName} customerName={auth?.portal?.fullName ?? ''}>
-            <Link
-                href={route('portal.chat.index')}
-                className="text-ink-3 hover:text-base-content flex items-center gap-1.5 self-start text-[13px] font-semibold"
-            >
-                <Icon icon={cilArrowLeft} size={14} />
-                Tus conversaciones
-            </Link>
+            <BackLink href={route('portal.chat.index')}>Tus conversaciones</BackLink>
 
             <section className="border-line bg-base-100 flex h-[calc(100dvh-190px)] min-h-[480px] flex-col overflow-hidden rounded-2xl border lg:h-[calc(100dvh-150px)]">
                 <header className="border-line flex items-center gap-2.5 border-b px-5 py-3.5 lg:px-6">

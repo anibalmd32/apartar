@@ -56,7 +56,7 @@ export function BackofficeNav({ sections, capabilities, badges = {} }: Backoffic
                                         href={section.href}
                                         aria-current={active ? 'page' : undefined}
                                         className={cn(
-                                            'flex h-[38px] items-center gap-3 rounded-[10px] px-3 text-sm transition-colors',
+                                            'touch:h-11 flex h-[38px] items-center gap-3 rounded-[10px] px-3 text-sm transition-colors',
                                             active
                                                 ? 'bg-primary-soft text-primary-ink font-bold'
                                                 : 'text-ink-2 hover:bg-surface-2 hover:text-base-content font-medium',

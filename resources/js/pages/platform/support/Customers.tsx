@@ -1,7 +1,7 @@
+import { BackLink } from '@/components/ui/back-link';
 import PlatformLayout from '@/layouts/platform-layout';
 import { NO_DOCUMENT, NO_PHONE } from '@/lib/identity-format';
 import { pf } from '@/lib/surfaces';
-import { Link } from '@inertiajs/react';
 
 interface CustomerRow {
     fullName: string;
@@ -20,9 +20,7 @@ export default function SupportCustomers({
 }) {
     return (
         <PlatformLayout title={`Clientes de ${organization.name}`} description="Acceso de soporte · solo lectura. Este acceso queda registrado.">
-            <Link href={pf('/organizaciones')} className="text-ink-2 hover:text-base-content self-start text-[13px]">
-                ← Organizaciones
-            </Link>
+            <BackLink href={pf('/organizaciones')}>Organizaciones</BackLink>
             <div className="table-frame">
                 <table className="table">
                     <thead>

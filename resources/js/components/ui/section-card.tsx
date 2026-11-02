@@ -26,7 +26,7 @@ export function SectionCard({ title, subtitle, action, children, flush = false, 
                         {title ? <h2 className="text-base leading-tight font-bold tracking-[-0.2px]">{title}</h2> : null}
                         {subtitle ? <p className="text-ink-3 text-[13px]">{subtitle}</p> : null}
                     </div>
-                    {action ? <div className="text-primary-ink shrink-0 text-[13px] font-semibold">{action}</div> : null}
+                    {action ? <div className="hit-area-children text-primary-ink shrink-0 text-[13px] font-semibold">{action}</div> : null}
                 </div>
             ) : null}
             {children}

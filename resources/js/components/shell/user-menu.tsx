@@ -21,7 +21,7 @@ const THEMES: { value: Appearance; label: string; icon: string[] }[] = [
 ];
 
 export const menuItemClass =
-    'data-focus:bg-surface-2 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-2 data-focus:text-base-content';
+    'data-focus:bg-surface-2 touch:min-h-11 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-2 data-focus:text-base-content';
 
 export function UserMenu({ name, detail, onLogout, extra, className }: UserMenuProps) {
     const { appearance, updateAppearance } = useAppearance();

@@ -31,7 +31,7 @@ export default function Legal({ document }: LegalProps) {
                                 href={route(item.route)}
                                 aria-current={current ? 'page' : undefined}
                                 className={cn(
-                                    'rounded-lg px-3.5 py-2 text-[13px]',
+                                    'touch:min-h-11 flex items-center rounded-lg px-3.5 py-2 text-[13px]',
                                     current ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                                 )}
                             >

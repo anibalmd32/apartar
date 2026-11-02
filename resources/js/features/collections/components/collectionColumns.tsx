@@ -35,7 +35,7 @@ function CustomerCell({ customer }: { customer: CollectionCustomer | null }) {
                     <span className="text-ink-3 text-xs">{NO_PHONE}</span>
                 ) : (
                     <span className="text-ink-3 flex items-center gap-1.5 text-xs">
-                        <a href={`tel:${customer.phone}`} className="hover:text-base-content">
+                        <a href={`tel:${customer.phone}`} className="hit-area hover:text-base-content">
                             {customer.phoneLabel}
                         </a>
                         <button
@@ -56,7 +56,7 @@ function CustomerCell({ customer }: { customer: CollectionCustomer | null }) {
 
 function LayawayLink({ layaway }: { layaway: { code: string; url: string } }) {
     return (
-        <Link href={layaway.url} className="text-primary-ink text-[13px] font-bold whitespace-nowrap hover:underline">
+        <Link href={layaway.url} className="hit-area text-primary-ink text-[13px] font-bold whitespace-nowrap hover:underline">
             {layaway.code}
         </Link>
     );

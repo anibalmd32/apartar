@@ -27,7 +27,10 @@ export function BusinessBlock({ block }: BusinessBlockProps) {
                     </p>
                 </div>
                 {closed ? null : (
-                    <nav aria-label={`Enlaces de ${business.name}`} className="text-primary-ink flex shrink-0 gap-3 text-[13px] font-semibold">
+                    <nav
+                        aria-label={`Enlaces de ${business.name}`}
+                        className="hit-area-children text-primary-ink flex shrink-0 gap-3 text-[13px] font-semibold"
+                    >
                         <Link href={`/mi-cuenta/chat/${business.slug}`} className="hover:underline">
                             Chat
                         </Link>

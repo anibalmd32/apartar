@@ -5,6 +5,7 @@ import { GlobalSearch } from '@/components/shell/global-search';
 import { OrganizationSwitcher } from '@/components/shell/organization-switcher';
 import { RatePill } from '@/components/shell/rate-pill';
 import { menuItemClass, UserMenu } from '@/components/shell/user-menu';
+import { BackLink } from '@/components/ui/back-link';
 import { Icon } from '@/components/ui/icon';
 import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { PastDueBanner } from '@/features/plan/components/PastDueBanner';
@@ -12,7 +13,7 @@ import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
 import { usePendingReceipts } from '@/features/receipts/hooks/useReceiptInbox';
 import { type BackofficeSharedData } from '@/types/backoffice';
-import { cilArrowLeft, cilLockLocked, cilSettings, cilUser, cilX } from '@coreui/icons';
+import { cilLockLocked, cilSettings, cilUser, cilX } from '@coreui/icons';
 import { Dialog, DialogPanel, MenuItem } from '@headlessui/react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -160,15 +161,7 @@ function BackofficeFrame({ title, description, actions, back, badge, children }:
 
                         <section className="flex flex-col gap-3.5 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
                             <div className="flex min-w-0 flex-col gap-1.5">
-                                {back ? (
-                                    <Link
-                                        href={back.href}
-                                        className="text-ink-3 hover:text-base-content flex items-center gap-1.5 self-start text-[13px] font-semibold"
-                                    >
-                                        <Icon icon={cilArrowLeft} size={14} />
-                                        {back.label}
-                                    </Link>
-                                ) : null}
+                                {back ? <BackLink href={back.href}>{back.label}</BackLink> : null}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <h1 className="text-h1 max-lg:text-[22px]">{title}</h1>
                                     {badge}

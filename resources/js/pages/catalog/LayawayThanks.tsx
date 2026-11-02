@@ -121,7 +121,7 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                 ) : null}
 
                 <p className="text-center text-sm">
-                    <Link href={route('catalog.show', { catalog: catalog.slug })} className="text-primary-ink font-semibold hover:underline">
+                    <Link href={route('catalog.show', { catalog: catalog.slug })} className="hit-area text-primary-ink font-semibold hover:underline">
                         Volver a {catalog.name}
                     </Link>
                 </p>

@@ -38,7 +38,7 @@ export function ShopHeader({ business, live, timezone }: ShopHeaderProps) {
                 />
                 <CurrencySwitch />
 
-                <a href="/mi-cuenta" className="btn border-line max-lg:btn-square lg:border-line-strong max-lg:size-9 max-lg:rounded-[10px]">
+                <a href="/mi-cuenta" className="btn border-line max-lg:btn-square lg:border-line-strong max-lg:size-11 max-lg:rounded-[10px]">
                     <Icon icon={cilUser} />
                     <span className="max-lg:sr-only">Mi cuenta</span>
                 </a>

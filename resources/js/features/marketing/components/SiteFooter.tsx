@@ -4,11 +4,11 @@ import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 import { HOW_IT_WORKS_ANCHOR } from './SiteHeader';
 
-const linkClass = 'text-ink-2 hover:text-base-content text-[13px] text-left cursor-pointer';
+const linkClass = 'text-ink-2 hover:text-base-content touch:flex touch:min-h-11 touch:items-center text-[13px] text-left cursor-pointer';
 
 function Column({ title, children }: { title: string; children: ReactNode }) {
     return (
-        <div className="flex flex-col gap-2.5 lg:w-[180px]">
+        <div className="touch:gap-0 flex flex-col gap-2.5 lg:w-[180px]">
             <h2 className="text-[13px] font-bold">{title}</h2>
             {children}
         </div>

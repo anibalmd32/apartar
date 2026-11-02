@@ -17,7 +17,7 @@ export function CurrencySwitch({ className, touch = false }: { className?: strin
             aria-pressed={active}
             className={cn(
                 'rounded-lg px-2.5 text-[13px] transition-colors disabled:cursor-not-allowed',
-                touch ? 'hit-area h-[38px] min-w-11' : 'pointer-coarse:h-10 pointer-coarse:min-w-11 h-[30px]',
+                touch ? 'hit-area h-[38px] min-w-11' : 'hit-area touch:h-[38px] touch:min-w-11 h-[30px]',
                 active ? 'bg-base-100 dark:bg-base-300 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
             )}
         >

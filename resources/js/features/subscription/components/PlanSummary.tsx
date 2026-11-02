@@ -66,7 +66,7 @@ export function PlanSummary({
                     </p>
                 ) : null}
                 {pricingUrl !== null ? (
-                    <a className="text-primary-ink self-start text-[13px] font-semibold hover:underline" href={pricingUrl}>
+                    <a className="hit-area text-primary-ink self-start text-[13px] font-semibold hover:underline" href={pricingUrl}>
                         Compara los planes
                     </a>
                 ) : null}

@@ -32,7 +32,7 @@ function LayawayCell({ row }: { row: ReceiptInboxRow }) {
                 <span className="text-ink-3">—</span>
             ) : (
                 <div className="flex flex-col items-start gap-1">
-                    <Link href={row.layaway.url} className="font-mono text-[13px] font-semibold whitespace-nowrap hover:underline">
+                    <Link href={row.layaway.url} className="hit-area font-mono text-[13px] font-semibold whitespace-nowrap hover:underline">
                         {row.layaway.code}
                     </Link>
                     {row.layaway.cancelled ? (
@@ -115,7 +115,7 @@ function FileCell({ row }: { row: ReceiptInboxRow }) {
     }
 
     return (
-        <a href={row.file.url} target="_blank" rel="noopener noreferrer" aria-label={label} className="shrink-0">
+        <a href={row.file.url} target="_blank" rel="noopener noreferrer" aria-label={label} className="touch:min-w-11 flex shrink-0 justify-center">
             <img src={row.file.url} alt="" loading="lazy" className="bg-base-300 h-11 w-9 rounded-[7px] object-cover" />
         </a>
     );

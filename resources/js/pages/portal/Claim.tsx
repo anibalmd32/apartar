@@ -1,3 +1,4 @@
+import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
 import { DocumentField } from '@/components/ui/document-field';
 import { Icon } from '@/components/ui/icon';
@@ -5,8 +6,8 @@ import { TextField } from '@/components/ui/text-field';
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
 import PortalLayout from '@/layouts/portal-layout';
 import { type PortalClaimProps } from '@/types/portal';
-import { cilArrowLeft, cilPlus } from '@coreui/icons';
-import { Link, useForm } from '@inertiajs/react';
+import { cilPlus } from '@coreui/icons';
+import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
 
 interface ClaimForm {
@@ -28,13 +29,7 @@ export default function Claim({ storeUrl, document }: PortalClaimProps) {
     return (
         <PortalLayout title="Recupera tu historial" businessName="Mi cuenta" customerName={session?.fullName ?? ''}>
             <div className="flex w-full max-w-[560px] flex-col gap-4 lg:gap-[18px]">
-                <Link
-                    href={route('portal.dashboard')}
-                    className="text-ink-3 hover:text-base-content flex items-center gap-1.5 self-start text-[13px] font-semibold"
-                >
-                    <Icon icon={cilArrowLeft} size={14} />
-                    Volver a mis apartados
-                </Link>
+                <BackLink href={route('portal.dashboard')}>Volver a mis apartados</BackLink>
 
                 <header className="flex flex-col gap-1.5">
                     <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Agrega un apartado a tu cuenta</h1>

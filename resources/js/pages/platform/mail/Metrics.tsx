@@ -54,7 +54,7 @@ export default function MailMetricsPage({ metrics, filters }: MetricsProps) {
                                 href={pf(`/correos?desde=${isoDaysAgo(today, days)}&hasta=${today}`)}
                                 aria-current={active ? 'page' : undefined}
                                 className={cn(
-                                    'pointer-coarse:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
+                                    'touch:h-11 flex h-[34px] items-center rounded-lg px-3.5 text-[13px]',
                                     active ? 'bg-base-100 shadow-card font-bold' : 'text-ink-3 hover:text-base-content font-medium',
                                 )}
                             >

@@ -14,7 +14,7 @@ function Contact({ icon, label, children }: { icon: string[]; label: string; chi
             <IconChip icon={icon} tone="neutral" />
             <dl className="min-w-0">
                 <dt className="text-ink-3 text-xs">{label}</dt>
-                <dd className="truncate text-sm font-semibold">{children}</dd>
+                <dd className="truncate text-sm font-semibold has-[>a]:overflow-visible">{children}</dd>
             </dl>
         </div>
     );
@@ -33,7 +33,7 @@ export function ContactStrip({ customer }: Pick<CustomerShowProps, 'customer'>) 
                 {customer.phone === null ? (
                     NO_PHONE
                 ) : (
-                    <a href={`tel:${customer.phone}`} className="hover:underline">
+                    <a href={`tel:${customer.phone}`} className="hit-area hover:underline">
                         {customer.phoneLabel}
                     </a>
                 )}

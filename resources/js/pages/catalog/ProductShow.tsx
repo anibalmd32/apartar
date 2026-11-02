@@ -23,7 +23,10 @@ export default function ProductShow({ catalog, product, related }: ProductShowPr
     return (
         <CatalogLayout title={`${product.name} · ${catalog.name}`} business={catalog.business} showsPlatformBadge={catalog.showsPlatformBadge}>
             <nav aria-label="Ruta" className="flex min-w-0 items-center gap-1.5 text-[13px]">
-                <Link href={route('catalog.show', { catalog: catalog.slug })} className="text-primary-ink shrink-0 font-semibold hover:underline">
+                <Link
+                    href={route('catalog.show', { catalog: catalog.slug })}
+                    className="hit-area text-primary-ink shrink-0 font-semibold hover:underline"
+                >
                     {catalog.name}
                 </Link>
                 <Icon icon={cilChevronRight} size={12} className="text-ink-3" />

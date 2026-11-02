@@ -36,7 +36,7 @@ export default function Pay({ layaways, dashboardUrl }: PortalPayProps) {
                 )}
 
                 {layaways.length > 0 ? (
-                    <Link href={dashboardUrl} className="text-ink-3 hover:text-base-content self-center text-[13px] font-semibold">
+                    <Link href={dashboardUrl} className="hit-area text-ink-3 hover:text-base-content self-center text-[13px] font-semibold">
                         Ver todos mis apartados
                     </Link>
                 ) : null}

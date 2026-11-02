@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { BackLink } from '@/components/ui/back-link';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
@@ -9,7 +10,7 @@ import PortalLayout from '@/layouts/portal-layout';
 import { type PortalSessionView } from '@/types/portal';
 import { type ReceiptCreateProps } from '@/types/receipt';
 import { cilBasket } from '@coreui/icons';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 
 export default function ReceiptCreate({
     business,
@@ -36,9 +37,7 @@ export default function ReceiptCreate({
             customerName={auth.portal?.fullName ?? ''}
         >
             <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4 lg:gap-6">
-                <Link href={backUrl} className="text-ink-3 hover:text-base-content self-start text-[13px] font-semibold">
-                    ← Volver al apartado
-                </Link>
+                <BackLink href={backUrl}>Volver al apartado</BackLink>
 
                 <header className="flex flex-col gap-1">
                     <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.6px] lg:text-[30px]">Subir comprobante</h1>

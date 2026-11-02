@@ -43,7 +43,7 @@ export function LayawaySteps({ current, productUrl, requiresDownPayment = true }
                     <li key={label} aria-current={active ? 'step' : undefined} className="flex shrink-0 items-center gap-2.5">
                         {index > 0 ? <span aria-hidden="true" className="bg-line-strong h-px w-6 lg:w-10" /> : null}
                         {n === 1 && productUrl !== undefined ? (
-                            <Link href={productUrl} className="flex items-center gap-2.5 hover:underline">
+                            <Link href={productUrl} className="touch:min-h-11 touch:min-w-11 flex items-center gap-2.5 hover:underline">
                                 {content}
                             </Link>
                         ) : (

@@ -39,7 +39,7 @@ export function DisabledReason({ reason, children, className }: DisabledReasonPr
                 onClick={() => setOpen((current) => !current)}
                 onFocus={() => setOpen(true)}
                 onBlur={() => setOpen(false)}
-                className="bg-warning text-warning-content ring-base-100 absolute -top-2 -right-2 z-10 inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-[11px] font-extrabold ring-2"
+                className="hit-area bg-warning text-warning-content ring-base-100 absolute -top-2 -right-2 z-10 inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-[11px] font-extrabold ring-2"
             >
                 !
             </button>

@@ -53,7 +53,7 @@ export function ReceiptHistory({ receipts }: ReceiptHistoryProps) {
                                 href={receipt.fileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary-ink self-start text-xs font-semibold hover:underline"
+                                className="hit-area text-primary-ink self-start text-xs font-semibold hover:underline"
                             >
                                 Ver el comprobante
                             </a>

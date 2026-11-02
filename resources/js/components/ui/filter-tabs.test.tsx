@@ -25,3 +25,9 @@ it('marca la pestaña activa y avisa del cambio', () => {
 
     expect(onChange).toHaveBeenCalledWith('published');
 });
+
+it('cada pestaña mide 44 px de alto en el celular', () => {
+    render(<FilterTabs label="Estado" tabs={TABS} value={null} onChange={() => undefined} />);
+
+    expect(screen.getByRole('button', { name: /Publicados/ })).toHaveClass('touch:min-h-11');
+});
