@@ -7,6 +7,7 @@ namespace App\Rules;
 use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\DuplicateReceipts;
 use App\Domain\Payment\ReceiptFile;
+use App\Models\Payment;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Http\UploadedFile;
@@ -19,6 +20,7 @@ final class UniqueReceiptFingerprint implements ValidationRule
         private readonly ?string $reference,
         private readonly bool $recordedByBusiness = false,
         private readonly ?string $exceptIdempotencyKey = null,
+        private readonly ?Payment $exceptPayment = null,
     ) {}
 
     /**
@@ -27,8 +29,8 @@ final class UniqueReceiptFingerprint implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         $criterion = match (true) {
-            $value instanceof UploadedFile => DuplicateReceipts::inOrganization(ReceiptFile::fingerprint($value), $this->bank, $this->reference, $this->exceptIdempotencyKey),
-            is_string($value) => DuplicateReceipts::inOrganization(null, $this->bank, trim($value), $this->exceptIdempotencyKey),
+            $value instanceof UploadedFile => DuplicateReceipts::inOrganization(ReceiptFile::fingerprint($value), $this->bank, $this->reference, $this->exceptIdempotencyKey, $this->exceptPayment),
+            is_string($value) => DuplicateReceipts::inOrganization(null, $this->bank, trim($value), $this->exceptIdempotencyKey, $this->exceptPayment),
             default => null,
         };
 

@@ -206,7 +206,7 @@ final class VoidPaymentActionTest extends TestCase
         $this->assertSame([1, 3_000, 'paid'], $this->installmentsOf($layaway)[0]);
     }
 
-    public function test_rechaza_apartados_cerrados_pagos_anulados_motivos_cortos_y_extranos(): void
+    public function test_rechaza_pagos_anulados_motivos_cortos_y_extranos(): void
     {
         $layaway = $this->activeLayaway();
         $payment = $this->pay($layaway, '30.00');
@@ -216,17 +216,24 @@ final class VoidPaymentActionTest extends TestCase
         $stranger = $this->withinOrganization($this->neighbourOrganization(), fn (): User => User::factory()->create());
         $this->assertInstanceOf(AuthorizationException::class, $this->refused(fn () => $this->within(fn () => app(VoidPaymentAction::class)->handle($payment, $stranger, self::REASON))));
 
-        DB::table('layaways')->where('id', $layaway->getKey())->update(['status' => LayawayStatus::Cancelled->value]);
-        $this->assertStringContainsString('cancelado', $this->refused(fn () => $this->void($payment))->getMessage());
-        DB::table('layaways')->where('id', $layaway->getKey())->update(['status' => LayawayStatus::Expired->value]);
-        $this->assertStringContainsString('expirado', $this->refused(fn () => $this->void($payment))->getMessage());
-        $this->assertNull(DB::table('payments')->where('id', $payment->getKey())->value('voided_at'));
-
-        DB::table('layaways')->where('id', $layaway->getKey())->update(['status' => LayawayStatus::Active->value]);
         $this->void($payment);
         $twice = $this->refused(fn () => $this->void($payment));
         $this->assertInstanceOf(PaymentNotVoidableException::class, $twice);
         $this->assertSame('Este pago ya está anulado.', $twice->getMessage());
+    }
+
+    public function test_un_apartado_cancelado_deja_anular_su_pago_y_su_inicial_sin_reabrirse(): void
+    {
+        $layaway = $this->activeLayaway();
+        $installment = $this->pay($layaway, '30.00');
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['status' => LayawayStatus::Cancelled->value]);
+
+        $this->void($installment);
+        $this->void($this->downPaymentOf($layaway));
+
+        $this->assertSame('cancelled', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        $this->assertSame(0, (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'));
+        $this->assertSame(0, $this->installmentsOf($layaway)[0][1]);
     }
 
     public function test_un_pago_anulado_no_se_desanula(): void

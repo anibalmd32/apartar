@@ -85,6 +85,41 @@ final class PaymentCorrectionPageTest extends TestCase
         $this->assertSame(3, DB::table('payments')->where('layaway_id', $to->getKey())->whereNull('voided_at')->count());
     }
 
+    public function test_mover_un_pago_movil_con_su_misma_referencia_no_lo_toma_por_duplicado(): void
+    {
+        [, $first] = $this->paidLayaway();
+        $from = Layaway::query()->withoutGlobalScopes()->findOrFail($first->layaway_id);
+        [$to] = $this->paidLayaway();
+        $mobile = ['method' => 'pago_movil', 'bank' => 'Banco de Venezuela', 'reference' => '007881968733', 'currency' => 'VES', 'amount' => '1.275,00'];
+
+        $this->post(route('layaways.payments.store', $from), [...$this->fields('1.275,00'), ...$mobile])->assertRedirect(route('layaways.show', $from));
+        $this->withoutOrganization();
+        $payment = $this->withinOrganization($this->organization, fn (): Payment => Payment::query()->where('layaway_id', $from->getKey())->latest('id')->firstOrFail());
+        $this->withoutOrganization();
+
+        $this->post(route('payments.correct', ['payment' => $payment, 'destino' => $to->code]), [...$this->fields('1.275,00'), ...$mobile])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('layaways.show', $to));
+
+        $this->assertNotNull(DB::table('payments')->where('id', $payment->getKey())->value('voided_at'));
+        $this->assertSame(1, DB::table('payments')->where('layaway_id', $to->getKey())->where('reference', '007881968733')->whereNull('voided_at')->count());
+    }
+
+    public function test_el_pago_de_un_apartado_cancelado_se_mueve_al_apartado_correcto(): void
+    {
+        [$from, $payment] = $this->paidLayaway();
+        [$to] = $this->paidLayaway();
+        DB::table('layaways')->where('id', $from->getKey())->update(['status' => 'cancelled']);
+
+        $this->post(route('payments.correct', ['payment' => $payment, 'destino' => $to->code]), $this->fields('60,00'))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('layaways.show', $to));
+
+        $this->assertSame('cancelled', DB::table('layaways')->where('id', $from->getKey())->value('status'));
+        $this->assertNotNull(DB::table('payments')->where('id', $payment->getKey())->value('voided_at'));
+        $this->assertSame(3, DB::table('payments')->where('layaway_id', $to->getKey())->whereNull('voided_at')->count());
+    }
+
     public function test_un_codigo_que_no_existe_se_explica_en_el_campo(): void
     {
         [, $payment] = $this->paidLayaway();

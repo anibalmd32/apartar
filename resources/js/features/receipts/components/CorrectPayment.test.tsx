@@ -85,10 +85,11 @@ function openMenu(fields: typeof OPTIONS | null) {
     fireEvent.click(screen.getByRole('button', { name: 'Acciones del pago de $60,00' }));
 }
 
-it('sin opciones de corrección solo ofrece anular', () => {
+it('en un apartado que ya no recibe pagos ofrece mover y anular, pero no editar', () => {
     openMenu(null);
 
     expect(screen.queryByRole('menuitem', { name: 'Editar pago' })).toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Mover a otro apartado' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Anular pago' })).toBeInTheDocument();
 });
 

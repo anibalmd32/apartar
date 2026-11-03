@@ -41,7 +41,6 @@ const GROUP: CollectionCustomerRow = {
 
 beforeEach(() => {
     usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', rate: { rate: null } }, errors: {}, flash: {} } });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     routerPost.mockReset();
     routerPut.mockReset();
 });
@@ -68,6 +67,10 @@ it('cada cliente se despliega para ver sus cuotas con producto y entrega', () =>
     expect(within(installments).getByText('Entregado el 1 sept 2026')).toBeInTheDocument();
 
     fireEvent.click(within(installments).getByRole('button', { name: 'Marcar entregado' }));
+    expect(routerPost).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole('dialog', { name: '¿Marcar AP-7K3M9QRT como entregado?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Marcar entregado' }));
     expect(routerPost).toHaveBeenCalledWith(
         '/backoffice/apartados/AP-7K3M9QRT/entregar',
         { volver: true },

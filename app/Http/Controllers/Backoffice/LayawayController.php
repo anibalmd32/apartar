@@ -56,7 +56,7 @@ final class LayawayController extends Controller
         $schedule = Installment::scheduleOf($installments, $timezone);
         $collecting = in_array($layaway->status, [LayawayStatus::Active, LayawayStatus::Overdue], true);
         $customer = Customer::query()->find($layaway->customer_id);
-        $voidable = ! in_array($layaway->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true);
+        $editable = ! in_array($layaway->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true);
         $payments = Payment::query()
             ->withVoided()
             ->where('layaway_id', $layaway->getKey())
@@ -114,12 +114,12 @@ final class LayawayController extends Controller
                 ];
             }, $installments),
             'payments' => $payments
-                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone, $voidable))->resolve($request))
+                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone, voidable: true))->resolve($request))
                 ->values()
                 ->all(),
             'reallocation' => $this->reallocationOptions($layaway, $installments, $payments->all(), $timezone),
             'manualPayment' => $layaway->status->acceptsPayments() ? $this->manualPaymentOptions($layaway, $timezone) : null,
-            'correctionFields' => $voidable ? $this->paymentFields->for(...ManualPaymentDates::bounds($timezone)) : null,
+            'correctionFields' => $editable ? $this->paymentFields->for(...ManualPaymentDates::bounds($timezone)) : null,
         ]);
     }
 

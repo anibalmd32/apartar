@@ -13,7 +13,8 @@ interface PaymentRowActionsProps {
 }
 
 export function PaymentRowActions({ payment, onAction, canCorrect = false }: PaymentRowActionsProps) {
-    const correctable = canCorrect && payment.correction !== null && payment.correction !== undefined;
+    const movable = payment.correction !== null && payment.correction !== undefined;
+    const correctable = canCorrect && movable;
 
     return (
         <Menu as="div" className="relative inline-block">
@@ -22,20 +23,20 @@ export function PaymentRowActions({ payment, onAction, canCorrect = false }: Pay
             </MenuButton>
             <MenuItems anchor="bottom end" className="bg-base-100 border-line shadow-pop z-50 mt-1 w-56 rounded-xl border p-1.5 focus:outline-none">
                 {correctable ? (
-                    <>
-                        <MenuItem>
-                            <button type="button" className={menuItemClass} onClick={() => onAction(payment, 'edit')}>
-                                <Icon icon={cilPencil} />
-                                Editar pago
-                            </button>
-                        </MenuItem>
-                        <MenuItem>
-                            <button type="button" className={menuItemClass} onClick={() => onAction(payment, 'move')}>
-                                <Icon icon={cilArrowRight} />
-                                Mover a otro apartado
-                            </button>
-                        </MenuItem>
-                    </>
+                    <MenuItem>
+                        <button type="button" className={menuItemClass} onClick={() => onAction(payment, 'edit')}>
+                            <Icon icon={cilPencil} />
+                            Editar pago
+                        </button>
+                    </MenuItem>
+                ) : null}
+                {movable ? (
+                    <MenuItem>
+                        <button type="button" className={menuItemClass} onClick={() => onAction(payment, 'move')}>
+                            <Icon icon={cilArrowRight} />
+                            Mover a otro apartado
+                        </button>
+                    </MenuItem>
                 ) : null}
                 <MenuItem>
                     <button type="button" className={`${menuItemClass} text-error data-focus:text-error`} onClick={() => onAction(payment, 'void')}>

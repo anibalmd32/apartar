@@ -55,10 +55,6 @@ final class VoidPaymentAction
             /** @var Layaway $locked */
             $locked = Layaway::query()->whereKey($payment->layaway_id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($locked->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true)) {
-                throw PaymentNotVoidableException::layawayClosed($locked->status);
-            }
-
             /** @var array<int, Installment> $installments */
             $installments = $locked->installments()->lockForUpdate()->get()->keyBy('id')->all();
 
@@ -121,6 +117,8 @@ final class VoidPaymentAction
 
     private function keepDownPaymentCovered(Layaway $layaway, int $downPayment): void
     {
+        $closed = in_array($layaway->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true);
+
         if ($layaway->activated_at === null || $downPayment <= 0) {
             return;
         }
@@ -128,7 +126,7 @@ final class VoidPaymentAction
         $required = $layaway->terms()->totalDownPayment()->cents;
         $missing = $required - ($this->downPayments->paidOn($layaway) - $downPayment);
 
-        if ($missing > $this->balance->toleranceCents()) {
+        if (! $closed && $missing > $this->balance->toleranceCents()) {
             throw PaymentNotVoidableException::coversDownPayment();
         }
 

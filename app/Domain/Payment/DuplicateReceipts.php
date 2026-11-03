@@ -12,17 +12,20 @@ use Illuminate\Database\UniqueConstraintViolationException;
 
 final class DuplicateReceipts
 {
-    public static function inOrganization(?string $fileHash, ?string $bank, ?string $reference, ?string $exceptIdempotencyKey = null): ?DuplicateCriterion
+    public static function inOrganization(?string $fileHash, ?string $bank, ?string $reference, ?string $exceptIdempotencyKey = null, ?Payment $exceptPayment = null): ?DuplicateCriterion
     {
-        $payments = Payment::query()->when($exceptIdempotencyKey !== null, fn (Builder $query) => $query->where(
-            fn (Builder $query) => $query->whereNull('idempotency_key')->orWhere('idempotency_key', '!=', $exceptIdempotencyKey),
-        ));
+        $payments = Payment::query()
+            ->when($exceptIdempotencyKey !== null, fn (Builder $query) => $query->where(
+                fn (Builder $query) => $query->whereNull('idempotency_key')->orWhere('idempotency_key', '!=', $exceptIdempotencyKey),
+            ))
+            ->when($exceptPayment !== null, fn (Builder $query) => $query->whereKeyNot($exceptPayment?->getKey()));
+        $receipts = Receipt::query()->when($exceptPayment?->receipt_id !== null, fn (Builder $query) => $query->whereKeyNot($exceptPayment?->receipt_id));
 
-        if ($fileHash !== null && (self::fileTaken(Receipt::query(), $fileHash) || self::fileTaken($payments, $fileHash))) {
+        if ($fileHash !== null && (self::fileTaken($receipts, $fileHash) || self::fileTaken($payments, $fileHash))) {
             return DuplicateCriterion::FileHash;
         }
 
-        return self::referenceTaken(Receipt::query(), $bank, $reference) || self::referenceTaken($payments, $bank, $reference)
+        return self::referenceTaken($receipts, $bank, $reference) || self::referenceTaken($payments, $bank, $reference)
             ? DuplicateCriterion::BankReference
             : null;
     }

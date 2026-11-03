@@ -110,13 +110,15 @@ final class PaymentVoidPageTest extends TestCase
         $this->assertSame(0, DB::table('payments')->where('layaway_id', $layaway->getKey())->whereNotNull('voided_at')->count());
     }
 
-    public function test_un_apartado_cerrado_no_ofrece_anular_y_un_extrano_no_puede(): void
+    public function test_un_apartado_cancelado_ofrece_anular_y_mover_pero_no_editar_y_un_extrano_no_puede(): void
     {
         [$layaway, $payment] = $this->paidLayaway();
         DB::table('layaways')->where('id', $layaway->getKey())->update(['status' => LayawayStatus::Cancelled->value]);
 
         $this->actingAs($this->member)->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('payments.0.voidUrl', null));
+            ->where('payments.0.voidUrl', route('payments.void', $payment))
+            ->where('payments.0.correction.targetUrl', route('payments.target', $payment))
+            ->where('correctionFields', null));
         $this->withoutOrganization();
 
         $stranger = $this->withinOrganization($this->neighbourOrganization(), fn (): User => User::factory()->create());

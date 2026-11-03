@@ -15,6 +15,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Http\Requests\Backoffice\ApproveReceiptRequest;
 use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Models\Bank;
+use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Rules\RealMimeType;
 use App\Rules\UniqueReceiptFingerprint;
@@ -51,7 +52,7 @@ trait ValidatesManualPayment
                 'nullable',
                 'string',
                 'max:'.SubmitReceiptData::TEXT_MAX,
-                new UniqueReceiptFingerprint($requiresReference ? Bank::canonicalName($this->nullableString('bank')) : null, null, recordedByBusiness: true, exceptIdempotencyKey: $this->paymentIdempotencyKey()),
+                new UniqueReceiptFingerprint($requiresReference ? Bank::canonicalName($this->nullableString('bank')) : null, null, recordedByBusiness: true, exceptIdempotencyKey: $this->paymentIdempotencyKey(), exceptPayment: $this->correctedPayment()),
             ],
             'file' => [
                 'nullable',
@@ -59,7 +60,7 @@ trait ValidatesManualPayment
                 'max:'.(ReceiptFile::maxSizeMb() * 1024),
                 RealMimeType::receipts(),
                 StoreReceiptRequest::withinPixelLimit(),
-                new UniqueReceiptFingerprint(null, null, recordedByBusiness: true, exceptIdempotencyKey: $this->paymentIdempotencyKey()),
+                new UniqueReceiptFingerprint(null, null, recordedByBusiness: true, exceptIdempotencyKey: $this->paymentIdempotencyKey(), exceptPayment: $this->correctedPayment()),
             ],
             'paid_at' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$earliest, 'before_or_equal:'.$latest],
             'note' => ['required', 'string', 'min:'.StaffReason::MIN, 'max:'.StaffReason::MAX],
@@ -157,6 +158,11 @@ trait ValidatesManualPayment
         }
 
         return $account;
+    }
+
+    protected function correctedPayment(): ?Payment
+    {
+        return null;
     }
 
     private function paymentIdempotencyKey(): ?string

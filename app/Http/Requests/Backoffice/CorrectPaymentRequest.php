@@ -62,6 +62,13 @@ final class CorrectPaymentRequest extends FormRequest
         return $this->paymentMessages();
     }
 
+    protected function correctedPayment(): ?Payment
+    {
+        $payment = $this->route('payment');
+
+        return $payment instanceof Payment ? $payment : null;
+    }
+
     /**
      * @throws ValidationException
      */
