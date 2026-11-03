@@ -45,9 +45,28 @@ it('hace únicos los comprobantes por organización y no en toda la plataforma',
     expect(SchemaInspector::hasUniqueOn('receipts', 'bank', 'reference'))->toBeFalse();
 });
 
-it('hace único el pago de cada comprobante dentro de su organización', function (): void {
-    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'receipt_id'))->toBeTrue();
+it('hace único el pago vigente de cada comprobante dentro de su organización', function (): void {
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'active_receipt_id'))->toBeTrue();
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'receipt_id'))->toBeFalse();
     expect(SchemaInspector::hasUniqueOn('payments', 'receipt_id'))->toBeFalse();
+});
+
+it('deja fuera de la unicidad a los pagos anulados', function (string $column, string $source): void {
+    $generated = collect(Schema::getColumns('payments'))->firstWhere('name', $column)['generation'] ?? null;
+
+    expect($generated['type'] ?? null)->toBe('stored');
+    expect(strtolower((string) ($generated['expression'] ?? '')))->toContain('voided_at')->toContain($source);
+})->with([
+    ['active_receipt_id', 'receipt_id'],
+    ['active_reference', 'reference'],
+    ['active_file_hash', 'file_hash'],
+]);
+
+it('hace únicos la referencia y el archivo de los pagos vigentes', function (): void {
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'bank', 'active_reference'))->toBeTrue();
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'active_file_hash'))->toBeTrue();
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'bank', 'reference'))->toBeFalse();
+    expect(SchemaInspector::hasUniqueOn('payments', 'organization_id', 'file_hash'))->toBeFalse();
 });
 
 it('hace única la clave de idempotencia del pago manual dentro de su organización', function (): void {

@@ -19,7 +19,7 @@ final class PaymentPolicy
         }
 
         if ($actor instanceof Customer) {
-            return $actor->id === (int) Layaway::query()->whereKey($payment->layaway_id)->value('customer_id');
+            return ! $payment->isVoided() && $actor->id === (int) Layaway::query()->whereKey($payment->layaway_id)->value('customer_id');
         }
 
         return $actor->role->can(OrganizationCapability::Collections)

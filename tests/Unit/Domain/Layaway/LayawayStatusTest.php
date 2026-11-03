@@ -13,7 +13,7 @@ function transitionMatrix(): array
         'pending_down_payment' => ['active', 'expired', 'cancelled'],
         'active' => ['overdue', 'completed', 'cancelled'],
         'overdue' => ['active', 'completed', 'cancelled'],
-        'completed' => [],
+        'completed' => ['active', 'overdue'],
         'cancelled' => [],
         'expired' => [],
     ];
@@ -39,12 +39,12 @@ it('admite exactamente las transiciones válidas', function (LayawayStatus $from
         ->and(in_array($to, $from->allowedTransitions(), true))->toBe($valid);
 })->with(transitionMatrix());
 
-it('tiene nueve celdas válidas de treinta y seis', function (): void {
-    expect(array_filter(transitionMatrix(), fn (array $cell): bool => $cell[2]))->toHaveCount(9)
+it('tiene once celdas válidas de treinta y seis', function (): void {
+    expect(array_filter(transitionMatrix(), fn (array $cell): bool => $cell[2]))->toHaveCount(11)
         ->and(transitionMatrix())->toHaveCount(36);
 });
 
-it('solo deja ir y volver entre active y overdue', function (): void {
+it('solo deja ir y volver entre active y overdue, y reabrir lo pagado', function (): void {
     $roundTrips = [];
 
     foreach (LayawayStatus::cases() as $a) {
@@ -55,7 +55,14 @@ it('solo deja ir y volver entre active y overdue', function (): void {
         }
     }
 
-    expect($roundTrips)->toBe(['active ⇄ overdue', 'overdue ⇄ active']);
+    expect($roundTrips)->toBe([
+        'active ⇄ overdue',
+        'active ⇄ completed',
+        'overdue ⇄ active',
+        'overdue ⇄ completed',
+        'completed ⇄ active',
+        'completed ⇄ overdue',
+    ]);
 });
 
 it('responde las tres preguntas por estado', function (LayawayStatus $status, bool $terminal, bool $payments, bool $counts): void {
@@ -71,9 +78,25 @@ it('responde las tres preguntas por estado', function (LayawayStatus $status, bo
     'expired' => [LayawayStatus::Expired, true, false, false],
 ]);
 
-it('llama terminal exactamente a lo que no tiene salida', function (LayawayStatus $status): void {
-    expect($status->isTerminal())->toBe($status->allowedTransitions() === []);
+it('llama terminal exactamente a lo que no tiene salida salvo reabrirse', function (LayawayStatus $status): void {
+    $exits = array_filter($status->allowedTransitions(), fn (LayawayStatus $to): bool => ! $status->reopensTo($to));
+
+    expect($status->isTerminal())->toBe($exits === []);
 })->with(LayawayStatus::cases());
+
+it('solo reabre un apartado pagado, hacia activo o en mora', function (): void {
+    $reopenings = [];
+
+    foreach (LayawayStatus::cases() as $from) {
+        foreach (LayawayStatus::cases() as $to) {
+            if ($from->reopensTo($to)) {
+                $reopenings[] = $from->value.' → '.$to->value;
+            }
+        }
+    }
+
+    expect($reopenings)->toBe(['completed → active', 'completed → overdue']);
+});
 
 it('nombra cada estado para el cliente sin repetir ninguno', function (): void {
     $labels = array_map(fn (LayawayStatus $status): string => $status->customerLabel(), LayawayStatus::cases());

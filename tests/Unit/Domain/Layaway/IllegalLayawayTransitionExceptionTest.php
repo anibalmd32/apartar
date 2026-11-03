@@ -15,11 +15,21 @@ it('dice desde dónde, hacia dónde y adónde sí se podía ir', function (): vo
 });
 
 it('explica que un terminal no se reabre', function (): void {
-    $exception = new IllegalLayawayTransitionException(LayawayStatus::Completed, LayawayStatus::Cancelled);
+    $exception = new IllegalLayawayTransitionException(LayawayStatus::Expired, LayawayStatus::Active);
 
     expect($exception->getMessage())->toBe(
+        'El apartado no puede pasar de «expired» a «active». '
+        .'«expired» es un estado terminal: no se reabre ni pasa a ningún otro.'
+    )->and($exception->from)->toBe(LayawayStatus::Expired)
+        ->and($exception->to)->toBe(LayawayStatus::Active);
+});
+
+it('explica que un apartado pagado solo se reabre al anular un pago', function (): void {
+    expect((new IllegalLayawayTransitionException(LayawayStatus::Completed, LayawayStatus::Cancelled))->getMessage())->toBe(
         'El apartado no puede pasar de «completed» a «cancelled». '
-        .'«completed» es un estado terminal: no se reabre ni pasa a ningún otro.'
-    )->and($exception->from)->toBe(LayawayStatus::Completed)
-        ->and($exception->to)->toBe(LayawayStatus::Cancelled);
+        .'«completed» es un estado terminal: solo se reabre, hacia «active» u «overdue», al anular uno de sus pagos.'
+    )->and((new IllegalLayawayTransitionException(LayawayStatus::Completed, LayawayStatus::Active))->getMessage())->toBe(
+        'El apartado no puede pasar de «completed» a «active». '
+        .'Un apartado pagado solo se reabre al anular uno de sus pagos, con LayawayStateMachine::reopen().'
+    );
 });

@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Platform;
 
+use App\Domain\Money\Money;
 use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\SubscriptionStatus;
 use App\Models\Account;
 use App\Models\Catalog;
 use App\Models\CatalogSubscription;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
+use App\Queries\Platform\OrganizationDirectoryQuery;
 use App\Queries\Platform\PlatformMetricsQuery;
 use App\Queries\Platform\PlatformMoney;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Tests\Concerns\ActsAsPlatformOperator;
 use Tests\Concerns\ReusesMigratedDatabase;
@@ -103,6 +107,17 @@ final class PlatformMetricsTest extends TestCase
 
         $this->asOperator();
         $this->get('/plataforma?periodo=365')->assertInertia(fn ($page) => $page->where('metrics.periodDays', 365)->where('periods', [30, 90, 365]));
+    }
+
+    public function test_lo_cobrado_no_cuenta_los_pagos_anulados(): void
+    {
+        $organization = Organization::factory()->create();
+        [$kept, $voided] = $this->withinOrganization($organization, fn (): array => [Payment::factory()->create(), Payment::factory()->create(['amount_cents_usd' => new Money(7_000)])]);
+        DB::table('payments')->where('id', $voided->getKey())->update(['voided_at' => now(), 'void_reason' => 'Era de otro cliente.']);
+        $this->withoutOrganization();
+
+        $this->assertSame($kept->amount_cents_usd->cents, app(PlatformMetricsQuery::class)->fresh()['gmv']['collectedLast30Days']['cents']);
+        $this->assertSame(3_000, app(OrganizationDirectoryQuery::class)->one((int) $organization->getKey())['volume']['collectedLast30Days']['cents'] ?? null);
     }
 
     public function test_metrics_are_cached_for_five_minutes(): void

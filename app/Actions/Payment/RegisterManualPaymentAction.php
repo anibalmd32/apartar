@@ -184,7 +184,7 @@ final class RegisterManualPaymentAction
      */
     private function alreadyRegistered(Layaway $layaway, ManualPaymentData $data): ?Payment
     {
-        $payment = Payment::query()->where('idempotency_key', $data->idempotencyKey)->first();
+        $payment = Payment::query()->withVoided()->where('idempotency_key', $data->idempotencyKey)->first();
 
         if (! $payment instanceof Payment) {
             return null;
@@ -226,7 +226,7 @@ final class RegisterManualPaymentAction
         }
 
         try {
-            if (Payment::query()->where('file_path', $path)->exists()) {
+            if (Payment::query()->withVoided()->where('file_path', $path)->exists()) {
                 return;
             }
 

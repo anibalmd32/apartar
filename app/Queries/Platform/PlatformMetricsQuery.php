@@ -87,7 +87,7 @@ final class PlatformMetricsQuery
             ]),
             'gmv' => $this->isolated(fn (): array => [
                 'committedLast30Days' => $this->money->view((int) DB::table('layaways')->where('created_at', '>=', $since)->sum('total_cents')),
-                'collectedLast30Days' => $this->money->view((int) DB::table('payments')->where('settled_at', '>=', $since)->sum('amount_cents_usd')),
+                'collectedLast30Days' => $this->money->view((int) DB::table('payments')->whereNull('voided_at')->where('settled_at', '>=', $since)->sum('amount_cents_usd')),
             ]),
         ];
     }

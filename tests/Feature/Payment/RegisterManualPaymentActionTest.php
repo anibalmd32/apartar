@@ -233,7 +233,7 @@ final class RegisterManualPaymentActionTest extends TestCase
         $viaApproval = $this->within(fn () => app(ApproveReceiptAction::class)->handle($receipt, new ApproveReceiptData('3187.50', Currency::VES, null, null), $this->staff))->payment;
         $viaManual = $this->register($manual, '3187.50', Currency::VES, method: PaymentMethod::PagoMovil, account: $account, paidAt: '2026-09-10', bank: 'Banesco', reference: '9876543210');
 
-        $ignored = ['id', 'layaway_id', 'receipt_id', 'registered_by', 'idempotency_key', 'note', 'reference', 'created_at', 'updated_at'];
+        $ignored = ['id', 'layaway_id', 'receipt_id', 'active_receipt_id', 'registered_by', 'idempotency_key', 'note', 'reference', 'active_reference', 'created_at', 'updated_at'];
         $this->assertSame(
             array_diff_key((array) DB::table('payments')->where('id', $viaApproval->getKey())->first(), array_flip($ignored)),
             array_diff_key((array) DB::table('payments')->where('id', $viaManual->getKey())->first(), array_flip($ignored)),

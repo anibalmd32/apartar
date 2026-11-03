@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 final class PaymentRowResource extends JsonResource
 {
-    public function __construct(Payment $payment, private readonly DateTimeZone $timezone)
+    public function __construct(Payment $payment, private readonly DateTimeZone $timezone, private readonly bool $voidable = false)
     {
         parent::__construct($payment);
     }
@@ -32,7 +32,8 @@ final class PaymentRowResource extends JsonResource
         $inDollars = $payment->declared_currency === Currency::USD;
         $manual = $payment->receipt_id === null;
         $allocated = (int) $payment->allocations->sum(fn (PaymentAllocation $allocation): int => $allocation->amount_cents->cents);
-        $downPayment = $payment->amount_cents_usd->cents - $allocated - $payment->unallocated_cents->cents;
+        $voidedAt = $payment->voided_at;
+        $downPayment = $voidedAt === null ? $payment->amount_cents_usd->cents - $allocated - $payment->unallocated_cents->cents : 0;
 
         return [
             'settledAt' => HumanDate::short($payment->settled_at->setTimezone($this->timezone)),
@@ -53,13 +54,20 @@ final class PaymentRowResource extends JsonResource
                 ->values()
                 ->all(),
             'downPayment' => $downPayment > 0 ? MoneyFormatter::format(new Money($downPayment)) : null,
-            'unallocated' => $payment->unallocated_cents->cents > 0 ? MoneyFormatter::format($payment->unallocated_cents) : null,
+            'unallocated' => $voidedAt === null && $payment->unallocated_cents->cents > 0 ? MoneyFormatter::format($payment->unallocated_cents) : null,
             'registeredByBusiness' => $manual,
+            'fromReceipt' => ! $manual,
             'note' => $manual ? $payment->note : null,
             'bankReference' => $manual && $payment->reference !== null ? sprintf('%s · ref. %s', $payment->bank, $payment->reference) : null,
             'attachmentUrl' => $manual && $payment->hasAttachment()
                 ? ($request->routeIs('portal.*') ? SignedFileUrl::forCustomerPayment($payment) : SignedFileUrl::forBackofficePayment($payment))
                 : null,
+            'voided' => $voidedAt !== null ? [
+                'at' => HumanDate::short($voidedAt->setTimezone($this->timezone)),
+                'by' => $payment->voidedBy?->name,
+                'reason' => $payment->void_reason,
+            ] : null,
+            'voidUrl' => $this->voidable && $voidedAt === null ? route('payments.void', $payment) : null,
         ];
     }
 }

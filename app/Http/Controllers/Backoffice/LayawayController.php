@@ -56,9 +56,11 @@ final class LayawayController extends Controller
         $schedule = Installment::scheduleOf($installments, $timezone);
         $collecting = in_array($layaway->status, [LayawayStatus::Active, LayawayStatus::Overdue], true);
         $customer = Customer::query()->find($layaway->customer_id);
+        $voidable = ! in_array($layaway->status, [LayawayStatus::Cancelled, LayawayStatus::Expired], true);
         $payments = Payment::query()
+            ->withVoided()
             ->where('layaway_id', $layaway->getKey())
-            ->with(['allocations.installment', 'receipt'])
+            ->with(['allocations.installment', 'receipt', 'voidedBy:id,name'])
             ->latest('settled_at')
             ->latest('id')
             ->get();
@@ -112,7 +114,7 @@ final class LayawayController extends Controller
                 ];
             }, $installments),
             'payments' => $payments
-                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone))->resolve($request))
+                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone, $voidable))->resolve($request))
                 ->values()
                 ->all(),
             'reallocation' => $this->reallocationOptions($layaway, $installments, $payments->all(), $timezone),

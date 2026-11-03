@@ -13,6 +13,7 @@ use App\Events\Layaway\LayawayCancelled;
 use App\Events\Layaway\LayawayCaughtUp;
 use App\Events\Layaway\LayawayCompleted;
 use App\Events\Layaway\LayawayExpired;
+use App\Events\Layaway\LayawayReopened;
 use App\Events\Layaway\LayawayTransition;
 use App\Models\Layaway;
 use App\Support\ModelState;
@@ -32,7 +33,20 @@ final class LayawayStateMachine
      */
     public function transition(Layaway $layaway, LayawayStatus $to): void
     {
-        DB::transaction(function () use ($layaway, $to): void {
+        $this->move($layaway, $to, reopening: false);
+    }
+
+    /**
+     * @throws IllegalLayawayTransitionException
+     */
+    public function reopen(Layaway $layaway, LayawayStatus $to): void
+    {
+        $this->move($layaway, $to, reopening: true);
+    }
+
+    private function move(Layaway $layaway, LayawayStatus $to, bool $reopening): void
+    {
+        DB::transaction(function () use ($layaway, $to, $reopening): void {
             if ($to->releasesStock()) {
                 $this->stock->lockProductOf($layaway);
             }
@@ -42,7 +56,7 @@ final class LayawayStateMachine
 
             $from = $locked->status;
 
-            if (! $from->canTransitionTo($to)) {
+            if (! $from->canTransitionTo($to) || $from->reopensTo($to) !== $reopening) {
                 throw new IllegalLayawayTransitionException($from, $to, $locked->getKey());
             }
 
@@ -68,10 +82,14 @@ final class LayawayStateMachine
     }
 
     /**
-     * @return array<'activated_at'|'completed_at'|'cancelled_at', CarbonImmutable>
+     * @return array<'activated_at'|'completed_at'|'cancelled_at', CarbonImmutable|null>
      */
     private function marksFor(LayawayStatus $from, LayawayStatus $to, CarbonImmutable $now): array
     {
+        if ($from->reopensTo($to)) {
+            return ['completed_at' => null];
+        }
+
         return match ($to) {
             LayawayStatus::Active => $from === LayawayStatus::PendingDownPayment ? ['activated_at' => $now] : [],
             LayawayStatus::Completed => ['completed_at' => $now],
@@ -84,6 +102,10 @@ final class LayawayStateMachine
     private function eventFor(Layaway $layaway, LayawayStatus $from, LayawayStatus $to, CarbonImmutable $now): LayawayTransition
     {
         $arguments = [(int) $layaway->getKey(), (int) $layaway->getAttribute('organization_id'), $from, $to, $now];
+
+        if ($from->reopensTo($to)) {
+            return new LayawayReopened(...$arguments);
+        }
 
         return match ($to) {
             LayawayStatus::Active => $from === LayawayStatus::Overdue

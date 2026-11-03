@@ -70,7 +70,7 @@ final class CompressReceiptImage implements ShouldQueue
         $this->runInTenantContext(function (): void {
             $receipt = $this->paymentId === null
                 ? Receipt::query()->find($this->receiptId)
-                : Payment::query()->find($this->paymentId);
+                : Payment::query()->withVoided()->find($this->paymentId);
 
             if (! $receipt instanceof Receipt && ! $receipt instanceof Payment) {
                 Log::warning('receipt.compression.missing', $this->logContext());

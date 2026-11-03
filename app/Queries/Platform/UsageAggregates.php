@@ -118,7 +118,7 @@ final class UsageAggregates
             ->groupBy('organization_id')
             ->selectRaw('organization_id AS organization, SUM(file_size) AS total'), $locking);
 
-        $attachments = $this->totals(Payment::query()->withoutTenantScope()
+        $attachments = $this->totals(Payment::query()->withoutTenantScope()->withVoided()
             ->whereIn('organization_id', $organizationIds)
             ->whereNotNull('file_size')
             ->groupBy('organization_id')

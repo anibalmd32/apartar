@@ -12,6 +12,7 @@ use App\Domain\Payment\PaymentMethod;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Models\Concerns\ReferencesBank;
 use Database\Factories\PaymentFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +42,9 @@ use LogicException;
  * @property RateSource $rate_source
  * @property \Illuminate\Support\Carbon|null $rate_published_at
  * @property \Illuminate\Support\Carbon $settled_at
+ * @property \Illuminate\Support\Carbon|null $voided_at
+ * @property int|null $voided_by
+ * @property string|null $void_reason
  * @property int|null $registered_by
  * @property string|null $note
  */
@@ -48,6 +52,13 @@ class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */
     use BelongsToOrganization, HasFactory, ReferencesBank;
+
+    public const NOT_VOIDED = 'not_voided';
+
+    /**
+     * @var list<string>
+     */
+    public const VOID_COLUMNS = ['voided_at', 'voided_by', 'void_reason'];
 
     /**
      * @var list<string>
@@ -77,6 +88,10 @@ class Payment extends Model
 
     protected static function booted(): void
     {
+        static::addGlobalScope(self::NOT_VOIDED, static function (Builder $query): void {
+            $query->whereNull($query->qualifyColumn('voided_at'));
+        });
+
         static::saving(static function (Payment $payment): void {
             if (! $payment->exists) {
                 return;
@@ -91,7 +106,30 @@ class Payment extends Model
                     implode(', ', $changed),
                 ));
             }
+
+            if ($payment->getOriginal('voided_at') !== null && $payment->isDirty(self::VOID_COLUMNS)) {
+                throw new LogicException('Un pago anulado no se desanula ni cambia su anulación.');
+            }
         });
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    public function scopeWithVoided(Builder $query): void
+    {
+        $query->withoutGlobalScope(self::NOT_VOIDED);
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @param  mixed  $value
+     * @param  string|null  $field
+     * @return Builder<self>
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null): Builder
+    {
+        return parent::resolveRouteBindingQuery($query->withoutGlobalScope(self::NOT_VOIDED), $value, $field);
     }
 
     /**
@@ -134,6 +172,19 @@ class Payment extends Model
         return $this->hasMany(PaymentAllocation::class)->orderBy('id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function voidedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
+    }
+
     public function isManual(): bool
     {
         return $this->receipt_id === null;
@@ -158,6 +209,7 @@ class Payment extends Model
             'rate_source' => RateSource::class,
             'rate_published_at' => 'datetime',
             'settled_at' => 'datetime',
+            'voided_at' => 'datetime',
             'payment_method' => PaymentMethod::class,
             'paid_on' => 'date',
             'file_size' => 'integer',

@@ -27,8 +27,14 @@ enum LayawayStatus: string
             self::PendingDownPayment => [self::Active, self::Expired, self::Cancelled],
             self::Active => [self::Overdue, self::Completed, self::Cancelled],
             self::Overdue => [self::Active, self::Completed, self::Cancelled],
-            self::Completed, self::Cancelled, self::Expired => [],
+            self::Completed => [self::Active, self::Overdue],
+            self::Cancelled, self::Expired => [],
         };
+    }
+
+    public function reopensTo(self $to): bool
+    {
+        return $this === self::Completed && $this->canTransitionTo($to);
     }
 
     public function canTransitionTo(self $to): bool

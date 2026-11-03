@@ -34,7 +34,8 @@ final class ExpireLayawaysAction
             ->whereNotExists(fn ($payments) => $payments
                 ->selectRaw('1')
                 ->from('payments')
-                ->whereColumn('payments.layaway_id', 'layaways.id'))
+                ->whereColumn('payments.layaway_id', 'layaways.id')
+                ->whereNull('payments.voided_at'))
             ->chunkById(self::CHUNK, function (Collection $layaways) use ($now, &$outcome): void {
                 foreach ($layaways as $layaway) {
                     $outcome = $this->expire($layaway, $now, $outcome);

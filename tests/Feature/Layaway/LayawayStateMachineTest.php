@@ -12,6 +12,7 @@ use App\Events\Layaway\LayawayActivated;
 use App\Events\Layaway\LayawayBecameOverdue;
 use App\Events\Layaway\LayawayCaughtUp;
 use App\Events\Layaway\LayawayCompleted;
+use App\Events\Layaway\LayawayReopened;
 use App\Events\Layaway\LayawayTransitioned;
 use App\Models\Layaway;
 use App\Models\Organization;
@@ -82,7 +83,7 @@ final class LayawayStateMachineTest extends TestCase
         $before = $this->row($layaway);
 
         if ($from->canTransitionTo($to)) {
-            $this->transition($layaway, $to);
+            $from->reopensTo($to) ? $this->reopen($layaway, $to) : $this->transition($layaway, $to);
 
             $this->assertSame($to, $this->fresh($layaway)->status);
             $this->assertCount(1, $this->dispatched);
@@ -237,6 +238,33 @@ final class LayawayStateMachineTest extends TestCase
         }
     }
 
+    public function test_un_apartado_pagado_solo_se_reabre_con_reopen(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Completed);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['delivered_at' => '2026-09-20 10:00:00']);
+        $this->setCounter(2);
+        $this->dispatched = [];
+
+        try {
+            $this->transition($layaway, LayawayStatus::Active);
+            $this->fail('transition() reabrió un apartado pagado.');
+        } catch (IllegalLayawayTransitionException $exception) {
+            $this->assertStringContainsString('solo se reabre al anular uno de sus pagos', $exception->getMessage());
+        }
+
+        $this->reopen($layaway, LayawayStatus::Overdue);
+
+        $fresh = $this->fresh($layaway);
+        $this->assertSame(LayawayStatus::Overdue, $fresh->status);
+        $this->assertNull($fresh->completed_at);
+        $this->assertSame('2026-09-20 10:00:00', $fresh->delivered_at?->format('Y-m-d H:i:s'));
+        $this->assertSame(3, $this->counter(), 'Reabrir vuelve a ocupar el cupo.');
+        $this->assertSame([LayawayReopened::class], array_map(fn (LayawayTransitioned $event): string => $event::class, $this->dispatched));
+
+        $this->expectException(IllegalLayawayTransitionException::class);
+        $this->reopen($layaway, LayawayStatus::Active);
+    }
+
     public function test_an_expired_layaway_cannot_be_activated(): void
     {
         $layaway = $this->layawayIn($this->organization, LayawayStatus::Expired);
@@ -378,6 +406,11 @@ final class LayawayStateMachineTest extends TestCase
     private function transition(Layaway $layaway, LayawayStatus $to): void
     {
         $this->withinOrganization($this->organization, fn () => app(LayawayStateMachine::class)->transition($layaway, $to));
+    }
+
+    private function reopen(Layaway $layaway, LayawayStatus $to): void
+    {
+        $this->withinOrganization($this->organization, fn () => app(LayawayStateMachine::class)->reopen($layaway, $to));
     }
 
     private function fresh(Layaway $layaway): Layaway

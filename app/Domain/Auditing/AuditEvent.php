@@ -10,6 +10,7 @@ enum AuditEvent: string
     case ReceiptRejected = 'receipt.rejected';
     case PaymentRecorded = 'payment.recorded';
     case PaymentReallocated = 'payment.reallocated';
+    case PaymentVoided = 'payment.voided';
     case LayawayCreated = 'layaway.created';
     case LayawayCancelled = 'layaway.cancelled';
     case InstallmentRescheduled = 'installment.rescheduled';
@@ -57,7 +58,7 @@ enum AuditEvent: string
     {
         return match ($this) {
             self::ReceiptApproved, self::ReceiptRejected, self::PaymentRecorded,
-            self::PaymentReallocated, self::LayawayCreated, self::LayawayCancelled,
+            self::PaymentReallocated, self::PaymentVoided, self::LayawayCreated, self::LayawayCancelled,
             self::InstallmentRescheduled, self::LayawayDelivered,
             self::ReconciliationCorrected => AuditArea::Collections,
 
@@ -88,6 +89,7 @@ enum AuditEvent: string
             self::ReceiptRejected => 'App\Actions\Payment\RejectReceiptAction',
             self::PaymentRecorded => 'App\Actions\Payment\RegisterManualPaymentAction',
             self::PaymentReallocated => 'App\Actions\Payment\ReallocatePaymentAction',
+            self::PaymentVoided => 'App\Actions\Payment\VoidPaymentAction',
             self::LayawayCreated => 'App\Actions\Layaway\CreateBackofficeLayawayAction',
             self::LayawayCancelled => 'App\Actions\Layaway\CancelLayawayAction',
             self::InstallmentRescheduled => 'App\Actions\Layaway\RescheduleInstallmentAction',
@@ -139,6 +141,7 @@ enum AuditEvent: string
             self::ReceiptRejected => 'Comprobante rechazado',
             self::PaymentRecorded => 'Pago registrado a mano',
             self::PaymentReallocated => 'Pago reasignado entre cuotas',
+            self::PaymentVoided => 'Pago anulado',
             self::LayawayCreated => 'Apartado creado desde el backoffice',
             self::LayawayCancelled => 'Apartado cancelado',
             self::InstallmentRescheduled => 'Cuota reprogramada',

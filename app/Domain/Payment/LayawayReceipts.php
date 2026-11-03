@@ -70,6 +70,7 @@ class LayawayReceipts
                 ->selectRaw('1')
                 ->from('payments')
                 ->whereColumn('payments.layaway_id', 'receipts.layaway_id')
+                ->whereNull('payments.voided_at')
                 ->whereColumn('payments.created_at', '>=', DB::raw('COALESCE(receipts.reviewed_at, receipts.updated_at)')))
             ->pluck('layaway_id')
             ->map(fn (mixed $id): int => (int) $id)

@@ -81,7 +81,7 @@ final class OrganizationDirectoryQuery
     {
         $now = CarbonImmutable::now();
         $lastLayaway = DB::table('layaways')->selectRaw('organization_id, MAX(created_at) AS at')->groupBy('organization_id');
-        $lastPayment = DB::table('payments')->selectRaw('organization_id, MAX(settled_at) AS at')->groupBy('organization_id');
+        $lastPayment = DB::table('payments')->whereNull('voided_at')->selectRaw('organization_id, MAX(settled_at) AS at')->groupBy('organization_id');
 
         $query = DB::table('organizations')
             ->leftJoin('subscriptions', 'subscriptions.organization_id', '=', 'organizations.id')
@@ -173,7 +173,7 @@ final class OrganizationDirectoryQuery
             ->groupBy('organization_id')
             ->selectRaw('organization_id, SUM(total_cents) AS committed, SUM(remaining_cents) AS outstanding')
             ->get()->keyBy('organization_id'));
-        $collected = $this->safely(fn () => DB::table('payments')->whereIn('organization_id', $ids)
+        $collected = $this->safely(fn () => DB::table('payments')->whereNull('voided_at')->whereIn('organization_id', $ids)
             ->where('settled_at', '>=', CarbonImmutable::now()->subDays(30))
             ->groupBy('organization_id')->selectRaw('organization_id, SUM(amount_cents_usd) AS total')->pluck('total', 'organization_id'));
         $overdue = $this->safely(fn () => DB::table('subscription_invoices')->whereIn('organization_id', $ids)
