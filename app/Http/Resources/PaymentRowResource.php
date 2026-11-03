@@ -10,6 +10,7 @@ use App\Domain\Money\MoneyFormatter;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Support\HumanDate;
+use App\Support\PaymentCorrectionForm;
 use App\Support\SignedFileUrl;
 use DateTimeZone;
 use Illuminate\Http\Request;
@@ -68,6 +69,7 @@ final class PaymentRowResource extends JsonResource
                 'reason' => $payment->void_reason,
             ] : null,
             'voidUrl' => $this->voidable && $voidedAt === null ? route('payments.void', $payment) : null,
+            'correction' => $this->voidable && $voidedAt === null ? PaymentCorrectionForm::for($payment) : null,
         ];
     }
 }

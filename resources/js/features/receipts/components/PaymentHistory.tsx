@@ -1,10 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { IconChip } from '@/components/ui/icon-chip';
-import { PaymentRowActions } from '@/features/receipts/components/PaymentRowActions';
+import { CorrectPaymentSheet } from '@/features/receipts/components/CorrectPaymentSheet';
+import { MovePaymentSheet } from '@/features/receipts/components/MovePaymentSheet';
+import { type PaymentAction, PaymentRowActions } from '@/features/receipts/components/PaymentRowActions';
 import { VoidPaymentSheet } from '@/features/receipts/components/VoidPaymentSheet';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { appliedTo } from '@/features/receipts/lib/payment-applied';
 import { cn } from '@/lib/utils';
+import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
 import { type PaymentRow, type PaymentVoid } from '@/types/receipt';
 import { cilBan, cilCash } from '@coreui/icons';
 import { useState } from 'react';
@@ -13,6 +16,7 @@ interface PaymentHistoryProps {
     payments: readonly PaymentRow[];
     empty: string;
     reopens?: boolean;
+    correctionFields?: PaymentFieldOptions | null;
 }
 
 function detail(payment: PaymentRow): string {
@@ -33,7 +37,15 @@ function voidLine(voided: PaymentVoid): string {
     return `Anulado el ${voided.at}${who}${why}`;
 }
 
-function PaymentItem({ payment, onVoid }: { payment: PaymentRow; onVoid: (payment: PaymentRow) => void }) {
+function PaymentItem({
+    payment,
+    onAction,
+    canCorrect,
+}: {
+    payment: PaymentRow;
+    onAction: (payment: PaymentRow, action: PaymentAction) => void;
+    canCorrect: boolean;
+}) {
     const voided = payment.voided ?? null;
 
     return (
@@ -65,13 +77,15 @@ function PaymentItem({ payment, onVoid }: { payment: PaymentRow; onVoid: (paymen
                 {payment.note !== null ? <p className="text-ink-2 text-xs">{payment.note}</p> : null}
                 {voided !== null ? <p className="text-error text-xs">{voidLine(voided)}</p> : null}
             </div>
-            {payment.voidUrl ? <PaymentRowActions payment={payment} onVoid={onVoid} /> : null}
+            {payment.voidUrl ? <PaymentRowActions payment={payment} onAction={onAction} canCorrect={canCorrect} /> : null}
         </li>
     );
 }
 
-export function PaymentHistory({ payments, empty, reopens = false }: PaymentHistoryProps) {
-    const [voiding, setVoiding] = useState<PaymentRow | null>(null);
+export function PaymentHistory({ payments, empty, reopens = false, correctionFields = null }: PaymentHistoryProps) {
+    const [selected, setSelected] = useState<{ payment: PaymentRow; action: PaymentAction } | null>(null);
+    const chosen = (action: PaymentAction): PaymentRow | null => (selected?.action === action ? selected.payment : null);
+    const close = () => setSelected(null);
 
     if (payments.length === 0) {
         return <p className="text-ink-2 text-sm">{empty}</p>;
@@ -81,10 +95,17 @@ export function PaymentHistory({ payments, empty, reopens = false }: PaymentHist
         <>
             <ul className="divide-line flex flex-col divide-y" aria-label="Pagos">
                 {payments.map((payment, index) => (
-                    <PaymentItem key={`${payment.settledAt}-${index}`} payment={payment} onVoid={setVoiding} />
+                    <PaymentItem
+                        key={`${payment.settledAt}-${index}`}
+                        payment={payment}
+                        onAction={(row, action) => setSelected({ payment: row, action })}
+                        canCorrect={correctionFields !== null}
+                    />
                 ))}
             </ul>
-            <VoidPaymentSheet payment={voiding} reopens={reopens} onClose={() => setVoiding(null)} />
+            <VoidPaymentSheet payment={chosen('void')} reopens={reopens} onClose={close} />
+            {correctionFields !== null ? <CorrectPaymentSheet payment={chosen('edit')} fields={correctionFields} onClose={close} /> : null}
+            <MovePaymentSheet payment={chosen('move')} onClose={close} />
         </>
     );
 }

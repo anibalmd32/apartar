@@ -125,7 +125,7 @@ final class RegisterManualPaymentAction
             return $existing;
         }
 
-        $hash = $data->file instanceof UploadedFile ? ReceiptFile::fingerprint($data->file) : null;
+        $hash = $data->file instanceof UploadedFile ? ReceiptFile::fingerprint($data->file) : $data->keptAttachment?->hash;
         $criterion = DuplicateReceipts::inOrganization($hash, Bank::canonicalName($data->bank), $data->reference);
 
         if ($criterion !== null) {

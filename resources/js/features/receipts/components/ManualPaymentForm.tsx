@@ -21,10 +21,23 @@ interface ManualPaymentFormProps {
     title: ReactNode;
     description?: ReactNode;
     suggestions?: readonly PaymentSuggestion[];
+    initial?: Partial<PaymentFieldValues>;
+    submitLabel?: string;
+    extra?: ReactNode;
 }
 
-export function ManualPaymentForm({ options, open, onClose, title, description, suggestions = [] }: ManualPaymentFormProps) {
-    const form = useForm<ManualPaymentValues>({ ...emptyPaymentValues(options), idempotency_key: crypto.randomUUID() });
+export function ManualPaymentForm({
+    options,
+    open,
+    onClose,
+    title,
+    description,
+    suggestions = [],
+    initial,
+    submitLabel = 'Registrar el pago',
+    extra,
+}: ManualPaymentFormProps) {
+    const form = useForm<ManualPaymentValues>({ ...emptyPaymentValues(options), ...initial, idempotency_key: crypto.randomUUID() });
 
     const previewState = useApprovalPreview(
         `${options.previewUrl}${options.previewUrl.includes('?') ? '&' : '?'}${new URLSearchParams({ paid_at: form.data.paid_at }).toString()}`,
@@ -75,12 +88,13 @@ export function ManualPaymentForm({ options, open, onClose, title, description, 
                         Cancelar
                     </Button>
                     <Button type="submit" loading={form.processing} disabled={blocked}>
-                        Registrar el pago
+                        {submitLabel}
                     </Button>
                 </>
             }
         >
             <section aria-label="Registrar un pago" className="flex flex-col gap-3">
+                {extra}
                 {suggestions.length > 0 ? (
                     <div role="group" aria-label="Rellenar el importe" className="flex flex-wrap gap-2">
                         {suggestions.map((suggestion) => (

@@ -42,6 +42,7 @@ final readonly class ManualPaymentData
         public ?string $bank = null,
         public ?string $reference = null,
         public ?UploadedFile $file = null,
+        public ?PaymentAttachment $keptAttachment = null,
     ) {
         PaymentAmounts::assertPositive($amount, $currency, 'del pago');
         SubmitReceiptData::assertReferenceFits($method, $bank, $reference);
@@ -76,7 +77,7 @@ final readonly class ManualPaymentData
             $this->paidAt->startOfDay(),
             $this->bank,
             $this->reference,
-            $attachment,
+            $attachment ?? ($this->file === null ? $this->keptAttachment : null),
         );
     }
 

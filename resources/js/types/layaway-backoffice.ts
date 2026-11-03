@@ -98,6 +98,7 @@ export interface BackofficeLayawayShowProps {
     readonly installments: readonly BackofficeInstallmentRow[];
     readonly payments: readonly PaymentRow[];
     readonly manualPayment: ManualPaymentOptions | null;
+    readonly correctionFields?: PaymentFieldOptions | null;
     readonly reallocation: ReallocationOptions | null;
 }
 

@@ -17,6 +17,23 @@ export interface PaymentRow extends PaymentEvidence {
     readonly fromReceipt?: boolean;
     readonly voided?: PaymentVoid | null;
     readonly voidUrl?: string | null;
+    readonly correction?: PaymentCorrection | null;
+}
+
+export interface PaymentCorrection {
+    readonly storeUrl: string;
+    readonly previewUrl: string;
+    readonly targetUrl: string;
+    readonly values: {
+        readonly method: string;
+        readonly payment_account: string;
+        readonly amount: string;
+        readonly currency: string;
+        readonly rate: string;
+        readonly paid_at: string;
+        readonly bank: string;
+        readonly reference: string;
+    };
 }
 
 export interface PaymentVoid {

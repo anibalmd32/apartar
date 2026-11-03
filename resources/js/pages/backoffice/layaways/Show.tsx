@@ -26,6 +26,7 @@ export default function LayawayShow({
     manualPayment,
     reallocation,
     activity,
+    correctionFields = null,
 }: BackofficeLayawayShowProps) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const delivery = useForm({});
@@ -85,7 +86,12 @@ export default function LayawayShow({
                     {installments.length > 0 ? <InstallmentPlan installments={installments} /> : null}
 
                     <SectionCard title="Pagos recibidos" aria-label="Pagos">
-                        <PaymentHistory payments={payments} empty="Este apartado todavía no tiene pagos." reopens={layaway.status === 'completed'} />
+                        <PaymentHistory
+                            payments={payments}
+                            empty="Este apartado todavía no tiene pagos."
+                            reopens={layaway.status === 'completed'}
+                            correctionFields={correctionFields}
+                        />
                     </SectionCard>
 
                     {reallocation !== null ? (

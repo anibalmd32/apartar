@@ -119,6 +119,7 @@ final class LayawayController extends Controller
                 ->all(),
             'reallocation' => $this->reallocationOptions($layaway, $installments, $payments->all(), $timezone),
             'manualPayment' => $layaway->status->acceptsPayments() ? $this->manualPaymentOptions($layaway, $timezone) : null,
+            'correctionFields' => $voidable ? $this->paymentFields->for(...ManualPaymentDates::bounds($timezone)) : null,
         ]);
     }
 

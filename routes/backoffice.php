@@ -28,6 +28,7 @@ use App\Http\Controllers\Backoffice\OrganizationClosureController;
 use App\Http\Controllers\Backoffice\OrganizationFoundingController;
 use App\Http\Controllers\Backoffice\OrganizationSwitchController;
 use App\Http\Controllers\Backoffice\PaymentAccountController;
+use App\Http\Controllers\Backoffice\PaymentCorrectionController;
 use App\Http\Controllers\Backoffice\PaymentReadingController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
 use App\Http\Controllers\Backoffice\PaymentVoidController;
@@ -287,6 +288,18 @@ Surface::backofficeRoutes(function (): void {
                 Route::post('pagos/{payment}/anular', PaymentVoidController::class)
                     ->whereNumber('payment')
                     ->name('payments.void');
+
+                Route::post('pagos/{payment}/corregir', [PaymentCorrectionController::class, 'store'])
+                    ->whereNumber('payment')
+                    ->name('payments.correct');
+
+                Route::get('pagos/{payment}/destino', [PaymentCorrectionController::class, 'target'])
+                    ->whereNumber('payment')
+                    ->name('payments.target');
+
+                Route::get('pagos/{payment}/correccion/vista-previa', [PaymentCorrectionController::class, 'preview'])
+                    ->whereNumber('payment')
+                    ->name('payments.correct.preview');
 
                 Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
                     ->middleware('signed')
