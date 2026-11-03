@@ -196,7 +196,9 @@ final class LayawayController extends Controller
             throw ValidationException::withMessages(['delivery' => $exception->getMessage()]);
         }
 
-        return to_route('layaways.show', $layaway)->with('status', 'Entrega registrada.');
+        $redirect = $request->boolean('volver') ? back() : to_route('layaways.show', $layaway);
+
+        return $redirect->with('status', sprintf('Entrega de %s registrada.', $layaway->code));
     }
 
     private function moment(?DateTimeInterface $at, DateTimeZone $timezone): ?string

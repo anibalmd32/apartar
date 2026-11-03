@@ -9,6 +9,11 @@ export interface CollectionCustomer {
     readonly chatUrl?: string | null;
 }
 
+export interface CollectionDelivery {
+    readonly deliveredAt: string | null;
+    readonly url: string | null;
+}
+
 export interface CollectionInstallmentRow {
     readonly id: number;
     readonly customer: CollectionCustomer | null;
@@ -19,6 +24,20 @@ export interface CollectionInstallmentRow {
     readonly amount: MoneyView;
     readonly paid: MoneyView;
     readonly daysLate: number;
+    readonly pending: MoneyView;
+    readonly productName: string;
+    readonly delivery: CollectionDelivery;
+}
+
+export interface CollectionCustomerRow {
+    readonly id: number;
+    readonly customer: CollectionCustomer | null;
+    readonly layaway: { readonly code: string; readonly url: string };
+    readonly installments: readonly CollectionInstallmentRow[];
+    readonly count: number;
+    readonly layaways: number;
+    readonly pending: MoneyView;
+    readonly daysLate: number;
 }
 
 export interface CollectionLayawayRow {
@@ -28,6 +47,7 @@ export interface CollectionLayawayRow {
     readonly productName: string;
     readonly completedAt: string | null;
     readonly total: MoneyView;
+    readonly delivery: CollectionDelivery;
 }
 
 export interface CollectionDownPaymentRow {
@@ -38,6 +58,7 @@ export interface CollectionDownPaymentRow {
     readonly downPayment: MoneyView;
     readonly missing: MoneyView;
     readonly expiresAt: string | null;
+    readonly delivery: CollectionDelivery;
 }
 
 export interface CollectionFiltersState {
@@ -69,9 +90,12 @@ interface CollectionPropsBase {
     readonly summary?: { readonly installments: number; readonly pending: MoneyView; readonly customers: number } | null;
     readonly presetCounts?: Readonly<Record<string, number>>;
     readonly awaitingDownPayment?: { readonly count: number; readonly missing: MoneyView } | null;
+    readonly grouped?: boolean;
+    readonly groupingUrl?: string | null;
 }
 
 export type CollectionIndexProps =
     | (CollectionPropsBase & { readonly kind: 'installments'; readonly rows: readonly CollectionInstallmentRow[] })
+    | (CollectionPropsBase & { readonly kind: 'customers'; readonly rows: readonly CollectionCustomerRow[] })
     | (CollectionPropsBase & { readonly kind: 'layaways'; readonly rows: readonly CollectionLayawayRow[] })
     | (CollectionPropsBase & { readonly kind: 'down_payments'; readonly rows: readonly CollectionDownPaymentRow[] });

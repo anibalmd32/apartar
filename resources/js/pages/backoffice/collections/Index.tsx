@@ -1,14 +1,17 @@
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageActions } from '@/components/ui/page-actions';
-import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
-import { AwaitingDownPaymentLink, CollectionSummary } from '@/features/collections/components/CollectionSummary';
 import { downPaymentColumns, installmentColumns, layawayColumns } from '@/features/collections/components/collectionColumns';
+import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
+import { customerColumns, CustomerInstallments } from '@/features/collections/components/collectionGroups';
+import { AwaitingDownPaymentLink, CollectionSummary } from '@/features/collections/components/CollectionSummary';
+import { GroupingSwitch } from '@/features/collections/components/GroupingSwitch';
 import { useCollectionFilters } from '@/features/collections/hooks/useCollectionFilters';
 import { DataTable } from '@/features/data-table/components/DataTable';
 import { useExportAction } from '@/features/exports/components/ExportButton';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import {
+    type CollectionCustomerRow,
     type CollectionDownPaymentRow,
     type CollectionIndexProps,
     type CollectionInstallmentRow,
@@ -16,7 +19,7 @@ import {
 } from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
 import { cilPlus, cilWallet } from '@coreui/icons';
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 
 export default function CollectionIndex(props: CollectionIndexProps) {
     const exportAction = useExportAction('collections', props.meta.filters);
@@ -44,6 +47,8 @@ export default function CollectionIndex(props: CollectionIndexProps) {
                 />
             ) : props.kind === 'layaways' ? (
                 <CollectionTable key="layaways" {...props} rows={props.rows} columns={layawayColumns} label="Apartados pagados sin entregar" />
+            ) : props.kind === 'customers' ? (
+                <CustomerGroupTable {...props} rows={props.rows} />
             ) : (
                 <CollectionTable key="installments" {...props} rows={props.rows} columns={installmentColumns} label="Cuotas por cobrar" />
             )}
@@ -51,7 +56,7 @@ export default function CollectionIndex(props: CollectionIndexProps) {
     );
 }
 
-function emptyMessage(props: CollectionIndexProps, narrowed: boolean): ReactNode {
+function emptyMessage(props: Pick<CollectionIndexProps, 'meta' | 'definition'>, narrowed: boolean): ReactNode {
     if (props.meta.page > 1) {
         return 'No hay más filas en esta página. Vuelve a la primera.';
     }
@@ -70,8 +75,44 @@ function emptyMessage(props: CollectionIndexProps, narrowed: boolean): ReactNode
     );
 }
 
-function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayawayRow | CollectionDownPaymentRow>(
-    props: CollectionIndexProps & { rows: readonly TRow[]; columns: readonly DataTableColumn<TRow>[]; label: string },
+type CollectionTableBase = Omit<CollectionIndexProps, 'rows' | 'kind'>;
+
+function CustomerGroupTable(props: CollectionTableBase & { rows: readonly CollectionCustomerRow[] }) {
+    const [open, setOpen] = useState<ReadonlySet<number>>(new Set());
+    const toggle = (id: number) =>
+        setOpen((current) => {
+            const next = new Set(current);
+
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+
+    return (
+        <CollectionTable
+            key="customers"
+            {...props}
+            rows={props.rows}
+            columns={customerColumns((id) => open.has(id), toggle)}
+            label="Clientes con cuotas por cobrar"
+            rowHref={(row) => row.customer?.url}
+            expanded={(row) => (open.has(row.id) ? <CustomerInstallments rows={row.installments} /> : null)}
+        />
+    );
+}
+
+function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayawayRow | CollectionDownPaymentRow | CollectionCustomerRow>(
+    props: CollectionTableBase & {
+        rows: readonly TRow[];
+        columns: readonly DataTableColumn<TRow>[];
+        label: string;
+        rowHref?: (row: TRow) => string | null | undefined;
+        expanded?: (row: TRow) => ReactNode;
+    },
 ) {
     const { table, filters, change } = useCollectionFilters({ rows: props.rows, meta: props.meta, columns: props.columns });
     const narrowed = Object.values(props.meta.filters).some((value) => value !== null);
@@ -81,10 +122,12 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
             label={props.label}
             table={table}
             filterLabels={COLLECTION_FILTER_LABELS}
-            rowHref={(row) => row.layaway.url}
+            rowHref={props.rowHref ?? ((row) => row.layaway.url)}
+            expanded={props.expanded}
             empty={emptyMessage(props, narrowed)}
             toolbar={
                 <>
+                    {props.groupingUrl ? <GroupingSwitch url={props.groupingUrl} grouped={props.grouped === true} /> : null}
                     <CollectionFilters
                         filters={filters}
                         options={props.options}

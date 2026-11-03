@@ -42,6 +42,9 @@ const INSTALLMENT: CollectionInstallmentRow = {
     amount: usd(1_450, '$14,50'),
     paid: usd(0, '$0,00'),
     daysLate: 5,
+    pending: usd(1_450, '$14,50'),
+    productName: 'Vestido negro',
+    delivery: { deliveredAt: null, url: null },
 };
 
 it('en Cobranza la cuota es una tarjeta que lleva al apartado, con el monto, el atraso y un botón para llamar', () => {
@@ -55,7 +58,7 @@ it('en Cobranza la cuota es una tarjeta que lleva al apartado, con el monto, el 
     expect(call).toHaveClass('size-11');
     expect(row).toHaveTextContent('$14,50');
     expect(row).toHaveTextContent('5 días de atraso');
-    expect(row).toHaveTextContent('AP-YZE96F5Q · Cuota 2 de 4');
+    expect(row).toHaveTextContent('AP-YZE96F5Q · Vestido negro · Cuota 2 de 4');
     expect(row).toHaveTextContent('28 oct 2026');
     expect(row).not.toHaveTextContent('Pagado');
     expect(row).not.toHaveTextContent('$0,00');

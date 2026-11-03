@@ -135,6 +135,7 @@ it('el filtro «Esperando inicial» lista el apartado con lo que falta y su plaz
                     downPayment: { cents: centsUsd(2_500), usd: '$25,00', ves: null },
                     missing: { cents: centsUsd(500), usd: '$5,00', ves: null },
                     expiresAt: null,
+                    delivery: { deliveredAt: null, url: null },
                 },
             ]}
         />,

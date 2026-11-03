@@ -26,6 +26,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $invitation_token_hash
  * @property \Illuminate\Support\Carbon|null $invitation_expires_at
  * @property array<string, mixed>|null $dashboard_layout
+ * @property bool $collections_grouped
  */
 class User extends Authenticatable
 {
@@ -70,6 +71,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'must_change_password' => 'boolean',
             'dashboard_layout' => 'array',
+            'collections_grouped' => 'boolean',
             'password' => 'hashed',
         ];
     }

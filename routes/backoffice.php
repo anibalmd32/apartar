@@ -11,6 +11,7 @@ use App\Http\Controllers\Backoffice\CatalogController;
 use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\ChatController;
 use App\Http\Controllers\Backoffice\CollectionController;
+use App\Http\Controllers\Backoffice\CollectionGroupingController;
 use App\Http\Controllers\Backoffice\CustomerController;
 use App\Http\Controllers\Backoffice\CustomerMergeController;
 use App\Http\Controllers\Backoffice\CustomerShowController;
@@ -247,6 +248,7 @@ Surface::backofficeRoutes(function (): void {
 
             Route::middleware('during-suspension')->group(function (): void {
                 Route::get('cobranza', CollectionController::class)->name('collections.index');
+                Route::put('cobranza/agrupar', CollectionGroupingController::class)->name('collections.grouping');
 
                 Route::get('chat', [ChatController::class, 'index'])->name('chat.index');
                 Route::get('chat/{conversation}', [ChatController::class, 'show'])->whereNumber('conversation')->name('chat.show');

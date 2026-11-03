@@ -13,6 +13,7 @@ interface MobileListProps<TRow> {
     label: string;
     selection?: RowSelection<TRow>;
     rowHref?: (row: TRow) => string | null | undefined;
+    expanded?: (row: TRow) => ReactNode;
 }
 
 function blank(node: ReactNode): boolean {
@@ -91,7 +92,7 @@ function MobileRow<TRow>({
     );
 }
 
-export function MobileList<TRow>({ rows, columns, loading, label, selection, rowHref }: MobileListProps<TRow>) {
+export function MobileList<TRow>({ rows, columns, loading, label, selection, rowHref, expanded }: MobileListProps<TRow>) {
     const [selecting, setSelecting] = useState(false);
     const canSelect = selection !== undefined && selection.selectableCount > 0;
     const active = selecting && canSelect;
@@ -124,18 +125,20 @@ export function MobileList<TRow>({ rows, columns, loading, label, selection, row
             ) : null}
             <CompactList aria-label={label} aria-busy={loading || undefined} className={cn(loading && 'opacity-50')}>
                 {rows.map((row) => (
-                    <MobileRow
-                        key={row.id}
-                        row={row.original}
-                        columns={columns}
-                        selection={selection}
-                        selecting={active}
-                        href={rowHref?.(row.original) ?? null}
-                        onHold={() => {
-                            setSelecting(true);
-                            selection?.toggle(row.original);
-                        }}
-                    />
+                    <Fragment key={row.id}>
+                        <MobileRow
+                            row={row.original}
+                            columns={columns}
+                            selection={selection}
+                            selecting={active}
+                            href={rowHref?.(row.original) ?? null}
+                            onHold={() => {
+                                setSelecting(true);
+                                selection?.toggle(row.original);
+                            }}
+                        />
+                        {expanded?.(row.original) ? <li className="list-none px-1 pb-2">{expanded(row.original)}</li> : null}
+                    </Fragment>
                 ))}
             </CompactList>
         </div>

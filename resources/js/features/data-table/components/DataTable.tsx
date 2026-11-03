@@ -17,6 +17,7 @@ interface DataTableProps<TRow extends RowData> {
     selection?: RowSelection<TRow>;
     selectionActions?: ReactNode;
     rowHref?: (row: TRow) => string | null | undefined;
+    expanded?: (row: TRow) => ReactNode;
 }
 
 export function DataTable<TRow extends RowData>({
@@ -28,6 +29,7 @@ export function DataTable<TRow extends RowData>({
     selection,
     selectionActions,
     rowHref,
+    expanded,
 }: DataTableProps<TRow>) {
     const ignored = table.meta.ignoredFilters.map((key) => filterLabels[key] ?? key);
     const narrowed = Object.values(table.meta.filters).some(
@@ -51,6 +53,7 @@ export function DataTable<TRow extends RowData>({
                 selection={selection}
                 label={label}
                 rowHref={rowHref}
+                expanded={expanded}
                 header={
                     <TableHeader table={table.table} columns={table.columns} sort={table.meta.sort} onSort={table.toggleSort} selection={selection} />
                 }

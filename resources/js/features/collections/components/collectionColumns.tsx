@@ -1,15 +1,31 @@
 import { Badge } from '@/components/ui/badge';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
 import { customerMobile, DueBadge, dueDateMeta, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
+import { DeliveryCell } from '@/features/collections/components/DeliveryCell';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDate } from '@/lib/dates';
-import { type CollectionDownPaymentRow, type CollectionInstallmentRow, type CollectionLayawayRow } from '@/types/collections';
+import {
+    type CollectionDelivery,
+    type CollectionDownPaymentRow,
+    type CollectionInstallmentRow,
+    type CollectionLayawayRow,
+} from '@/types/collections';
 import { type DataTableColumn } from '@/types/data-table';
 import { Link } from '@inertiajs/react';
+
+export function deliveryColumn<TRow extends { delivery: CollectionDelivery; layaway: { code: string } }>(): DataTableColumn<TRow> {
+    return {
+        id: 'delivery',
+        header: 'Entrega',
+        mobile: { meta: (row) => <DeliveryCell delivery={row.delivery} code={row.layaway.code} /> },
+        cell: (row) => <DeliveryCell delivery={row.delivery} code={row.layaway.code} />,
+    };
+}
 
 export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
     { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
     { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'product', header: 'Producto', mobile: { subtitle: (row) => row.productName }, cell: (row) => row.productName },
     {
         id: 'number',
         header: 'Cuota',
@@ -48,6 +64,7 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
         },
         cell: (row) => <MoneyLabel money={row.paid} className="text-ink-2" compact />,
     },
+    deliveryColumn<CollectionInstallmentRow>(),
     {
         id: 'actions',
         header: 'Acciones',
@@ -81,17 +98,7 @@ export const layawayColumns: DataTableColumn<CollectionLayawayRow>[] = [
         mobile: 'amount',
         cell: (row) => <MoneyLabel money={row.total} className="font-semibold" compact />,
     },
-    {
-        id: 'actions',
-        header: 'Acciones',
-        align: 'end',
-        mobile: 'hidden',
-        cell: (row) => (
-            <Link href={row.layaway.url} className="btn btn-secondary btn-sm">
-                Marcar entrega
-            </Link>
-        ),
-    },
+    deliveryColumn<CollectionLayawayRow>(),
 ];
 
 function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
@@ -134,6 +141,7 @@ export const downPaymentColumns: DataTableColumn<CollectionDownPaymentRow>[] = [
         mobile: 'amount',
         cell: (row) => <MoneyLabel money={row.missing} className="font-semibold" compact />,
     },
+    deliveryColumn<CollectionDownPaymentRow>(),
     {
         id: 'actions',
         header: 'Acciones',

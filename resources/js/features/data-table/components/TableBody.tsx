@@ -4,7 +4,7 @@ import { type RowSelection } from '@/features/data-table/hooks/useRowSelection';
 import { type DataTableColumn } from '@/types/data-table';
 import { flexRender, type RowData } from '@tanstack/react-table';
 import { type LegacyReactTable } from '@tanstack/react-table/legacy';
-import { type ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 
 interface TableBodyProps<TRow extends RowData> {
     table: LegacyReactTable<TRow>;
@@ -15,6 +15,7 @@ interface TableBodyProps<TRow extends RowData> {
     selection?: RowSelection<TRow>;
     label: string;
     rowHref?: (row: TRow) => string | null | undefined;
+    expanded?: (row: TRow) => ReactNode;
 }
 
 function Skeleton({ rows, columns }: { rows: number; columns: number }) {
@@ -33,7 +34,17 @@ function Skeleton({ rows, columns }: { rows: number; columns: number }) {
     );
 }
 
-export function TableBody<TRow extends RowData>({ table, columns, loading, empty, header, selection, label, rowHref }: TableBodyProps<TRow>) {
+export function TableBody<TRow extends RowData>({
+    table,
+    columns,
+    loading,
+    empty,
+    header,
+    selection,
+    label,
+    rowHref,
+    expanded,
+}: TableBodyProps<TRow>) {
     const rows = table.getRowModel().rows;
 
     if (rows.length === 0 && !loading) {
@@ -54,29 +65,38 @@ export function TableBody<TRow extends RowData>({ table, columns, loading, empty
                     ) : (
                         <tbody>
                             {rows.map((row) => (
-                                <tr key={row.id} className={selection?.isSelected(row.original) ? 'bg-primary/5' : undefined}>
-                                    {selection ? (
-                                        <td className="w-10">
-                                            <RowCheckbox selection={selection} row={row.original} />
-                                        </td>
-                                    ) : null}
-                                    {row.getVisibleCells().map((cell) => {
-                                        const column = columns.find((candidate) => candidate.id === cell.column.id);
-
-                                        return (
-                                            <td key={cell.id} className={column?.align === 'end' ? 'text-right' : undefined}>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                <Fragment key={row.id}>
+                                    <tr className={selection?.isSelected(row.original) ? 'bg-primary/5' : undefined}>
+                                        {selection ? (
+                                            <td className="w-10">
+                                                <RowCheckbox selection={selection} row={row.original} />
                                             </td>
-                                        );
-                                    })}
-                                </tr>
+                                        ) : null}
+                                        {row.getVisibleCells().map((cell) => {
+                                            const column = columns.find((candidate) => candidate.id === cell.column.id);
+
+                                            return (
+                                                <td key={cell.id} className={column?.align === 'end' ? 'text-right' : undefined}>
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                    {expanded?.(row.original) ? (
+                                        <tr className="bg-base-200/50">
+                                            <td colSpan={columns.length + (selection ? 1 : 0)} className="p-0">
+                                                {expanded(row.original)}
+                                            </td>
+                                        </tr>
+                                    ) : null}
+                                </Fragment>
                             ))}
                         </tbody>
                     )}
                 </table>
             </div>
 
-            <MobileList rows={rows} columns={columns} loading={loading} label={label} selection={selection} rowHref={rowHref} />
+            <MobileList rows={rows} columns={columns} loading={loading} label={label} selection={selection} rowHref={rowHref} expanded={expanded} />
         </>
     );
 }

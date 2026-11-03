@@ -23,6 +23,9 @@ export function installmentRow(overrides: Partial<CollectionInstallmentRow> = {}
         amount: money('$30,00', 3_000),
         paid: money('$10,00', 1_000),
         daysLate: 5,
+        pending: money('$20,00', 2_000),
+        productName: 'Bolso tote',
+        delivery: { deliveredAt: null, url: null },
         ...overrides,
     };
 }

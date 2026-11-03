@@ -125,6 +125,54 @@ final class CollectionPageTest extends TestCase
             ->has('options.presets', 7));
     }
 
+    public function test_cada_cuota_dice_el_producto_y_se_puede_marcar_entregada_desde_la_tabla(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['product_name_snapshot' => 'Bolso tote']);
+        $this->installment($layaway, 1, '2026-09-05');
+
+        $this->actingAs($this->member)->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('rows.0.productName', 'Bolso tote')
+            ->where('rows.0.delivery', ['deliveredAt' => null, 'url' => route('layaways.deliver', $layaway)]));
+
+        $this->from(route('collections.index'))->post(route('layaways.deliver', $layaway), ['volver' => true])
+            ->assertRedirect(route('collections.index'))
+            ->assertSessionHas('status', sprintf('Entrega de %s registrada.', $layaway->code));
+        $this->withoutOrganization();
+
+        $this->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('rows.0.delivery', ['deliveredAt' => '2026-09-10', 'url' => null]));
+    }
+
+    public function test_agrupar_por_cliente_se_guarda_y_junta_sus_cuotas_en_una_fila(): void
+    {
+        $first = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $second = $this->layawayIn($this->organization, LayawayStatus::Active);
+        DB::table('layaways')->where('id', $second->getKey())->update(['customer_id' => $first->customer_id]);
+        $other = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $this->installment($first, 1, '2026-09-08');
+        $this->installment($second, 1, '2026-09-20', paid: 1_000);
+        $this->installment($other, 1, '2026-09-01');
+
+        $this->actingAs($this->member)->put(route('collections.grouping'), ['grouped' => true])->assertRedirect();
+        $this->assertTrue((bool) DB::table('users')->where('id', $this->member->getKey())->value('collections_grouped'));
+
+        $this->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('kind', 'customers')
+            ->where('grouped', true)
+            ->has('rows', 2)
+            ->where('rows.0.id', (int) $other->customer_id)
+            ->where('rows.1.id', (int) $first->customer_id)
+            ->where('rows.1.count', 2)
+            ->where('rows.1.layaways', 2)
+            ->where('rows.1.pending.cents', 5_000)
+            ->where('rows.1.daysLate', 2)
+            ->where('rows.1.installments', fn (Collection $rows): bool => $rows->pluck('layaway.code')->all() === [$first->code, $second->code]));
+
+        $this->put(route('collections.grouping'), ['grouped' => false]);
+        $this->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page->where('kind', 'installments')->has('rows', 3));
+    }
+
     public function test_the_layaway_preset_lists_layaways_with_its_definition(): void
     {
         $layaway = $this->layawayIn($this->organization, LayawayStatus::Completed);

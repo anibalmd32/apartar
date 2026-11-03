@@ -17,12 +17,15 @@ use App\Models\Conversation;
 use App\Models\Customer;
 use App\Models\Installment;
 use App\Models\Layaway;
+use App\Models\User;
 use App\Queries\CollectionFilterInput;
 use App\Queries\CollectionFilters;
 use App\Support\PhoneNumber;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -54,9 +57,13 @@ final class CollectionController extends Controller
             ]), $state, simple: true);
             $rows = array_map(fn (Layaway $layaway): array => $awaiting ? $this->downPaymentRow($layaway) : $this->layawayRow($layaway, $timezone), $page->items());
             $meta = $this->tableMeta($page, $state);
+        } elseif ($this->grouped($request)) {
+            $page = $this->paginateTable($this->customerGroups($filters), $state, simple: true);
+            $rows = $this->groupRows($filters, $page->items(), $today);
+            $meta = $this->tableMeta($page, $state);
         } else {
             $page = $this->paginateTable($filters->installments()->with([
-                'layaway:id,organization_id,code,status,customer_id,installments_count',
+                'layaway:id,organization_id,code,status,customer_id,installments_count,product_name_snapshot,delivered_at',
                 'layaway.customer:id,organization_id,full_name,phone',
                 'layaway.customer.conversation:id,organization_id,customer_id',
             ]), $state, simple: true);
@@ -65,7 +72,9 @@ final class CollectionController extends Controller
         }
 
         return Inertia::render('backoffice/collections/Index', [
-            'kind' => $awaiting ? 'down_payments' : ($listsLayaways ? 'layaways' : 'installments'),
+            'kind' => $awaiting ? 'down_payments' : ($listsLayaways ? 'layaways' : ($this->grouped($request) ? 'customers' : 'installments')),
+            'groupingUrl' => $listsLayaways ? null : route('collections.grouping'),
+            'grouped' => ! $listsLayaways && $this->grouped($request),
             'rows' => $rows,
             'meta' => $meta,
             'definition' => $filters->preset?->definition(app(Settings::class)->longOverdueDays()),
@@ -74,6 +83,76 @@ final class CollectionController extends Controller
             'presetCounts' => fn (): array => $this->presetCounts(),
             'options' => fn (): array => $this->options(),
         ]);
+    }
+
+    private function grouped(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user instanceof User && $user->collections_grouped;
+    }
+
+    /**
+     * @return Builder<Customer>
+     */
+    private function customerGroups(CollectionFilters $filters): Builder
+    {
+        $owing = fn (): QueryBuilder => $filters->apply(Installment::query())
+            ->join('layaways as owing', 'owing.id', '=', 'installments.layaway_id')
+            ->toBase();
+
+        return Customer::query()
+            ->with('conversation:id,organization_id,customer_id')
+            ->whereIn('customers.id', $owing()->select('owing.customer_id'))
+            ->addSelect([
+                'customers.*',
+                'first_due' => $owing()->whereColumn('owing.customer_id', 'customers.id')->selectRaw('min(installments.due_date)'),
+            ])
+            ->orderBy('first_due')
+            ->orderBy('customers.id');
+    }
+
+    /**
+     * @param  list<Customer>  $customers
+     * @return list<array<string, mixed>>
+     */
+    private function groupRows(CollectionFilters $filters, array $customers, CarbonImmutable $today): array
+    {
+        $installments = $filters->installments()
+            ->with(['layaway:id,organization_id,code,status,customer_id,installments_count,product_name_snapshot,delivered_at'])
+            ->whereHas('layaway', fn (Builder $layaway) => $layaway->whereIn('layaways.customer_id', array_map(fn (Customer $customer): int => (int) $customer->getKey(), $customers)))
+            ->get()
+            ->groupBy(fn (Installment $installment): int => (int) $installment->layaway?->customer_id);
+
+        return array_map(function (Customer $customer) use ($installments, $today): array {
+            $rows = array_map(
+                fn (Installment $installment): array => $this->installmentRow($installment, $today),
+                $installments->get((int) $customer->getKey())?->all() ?? [],
+            );
+            $pending = array_sum(array_map(fn (Installment $installment): int => $installment->amount_cents->cents - $installment->paid_cents->cents, $installments->get((int) $customer->getKey())?->all() ?? []));
+
+            return [
+                'id' => (int) $customer->getKey(),
+                'customer' => $this->customerOf($customer),
+                'layaway' => ['code' => '', 'url' => route('customers.show', $customer)],
+                'installments' => $rows,
+                'count' => count($rows),
+                'layaways' => count(array_unique(array_map(fn (array $row): string => $row['layaway']['code'], $rows))),
+                'pending' => $this->money(new Money($pending)),
+                'daysLate' => $rows === [] ? 0 : max(array_column($rows, 'daysLate')),
+            ];
+        }, $customers);
+    }
+
+    /**
+     * @return array{deliveredAt: string|null, url: string|null}
+     */
+    private function deliveryOf(Layaway $layaway): array
+    {
+        return [
+            'deliveredAt' => $layaway->delivered_at?->toDateString(),
+            'url' => $layaway->delivered_at === null && $layaway->status->allowsDelivery() ? route('layaways.deliver', $layaway) : null,
+        ];
     }
 
     /**
@@ -96,6 +175,9 @@ final class CollectionController extends Controller
             'amount' => $this->money($installment->amount_cents),
             'paid' => $this->money($installment->paid_cents),
             'daysLate' => max(0, $late),
+            'pending' => $this->money(new Money(max(0, $installment->amount_cents->cents - $installment->paid_cents->cents))),
+            'productName' => $layaway->product_name_snapshot,
+            'delivery' => $this->deliveryOf($layaway),
         ];
     }
 
@@ -111,6 +193,7 @@ final class CollectionController extends Controller
             'productName' => $layaway->product_name_snapshot,
             'completedAt' => $layaway->completed_at?->setTimezone($timezone)->toDateString(),
             'total' => $this->money($layaway->total_cents),
+            'delivery' => $this->deliveryOf($layaway),
         ];
     }
 
@@ -129,6 +212,7 @@ final class CollectionController extends Controller
             'downPayment' => $this->money($total),
             'missing' => $this->money(new Money(max(0, $total->cents - $layaway->paid_cents->cents))),
             'expiresAt' => $layaway->expires_at?->toIso8601String(),
+            'delivery' => $this->deliveryOf($layaway),
         ];
     }
 
