@@ -173,6 +173,32 @@ final class CollectionPageTest extends TestCase
         $this->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page->where('kind', 'installments')->has('rows', 3));
     }
 
+    public function test_agrupado_cada_apartado_trae_su_avance_y_el_detalle_se_guarda(): void
+    {
+        $layaway = $this->layawayIn($this->organization, LayawayStatus::Active);
+        DB::table('layaways')->where('id', $layaway->getKey())->update(['paid_cents' => 6_000, 'total_cents' => 15_000, 'product_name_snapshot' => 'Mini Ups']);
+        $this->installment($layaway, 2, '2026-09-08', paid: 1_000);
+        $this->installment($layaway, 3, '2026-09-20');
+
+        $this->actingAs($this->member)->put(route('collections.grouping'), ['grouped' => true])->assertRedirect();
+
+        $this->get(route('collections.index'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('detail', 'layaways')
+            ->has('rows.0.layawayRows', 1)
+            ->where('rows.0.layawayRows.0.productName', 'Mini Ups')
+            ->where('rows.0.layawayRows.0.progress', 40)
+            ->where('rows.0.layawayRows.0.installments', 2)
+            ->where('rows.0.layawayRows.0.owed.cents', 5_000)
+            ->where('rows.0.layawayRows.0.nextDue', '2026-09-08')
+            ->where('rows.0.progress', 40)
+            ->where('rows.0.total.cents', 15_000));
+
+        $this->put(route('collections.grouping'), ['detail' => 'installments'])->assertRedirect();
+        $this->assertSame('installments', DB::table('users')->where('id', $this->member->getKey())->value('collections_detail'));
+        $this->assertTrue((bool) DB::table('users')->where('id', $this->member->getKey())->value('collections_grouped'));
+        $this->put(route('collections.grouping'), ['detail' => 'productos'])->assertSessionHasErrors('detail');
+    }
+
     public function test_the_layaway_preset_lists_layaways_with_its_definition(): void
     {
         $layaway = $this->layawayIn($this->organization, LayawayStatus::Completed);

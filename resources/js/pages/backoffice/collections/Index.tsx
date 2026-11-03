@@ -4,6 +4,7 @@ import { downPaymentColumns, installmentColumns, layawayColumns } from '@/featur
 import { COLLECTION_FILTER_LABELS, CollectionFilters } from '@/features/collections/components/CollectionFilters';
 import { customerColumns, CustomerInstallments } from '@/features/collections/components/collectionGroups';
 import { AwaitingDownPaymentLink, CollectionSummary } from '@/features/collections/components/CollectionSummary';
+import { CustomerLayaways } from '@/features/collections/components/CustomerLayaways';
 import { GroupingSwitch } from '@/features/collections/components/GroupingSwitch';
 import { useCollectionFilters } from '@/features/collections/hooks/useCollectionFilters';
 import { DataTable } from '@/features/data-table/components/DataTable';
@@ -100,7 +101,15 @@ function CustomerGroupTable(props: CollectionTableBase & { rows: readonly Collec
             columns={customerColumns((id) => open.has(id), toggle)}
             label="Clientes con cuotas por cobrar"
             rowHref={(row) => row.customer?.url}
-            expanded={(row) => (open.has(row.id) ? <CustomerInstallments rows={row.installments} /> : null)}
+            expanded={(row) =>
+                open.has(row.id) ? (
+                    props.detail === 'installments' ? (
+                        <CustomerInstallments rows={row.installments} />
+                    ) : (
+                        <CustomerLayaways rows={row.layawayRows} />
+                    )
+                ) : null
+            }
         />
     );
 }
@@ -127,7 +136,7 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
             empty={emptyMessage(props, narrowed)}
             toolbar={
                 <>
-                    {props.groupingUrl ? <GroupingSwitch url={props.groupingUrl} grouped={props.grouped === true} /> : null}
+                    {props.groupingUrl ? <GroupingSwitch url={props.groupingUrl} grouped={props.grouped === true} detail={props.detail} /> : null}
                     <CollectionFilters
                         filters={filters}
                         options={props.options}

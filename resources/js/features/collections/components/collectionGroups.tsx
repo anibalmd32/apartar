@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
+import { AmountProgress } from '@/features/collections/components/AmountProgress';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
 import { DueBadge, customerMobile } from '@/features/collections/components/collectionMobile';
 import { DeliveryCell } from '@/features/collections/components/DeliveryCell';
@@ -56,6 +57,12 @@ export function customerColumns(isOpen: (id: number) => boolean, onToggle: (id: 
             ),
         },
         { id: 'count', header: 'Por cobrar', mobile: { subtitle: countLabel }, cell: countLabel },
+        {
+            id: 'progress',
+            header: 'Avance',
+            mobile: { meta: (row) => <AmountProgress paid={row.paid} total={row.total} progress={row.progress} /> },
+            cell: (row) => <AmountProgress paid={row.paid} total={row.total} progress={row.progress} />,
+        },
         { id: 'late', header: 'Atraso', mobile: { status: lateness }, cell: lateness },
         {
             id: 'pending',

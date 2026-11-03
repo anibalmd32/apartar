@@ -75,6 +75,7 @@ final class CollectionController extends Controller
             'kind' => $awaiting ? 'down_payments' : ($listsLayaways ? 'layaways' : ($this->grouped($request) ? 'customers' : 'installments')),
             'groupingUrl' => $listsLayaways ? null : route('collections.grouping'),
             'grouped' => ! $listsLayaways && $this->grouped($request),
+            'detail' => $request->user() instanceof User && $request->user()->collections_detail === 'installments' ? 'installments' : 'layaways',
             'rows' => $rows,
             'meta' => $meta,
             'definition' => $filters->preset?->definition(app(Settings::class)->longOverdueDays()),
@@ -119,29 +120,72 @@ final class CollectionController extends Controller
     private function groupRows(CollectionFilters $filters, array $customers, CarbonImmutable $today): array
     {
         $installments = $filters->installments()
-            ->with(['layaway:id,organization_id,code,status,customer_id,installments_count,product_name_snapshot,delivered_at'])
+            ->with(['layaway:id,organization_id,code,status,customer_id,installments_count,product_name_snapshot,delivered_at,paid_cents,total_cents'])
             ->whereHas('layaway', fn (Builder $layaway) => $layaway->whereIn('layaways.customer_id', array_map(fn (Customer $customer): int => (int) $customer->getKey(), $customers)))
             ->get()
             ->groupBy(fn (Installment $installment): int => (int) $installment->layaway?->customer_id);
 
         return array_map(function (Customer $customer) use ($installments, $today): array {
-            $rows = array_map(
-                fn (Installment $installment): array => $this->installmentRow($installment, $today),
-                $installments->get((int) $customer->getKey())?->all() ?? [],
-            );
-            $pending = array_sum(array_map(fn (Installment $installment): int => $installment->amount_cents->cents - $installment->paid_cents->cents, $installments->get((int) $customer->getKey())?->all() ?? []));
+            /** @var list<Installment> $owed */
+            $owed = $installments->get((int) $customer->getKey())?->all() ?? [];
+            $rows = array_map(fn (Installment $installment): array => $this->installmentRow($installment, $today), $owed);
+            $layaways = $this->layawayGroups($owed, $rows);
+            $paid = array_sum(array_column($layaways, 'paidCents'));
+            $total = array_sum(array_column($layaways, 'totalCents'));
 
             return [
                 'id' => (int) $customer->getKey(),
                 'customer' => $this->customerOf($customer),
                 'layaway' => ['code' => '', 'url' => route('customers.show', $customer)],
                 'installments' => $rows,
+                'layawayRows' => $layaways,
                 'count' => count($rows),
-                'layaways' => count(array_unique(array_map(fn (array $row): string => $row['layaway']['code'], $rows))),
-                'pending' => $this->money(new Money($pending)),
+                'layaways' => count($layaways),
+                'pending' => $this->money(new Money(array_sum(array_map(fn (Installment $installment): int => $installment->amount_cents->cents - $installment->paid_cents->cents, $owed)))),
+                'paid' => $this->money(new Money($paid)),
+                'total' => $this->money(new Money($total)),
+                'progress' => $total > 0 ? (int) floor($paid * 100 / $total) : 0,
                 'daysLate' => $rows === [] ? 0 : max(array_column($rows, 'daysLate')),
             ];
         }, $customers);
+    }
+
+    /**
+     * @param  list<Installment>  $owed
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function layawayGroups(array $owed, array $rows): array
+    {
+        $groups = [];
+
+        foreach ($owed as $index => $installment) {
+            /** @var Layaway $layaway */
+            $layaway = $installment->layaway;
+            $key = (int) $layaway->getKey();
+            $row = $rows[$index];
+            $groups[$key] ??= [
+                'id' => $key,
+                'layaway' => $row['layaway'],
+                'productName' => $layaway->product_name_snapshot,
+                'paidCents' => $layaway->paid_cents->cents,
+                'totalCents' => $layaway->total_cents->cents,
+                'paid' => $this->money($layaway->paid_cents),
+                'total' => $this->money($layaway->total_cents),
+                'progress' => $layaway->total_cents->cents > 0 ? (int) floor($layaway->paid_cents->cents * 100 / $layaway->total_cents->cents) : 0,
+                'owedCents' => 0,
+                'installments' => 0,
+                'of' => $layaway->installments_count,
+                'nextDue' => $row['dueDate'],
+                'daysLate' => 0,
+                'delivery' => $row['delivery'],
+            ];
+            $groups[$key]['owedCents'] += $installment->amount_cents->cents - $installment->paid_cents->cents;
+            $groups[$key]['installments']++;
+            $groups[$key]['daysLate'] = max($groups[$key]['daysLate'], $row['daysLate']);
+        }
+
+        return array_values(array_map(fn (array $group): array => $group + ['owed' => $this->money(new Money($group['owedCents']))], $groups));
     }
 
     /**

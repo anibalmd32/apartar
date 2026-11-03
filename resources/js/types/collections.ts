@@ -29,14 +29,33 @@ export interface CollectionInstallmentRow {
     readonly delivery: CollectionDelivery;
 }
 
+export interface CollectionLayawayGroup {
+    readonly id: number;
+    readonly layaway: { readonly code: string; readonly url: string };
+    readonly productName: string;
+    readonly paid: MoneyView;
+    readonly total: MoneyView;
+    readonly progress: number;
+    readonly owed: MoneyView;
+    readonly installments: number;
+    readonly of?: number;
+    readonly nextDue: string;
+    readonly daysLate: number;
+    readonly delivery: CollectionDelivery;
+}
+
 export interface CollectionCustomerRow {
     readonly id: number;
     readonly customer: CollectionCustomer | null;
     readonly layaway: { readonly code: string; readonly url: string };
     readonly installments: readonly CollectionInstallmentRow[];
+    readonly layawayRows: readonly CollectionLayawayGroup[];
     readonly count: number;
     readonly layaways: number;
     readonly pending: MoneyView;
+    readonly paid: MoneyView;
+    readonly total: MoneyView;
+    readonly progress: number;
     readonly daysLate: number;
 }
 
@@ -91,6 +110,7 @@ interface CollectionPropsBase {
     readonly presetCounts?: Readonly<Record<string, number>>;
     readonly awaitingDownPayment?: { readonly count: number; readonly missing: MoneyView } | null;
     readonly grouped?: boolean;
+    readonly detail?: 'layaways' | 'installments';
     readonly groupingUrl?: string | null;
 }
 

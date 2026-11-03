@@ -33,9 +33,28 @@ const GROUP: CollectionCustomerRow = {
             delivery: { deliveredAt: '2026-09-01', url: null },
         }),
     ],
+    layawayRows: [
+        {
+            id: 4,
+            layaway: { code: 'AP-7K3M9QRT', url: '/backoffice/apartados/AP-7K3M9QRT' },
+            productName: 'Mini Ups',
+            paid: money('$60,00', 6_000),
+            total: money('$150,00', 15_000),
+            progress: 40,
+            owed: money('$90,00', 9_000),
+            installments: 2,
+            of: 3,
+            nextDue: '2026-12-02',
+            daysLate: 0,
+            delivery: { deliveredAt: null, url: null },
+        },
+    ],
     count: 2,
     layaways: 2,
     pending: money('$40,00', 4_000),
+    paid: money('$60,00', 6_000),
+    total: money('$150,00', 15_000),
+    progress: 40,
     daysLate: 5,
 };
 
@@ -49,9 +68,40 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function renderGrouped() {
-    render(<CollectionIndex {...collectionProps([])} kind="customers" rows={[GROUP]} grouped groupingUrl="/backoffice/cobranza/agrupar" />);
+function renderGrouped(detail: 'layaways' | 'installments' = 'installments') {
+    render(
+        <CollectionIndex
+            {...collectionProps([])}
+            kind="customers"
+            rows={[GROUP]}
+            grouped
+            detail={detail}
+            groupingUrl="/backoffice/cobranza/agrupar"
+        />,
+    );
 }
+
+it('por apartado muestra una fila por apartado con su barra de avance, y el cliente su avance total', () => {
+    renderGrouped('layaways');
+    const table = screen.getByRole('table');
+
+    expect(within(table).getAllByRole('progressbar', { name: 'Pagado 40%' })).toHaveLength(1);
+    fireEvent.click(within(table).getByRole('button', { name: `Ver las cuotas de ${CUSTOMER.name}` }));
+
+    const layaways = within(table).getByRole('list', { name: 'Apartados del cliente' });
+    expect(within(layaways).getByText('Mini Ups')).toBeInTheDocument();
+    expect(within(layaways).getByText('2 cuotas por pagar de 3')).toBeInTheDocument();
+    expect(within(layaways).getByRole('progressbar', { name: 'Pagado 40%' })).toHaveAttribute('aria-valuenow', '40');
+    expect(within(table).queryByRole('list', { name: 'Cuotas del cliente' })).toBeNull();
+});
+
+it('el selector de detalle guarda la preferencia', () => {
+    renderGrouped('layaways');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Por cuota' }));
+
+    expect(routerPut).toHaveBeenCalledWith('/backoffice/cobranza/agrupar', { detail: 'installments' }, expect.anything());
+});
 
 it('cada cliente se despliega para ver sus cuotas con producto y entrega', () => {
     renderGrouped();

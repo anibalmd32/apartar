@@ -27,6 +27,7 @@ use Illuminate\Notifications\Notifiable;
  * @property \Illuminate\Support\Carbon|null $invitation_expires_at
  * @property array<string, mixed>|null $dashboard_layout
  * @property bool $collections_grouped
+ * @property string $collections_detail
  */
 class User extends Authenticatable
 {
