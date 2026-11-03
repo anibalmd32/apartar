@@ -8,6 +8,7 @@ use App\Http\Controllers\Backoffice\Auth\ForcedPasswordChangeController;
 use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Http\Controllers\Backoffice\Auth\PasswordResetController;
 use App\Http\Controllers\Backoffice\CatalogController;
+use App\Http\Controllers\Backoffice\CatalogSummaryController;
 use App\Http\Controllers\Backoffice\CategoryController;
 use App\Http\Controllers\Backoffice\ChatController;
 use App\Http\Controllers\Backoffice\CollectionController;
@@ -204,6 +205,7 @@ Surface::backofficeRoutes(function (): void {
             Route::post('catalogos', [CatalogController::class, 'store'])->name('catalogs.store');
 
             Route::get('catalogos/{catalog}/editar', [CatalogController::class, 'edit'])->name('catalogs.edit');
+            Route::get('catalogos/{catalog}/resumen', CatalogSummaryController::class)->name('catalogs.summary');
             Route::put('catalogos/{catalog}', [CatalogController::class, 'update'])->name('catalogs.update');
 
             Route::patch('catalogos/{catalog}/productos', [CatalogController::class, 'products'])

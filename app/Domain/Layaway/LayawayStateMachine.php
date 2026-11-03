@@ -64,7 +64,7 @@ final class LayawayStateMachine
 
             Layaway::query()->whereKey($locked->getKey())->update(['status' => $to->value] + $this->marksFor($from, $to, $now));
 
-            if ($to->releasesStock() && $locked->delivered_at === null) {
+            if ($to->releasesStock()) {
                 $this->stock->handle($locked);
             }
 

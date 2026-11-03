@@ -5,7 +5,7 @@ import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVi
 import { formatDate } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
 import { type CatalogListItem } from '@/types/catalog';
-import { cilBasket, cilCalendar, cilCheckAlt, cilCopy, cilExternalLink, cilUserFollow } from '@coreui/icons';
+import { cilBasket, cilCalendar, cilChartLine, cilCheckAlt, cilCopy, cilExternalLink, cilUserFollow } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -108,7 +108,15 @@ export function CatalogCard({ catalog }: { catalog: CatalogListItem }) {
                     </p>
                 ) : null}
 
-                <div className="mt-auto flex gap-2 pt-1">
+                <Link
+                    href={bo(`/catalogos/${catalog.id}/resumen`)}
+                    className="btn btn-secondary btn-sm mt-auto"
+                    aria-label={`Ver el resumen de ${catalog.name}`}
+                >
+                    <Icon icon={cilChartLine} size={14} />
+                    Ver resumen
+                </Link>
+                <div className="flex gap-2">
                     <Link href={editUrl} className="btn btn-sm flex-1" aria-label={`Editar ${catalog.name}`}>
                         Editar
                     </Link>
