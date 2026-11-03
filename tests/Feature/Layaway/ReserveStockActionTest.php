@@ -122,21 +122,24 @@ final class ReserveStockActionTest extends TestCase
         $this->assertSame(3, $this->stockOf($product));
     }
 
-    public function test_reserved_units_count_only_layaways_that_still_hold_stock(): void
+    public function test_las_reservadas_son_las_que_esperan_en_la_tienda_sin_entregar(): void
     {
-        $product = Product::factory()->create(['stock' => 20]);
+        $product = Product::factory()->create(['stock' => 30]);
 
         $this->layawayIn($this->organization, LayawayStatus::PendingDownPayment, $product, quantity: 1);
         $this->layawayIn($this->organization, LayawayStatus::Active, $product, quantity: 2);
         $this->layawayIn($this->organization, LayawayStatus::Overdue, $product, quantity: 3);
         $this->layawayIn($this->organization, LayawayStatus::Completed, $product, quantity: 4);
         $this->layawayIn($this->organization, LayawayStatus::Cancelled, $product, quantity: 5);
+        $delivered = $this->layawayIn($this->organization, LayawayStatus::Active, $product, quantity: 6);
+        DB::table('layaways')->where('id', $delivered->getKey())->update(['delivered_at' => now()]);
 
         $fresh = Product::query()->findOrFail($product->getKey());
         $listed = Product::query()->withReservedUnits()->findOrFail($product->getKey());
 
-        $this->assertSame(6, $fresh->reservedUnits());
-        $this->assertSame(6, $listed->reservedUnits());
+        $this->assertSame(10, $fresh->reservedUnits());
+        $this->assertSame(10, $listed->reservedUnits());
+        $this->assertSame($fresh->stock + 10, $fresh->onHandUnits());
     }
 
     public function test_the_statuses_holding_stock_are_the_non_terminal_ones(): void

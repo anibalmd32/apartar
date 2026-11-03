@@ -18,7 +18,7 @@ export function ProductInventoryFields({ data, setData, errors, saved }: Product
                 value={data.stock}
                 onChange={(stock) => setData('stock', stock)}
                 error={errors.stock}
-                hint="Las que tienes en la tienda, apartadas incluidas. Cero no despublica el producto: se muestra agotado y no se puede apartar."
+                hint="Las que tienes físicamente en la tienda, incluidas las apartadas que aún no entregas. Cero no despublica el producto: se muestra agotado y no se puede apartar."
                 required
             />
 

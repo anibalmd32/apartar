@@ -15,7 +15,7 @@ export function StockBreakdown({ breakdown, onHand }: StockBreakdownProps) {
         <div className="flex flex-col gap-2">
             <dl className="text-[13px]">
                 <div className="flex justify-between gap-3 py-1">
-                    <dt className="text-ink-3">Reservadas por apartados</dt>
+                    <dt className="text-ink-3">Apartadas sin entregar</dt>
                     <dd className="font-bold">{breakdown.reserved}</dd>
                 </div>
                 <div className="flex justify-between gap-3 py-1">
@@ -24,16 +24,16 @@ export function StockBreakdown({ breakdown, onHand }: StockBreakdownProps) {
                 </div>
             </dl>
             <p className="sr-only">
-                <span>{units(breakdown.reserved)} en apartados vigentes</span>
+                <span>{units(breakdown.reserved)} en apartados sin entregar</span>
                 {' · '}
                 {breakdown.available === 0 ? 'ninguna disponible para apartar' : `${units(breakdown.available)} disponibles para apartar`}
             </p>
 
             {breakdown.shortfall > 0 ? (
                 <Alert tone="warning">
-                    Faltan {units(breakdown.shortfall)} para cubrir los apartados vigentes: tienes {units(breakdown.reserved)} apartadas y declaraste{' '}
-                    {units(onHand)} en existencias. Los apartados siguen en pie y no se cancela ninguno; si recuperas o repones unidades, actualiza
-                    las existencias.
+                    Faltan {units(breakdown.shortfall)} para cubrir los apartados sin entregar: tienes {units(breakdown.reserved)} apartadas sin
+                    entregar y declaraste {units(onHand)} en existencias. Los apartados siguen en pie y no se cancela ninguno; si recuperas o repones
+                    unidades, actualiza las existencias.
                 </Alert>
             ) : null}
         </div>

@@ -90,6 +90,14 @@ enum LayawayStatus: string
         return array_values(array_filter(self::cases(), fn (self $status): bool => ! $status->isTerminal()));
     }
 
+    /**
+     * @return list<self>
+     */
+    public static function waitingOnTheShelf(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $status): bool => $status->allowsDelivery()));
+    }
+
     public function label(): string
     {
         return match ($this) {

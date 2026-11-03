@@ -16,7 +16,7 @@ it('no dice nada de un producto sin apartados', () => {
 it('dice cuántas están apartadas y cuántas quedan para apartar', () => {
     render(<StockBreakdown breakdown={{ available: 3, reserved: 2, shortfall: 0 }} onHand={5} />);
 
-    expect(screen.getByText(/2 unidades en apartados vigentes/)).toBeInTheDocument();
+    expect(screen.getByText(/2 unidades en apartados sin entregar/)).toBeInTheDocument();
     expect(screen.getByText(/3 unidades disponibles para apartar/)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
 });
@@ -27,8 +27,8 @@ it('avisa de las que faltan cuando se declararon menos de las apartadas', () => 
     expect(screen.getByText(/ninguna disponible para apartar/)).toBeInTheDocument();
 
     const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('Faltan 2 unidades para cubrir los apartados vigentes');
-    expect(alert).toHaveTextContent('tienes 3 unidades apartadas y declaraste 1 unidad en existencias');
+    expect(alert).toHaveTextContent('Faltan 2 unidades para cubrir los apartados sin entregar');
+    expect(alert).toHaveTextContent('tienes 3 unidades apartadas sin entregar y declaraste 1 unidad en existencias');
     expect(alert).toHaveTextContent('no se cancela ninguno');
 });
 

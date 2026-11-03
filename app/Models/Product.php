@@ -146,7 +146,7 @@ class Product extends Model implements HasMedia
     public function scopeWithReservedUnits(Builder $query): Builder
     {
         return $query->withSum(
-            ['layaways as reserved_units' => fn (Builder $layaways): Builder => $layaways->whereIn('status', LayawayStatus::holdingStock())],
+            ['layaways as reserved_units' => fn (Builder $layaways): Builder => self::onTheShelf($layaways)],
             'quantity',
         );
     }
@@ -154,9 +154,20 @@ class Product extends Model implements HasMedia
     public function loadReservedUnits(): static
     {
         return $this->loadSum(
-            ['layaways as reserved_units' => fn (Builder $layaways): Builder => $layaways->whereIn('status', LayawayStatus::holdingStock())],
+            ['layaways as reserved_units' => fn (Builder $layaways): Builder => self::onTheShelf($layaways)],
             'quantity',
         );
+    }
+
+    /**
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $layaways
+     * @return Builder<TModel>
+     */
+    private static function onTheShelf(Builder $layaways): Builder
+    {
+        return $layaways->whereNull('delivered_at')->whereIn('status', LayawayStatus::waitingOnTheShelf());
     }
 
     public function reservedUnits(): int
@@ -165,7 +176,7 @@ class Product extends Model implements HasMedia
             return (int) $this->getAttribute('reserved_units');
         }
 
-        return (int) $this->layaways()->whereIn('status', LayawayStatus::holdingStock())->sum('quantity');
+        return (int) self::onTheShelf($this->layaways()->getQuery())->sum('quantity');
     }
 
     public function onHandUnits(): int
