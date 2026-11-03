@@ -2,7 +2,8 @@ import { type OrganizationBrand } from '@/types/backoffice';
 import { type Paginated } from '@/types/data-table';
 import { type DownPaymentProgressView } from '@/types/layaway';
 import { type Currency, type MoneyView } from '@/types/money';
-import { type PaymentAccountView, type PaymentEvidence, type PaymentMethod } from '@/types/payment';
+import { type PaymentAccountView, type PaymentMethod } from '@/types/payment';
+import { type PaymentRow } from '@/types/payment-row';
 import { type LayawaySummary, type NextPaymentSuggestion } from '@/types/portal';
 import { type RateChecks } from '@/types/rate-deviation';
 
@@ -105,20 +106,7 @@ export interface ReceiptInboxProps extends Paginated<ReceiptInboxRow> {
     readonly timezone: string;
 }
 
-export interface PaymentRow extends PaymentEvidence {
-    readonly settledAt: string;
-    readonly amountUsd: MoneyView;
-    readonly declaredAmount: string;
-    readonly rateApplied: string | null;
-    readonly rateSource: 'bcv' | 'parallel' | 'manual';
-    readonly rateSourceLabel: string;
-    readonly method: string;
-    readonly appliedTo: readonly number[];
-    readonly downPayment: string | null;
-    readonly unallocated: string | null;
-    readonly registeredByBusiness: boolean;
-    readonly note: string | null;
-}
+export type { PaymentRow, PaymentVoid } from '@/types/payment-row';
 
 export interface ApprovalPreviewView extends RateChecks {
     readonly amount: string;
