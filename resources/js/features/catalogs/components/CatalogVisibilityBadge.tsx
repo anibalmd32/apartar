@@ -3,7 +3,7 @@ import { type CatalogVisibility } from '@/types/catalog';
 
 const LABELS: Record<CatalogVisibility, string> = {
     draft: 'Borrador',
-    listed: 'En tu vitrina',
+    listed: 'En tu tienda',
     unlisted: 'Solo por enlace',
     expired: 'Caducado',
 };

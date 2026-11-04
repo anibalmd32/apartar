@@ -71,7 +71,7 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
                 />
 
                 <TextField
-                    label="Enlace de tu vitrina"
+                    label="Enlace de tu tienda"
                     prefix="apartar.app/"
                     value={data.slug}
                     onChange={(event) => setData('slug', event.target.value)}
@@ -115,7 +115,7 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
                     value={data.tagline}
                     onChange={(event) => setData('tagline', event.target.value)}
                     error={errors.tagline}
-                    hint="Una línea bajo tu nombre en la vitrina y el catálogo. Ej.: «Bolsos y calzado · Caracas»."
+                    hint="Una línea bajo tu nombre en la tienda y el catálogo. Ej.: «Bolsos y calzado · Caracas»."
                     maxLength={80}
                 />
                 <TextField
@@ -123,7 +123,7 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
                     value={data.address}
                     onChange={(event) => setData('address', event.target.value)}
                     error={errors.address}
-                    hint="Opcional. Aparece en tu vitrina."
+                    hint="Opcional. Aparece en tu tienda."
                     maxLength={160}
                 />
             </div>
@@ -132,7 +132,7 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
                 value={data.description}
                 onChange={(event) => setData('description', event.target.value)}
                 error={errors.description}
-                hint={`${data.description.length} / 300 caracteres. Lo que cuentas de ti en tu vitrina.`}
+                hint={`${data.description.length} / 300 caracteres. Lo que cuentas de ti en tu tienda.`}
                 maxLength={300}
             />
 
@@ -163,11 +163,11 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
             />
 
             <CheckboxField
-                label="Mostrar mi vitrina pública"
+                label="Mostrar mi tienda pública"
                 checked={data.storefront_enabled}
                 onChange={(event) => setData('storefront_enabled', event.target.checked)}
                 error={errors.storefront_enabled}
-                hint="Con la vitrina encendida, cualquiera que abra tu enlace ve tus catálogos publicados."
+                hint="Con la tienda encendida, cualquiera que abra tu enlace ve tus catálogos publicados."
             />
 
             <FormActionBar sticky={false} className={savesFromBar ? 'max-lg:hidden' : undefined}>

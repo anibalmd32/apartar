@@ -51,8 +51,8 @@ export function ShareLinkField({ url, name, visibility }: ShareLinkFieldProps) {
 
             <p className="text-ink-2 text-xs">
                 {visibility === 'listed'
-                    ? 'Aparece en tu vitrina y cualquiera con el enlace puede verlo.'
-                    : 'Cualquiera con el enlace puede verlo, aunque no aparezca en tu vitrina.'}
+                    ? 'Aparece en tu tienda y cualquiera con el enlace puede verlo.'
+                    : 'Cualquiera con el enlace puede verlo, aunque no aparezca en tu tienda.'}
             </p>
 
             <figure className="border-line bg-base-100 flex flex-col gap-1 rounded-lg border p-3">

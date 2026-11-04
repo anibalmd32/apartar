@@ -179,9 +179,9 @@ final class CatalogController extends Controller
     private function publishedMessage(Catalog $catalog): string
     {
         return $catalog->visibility() === CatalogVisibility::Listed
-            ? 'Catálogo publicado y visible en tu vitrina. Cualquiera con el enlace puede verlo.'
-            : 'Catálogo publicado fuera de tu vitrina: cualquiera con el enlace puede verlo, aunque no aparezca en '
-                .'tu vitrina.';
+            ? 'Catálogo publicado y visible en tu tienda. Cualquiera con el enlace puede verlo.'
+            : 'Catálogo publicado fuera de tu tienda: cualquiera con el enlace puede verlo, aunque no aparezca en '
+                .'tu tienda.';
     }
 
     /**

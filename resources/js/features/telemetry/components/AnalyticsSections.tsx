@@ -28,7 +28,7 @@ export function FunnelCard({ funnel }: { funnel: NonNullable<Analytics['funnel']
     const top = funnel[0]?.count ?? 0;
 
     return (
-        <SectionCard title="Embudo de conversión" subtitle="De la visita al apartado" aria-label="Embudo">
+        <SectionCard title="De la visita al apartado" subtitle="Cuántos llegan a cada paso" aria-label="De la visita al apartado">
             {funnel.length === 0 ? (
                 <p className="text-ink-3 text-sm">Sin datos.</p>
             ) : (

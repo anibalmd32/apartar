@@ -67,7 +67,7 @@ export default function SettingsIndex({ settings, definitions, identity, brand, 
 
                     <SectionCard
                         title="Tasa de cambio"
-                        subtitle="Con qué tasa se proyectan tus precios en bolívares. La elección es tuya; la tasa la ingesta la plataforma."
+                        subtitle="Con qué tasa se proyectan tus precios en bolívares. La elección es tuya; Apartar trae la tasa publicada cada día."
                     >
                         <div id="tasa" className="-mt-20 pt-20" />
                         <ExchangeRateForm

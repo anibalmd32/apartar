@@ -76,12 +76,12 @@ export function CatalogPublishPanel({ catalog, blockers }: CatalogPublishPanelPr
 
                 <form className="flex flex-col gap-3" onSubmit={publish} noValidate>
                     <CheckboxField
-                        label="Mostrarlo en mi vitrina"
+                        label="Mostrarlo en mi tienda"
                         name="is_listed"
                         checked={form.data.is_listed}
                         onChange={(event) => form.setData('is_listed', event.target.checked)}
                         error={form.errors.is_listed}
-                        hint="Sin esto sigue accesible: cualquiera con el enlace puede verlo, aunque no aparezca en tu vitrina."
+                        hint="Sin esto sigue accesible: cualquiera con el enlace puede verlo, aunque no aparezca en tu tienda."
                     />
 
                     <DateField

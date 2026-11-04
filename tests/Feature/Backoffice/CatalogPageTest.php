@@ -175,8 +175,8 @@ final class CatalogPageTest extends TestCase
         $response->assertSessionHasNoErrors();
         $response->assertSessionHas(
             'status',
-            'Catálogo publicado fuera de tu vitrina: cualquiera con el enlace puede verlo, aunque no aparezca en tu '
-            .'vitrina.',
+            'Catálogo publicado fuera de tu tienda: cualquiera con el enlace puede verlo, aunque no aparezca en tu '
+            .'tienda.',
         );
 
         $this->assertSame(CatalogVisibility::Unlisted, $catalog->refresh()->visibility());

@@ -52,7 +52,7 @@ function props(full: boolean): AnalyticsPageProps {
 it('con la analítica completa enseña el embudo 340 → 180 → 42 → 12, con su conversión', () => {
     render(<AnalyticsIndex {...props(true)} />);
 
-    const steps = within(screen.getByRole('region', { name: 'Embudo' })).getAllByRole('listitem');
+    const steps = within(screen.getByRole('region', { name: 'De la visita al apartado' })).getAllByRole('listitem');
     expect(steps.map((item) => item.lastElementChild?.textContent)).toEqual([
         'Vieron un catálogo340 100 %',
         'Abrieron un producto180 53 %',
@@ -75,7 +75,7 @@ it('en Free, los tres conteos y la propuesta de subir de plan', () => {
     const numbers = within(screen.getByRole('region', { name: 'Cifras' }));
     expect(numbers.getByText('340')).toBeInTheDocument();
     expect(numbers.getByText('Sube de plan')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Embudo' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'De la visita al apartado' })).toBeNull();
 });
 
 it('marca el período elegido', () => {
@@ -118,7 +118,7 @@ it('sin visitas ni apartados enseña un solo estado vacío en vez de cifras en c
 
     expect(screen.getByText('Sin visitas en los últimos 30 días')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Cifras' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Embudo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'De la visita al apartado' })).not.toBeInTheDocument();
 });
 
 it('los meses van del más reciente al más antiguo, con la misma abreviatura y sin filas en cero', () => {
@@ -160,7 +160,7 @@ it('si un paso tiene más que el anterior no dice 0 % sino que lo explica', () =
         />,
     );
 
-    const funnel = screen.getByRole('region', { name: 'Embudo' });
+    const funnel = screen.getByRole('region', { name: 'De la visita al apartado' });
     expect(within(funnel).getByText(/Más que el paso anterior/)).toBeInTheDocument();
     expect(within(funnel).getAllByText(/del paso anterior/)).toHaveLength(2);
     expect(within(funnel).queryByText(/267 %/)).toBeNull();

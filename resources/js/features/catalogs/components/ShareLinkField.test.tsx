@@ -11,16 +11,16 @@ describe('ShareLinkField', () => {
         expect(screen.getByLabelText('Enlace del catálogo')).toHaveValue(URL);
     });
 
-    it('explica un catálogo fuera de la vitrina', () => {
+    it('explica un catálogo fuera de la tienda', () => {
         render(<ShareLinkField url={URL} name="Ofertas de septiembre" visibility="unlisted" />);
 
-        expect(screen.getByText('Cualquiera con el enlace puede verlo, aunque no aparezca en tu vitrina.')).toBeInTheDocument();
+        expect(screen.getByText('Cualquiera con el enlace puede verlo, aunque no aparezca en tu tienda.')).toBeInTheDocument();
     });
 
-    it('dice que uno en la vitrina además aparece en ella', () => {
+    it('dice que uno en la tienda además aparece en ella', () => {
         render(<ShareLinkField url={URL} name="Ofertas de septiembre" visibility="listed" />);
 
-        expect(screen.getByText('Aparece en tu vitrina y cualquiera con el enlace puede verlo.')).toBeInTheDocument();
+        expect(screen.getByText('Aparece en tu tienda y cualquiera con el enlace puede verlo.')).toBeInTheDocument();
     });
 
     it('copia la URL y lo confirma', async () => {
