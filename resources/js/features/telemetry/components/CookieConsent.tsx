@@ -13,6 +13,16 @@ const PURPOSE: Record<ConsentSurface, string> = {
 
 const BOTTOM_GAP = 12;
 
+const FRAME: Record<ConsentSurface, string> = {
+    catalog: 'bg-base-100 border-line shadow-pop rounded-box border',
+    site: 'pizarra bg-pz-board rounded-md shadow-[0_14px_32px_-12px_rgb(0_0_0/0.35),inset_0_0_0_2px_var(--pz-ink)]',
+};
+
+const ACTION: Record<ConsentSurface, string> = {
+    catalog: '',
+    site: 'pz-btn pz-btn-line min-h-11 px-3 text-[0.9375rem]',
+};
+
 function useReservedHeight(active: boolean) {
     const ref = useRef<HTMLElement>(null);
 
@@ -52,26 +62,44 @@ export function CookieConsent({ surface = 'catalog' }: { surface?: ConsentSurfac
         <section
             ref={ref}
             aria-label="Aviso de cookies"
-            className="bg-base-100 border-line shadow-pop rounded-box fixed inset-x-3 bottom-[calc(var(--overlay-bottom)+0.75rem)] z-40 mx-auto flex max-w-3xl flex-col gap-3 border p-3 sm:flex-row sm:items-center sm:gap-4 sm:pl-4"
+            className={cn(
+                FRAME[surface],
+                'fixed inset-x-3 bottom-[calc(var(--overlay-bottom)+0.75rem)] z-40 mx-auto flex max-w-3xl flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4 sm:pl-4',
+            )}
         >
-            <p className="text-ink-2 min-w-0 flex-1 text-sm leading-snug">
+            <p className={cn('min-w-0 flex-1 text-sm leading-snug', surface === 'site' ? 'text-pz-ink-2' : 'text-ink-2')}>
                 {PURPOSE[surface]}{' '}
                 <a
                     href="/privacidad"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="link link-hover text-base-content font-semibold whitespace-nowrap"
+                    className={cn(
+                        'font-semibold whitespace-nowrap',
+                        surface === 'site' ? 'text-pz-ink underline' : 'link link-hover text-base-content',
+                    )}
                 >
                     Más información
                 </a>
             </p>
             <div className="grid shrink-0 grid-cols-2 gap-2">
-                <Button variant="secondary" className="max-lg:h-11" onClick={() => choose('essential')}>
-                    Solo lo esencial
-                </Button>
-                <Button variant="secondary" className="max-lg:h-11" onClick={() => choose('all')}>
-                    Aceptar todo
-                </Button>
+                {surface === 'site' ? (
+                    <button type="button" className={ACTION.site} onClick={() => choose('essential')}>
+                        Solo lo esencial
+                    </button>
+                ) : (
+                    <Button variant="secondary" className="max-lg:h-11" onClick={() => choose('essential')}>
+                        Solo lo esencial
+                    </Button>
+                )}
+                {surface === 'site' ? (
+                    <button type="button" className={ACTION.site} onClick={() => choose('all')}>
+                        Aceptar todo
+                    </button>
+                ) : (
+                    <Button variant="secondary" className="max-lg:h-11" onClick={() => choose('all')}>
+                        Aceptar todo
+                    </Button>
+                )}
             </div>
         </section>
     );

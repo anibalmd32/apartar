@@ -3,12 +3,12 @@ import { Link } from '@inertiajs/react';
 
 export const SIGNUP_LABEL = 'Empezar gratis';
 
-export const CTA_SHAPE = 'btn h-12 rounded-full px-6 text-[15px] font-bold';
+export const CTA_SHAPE = 'pz-btn';
 
 const TONES = {
-    primary: 'btn-primary',
-    secondary: '',
-    inverse: 'border-0 bg-white text-[#4338ca] hover:bg-white/90',
+    primary: 'pz-btn-blue',
+    secondary: 'pz-btn-line',
+    inverse: 'pz-btn-paper',
 } as const;
 
 interface SignupCtaProps {

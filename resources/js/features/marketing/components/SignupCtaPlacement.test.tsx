@@ -35,14 +35,14 @@ function signupLinks(): HTMLAnchorElement[] {
     return Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="/register"]'));
 }
 
-it('la cabecera del sitio invita a registrarse con la misma píldora de 48px que el resto', () => {
+it('la cabecera del sitio invita a registrarse con el mismo botón azul que el resto, también en el celular', () => {
     render(<SiteHeader />);
 
     const [cta] = signupLinks();
 
     expect(cta).toHaveTextContent(/^Empezar gratis$/);
-    expect(cta).toHaveClass('h-12', 'rounded-full', 'lg:inline-flex');
-    expect(cta).not.toHaveClass('h-10');
+    expect(cta).toHaveClass('pz-btn', 'pz-btn-blue');
+    expect(cta).not.toHaveClass('hidden');
 });
 
 it('el acceso al negocio invita a registrarse con «Empezar gratis»', () => {
@@ -60,7 +60,7 @@ it('«Entrar» en la cabecera del sitio mide 44px en el celular', () => {
     const login = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="/login"]'));
 
     expect(login).toHaveLength(1);
-    expect(login[0]).toHaveClass('touch:h-11');
+    expect(login[0]).toHaveClass('touch:min-h-11');
 });
 
 it('«Entra a Mi cuenta» del acceso al negocio es un objetivo de 44px', () => {

@@ -1,15 +1,15 @@
-import { Brand } from '@/components/shell/brand';
+import { BoardBrand } from '@/features/marketing/board/BoardBrand';
 import { CookiePreferencesLink } from '@/features/telemetry/components/CookieConsent';
 import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 import { HOW_IT_WORKS_ANCHOR } from './SiteHeader';
 
-const linkClass = 'text-ink-2 hover:text-base-content touch:flex touch:min-h-11 touch:items-center text-[13px] text-left cursor-pointer';
+const linkClass = 'text-pz-ink touch:min-h-11 flex cursor-pointer items-center text-left text-[0.9375rem] font-medium hover:underline';
 
 function Column({ title, children }: { title: string; children: ReactNode }) {
     return (
-        <div className="touch:gap-0 flex flex-col gap-2.5 lg:w-[180px]">
-            <h2 className="text-[13px] font-bold">{title}</h2>
+        <div className="flex flex-col gap-1.5">
+            <h2 className="text-pz-ink-2 text-[0.8125rem] font-bold tracking-[0.06em] uppercase">{title}</h2>
             {children}
         </div>
     );
@@ -17,43 +17,41 @@ function Column({ title, children }: { title: string; children: ReactNode }) {
 
 export function SiteFooter() {
     return (
-        <footer className="border-line bg-base-100 border-t">
-            <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-4 pt-10 pb-12 lg:flex-row lg:gap-10 lg:px-20 lg:pt-12 lg:pb-14">
-                <div className="flex flex-col gap-2.5 lg:flex-1">
-                    <Brand />
-                    <p className="text-ink-3 max-w-[280px] text-[13px]">Catálogos con apartado y cuotas para negocios en Venezuela.</p>
-                    <p className="text-ink-3 text-xs">© {new Date().getFullYear()} Apartar</p>
+        <footer>
+            <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-x-6 gap-y-8 px-4 pt-9 pb-12 sm:px-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:px-12 lg:pt-11 lg:pb-14">
+                <div className="col-span-2 flex flex-col gap-2 lg:col-span-1">
+                    <BoardBrand />
+                    <p className="text-pz-ink-2 max-w-[34ch] text-[0.9375rem]">Catálogos con apartado y cuotas para negocios en Venezuela.</p>
+                    <p className="text-pz-ink-3 text-[0.8125rem]">© {new Date().getFullYear()} Apartar</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:contents">
-                    <Column title="Producto">
-                        <Link href={`${route('home')}#${HOW_IT_WORKS_ANCHOR}`} className={linkClass}>
-                            Cómo funciona
-                        </Link>
-                        <Link href={route('pricing')} className={linkClass}>
-                            Precios
-                        </Link>
-                        <Link href={route('login')} className={linkClass}>
-                            Entrar
-                        </Link>
-                    </Column>
+                <Column title="Producto">
+                    <Link href={`${route('home')}#${HOW_IT_WORKS_ANCHOR}`} className={linkClass}>
+                        Cómo funciona
+                    </Link>
+                    <Link href={route('pricing')} className={linkClass}>
+                        Precios
+                    </Link>
+                    <Link href={route('login')} className={linkClass}>
+                        Entrar a mi negocio
+                    </Link>
+                </Column>
 
-                    <Column title="Clientes">
-                        <Link href={route('portal.access')} className={linkClass}>
-                            Mi cuenta
-                        </Link>
-                    </Column>
+                <Column title="¿Apartaste algo?">
+                    <Link href={route('portal.access')} className={linkClass}>
+                        Mi cuenta de cliente
+                    </Link>
+                </Column>
 
-                    <Column title="Legal">
-                        <Link href={route('legal.terms')} className={linkClass}>
-                            Términos
-                        </Link>
-                        <Link href={route('legal.privacy')} className={linkClass}>
-                            Privacidad
-                        </Link>
-                        <CookiePreferencesLink className={linkClass} />
-                    </Column>
-                </div>
+                <Column title="Legal">
+                    <Link href={route('legal.terms')} className={linkClass}>
+                        Términos
+                    </Link>
+                    <Link href={route('legal.privacy')} className={linkClass}>
+                        Privacidad
+                    </Link>
+                    <CookiePreferencesLink className={linkClass} />
+                </Column>
             </div>
         </footer>
     );

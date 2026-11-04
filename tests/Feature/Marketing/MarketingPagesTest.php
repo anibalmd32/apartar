@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Marketing;
 
 use App\Domain\Money\CurrencyDisplay;
+use App\Http\Controllers\Marketing\HomeController;
 use App\Http\Middleware\AssignVisitorId;
+use App\Models\ExchangeRate;
+use Carbon\CarbonImmutable;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\ReusesMigratedDatabase;
@@ -19,6 +22,36 @@ final class MarketingPagesTest extends TestCase
     {
         $this->get('/')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('marketing/Home'));
         $this->assertGuest();
+    }
+
+    public function test_the_home_page_shows_the_latest_bcv_rate_of_each_day_newest_first(): void
+    {
+        ExchangeRate::query()->delete();
+        ExchangeRate::factory()->create(['rate' => '880.00000000', 'published_at' => CarbonImmutable::parse('2026-11-02 00:00:00')]);
+        ExchangeRate::factory()->create(['rate' => '889.57540000', 'published_at' => CarbonImmutable::parse('2026-11-03 00:00:00')]);
+        ExchangeRate::factory()->create(['rate' => '891.10000000', 'published_at' => CarbonImmutable::parse('2026-11-04 00:00:00')]);
+        ExchangeRate::factory()->create(['rate' => '891.10000000', 'published_at' => CarbonImmutable::parse('2026-11-04 00:00:00')]);
+        ExchangeRate::factory()->parallel()->create(['rate' => '1000.26372600', 'published_at' => CarbonImmutable::parse('2026-11-04 17:00:00')]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('rates', [
+                ['date' => '2026-11-04', 'rate' => '891.10000000'],
+                ['date' => '2026-11-03', 'rate' => '889.57540000'],
+                ['date' => '2026-11-02', 'rate' => '880.00000000'],
+            ]));
+    }
+
+    public function test_the_home_page_shows_at_most_six_days_of_rates(): void
+    {
+        ExchangeRate::query()->delete();
+
+        foreach (range(1, 9) as $day) {
+            ExchangeRate::factory()->create(['published_at' => CarbonImmutable::parse("2026-10-{$day} 00:00:00")]);
+        }
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('rates', HomeController::RATE_DAYS)
+            ->where('rates.0.date', '2026-10-09'));
     }
 
     public function test_start_for_free_leads_to_the_registration(): void

@@ -39,7 +39,7 @@ it('cada plan de pago tiene su botón para empezar con ese plan', () => {
     const cta = screen.getByRole('link', { name: 'Empezar con Pro' });
 
     expect(cta).toHaveAttribute('href', '/register?plan=pro');
-    expect(cta).toHaveClass('h-12', 'rounded-full');
+    expect(cta).toHaveClass('pz-btn');
 });
 
 it('el plan gratis dice «Gratis» una sola vez y muestra el precio en cifra', () => {

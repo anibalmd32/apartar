@@ -1,109 +1,83 @@
 import { Icon } from '@/components/ui/icon';
-import { IconChip } from '@/components/ui/icon-chip';
-import { HeroVisual } from '@/features/marketing/components/HeroVisual';
+import { caracasToday, type DailyRate } from '@/features/marketing/board/board-math';
+import { BoardSteps } from '@/features/marketing/board/BoardSteps';
+import { BothSides } from '@/features/marketing/board/BothSides';
+import { LayawaySumBoard } from '@/features/marketing/board/LayawaySumBoard';
+import { RateHistory } from '@/features/marketing/board/RateHistory';
+import { RateLine } from '@/features/marketing/board/RateLine';
 import { CTA_SHAPE, SignupCta } from '@/features/marketing/components/SignupCta';
-import { HOW_IT_WORKS_ANCHOR } from '@/features/marketing/components/SiteHeader';
 import MarketingLayout from '@/layouts/marketing-layout';
-import { cilCalendarCheck, cilChatBubble, cilCheckCircle, cilLink, cilSwapHorizontal } from '@coreui/icons';
+import { cn } from '@/lib/utils';
+import { cilCheckAlt } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 
-const VALUES = [
-    {
-        icon: cilLink,
-        title: 'Un enlace por campaña',
-        text: 'Arma catálogos por temporada u oferta y compártelos por WhatsApp, Instagram o donde vendas.',
-    },
-    {
-        icon: cilCalendarCheck,
-        title: 'Apartado en cuotas',
-        text: 'Tu cliente paga la inicial y el resto en cuotas, y ve su plan de pagos desde el primer momento. Sin crear cuenta.',
-    },
-    {
-        icon: cilSwapHorizontal,
-        title: 'USD y Bs. a la tasa del día',
-        text: 'Tus precios en dólares, con su equivalente en bolívares según BCV, paralelo o tu propia tasa.',
-    },
-];
-
-const STEPS = [
-    { title: 'Carga tus productos', text: 'Fotos, precio, inicial y número de cuotas.' },
-    { title: 'Comparte tu catálogo', text: 'Un enlace bonito que se ve bien en WhatsApp.' },
-    { title: 'Aprueba los pagos', text: 'Tus clientes suben el comprobante; tú lo apruebas en un toque.' },
-];
+interface HomeProps {
+    rates?: DailyRate[];
+}
 
 const PERKS = ['Sin tarjeta', 'Plan gratis para empezar', 'Listo en minutos'];
 
-export default function Home() {
+function Perks({ className }: { className?: string }) {
+    return (
+        <ul className={cn('font-hand flex flex-col gap-1.5 text-xl sm:flex-row sm:flex-wrap sm:gap-x-6', className)}>
+            {PERKS.map((perk) => (
+                <li key={perk} className="flex items-center gap-2">
+                    <Icon icon={cilCheckAlt} size={20} className="text-pz-green" />
+                    {perk}
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+function Divider() {
+    return <hr aria-hidden="true" className="border-pz-rule-soft mx-auto max-w-[1180px] border-t-2" />;
+}
+
+export default function Home({ rates = [] }: HomeProps) {
+    const today = caracasToday();
+    const rate = rates[0]?.rate ?? null;
+
     return (
         <MarketingLayout title="Catálogos con apartado">
-            <section className="mx-auto flex max-w-[1440px] flex-col gap-8 px-4 pt-6 pb-10 lg:flex-row lg:items-center lg:gap-16 lg:px-20 lg:pt-[72px] lg:pb-[88px]">
-                <div className="flex flex-col items-start gap-[22px] lg:flex-1">
-                    <span className="bg-primary-soft text-primary-ink inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-xs font-semibold">
-                        <Icon icon={cilChatBubble} size={12} />
-                        Hecho para vender por WhatsApp
-                    </span>
-                    <h1 className="tracking-heading max-w-[620px] text-[34px] leading-[1.05] font-extrabold lg:text-[56px]">
-                        Tu catálogo, con apartado y cuotas, en un solo enlace
+            <section className="mx-auto grid max-w-[1440px] gap-12 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[1.3fr_1fr] lg:gap-14 lg:px-12 lg:pt-10 lg:pb-24 xl:gap-20">
+                <div className="flex flex-col items-start">
+                    <RateLine today={today} rates={rates} />
+                    <h1 className="font-vinyl mt-6 text-[clamp(3.25rem,1.6rem+6.4vw,6rem)] text-balance lg:mt-8">
+                        Se aparta con <span className="text-pz-blue">inicial.</span> El resto, en cuotas.
                     </h1>
-                    <p className="text-ink-2 max-w-[560px] text-base leading-[1.55] lg:text-[19px]">
-                        Publica tus productos, comparte el enlace y deja que tus clientes aparten pagando una inicial y el resto en cuotas. Precios en
-                        dólares y bolívares a la tasa del día.
+                    <p className="text-pz-ink-2 mt-6 max-w-[46ch] text-lg leading-relaxed sm:text-xl">
+                        Tu catálogo en un enlace. Tu cliente aparta, ve cuánto le falta y te paga a ti, en dólares o bolívares a la tasa del día.
                     </p>
-                    <div className="mt-2.5 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                        <SignupCta />
-                        <Link href={route('pricing')} className={CTA_SHAPE}>
+                    <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                        <SignupCta className="min-h-14 px-7 text-lg" />
+                        <Link href={route('pricing')} className={cn(CTA_SHAPE, 'pz-btn-line min-h-14 px-7 text-lg')}>
                             Ver planes y precios
                         </Link>
                     </div>
-                    <ul className="text-ink-2 flex flex-col gap-2.5 text-[13px] font-medium lg:flex-row lg:flex-wrap lg:gap-x-4">
-                        {PERKS.map((perk) => (
-                            <li key={perk} className="flex items-center gap-1.5">
-                                <Icon icon={cilCheckCircle} className="text-success" />
-                                {perk}
-                            </li>
-                        ))}
-                    </ul>
+                    <Perks className="mt-6" />
                 </div>
 
-                <HeroVisual className="lg:w-[520px] lg:shrink-0" />
+                <LayawaySumBoard today={today} rate={rate} className="lg:mt-24" />
             </section>
+
+            <Divider />
+            <BothSides today={today} rate={rate} />
+            <Divider />
+            <BoardSteps />
+            <Divider />
+            <RateHistory rates={rates} />
+            <Divider />
 
             <section
-                aria-label="Lo que resuelve"
-                className="mx-auto grid max-w-[1440px] grid-cols-1 gap-4 px-4 pb-10 lg:grid-cols-3 lg:gap-5 lg:px-20 lg:pt-6 lg:pb-20"
+                aria-labelledby="empieza"
+                className="mx-auto flex max-w-[1280px] flex-col items-start gap-5 px-4 py-20 sm:px-6 lg:items-center lg:px-12 lg:py-28 lg:text-center"
             >
-                {VALUES.map((value) => (
-                    <article key={value.title} className="border-line bg-base-100 shadow-card flex flex-col gap-3 rounded-2xl border p-6">
-                        <IconChip icon={value.icon} size={44} className="rounded-[13px]" />
-                        <h2 className="text-lg font-bold">{value.title}</h2>
-                        <p className="text-ink-2 text-sm leading-[1.55]">{value.text}</p>
-                    </article>
-                ))}
-            </section>
-
-            <section id={HOW_IT_WORKS_ANCHOR} className="bg-base-100 scroll-mt-4 px-4 py-14 lg:px-20 lg:py-20">
-                <div className="mx-auto flex max-w-[1128px] flex-col gap-7 lg:items-center">
-                    <h2 className="tracking-heading text-[26px] font-extrabold lg:text-[38px]">Así de simple</h2>
-                    <ol className="grid w-full grid-cols-1 gap-7 lg:grid-cols-3 lg:gap-6">
-                        {STEPS.map((step, index) => (
-                            <li key={step.title} className="flex flex-col items-start gap-2.5">
-                                <span className="bg-primary text-primary-content flex size-10 items-center justify-center rounded-full text-base font-extrabold">
-                                    {index + 1}
-                                </span>
-                                <h3 className="text-lg font-bold">{step.title}</h3>
-                                <p className="text-ink-2 max-w-[320px] text-sm">{step.text}</p>
-                            </li>
-                        ))}
-                    </ol>
-                </div>
-            </section>
-
-            <section className="px-4 py-10 lg:px-20 lg:py-20">
-                <div className="bg-primary text-primary-content mx-auto flex max-w-[1280px] flex-col items-center gap-4 rounded-[28px] px-6 py-12 text-center lg:px-16 lg:py-14">
-                    <h2 className="tracking-heading text-[28px] leading-tight font-extrabold lg:text-[40px]">Empieza a vender en cuotas hoy</h2>
-                    <p className="text-base opacity-85">Sin tarjeta y sin período de prueba.</p>
-                    <SignupCta tone="inverse" className="mt-2" />
-                </div>
+                <h2 id="empieza" className="font-vinyl max-w-[16ch] text-[3rem] sm:text-[4.5rem] lg:text-[5.5rem]">
+                    Empieza a vender en cuotas hoy
+                </h2>
+                <p className="text-pz-ink-2 text-lg sm:text-xl">Sin tarjeta y sin período de prueba.</p>
+                <SignupCta className="mt-3 min-h-14 px-8 text-lg" />
             </section>
         </MarketingLayout>
     );

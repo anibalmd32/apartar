@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './pizarra.css';
 
 @plugin 'tailwindcss-animate';
 @plugin 'daisyui' {
