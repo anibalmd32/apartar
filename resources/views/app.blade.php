@@ -10,7 +10,7 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/site.webmanifest">
-        <meta name="theme-color" content="#5046e5">
+        <meta name="theme-color" content="#1c45c4">
 
         @isset($meta)
             <meta name="description" content="{{ $meta['description'] }}">

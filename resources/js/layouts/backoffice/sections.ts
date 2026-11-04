@@ -25,13 +25,13 @@ export const RECEIPTS_HREF = bo('/comprobantes');
 export const CHAT_HREF = bo('/chat');
 
 export const SECTIONS: NavSection[] = [
-    { label: 'Panel', href: bo(''), capability: ANY_CAPABILITY, icon: cilSpeedometer },
+    { label: 'Hoy', href: bo(''), capability: ANY_CAPABILITY, icon: cilSpeedometer },
     { label: 'Comprobantes', href: RECEIPTS_HREF, capability: 'receipts', icon: cilDescription },
     { label: 'Cobranza', href: bo('/cobranza'), capability: 'collections', icon: cilWallet },
     { label: 'Clientes', href: bo('/clientes'), capability: 'customers', icon: cilPeople },
     { label: 'Chat', href: CHAT_HREF, capability: 'chat', icon: cilChatBubble },
-    { label: 'Productos', href: bo('/productos'), capability: 'products', icon: cilBasket, group: 'Catálogo' },
-    { label: 'Catálogos', href: bo('/catalogos'), capability: 'products', icon: cilLibrary, group: 'Catálogo' },
+    { label: 'Productos', href: bo('/productos'), capability: 'products', icon: cilBasket },
+    { label: 'Catálogos', href: bo('/catalogos'), capability: 'products', icon: cilLibrary },
     { label: 'Categorías', href: bo('/categorias'), capability: 'products', icon: cilFolder, group: 'Catálogo' },
     { label: 'Etiquetas', href: bo('/etiquetas'), capability: 'products', icon: cilTag, group: 'Catálogo' },
     { label: 'Suscriptores', href: bo('/suscriptores'), capability: 'customers', icon: cilUserFollow, group: 'Crecimiento' },
@@ -46,7 +46,7 @@ export const SECTIONS: NavSection[] = [
 ];
 
 export const TABS: NavSection[] = [
-    { label: 'Inicio', href: bo(''), capability: ANY_CAPABILITY, icon: cilSpeedometer },
+    { label: 'Hoy', href: bo(''), capability: ANY_CAPABILITY, icon: cilSpeedometer },
     { label: 'Comprobantes', href: RECEIPTS_HREF, capability: 'receipts', icon: cilDescription },
     { label: 'Cobranza', href: bo('/cobranza'), capability: 'collections', icon: cilWallet },
     { label: 'Clientes', href: bo('/clientes'), capability: 'customers', icon: cilPeople },

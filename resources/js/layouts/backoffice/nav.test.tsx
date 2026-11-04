@@ -9,7 +9,7 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 const SECTIONS: NavSection[] = [
-    { label: 'Panel', href: '/backoffice', capability: 'any' },
+    { label: 'Hoy', href: '/backoffice', capability: 'any' },
     { label: 'Comprobantes', href: '/backoffice/comprobantes', capability: 'receipts' },
 ];
 

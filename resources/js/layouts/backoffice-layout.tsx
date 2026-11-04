@@ -1,5 +1,4 @@
 import { AttentionBell } from '@/components/shell/attention-bell';
-import { Brand } from '@/components/shell/brand';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { GlobalSearch } from '@/components/shell/global-search';
 import { OrganizationSwitcher } from '@/components/shell/organization-switcher';
@@ -10,6 +9,7 @@ import { DOCKED_BAR_PADDING } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
 import { PAGE_ACTIONS_CLASS, PAGE_HEADER_CLASS, PAGE_TITLE_CLASS } from '@/components/ui/page-actions';
 import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
+import { BoardBrand } from '@/features/marketing/board/BoardBrand';
 import { PastDueBanner } from '@/features/plan/components/PastDueBanner';
 import { UpgradePrompt } from '@/features/plan/components/UpgradePrompt';
 import { usePlanLimits } from '@/features/plan/hooks/usePlanLimits';
@@ -118,9 +118,9 @@ function BackofficeFrame({ title, description, actions, back, badge, immersive =
         <div className="bg-base-200 min-h-screen">
             <Head title={title} />
 
-            <aside className="border-line bg-base-100 fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col gap-5 overflow-y-auto border-r px-4 py-5 lg:flex">
-                <Link href={bo('')} className="self-start">
-                    <Brand />
+            <aside className="border-line bg-base-200 fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col gap-5 overflow-y-auto border-r-2 px-4 py-6 lg:flex">
+                <Link href={bo('')} className="touch:min-h-11 self-start px-1" aria-label="Apartar, hoy">
+                    <BoardBrand />
                 </Link>
 
                 {organizationCard}
@@ -130,8 +130,8 @@ function BackofficeFrame({ title, description, actions, back, badge, immersive =
                 <PlanUsage className="mt-auto" />
             </aside>
 
-            <div className="flex min-h-screen flex-col lg:pl-[260px]">
-                <header className="border-line bg-base-100 sticky top-0 z-20 hidden h-[68px] items-center gap-4 border-b px-8 lg:flex">
+            <div className="flex min-h-screen flex-col lg:pl-[248px]">
+                <header className="border-line bg-base-200 sticky top-0 z-20 hidden h-[68px] items-center gap-4 border-b-2 px-8 lg:flex">
                     <GlobalSearch />
                     <div className="flex-1" />
                     <RatePill />
@@ -196,9 +196,9 @@ function BackofficeFrame({ title, description, actions, back, badge, immersive =
 
             <Dialog open={menuOpen} onClose={() => setMenuOpen(false)} className="relative z-50 lg:hidden">
                 <div className="bg-neutral/40 fixed inset-0" aria-hidden="true" />
-                <DialogPanel className="bg-base-100 fixed inset-y-0 right-0 flex w-[min(320px,88vw)] flex-col gap-5 overflow-y-auto px-4 py-5">
+                <DialogPanel className="bg-base-200 fixed inset-y-0 right-0 flex w-[min(320px,88vw)] flex-col gap-5 overflow-y-auto px-4 py-5">
                     <div className="flex items-center justify-between">
-                        <Brand />
+                        <BoardBrand />
                         <button
                             type="button"
                             className="btn btn-ghost btn-sm btn-square"

@@ -12,6 +12,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\User;
+use App\Queries\CollectTodayQuery;
 use App\Queries\DashboardMetricsQuery;
 use App\Queries\OldestPendingReceiptsQuery;
 use App\Queries\SuspensionNoticeQuery;
@@ -30,6 +31,7 @@ final class DashboardController extends Controller
         private readonly DashboardMetricsQuery $metrics,
         private readonly OldestPendingReceiptsQuery $oldestReceipts,
         private readonly SuspensionNoticeQuery $suspension,
+        private readonly CollectTodayQuery $collectToday,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -47,6 +49,9 @@ final class DashboardController extends Controller
             ],
             'pendingReceipts' => $user instanceof User && $user->role->can(OrganizationCapability::Receipts)
                 ? $this->oldestReceipts->get(CarbonImmutable::now())
+                : null,
+            'collectToday' => $user instanceof User && $user->role->can(OrganizationCapability::Collections)
+                ? $this->collectToday->get()
                 : null,
             'longOverdueDays' => app(Settings::class)->longOverdueDays(),
             'suspension' => $this->suspension->for($this->context->organization()),

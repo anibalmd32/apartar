@@ -43,6 +43,24 @@ export interface DashboardPendingReceipt {
     readonly file: { readonly url: string; readonly kind: 'image' | 'pdf' };
 }
 
+export interface DashboardCollectRow {
+    readonly customerId: number;
+    readonly name: string;
+    readonly phone: string | null;
+    readonly url: string;
+    readonly dueCents: number;
+    readonly daysLate: number;
+    readonly installments: number;
+}
+
+export interface DashboardCollectToday {
+    readonly totalCents: number;
+    readonly outstandingCents: number;
+    readonly customers: number;
+    readonly late: number;
+    readonly rows: readonly DashboardCollectRow[];
+}
+
 export interface DashboardSuspension {
     readonly suspendedAt: string | null;
     readonly graceEndsAt: string | null;
@@ -83,6 +101,7 @@ export interface DashboardProps {
     readonly suspension?: DashboardSuspension | null;
     readonly longOverdueDays?: number;
     readonly pendingReceipts?: readonly DashboardPendingReceipt[] | null;
+    readonly collectToday?: DashboardCollectToday | null;
     readonly links: {
         readonly receipts: string;
         readonly customersOverdue: string;

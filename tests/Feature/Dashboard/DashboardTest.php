@@ -276,6 +276,31 @@ final class DashboardTest extends TestCase
             ->where('pendingReceipts.0.reviewUrl', route('receipts.show', $oldest)));
     }
 
+    public function test_collect_today_groups_what_is_due_or_late_by_customer_with_the_latest_first(): void
+    {
+        $late = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $this->installment($late, 1, '2026-09-25');
+        $this->installment($late, 2, '2026-09-30');
+        $this->installment($late, 3, '2026-10-15');
+        $dueToday = $this->layawayIn($this->organization, LayawayStatus::Active);
+        $this->installment($dueToday, 1, '2026-10-01');
+        $cancelled = $this->layawayIn($this->organization, LayawayStatus::Cancelled);
+        $this->installment($cancelled, 1, '2026-09-10');
+
+        $this->actingAs($this->owner)->get(route('dashboard'))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('collectToday.totalCents', 9_000)
+            ->where('collectToday.outstandingCents', 12_000)
+            ->where('collectToday.customers', 2)
+            ->where('collectToday.late', 1)
+            ->where('collectToday.rows.0.customerId', $late->customer_id)
+            ->where('collectToday.rows.0.dueCents', 6_000)
+            ->where('collectToday.rows.0.daysLate', 6)
+            ->where('collectToday.rows.0.installments', 2)
+            ->where('collectToday.rows.0.phone', '+584141234567')
+            ->where('collectToday.rows.1.customerId', $dueToday->customer_id)
+            ->where('collectToday.rows.1.daysLate', 0));
+    }
+
     public function test_a_suspended_business_sees_how_to_lift_it(): void
     {
         $this->actingAs($this->owner)->get(route('dashboard'))->assertInertia(fn (AssertableInertia $page) => $page->where('suspension', null));

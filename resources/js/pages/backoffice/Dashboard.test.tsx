@@ -1,20 +1,17 @@
 import Dashboard from '@/pages/backoffice/Dashboard';
-import { planState, usage } from '@/test/plan-fixtures';
 import { dashboardProps } from '@/test/t065-fixtures';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { type DashboardCollectToday, type DashboardPendingReceipt } from '@/types/dashboard';
+import { render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
-import { expect, it, vi } from 'vitest';
-
-const put = vi.fn();
+import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('@inertiajs/react', () => ({
-    router: { put: (...args: unknown[]) => put(...args) },
     usePage: () => ({
         url: '/backoffice',
         props: {
             errors: {},
             currency: { display: 'usd_primary', rate: { rate: null } },
-            teamMember: { name: 'Ana Pérez', organization: { name: 'Ferretería Oriente', slug: 'oriente' } },
+            teamMember: { name: 'Ana Pérez', capabilities: ['products'], organization: { name: 'Ferretería Oriente', slug: 'oriente' } },
         },
     }),
     Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
@@ -25,31 +22,102 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 vi.mock('@/layouts/backoffice-layout', () => ({
-    default: ({ children, actions }: { children: ReactNode; actions?: ReactNode }) => (
+    default: ({ children, actions, description }: { children: ReactNode; actions?: ReactNode; description?: ReactNode }) => (
         <main>
-            <header>{actions}</header>
+            <header>
+                {description}
+                {actions}
+            </header>
             {children}
         </main>
     ),
 }));
 
-it('cada tarjeta lleva a su lista filtrada', () => {
-    render(<Dashboard {...dashboardProps()} />);
-
-    expect(screen.getByRole('link', { name: /Comprobantes por revisar\s*6\s*2\s*con más de 48 h/ })).toHaveAttribute(
-        'href',
-        '/backoffice/comprobantes?status=pending_review',
-    );
-    expect(screen.queryByText('Vencen en 7 días')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Clientes en mora\s*3/ })).toHaveAttribute('href', '/backoffice/clientes?overdue=1');
-    expect(screen.getByText('$1.250,00')).toBeInTheDocument();
+beforeEach(() => {
+    vi.stubGlobal('route', (name: string) => (name === 'portal.access' ? 'https://apartar.app/mi-cuenta/acceso' : `/${name}`));
 });
 
-it('una métrica caída es un guion y sin avisos no hay sección', () => {
-    render(<Dashboard {...dashboardProps({ customersOverdue: null })} />);
+const receipt: DashboardPendingReceipt = {
+    id: 7,
+    reviewUrl: '/backoffice/comprobantes/7',
+    customerName: 'José Rivas',
+    layawayCode: 'AP-1',
+    methodLabel: 'Pago móvil',
+    declared: '$20,00',
+    submittedAt: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+    overdue: false,
+    file: { url: '/f', kind: 'image' },
+};
 
-    expect(screen.getByRole('link', { name: /Clientes en mora\s*—/ })).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Avisos' })).not.toBeInTheDocument();
+const collect: DashboardCollectToday = {
+    totalCents: 2_700,
+    outstandingCents: 128_450,
+    customers: 2,
+    late: 1,
+    rows: [
+        { customerId: 1, name: 'Carla Méndez', phone: '0414-1234567', url: '/backoffice/clientes/1', dueCents: 1_500, daysLate: 3, installments: 1 },
+        { customerId: 2, name: 'María Gómez', phone: null, url: '/backoffice/clientes/2', dueCents: 1_200, daysLate: 0, installments: 1 },
+    ],
+};
+
+function column(name: string): HTMLElement {
+    return screen.getByRole('region', { name });
+}
+
+it('el inicio es una pizarra de tres columnas: por revisar, por cobrar hoy y este mes', () => {
+    render(<Dashboard {...dashboardProps()} pendingReceipts={[receipt]} collectToday={collect} />);
+
+    expect(within(column('Por revisar')).getByText('6')).toBeInTheDocument();
+    expect(within(column('Por revisar')).getByText(/2 con más de 48 h/)).toBeInTheDocument();
+    expect(within(column('Por revisar')).getByRole('link', { name: 'Revisar' })).toHaveAttribute('href', '/backoffice/comprobantes/7');
+    expect(within(column('Por cobrar hoy')).getByText('$27,00')).toBeInTheDocument();
+    expect(within(column('Este mes')).getByText('$1.250,00')).toBeInTheDocument();
+    expect(within(column('Este mes')).getByText(/falta \$1\.284,50/)).toBeInTheDocument();
+});
+
+it('cada cliente atrasado dice cuántos días y tiene su recordatorio por WhatsApp ya escrito', () => {
+    render(<Dashboard {...dashboardProps()} pendingReceipts={[]} collectToday={collect} />);
+
+    const collectColumn = column('Por cobrar hoy');
+
+    expect(within(collectColumn).getByText('Atrasada 3 días')).toHaveClass('text-error');
+    expect(within(collectColumn).getByText('Vence hoy')).toBeInTheDocument();
+
+    const whatsapp = within(collectColumn).getByRole('link', { name: 'WhatsApp' });
+
+    expect(whatsapp.getAttribute('href')).toContain('https://wa.me/584141234567?text=');
+    expect(decodeURIComponent(whatsapp.getAttribute('href') ?? '')).toContain('Te escribo de Ferretería Oriente');
+    expect(within(collectColumn).getByRole('link', { name: 'Ver' })).toHaveAttribute('href', '/backoffice/clientes/2');
+});
+
+it('sin pendientes, cada columna lo dice en vez de quedar vacía', () => {
+    render(
+        <Dashboard {...dashboardProps()} pendingReceipts={[]} collectToday={{ totalCents: 0, outstandingCents: 0, customers: 0, late: 0, rows: [] }} />,
+    );
+
+    expect(within(column('Por revisar')).getByText('Nada por revisar.')).toBeInTheDocument();
+    expect(within(column('Por cobrar hoy')).getByText('Todo al día.')).toBeInTheDocument();
+});
+
+it('quien no ve la cobranza no recibe la columna de por cobrar', () => {
+    render(<Dashboard {...dashboardProps()} pendingReceipts={[]} collectToday={null} />);
+
+    expect(screen.queryByRole('region', { name: 'Por cobrar hoy' })).not.toBeInTheDocument();
+    expect(column('Este mes')).toBeInTheDocument();
+});
+
+it('una métrica caída es un guion', () => {
+    render(<Dashboard {...dashboardProps({ pendingReceipts: null, longOverdueLayaways: null })} pendingReceipts={[]} collectToday={collect} />);
+
+    expect(within(column('Por revisar')).getByText('—')).toBeInTheDocument();
+    expect(within(screen.getByRole('link', { name: 'Mora prolongada' }).closest('li')!).getByText('—')).toBeInTheDocument();
+});
+
+it('ya no ofrece organizar tarjetas ni cambiar a dos columnas', () => {
+    render(<Dashboard {...dashboardProps()} pendingReceipts={[]} collectToday={collect} />);
+
+    expect(screen.queryByRole('button', { name: /Organizar|Dos columnas/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Nuevo producto/ })).toHaveAttribute('href', '/backoffice/productos/crear');
 });
 
 it('pinta los avisos con su acción', () => {
@@ -67,37 +135,15 @@ it('pinta los avisos con su acción', () => {
     expect(screen.getByRole('link', { name: 'Añade una' })).toHaveAttribute('href', '/backoffice/cuentas-de-cobro');
 });
 
-it('destaca el consumo del plan al 80 % y dice la edad de la tasa', () => {
+it('escribe a mano el día y la tasa de hoy', () => {
     render(
         <Dashboard
-            {...dashboardProps({
-                plan: planState({
-                    usage: {
-                        users: usage(1, 2),
-                        catalogs: usage(1, 1),
-                        products: usage(24, 30),
-                        active_layaways: usage(11, 15),
-                        storage_mb: usage(10, 500),
-                        payment_accounts: usage(1, 3),
-                    },
-                }),
-                rate: {
-                    rate: 42.5,
-                    source: 'bcv',
-                    sourceLabel: 'BCV',
-                    publishedAt: new Date(Date.now() - 5 * 3_600_000 - 60_000).toISOString(),
-                    isStale: false,
-                },
-            })}
+            {...dashboardProps({ rate: { rate: 893.2227, source: 'bcv', sourceLabel: 'BCV', publishedAt: new Date().toISOString(), isStale: false } })}
         />,
     );
 
-    const item = (text: string) => screen.getAllByRole('listitem').find((li) => li.textContent?.startsWith(text));
-
-    expect(item('productos')).toHaveAttribute('data-near', 'true');
-    expect(item('productos')).toHaveTextContent('cerca del límite');
-    expect(item('apartados activos')).not.toHaveAttribute('data-near');
-    expect(screen.getByText(/actualizada hace 5 h/)).toBeInTheDocument();
+    expect(screen.getByText(/^Hoy, /)).toHaveClass('font-hand');
+    expect(screen.getByText('Bs. 893,22')).toBeInTheDocument();
 });
 
 it('una instalación nueva ve el checklist de arranque', () => {
@@ -106,88 +152,4 @@ it('una instalación nueva ve el checklist de arranque', () => {
     expect(screen.getByRole('region', { name: 'Para empezar' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Carga tu primer producto' })).toHaveAttribute('href', '/backoffice/productos/crear');
     expect(screen.queryByRole('link', { name: 'Añade una cuenta de cobro' })).not.toBeInTheDocument();
-});
-
-it('muestra seis tarjetas en el orden guardado del usuario', () => {
-    render(
-        <Dashboard
-            {...dashboardProps()}
-            layout={{
-                mode: 'stacked',
-                sections: ['plan', 'stats'],
-                cards: ['unreadMessages', 'pendingReceipts', 'collectedThisMonth', 'customersOverdue', 'longOverdue', 'completedNotDelivered'],
-            }}
-        />,
-    );
-
-    const stats = screen.getByRole('region', { name: 'Cifras del día' });
-    const labels = within(stats)
-        .getAllByText(/Chats sin leer|Comprobantes por revisar|Cobrado este mes|Clientes en mora|Mora prolongada|Pagados sin entregar/)
-        .map((node) => node.textContent);
-
-    expect(labels).toEqual([
-        'Chats sin leer',
-        'Comprobantes por revisar',
-        'Cobrado este mes',
-        'Clientes en mora',
-        'Mora prolongada',
-        'Pagados sin entregar',
-    ]);
-});
-
-it('cambia a dos columnas y guarda la disposición', () => {
-    put.mockClear();
-    render(<Dashboard {...dashboardProps()} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /Dos columnas/ }));
-
-    expect(put).toHaveBeenCalledWith(
-        '/backoffice/panel/disposicion',
-        {
-            mode: 'split',
-            sections: ['stats', 'plan'],
-            cards: ['pendingReceipts', 'collectedThisMonth', 'customersOverdue', 'longOverdue', 'completedNotDelivered', 'unreadMessages'],
-        },
-        expect.objectContaining({ preserveScroll: true }),
-    );
-    expect(screen.getByRole('button', { name: /Apilado/ })).toBeInTheDocument();
-});
-
-it('al organizar cada sección y cada tarjeta tiene su asa', () => {
-    render(<Dashboard {...dashboardProps()} />);
-
-    expect(screen.queryByRole('button', { name: /^Mover/ })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /Organizar/ }));
-
-    expect(screen.getByRole('button', { name: 'Mover las cifras del día' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mover el plan y la tasa' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mover Chats sin leer' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /^Mover/ })).toHaveLength(8);
-    expect(screen.getByRole('button', { name: /Listo/ })).toHaveAttribute('aria-pressed', 'true');
-});
-
-it('en el celular la primera cifra queda destacada y las demás forman una lista densa', () => {
-    render(<Dashboard {...dashboardProps()} />);
-
-    const grid = screen.getByRole('region', { name: 'Cifras del día' }).firstElementChild!;
-    const cards = grid.querySelectorAll('.stat-card');
-
-    expect(grid).toHaveClass('stat-stack', 'lg:grid');
-    expect(grid).not.toHaveClass('grid-cols-2');
-    expect(cards).toHaveLength(6);
-    cards.forEach((card) => {
-        expect(card.querySelector('.stat-card-head')).not.toBeNull();
-        expect(card.querySelector('.stat-card-value')).not.toBeNull();
-    });
-});
-
-it('en el celular esconde el cambio a dos columnas y la lista usa íconos pequeños', () => {
-    render(<Dashboard {...dashboardProps()} />);
-
-    expect(screen.getByRole('button', { name: /Dos columnas/ })).toHaveClass('max-lg:hidden');
-
-    const grid = screen.getByRole('region', { name: 'Cifras del día' }).firstElementChild!;
-    expect(grid).toHaveClass('stat-list', 'lg:auto-rows-fr');
-    expect(grid.querySelectorAll('.stat-card-icon')).toHaveLength(6);
 });

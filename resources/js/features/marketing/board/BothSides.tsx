@@ -6,12 +6,12 @@ interface BothSidesProps {
     rate: string | null;
 }
 
-type Tone = 'ink' | 'red' | 'blue' | 'green';
+type Tone = 'ink' | 'red' | 'amber' | 'green';
 
 const TONE_TEXT: Record<Tone, string> = {
     ink: 'text-pz-ink',
     red: 'text-pz-red',
-    blue: 'text-pz-blue',
+    amber: 'text-pz-amber',
     green: 'text-pz-green',
 };
 
@@ -102,7 +102,7 @@ export function BothSides({ today, rate }: BothSidesProps) {
             tone: 'ink',
             highlight: true,
         },
-        { name: 'José Rivas', product: 'Bolso de cuero', status: 'mandó un comprobante: por aprobar', amount: '$20,00', tone: 'blue' },
+        { name: 'José Rivas', product: 'Bolso de cuero', status: 'mandó un comprobante: por aprobar', amount: '$20,00', tone: 'amber' },
         { name: 'Carla Méndez', product: 'Sandalias', status: 'cuota vencida hace 3 días', amount: '$15,00', tone: 'red' },
         { name: 'Ana Torres', product: 'Perfume', status: 'pagado completo, listo para entregar', amount: '$0,00', tone: 'green' },
     ];
