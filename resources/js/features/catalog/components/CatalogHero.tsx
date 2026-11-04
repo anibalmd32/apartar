@@ -1,15 +1,9 @@
-import { Icon } from '@/components/ui/icon';
 import { formatDate } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { type CatalogView } from '@/types/catalog-view';
 import { type CurrencyPageProps } from '@/types/exchange';
-import { cilCalendar, cilLibrary } from '@coreui/icons';
 import { usePage } from '@inertiajs/react';
 import { type ReactNode } from 'react';
-
-function closingDate(iso: string, timeZone: string): string {
-    return formatDate(iso, 'long', timeZone);
-}
 
 interface CatalogHeroProps {
     catalog: CatalogView;
@@ -21,50 +15,50 @@ export function CatalogHero({ catalog, stats, action }: CatalogHeroProps) {
     const { currency } = usePage<{ currency: CurrencyPageProps }>().props;
     const cover = catalog.cover;
 
+    const meta = [
+        stats !== undefined ? `${stats.products} ${stats.products === 1 ? 'producto' : 'productos'}` : null,
+        catalog.expiresAt !== null ? `Disponible hasta el ${formatDate(catalog.expiresAt, 'long', currency.timezone)}` : null,
+    ].filter((item): item is string => item !== null);
+
     return (
         <section
             className={cn(
-                'relative isolate flex flex-col gap-4 overflow-hidden rounded-3xl p-5 lg:flex-row lg:items-center lg:gap-5 lg:px-9 lg:py-8',
-                cover === null
-                    ? 'bg-[#e9e4fb] dark:bg-[#2d273a]'
-                    : 'bg-neutral min-h-[176px] justify-end text-white lg:min-h-[280px] lg:items-end [&_.text-ink-2]:text-white/90',
+                'relative isolate flex flex-col gap-3 overflow-hidden lg:flex-row lg:items-end lg:gap-6',
+                cover === null ? 'py-1 lg:py-2' : 'bg-neutral min-h-[168px] justify-end rounded-2xl p-5 text-white lg:min-h-[300px] lg:p-9',
             )}
         >
             {cover !== null ? (
                 <>
-                    <img src={cover.zoom} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
-                    <span aria-hidden="true" data-scrim className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/70 to-black/45" />
+                    <img
+                        src={cover.card}
+                        srcSet={`${cover.card} 1x, ${cover.zoom} 2x`}
+                        alt=""
+                        className="absolute inset-0 -z-20 h-full w-full object-cover"
+                    />
+                    <span aria-hidden="true" data-scrim className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
                 </>
             ) : null}
 
-            <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
-                <span className="bg-primary-soft text-primary-ink inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                    <Icon icon={cilLibrary} size={12} />
-                    Catálogo
-                </span>
-
-                <h1 className="tracking-heading text-[26px] leading-[1.25] font-extrabold lg:text-[40px] lg:leading-[1.3]">{catalog.name}</h1>
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+                <h1 className="text-[1.875rem] leading-[1.1] font-extrabold [font-stretch:88%] lg:text-[2.75rem]">{catalog.name}</h1>
 
                 {catalog.description !== null ? (
-                    <p className="text-ink-2 line-clamp-3 text-[15px] leading-normal lg:line-clamp-none">{catalog.description}</p>
-                ) : null}
-
-                {stats !== undefined ? (
-                    <p className="text-ink-2 text-[13px] font-semibold">
-                        {stats.products} {stats.products === 1 ? 'producto' : 'productos'}
-                        {stats.followers > 0 ? ` · ${stats.followers} ${stats.followers === 1 ? 'persona lo sigue' : 'personas lo siguen'}` : ''}
+                    <p
+                        className={cn(
+                            'line-clamp-2 max-w-[62ch] text-[0.9375rem] leading-normal lg:line-clamp-none',
+                            cover === null ? 'text-ink-2' : 'text-white/90',
+                        )}
+                    >
+                        {catalog.description}
                     </p>
                 ) : null}
 
-                {catalog.expiresAt !== null ? (
-                    <p className="text-ink-2 inline-flex items-center gap-1.5 text-[13px]">
-                        <Icon icon={cilCalendar} size={14} />
-                        Disponible hasta el {closingDate(catalog.expiresAt, currency.timezone)}
-                    </p>
+                {meta.length > 0 ? (
+                    <p className={cn('text-[0.8125rem] font-semibold', cover === null ? 'text-ink-3' : 'text-white/85')}>{meta.join(' · ')}</p>
                 ) : null}
             </div>
 
-            <div className="shrink-0 lg:[&_.btn]:self-end lg:[&_div]:items-end lg:[&_p]:text-right">{action}</div>
+            <div className={cn('shrink-0', cover !== null && '[&_p]:text-white/80')}>{action}</div>
         </section>
     );
 }

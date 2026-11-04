@@ -16,10 +16,10 @@ export function LiveRateStamp({ live, timezone, className }: LiveRateStampProps)
     }
 
     return (
-        <span className={cn('border-line inline-flex min-h-9 items-center gap-2 rounded-full border px-3 py-1', className)}>
-            <span aria-hidden="true" className={cn('size-2 shrink-0 rounded-full', live.rate.isStale ? 'bg-warning' : 'bg-success')} />
-            <RateStamp rate={live.rate} timezone={timezone} className="text-ink-2 font-semibold opacity-100!" />
-        </span>
+        <p className={cn('text-ink-3 text-[0.8125rem]', className)}>
+            Precios en dólares. En bolívares, según la{' '}
+            <RateStamp rate={live.rate} timezone={timezone} className="text-ink-2 text-[0.8125rem] opacity-100!" />
+        </p>
     );
 }
 

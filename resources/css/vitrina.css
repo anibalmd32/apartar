@@ -1,0 +1,30 @@
+.vitrina {
+    --color-primary: var(--store-accent, #15171b);
+    --color-primary-content: var(--store-on-accent, #ffffff);
+    --primary-hover: color-mix(in oklab, var(--store-accent, #15171b) 86%, black);
+    --primary-ink: var(--store-accent, #15171b);
+    --primary-soft: color-mix(in oklab, var(--store-accent, #15171b) 10%, var(--color-base-100));
+    --color-secondary: color-mix(in oklab, var(--store-accent, #15171b) 10%, var(--color-base-100));
+    --color-secondary-content: var(--store-accent, #15171b);
+    --color-ring: var(--store-accent, #15171b);
+}
+
+[data-theme='apartar-dark'] .vitrina {
+    --color-primary: var(--store-accent-dark, #f2f3ef);
+    --color-primary-content: var(--store-on-accent-dark, #0c0e11);
+    --primary-hover: color-mix(in oklab, var(--store-accent-dark, #f2f3ef) 86%, white);
+    --primary-ink: var(--store-accent-dark, #f2f3ef);
+    --primary-soft: color-mix(in oklab, var(--store-accent-dark, #f2f3ef) 14%, var(--color-base-100));
+    --color-secondary: color-mix(in oklab, var(--store-accent-dark, #f2f3ef) 14%, var(--color-base-100));
+    --color-secondary-content: var(--store-accent-dark, #f2f3ef);
+    --color-ring: var(--store-accent-dark, #f2f3ef);
+}
+
+.vitrina :focus-visible {
+    outline-color: var(--color-primary);
+}
+
+.vitrina ::selection {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+}

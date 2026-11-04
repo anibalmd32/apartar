@@ -1,52 +1,46 @@
 import { Avatar } from '@/components/shell/avatar';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { Icon } from '@/components/ui/icon';
-import { LiveRateStamp } from '@/features/catalog/components/LiveRateStamp';
-import { type LiveRate } from '@/features/catalog/hooks/useLiveRate';
 import { type OrganizationBrand } from '@/types/backoffice';
 import { cilUser } from '@coreui/icons';
-import { type CSSProperties } from 'react';
 
-interface ShopHeaderProps {
-    business: OrganizationBrand;
-    live: LiveRate;
-    timezone: string;
-}
+export function ShopHeader({ business }: { business: OrganizationBrand }) {
+    const logo = business.brandingEnabled ? business.logoUrl : null;
 
-export function ShopHeader({ business, live, timezone }: ShopHeaderProps) {
-    const branded = business.brandingEnabled;
-    const accent = branded && business.brandColor !== null ? ({ borderTopColor: business.brandColor } as CSSProperties) : undefined;
+    const identity = (
+        <>
+            {logo !== null ? (
+                <img src={logo} alt="" className="border-line size-11 shrink-0 rounded-xl border object-contain lg:size-12" />
+            ) : (
+                <Avatar name={business.name} tone="neutral" className="size-11! rounded-xl! text-[15px]! lg:size-12!" />
+            )}
+            <span className="flex min-w-0 flex-col">
+                <span className="truncate text-[1.0625rem] leading-tight font-extrabold [font-stretch:90%] lg:text-xl">{business.name}</span>
+                {business.tagline ? <span className="text-ink-3 truncate text-[0.8125rem] leading-snug">{business.tagline}</span> : null}
+            </span>
+        </>
+    );
 
     return (
-        <header className={`bg-base-100 border-line border-b ${accent ? 'border-t-4' : ''}`} style={accent}>
-            <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 md:min-h-[60px] lg:min-h-[72px] lg:px-20">
-                {branded && business.logoUrl !== null ? (
-                    <img src={business.logoUrl} alt={business.name} className="size-[34px] shrink-0 rounded-full object-contain lg:size-10" />
+        <header className="bg-base-100 border-line border-b">
+            <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:min-h-[76px] lg:px-20">
+                {business.storefrontUrl ? (
+                    <a
+                        href={business.storefrontUrl}
+                        className="flex min-w-0 flex-1 items-center gap-3"
+                        aria-label={`${business.name}, ver la tienda`}
+                    >
+                        {identity}
+                    </a>
                 ) : (
-                    <Avatar name={business.name} tone="accent" className="size-[34px]! text-[13px]! lg:size-10! lg:text-[15px]!" />
+                    <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
                 )}
 
-                <div className="min-w-0 flex-1">
-                    {business.storefrontUrl ? (
-                        <a href={business.storefrontUrl} className="flex min-h-11 items-center hover:underline lg:min-h-0">
-                            <span className="truncate text-[15px] font-bold lg:text-base">{business.name}</span>
-                        </a>
-                    ) : (
-                        <p className="truncate text-[15px] font-bold lg:text-base">{business.name}</p>
-                    )}
-                    {business.tagline ? <p className="text-ink-3 truncate text-xs max-sm:hidden">{business.tagline}</p> : null}
-                </div>
-
-                <LiveRateStamp
-                    live={live}
-                    timezone={timezone}
-                    className="max-md:order-last max-md:min-h-0 max-md:basis-full max-md:justify-center max-md:border-0 max-md:py-0"
-                />
                 <CurrencySwitch />
 
-                <a href="/mi-cuenta" className="btn border-line max-lg:btn-square lg:border-line-strong max-lg:size-11 max-lg:rounded-[10px]">
-                    <Icon icon={cilUser} />
-                    <span className="max-lg:sr-only">Mi cuenta</span>
+                <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-3" aria-label="Mis apartados">
+                    <Icon icon={cilUser} size={18} />
+                    <span className="max-sm:hidden">Mis apartados</span>
                 </a>
             </div>
         </header>

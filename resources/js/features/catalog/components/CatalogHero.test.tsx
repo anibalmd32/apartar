@@ -36,6 +36,11 @@ it('pinta la portada del catálogo de fondo cuando la tiene', () => {
     expect(hero).toHaveTextContent('4 productos');
 });
 
-it('sin portada queda con su fondo de color y sin imagen', () => {
+it('sin portada queda como título y datos, sin caja de color ni imagen', () => {
     expect(heroOf(CATALOG).querySelector('img')).toBeNull();
+});
+
+it('no lleva la etiqueta «Catálogo» encima del título', () => {
+    expect(heroOf(CATALOG)).not.toHaveTextContent(/^Catálogo/);
+    expect(screen.queryByText('Catálogo')).not.toBeInTheDocument();
 });

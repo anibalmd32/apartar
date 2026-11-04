@@ -1,8 +1,9 @@
-import { RateChangedNotice } from '@/features/catalog/components/LiveRateStamp';
+import { LiveRateStamp, RateChangedNotice } from '@/features/catalog/components/LiveRateStamp';
 import { PlatformBadge } from '@/features/catalog/components/PlatformBadge';
 import { ShopHeader } from '@/features/catalog/components/ShopHeader';
 import { useLiveRate } from '@/features/catalog/hooks/useLiveRate';
 import { CookieConsent, CookiePreferencesLink } from '@/features/telemetry/components/CookieConsent';
+import { storeStyle } from '@/lib/store-brand';
 import { cn } from '@/lib/utils';
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type CurrencyPageProps } from '@/types/exchange';
@@ -33,10 +34,13 @@ function CatalogFrame({ title, business, showsPlatformBadge, width = 'wide', chi
     const live = useLiveRate(currency.rate);
 
     return (
-        <div className="bg-base-200 flex min-h-screen flex-col has-[[data-chat-dock]]:pb-[calc(var(--overlay-bottom)+var(--consent-height)+4.5rem)]">
+        <div
+            className="vitrina bg-base-200 flex min-h-screen flex-col has-[[data-chat-dock]]:pb-[calc(var(--overlay-bottom)+var(--consent-height)+4.5rem)]"
+            style={storeStyle(business.brandingEnabled ? business.brandColor : null)}
+        >
             <Head title={title} />
 
-            <ShopHeader business={business} live={live} timezone={currency.timezone} />
+            <ShopHeader business={business} />
             <RateChangedNotice live={live} />
 
             <main
@@ -46,6 +50,7 @@ function CatalogFrame({ title, business, showsPlatformBadge, width = 'wide', chi
                 )}
             >
                 {children}
+                <LiveRateStamp live={live} timezone={currency.timezone} className="text-center lg:text-left" />
             </main>
 
             <footer className="mx-auto flex w-full max-w-[1440px] flex-col gap-2 px-4 pt-6 pb-8 lg:flex-row lg:items-center lg:justify-between lg:px-20 lg:py-7">

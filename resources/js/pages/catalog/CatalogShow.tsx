@@ -26,7 +26,7 @@ export default function CatalogShow({ catalog, products, filters, facets, follow
                 stats={stats}
                 catalog={catalog}
                 action={
-                    <div className="[&_.btn]:h-10 [&_.btn]:rounded-full [&_.btn]:px-4 [&_.btn]:text-sm">
+                    <div>
                         <FollowCatalogButton follow={follow} />
                     </div>
                 }
