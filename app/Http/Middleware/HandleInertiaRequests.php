@@ -251,7 +251,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{mode: 'scoped'|'account', fullName: string, businessName: string|null, business?: array<string, mixed>|null, unreadChats: int, chatChannels: list<string>}|null
+     * @return array{mode: 'scoped'|'account', fullName: string, businessName: string|null, store?: array<string, mixed>|null, unreadChats: int, chatChannels: list<string>}|null
      */
     private function portalSession(): ?array
     {
@@ -273,7 +273,7 @@ class HandleInertiaRequests extends Middleware
             'mode' => 'scoped',
             'fullName' => $customer->full_name,
             'businessName' => $organization instanceof Organization ? $organization->name : '',
-            'business' => $organization instanceof Organization ? $this->portalBrand($organization) : null,
+            'store' => $organization instanceof Organization ? $this->portalBrand($organization) : null,
             'unreadChats' => $this->portalUnreadChats(),
             'chatChannels' => $this->portalChatChannels(),
         ];
@@ -284,9 +284,10 @@ class HandleInertiaRequests extends Middleware
      */
     private function portalBrand(Organization $organization): array
     {
-        $branding = app(TenantContext::class)->runFor(
-            $organization,
-            fn (): bool => app(LimitEnforcer::class)->hasFeature(PlanFeature::Branding),
+        $branding = (bool) rescue(
+            fn (): bool => app(TenantContext::class)->runFor($organization, fn (): bool => app(LimitEnforcer::class)->hasFeature(PlanFeature::Branding)),
+            false,
+            report: false,
         );
 
         return OrganizationBrand::of($organization, $branding)->toArray();

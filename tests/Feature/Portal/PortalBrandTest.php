@@ -24,8 +24,8 @@ final class PortalBrandTest extends TestCase
 
         $this->actingAs($customer, 'customer')->get(route('portal.dashboard'))->assertInertia(fn (AssertableInertia $page) => $page
             ->where('auth.portal.businessName', 'Moda Luna')
-            ->where('auth.portal.business.name', 'Moda Luna')
-            ->where('auth.portal.business.brandColor', '#3a0ca3')
-            ->has('auth.portal.business.brandingEnabled'));
+            ->where('auth.portal.store.name', 'Moda Luna')
+            ->where('auth.portal.store.brandColor', '#3a0ca3')
+            ->has('auth.portal.store.brandingEnabled'));
     }
 }

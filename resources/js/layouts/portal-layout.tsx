@@ -55,7 +55,7 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
     });
     const items = portalNavItems(isAccount, session?.unreadChats ?? 0);
 
-    const business = isAccount ? null : (session?.business ?? null);
+    const business = isAccount ? null : (session?.store ?? null);
 
     const userMenu = <UserMenu name={customerName} detail={businessName} onLogout={() => router.post(route('portal.logout'))} />;
 
