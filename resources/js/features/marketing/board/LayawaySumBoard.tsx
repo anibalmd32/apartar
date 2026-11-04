@@ -20,16 +20,19 @@ interface LayawaySumBoardProps {
     className?: string;
 }
 
-function SumRows({ sum, rate }: { sum: LayawaySum; rate: string | null }) {
+function SumRows({ sum, rate, written = false }: { sum: LayawaySum; rate: string | null; written?: boolean }) {
     return (
         <ol className="flex flex-col">
             {sum.rows.map((row, index) => (
                 <li
                     key={row.label}
                     style={{ animationDelay: `${index * 70}ms` }}
-                    className="pz-write pz-rule-dashed font-hand flex items-baseline justify-between gap-4 py-1.5 text-[1.375rem] leading-tight sm:text-[1.625rem]"
+                    className={cn(
+                        written && 'pz-write',
+                        'pz-rule-dashed font-hand flex items-baseline justify-between gap-4 py-1.5 text-[1.375rem] leading-tight sm:text-[1.625rem]',
+                    )}
                 >
-                    <span className={cn(row.paid && 'text-pz-ink-3 decoration-pz-red line-through decoration-[3px]')}>
+                    <span className={cn(row.paid && 'text-pz-ink-3 decoration-pz-ink line-through decoration-[3px]')}>
                         {row.label}
                         {row.due === null ? null : <span className="text-pz-ink-3"> · {shortDay(row.due)}</span>}
                     </span>
@@ -79,7 +82,7 @@ export function LayawaySumBoard({ today, rate, className }: LayawaySumBoardProps
                     </div>
                 )}
                 <div key={installments} aria-live="polite">
-                    <SumRows sum={sum} rate={rate} />
+                    <SumRows sum={sum} rate={rate} written={previous !== null} />
                 </div>
             </div>
 
@@ -88,7 +91,9 @@ export function LayawaySumBoard({ today, rate, className }: LayawaySumBoardProps
                 className="font-hand text-pz-red flex items-baseline justify-between pt-2 text-[1.75rem] sm:text-[2.125rem]"
             >
                 <span>Resta</span>
-                <MarkerCircle className="tabular-nums">{formatUsd(sum.remainingCents)}</MarkerCircle>
+                <MarkerCircle className="tabular-nums" drawn={previous !== null}>
+                    {formatUsd(sum.remainingCents)}
+                </MarkerCircle>
             </div>
 
             <fieldset className="mt-3 flex flex-wrap items-center gap-2">

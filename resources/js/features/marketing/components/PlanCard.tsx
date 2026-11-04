@@ -18,7 +18,7 @@ export const FREE_PLAN_SUMMARY = 'Incluye el apartado completo: catálogo, cuota
 function Feature({ children }: { children: ReactNode }) {
     return (
         <li className="flex items-start gap-2.5">
-            <Icon icon={cilCheckAlt} size={18} className="text-pz-green mt-1 shrink-0" />
+            <Icon icon={cilCheckAlt} size={18} className="text-pz-blue mt-1 shrink-0" />
             <span>{children}</span>
         </li>
     );

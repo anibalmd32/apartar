@@ -37,6 +37,7 @@
 
         <link rel="preload" href="/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
         <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="/fonts/gochi-hand-latin.woff2" as="font" type="font/woff2" crossorigin>
 
         <script>window.apartarSurfaces = @json(\App\Support\Surface::forClient());</script>
         @routes

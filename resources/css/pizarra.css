@@ -36,6 +36,16 @@
     size-adjust: 100%;
 }
 
+@font-face {
+    font-family: 'Archivo Vinyl Fallback';
+    src:
+        local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Narrow'), local('Roboto Condensed Bold'), local('RobotoCondensed-Bold'),
+        local('Roboto Condensed');
+    size-adjust: 96%;
+    ascent-override: 92%;
+    descent-override: 22%;
+}
+
 :root {
     --pz-wall: #dde0e3;
     --pz-board: #f4f5f2;
@@ -107,7 +117,7 @@
 }
 
 @utility font-vinyl {
-    font-family: var(--font-display);
+    font-family: 'Archivo', 'Archivo Vinyl Fallback', 'Archivo Fallback', ui-sans-serif, sans-serif;
     font-stretch: 68%;
     font-weight: 850;
     letter-spacing: -0.012em;

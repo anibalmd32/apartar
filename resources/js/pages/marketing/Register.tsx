@@ -69,7 +69,7 @@ export default function Register({ plan = null }: RegisterProps) {
                 <div className="mx-auto grid max-w-[1280px] gap-10 px-4 pt-4 pb-16 sm:px-6 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-20 lg:px-12 lg:pt-10 lg:pb-24">
                     <div className="flex flex-col gap-6 lg:order-2">
                         <header className="flex flex-col gap-3">
-                            <h1 className="font-vinyl text-[3rem] sm:text-[3.5rem]">Crea tu cuenta</h1>
+                            <h1 className="font-vinyl text-[3rem] sm:text-[4rem]">Crea tu cuenta</h1>
                             <p className="text-pz-ink-2 text-[1.0625rem] leading-relaxed">
                                 {plan === null
                                     ? 'Empiezas en el plan Gratis, sin tarjeta y sin período de prueba que se acabe.'
@@ -160,7 +160,7 @@ export default function Register({ plan = null }: RegisterProps) {
                             </Button>
                         </form>
                     </div>
-                    <RegisterBrandPanel className="max-lg:hidden lg:order-1 lg:pt-6" />
+                    <RegisterBrandPanel example className="max-lg:hidden lg:order-1 lg:pt-6" />
                 </div>
             </BoardFrame>
         </>

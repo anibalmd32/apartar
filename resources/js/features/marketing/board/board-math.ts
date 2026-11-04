@@ -39,8 +39,12 @@ export function formatUsd(cents: number): string {
     return `$${usd.format(cents / 100)}`;
 }
 
+export function shownRate(rate: string): number {
+    return Math.round(Number(rate) * 100) / 100;
+}
+
 export function formatBs(cents: number, rate: string): string {
-    return `Bs. ${usd.format(Math.round((cents / 100) * Number(rate) * 100) / 100)}`;
+    return `Bs. ${usd.format(Math.round(cents * shownRate(rate)) / 100)}`;
 }
 
 export function formatRate(rate: string): string {
@@ -71,6 +75,22 @@ export function shortDay(iso: string): string {
     const date = utcDay(iso);
 
     return `${date.getUTCDate()} ${SHORT_MONTHS[date.getUTCMonth()]}`;
+}
+
+const SHORT_WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+export function weekdayDay(iso: string): string {
+    return `${SHORT_WEEKDAYS[utcDay(iso).getUTCDay()]} ${shortDay(iso)}`;
+}
+
+export function missingDays(newer: string, older: string): string[] {
+    const missing: string[] = [];
+
+    for (let day = addDays(older, 1); day < newer; day = addDays(day, 1)) {
+        missing.push(day);
+    }
+
+    return missing;
 }
 
 function addDays(iso: string, days: number): string {

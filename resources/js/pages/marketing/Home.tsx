@@ -22,7 +22,7 @@ function Perks({ className }: { className?: string }) {
         <ul className={cn('font-hand flex flex-col gap-1.5 text-xl sm:flex-row sm:flex-wrap sm:gap-x-6', className)}>
             {PERKS.map((perk) => (
                 <li key={perk} className="flex items-center gap-2">
-                    <Icon icon={cilCheckAlt} size={20} className="text-pz-green" />
+                    <Icon icon={cilCheckAlt} size={20} className="text-pz-blue" />
                     {perk}
                 </li>
             ))}

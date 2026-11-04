@@ -1,11 +1,26 @@
 import { Icon } from '@/components/ui/icon';
+import { cn } from '@/lib/utils';
 import { cilCheckAlt } from '@coreui/icons';
-import { type DailyRate, formatRate, shortDay } from './board-math';
+import { type DailyRate, formatRate, missingDays, weekdayDay } from './board-math';
 import { MarkerCircle } from './MarkerCircle';
 
 const SOURCES = ['Tasa BCV', 'Paralelo', 'Tu propia tasa'];
 
-const FADE = [1, 0.72, 0.6, 0.52, 0.46, 0.42];
+function GapNote({ newer, older }: { newer: string; older: DailyRate }) {
+    const missing = missingDays(newer, older.date);
+
+    if (missing.length === 0) {
+        return null;
+    }
+
+    const days = missing.map(weekdayDay).join(' y ');
+
+    return (
+        <li className="font-hand text-pz-ink-3 py-1 pl-6 text-lg leading-snug">
+            {days}: sin publicación, vale la del {weekdayDay(older.date)}
+        </li>
+    );
+}
 
 export function RateHistory({ rates }: { rates: DailyRate[] }) {
     return (
@@ -21,10 +36,11 @@ export function RateHistory({ rates }: { rates: DailyRate[] }) {
                     Tus precios en dólares, con su equivalente en bolívares a la tasa del día. Cada pago se cuenta con la tasa del día en que se hizo;
                     los fines de semana y feriados vale la del último día hábil.
                 </p>
-                <ul className="mt-8 flex flex-col gap-2">
+                <p className="font-hand text-pz-ink-3 mt-8 text-xl">Tú eliges de dónde sale la tasa:</p>
+                <ul className="mt-2 flex flex-col gap-1.5">
                     {SOURCES.map((source) => (
                         <li key={source} className="font-hand flex items-center gap-3 text-2xl">
-                            <Icon icon={cilCheckAlt} size={22} className="text-pz-green" />
+                            <Icon icon={cilCheckAlt} size={22} className="text-pz-blue" />
                             {source}
                         </li>
                     ))}
@@ -35,22 +51,29 @@ export function RateHistory({ rates }: { rates: DailyRate[] }) {
                 <figure className="self-end">
                     <figcaption className="font-hand text-pz-ink-3 mb-3 text-2xl">Tasa BCV de los últimos días</figcaption>
                     <ol className="flex flex-col">
-                        {rates.map((rate, index) => (
-                            <li
-                                key={rate.date}
-                                style={{ opacity: FADE[index] ?? 0.42 }}
-                                className="pz-rule-dashed font-hand flex items-baseline justify-between gap-6 py-2 text-[1.625rem] sm:text-[1.875rem]"
-                            >
-                                <span>{shortDay(rate.date)}</span>
-                                {index === 0 ? (
-                                    <MarkerCircle tone="blue" className="text-pz-blue tabular-nums">
-                                        {formatRate(rate.rate)}
-                                    </MarkerCircle>
-                                ) : (
-                                    <span className="tabular-nums">{formatRate(rate.rate)}</span>
-                                )}
-                            </li>
-                        ))}
+                        {rates.flatMap((rate, index) => {
+                            const older = rates[index + 1];
+
+                            return [
+                                <li
+                                    key={rate.date}
+                                    className={cn(
+                                        'pz-rule-dashed font-hand flex items-baseline justify-between gap-6 py-2 text-[1.625rem] sm:text-[1.875rem]',
+                                        index > 0 && 'text-pz-ink-3',
+                                    )}
+                                >
+                                    <span>{weekdayDay(rate.date)}</span>
+                                    {index === 0 ? (
+                                        <MarkerCircle tone="blue" className="text-pz-blue tabular-nums">
+                                            {formatRate(rate.rate)}
+                                        </MarkerCircle>
+                                    ) : (
+                                        <span className="tabular-nums">{formatRate(rate.rate)}</span>
+                                    )}
+                                </li>,
+                                older === undefined ? null : <GapNote key={`${rate.date}-gap`} newer={rate.date} older={older} />,
+                            ];
+                        })}
                     </ol>
                     <p className="text-pz-ink-3 mt-3 text-sm">Publicada por el Banco Central de Venezuela.</p>
                 </figure>

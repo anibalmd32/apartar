@@ -68,7 +68,7 @@ it('la pizarra escribe el día de hoy y la tasa BCV real que manda el servidor',
 
     expect(screen.getByText('Hoy, miércoles 4 de noviembre')).toBeInTheDocument();
     expect(screen.getAllByText('Bs. 889,58').length).toBeGreaterThan(0);
-    expect(screen.getByText('= Bs. 42.699,62 hoy')).toBeInTheDocument();
+    expect(screen.getByText('= Bs. 42.699,84 hoy')).toBeInTheDocument();
 });
 
 it('si la última tasa no es de hoy, dice cuándo se publicó', () => {
@@ -96,4 +96,17 @@ it('elegir otro número de cuotas reescribe la cuenta y lo que resta', () => {
     expect(screen.getByRole('button', { name: '4 cuotas' })).toHaveAttribute('aria-pressed', 'true');
     expect(example).toHaveTextContent('Resta$27,00');
     expect(example).toHaveTextContent('Cuota 4');
+});
+
+it('al cargar, la cuenta de ejemplo se ve completa y solo se reescribe con trazo cuando se cambia', () => {
+    render(<Home rates={RATES} />);
+
+    const example = screen.getByRole('figure', { name: 'Ejemplo de un apartado' });
+
+    expect(example.querySelectorAll('.pz-write, .pz-circle')).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole('button', { name: '2 cuotas' }));
+
+    expect(example.querySelectorAll('.pz-write').length).toBeGreaterThan(0);
+    expect(example.querySelector('.pz-circle')).not.toBeNull();
 });
