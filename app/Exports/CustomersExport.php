@@ -43,7 +43,7 @@ final class CustomersExport implements FromGenerator, WithCustomValueBinder, Wit
     {
         return $this->headingRows('Apartar · Clientes', $this->meta, [
             'Nombre', 'Documento', 'Teléfono', 'Correo', 'Apartados activos',
-            'Comprometido (USD)', 'Pagado (USD)', 'Pendiente (USD)', 'Cuotas vencidas', 'En mora', 'Próximo vencimiento',
+            'Comprometido (USD)', 'Pagado (USD)', 'Pendiente (USD)', 'Cuotas vencidas', 'Atrasado', 'Próximo vencimiento',
         ]);
     }
 

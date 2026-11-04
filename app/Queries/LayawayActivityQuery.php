@@ -79,7 +79,7 @@ final class LayawayActivityQuery
 
         foreach ($layaway->installments as $installment) {
             if ($this->wentOverdue($installment)) {
-                $events[] = $this->event('installment_overdue', 'Cuota '.$installment->number.' pasó a mora', null, null, $installment->due_date->addDay());
+                $events[] = $this->event('installment_overdue', 'Cuota '.$installment->number.' quedó atrasada', null, null, $installment->due_date->addDay());
             }
         }
 

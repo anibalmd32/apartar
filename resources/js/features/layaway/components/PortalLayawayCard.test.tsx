@@ -60,7 +60,7 @@ it('dice cuánto es la próxima cuota y enseña la foto', () => {
 it('en mora dice desde hace cuántos días', () => {
     render(
         <ul>
-            <PortalLayawayCard layaway={summary({ status: 'overdue', statusLabel: 'En mora', overdueInstallments: 1, overdueDays: 7 })} />
+            <PortalLayawayCard layaway={summary({ status: 'overdue', statusLabel: 'Atrasado', overdueInstallments: 1, overdueDays: 7 })} />
         </ul>,
     );
 
@@ -102,7 +102,7 @@ it('con cuotas vencidas propone ponerse al día con el total', () => {
             <PortalLayawayCard
                 layaway={summary({
                     status: 'overdue',
-                    statusLabel: 'En mora',
+                    statusLabel: 'Atrasado',
                     overdueInstallments: 2,
                     overdueDays: 12,
                     suggestion: suggestion({ kind: 'overdue', installmentNumber: null, overdueInstallments: 2, amount: money('$45,00') }),

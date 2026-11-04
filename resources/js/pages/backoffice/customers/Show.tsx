@@ -46,7 +46,7 @@ export default function CustomerShow(props: CustomerShowProps) {
                             Cuenta vinculada
                         </Badge>
                     ) : null}
-                    {layaways.active.some((layaway) => layaway.status === 'overdue') ? <Badge tone="error">En mora</Badge> : null}
+                    {layaways.active.some((layaway) => layaway.status === 'overdue') ? <Badge tone="error">Atrasado</Badge> : null}
                 </>
             }
             actions={

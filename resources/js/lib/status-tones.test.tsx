@@ -25,7 +25,7 @@ const LAYAWAY: CustomerLayawayRow = {
     code: 'AP-7K3M9QRT',
     url: '/apartados/AP-7K3M9QRT',
     status: 'overdue',
-    statusLabel: 'En mora',
+    statusLabel: 'Atrasado',
     productName: 'Nevera Mabe',
     catalogName: null,
     total: money('$100,00'),
@@ -56,7 +56,7 @@ describe('un estado tiene el mismo color en todas las pantallas', () => {
     it('un apartado en mora es rojo también en la ficha del cliente', () => {
         render(<CustomerLayaways layaways={[LAYAWAY]} empty="" />);
 
-        expect(screen.getByText('En mora')).toHaveClass('badge-error');
+        expect(screen.getByText('Atrasado')).toHaveClass('badge-error');
     });
 
     it('un comprobante en revisión es amarillo en la ficha del cliente y en la bandeja', () => {

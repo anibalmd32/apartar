@@ -60,7 +60,7 @@ it('muestra lo vendido, lo cobrado, cada producto con su inventario y quiénes d
 
     expect(screen.getAllByRole('progressbar', { name: 'Pagado 70%' })).toHaveLength(1);
     expect(screen.getByText('3 apartados · 2 unidades')).toBeInTheDocument();
-    expect(screen.getByText('1 apartado en mora')).toBeInTheDocument();
+    expect(screen.getByText('1 apartado atrasado')).toBeInTheDocument();
 
     const products = screen.getByRole('list', { name: 'Productos del catálogo' });
     expect(within(products).getByRole('link', { name: 'Mini Ups' })).toHaveAttribute('href', '/backoffice/productos/5/editar');

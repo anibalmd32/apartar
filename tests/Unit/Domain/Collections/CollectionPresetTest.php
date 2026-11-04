@@ -24,7 +24,7 @@ it('esperando inicial y pagados sin entregar listan apartados, no cuotas', funct
 });
 
 it('la mora prolongada usa los días de la configuración del negocio', function (): void {
-    expect(CollectionPreset::LongOverdue->label())->toBe('Mora prolongada')
+    expect(CollectionPreset::LongOverdue->label())->toBe('Atraso largo')
         ->and(CollectionPreset::LongOverdue->definition(30))->toContain('más de 30 días')
         ->and(CollectionPreset::LongOverdue->definition(1))->toContain('más de 1 día de atraso');
 });

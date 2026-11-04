@@ -29,5 +29,5 @@ it('nombra cada estado de la cuota para el backoffice', function (): void {
     $labels = array_map(fn (InstallmentStatus $status): string => $status->label(), InstallmentStatus::cases());
 
     expect(array_unique($labels))->toHaveCount(4)
-        ->and(InstallmentStatus::Overdue->label())->toBe('En mora');
+        ->and(InstallmentStatus::Overdue->label())->toBe('Atrasada');
 });

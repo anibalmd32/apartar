@@ -58,15 +58,15 @@ it('el directorio pinta los agregados y destaca la mora', () => {
     expect(row.getByText('V-12.345.678')).toBeInTheDocument();
     expect(row.getByText('Cuenta vinculada')).toBeInTheDocument();
     expect(row.getByText(/1\s+vencida/)).toHaveClass('badge-error');
-    expect(row.getByText('En mora')).toHaveClass('badge-error');
+    expect(row.getByText('Atrasado')).toHaveClass('badge-error');
 
-    expect(within(screen.getAllByRole('row')[2]!).queryByText('En mora')).not.toBeInTheDocument();
+    expect(within(screen.getAllByRole('row')[2]!).queryByText('Atrasado')).not.toBeInTheDocument();
 });
 
 it('el directorio filtra por mora y busca tras la pausa', async () => {
     render(<CustomerIndex {...directoryProps([directoryRow()])} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'En mora' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Atrasados' }));
     expect(routerGet.mock.calls[0]?.[1]).toMatchObject({ overdue: '1' });
 
     fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: '0414-1234567' } });
@@ -173,7 +173,7 @@ it('«Todos» quita los filtros rápidos en una sola visita y cada píldora llev
         />,
     );
 
-    expect(screen.getByRole('button', { name: /En mora\s*7/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Atrasados\s*7/ })).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(screen.getByRole('button', { name: /Todos\s*128/ }));
 

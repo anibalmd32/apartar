@@ -9,7 +9,7 @@ const linkClass = 'text-pz-ink touch:min-h-11 flex cursor-pointer items-center t
 function Column({ title, children }: { title: string; children: ReactNode }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <h2 className="text-pz-ink-2 text-[0.8125rem] font-bold tracking-[0.06em] uppercase">{title}</h2>
+            <h2 className="font-hand text-pz-ink-3 text-xl leading-none">{title}</h2>
             {children}
         </div>
     );

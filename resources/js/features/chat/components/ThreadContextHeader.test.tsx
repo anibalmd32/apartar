@@ -27,7 +27,7 @@ it('dice la mora con su importe, el próximo vencimiento y enlaza cada apartado'
                         code: 'AP-7K3M9QRT',
                         productName: 'Bolso tote de cuero',
                         status: 'overdue',
-                        statusLabel: 'En mora',
+                        statusLabel: 'Atrasado',
                         url: '/backoffice/apartados/AP-7K3M9QRT',
                     },
                 ],

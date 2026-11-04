@@ -52,13 +52,13 @@ it('el estado del apartado es una insignia con su tono y uno cancelado no muestr
         <SupportLayaways
             organization={ORGANIZATION}
             layaways={[
-                { ...row, code: 'AP-MORA0001', status: 'overdue', statusLabel: 'En mora', remainingCents: 9_500 },
+                { ...row, code: 'AP-MORA0001', status: 'overdue', statusLabel: 'Atrasado', remainingCents: 9_500 },
                 { ...row, code: 'AP-CANC0001', status: 'cancelled', statusLabel: 'Cancelado', remainingCents: null },
             ]}
         />,
     );
 
-    expect(screen.getByText('En mora')).toHaveClass('badge', 'badge-error');
+    expect(screen.getByText('Atrasado')).toHaveClass('badge', 'badge-error');
     expect(screen.getByText('Cancelado')).toHaveClass('badge', 'badge-neutral');
 
     const cancelled = within(screen.getAllByRole('row')[2]!).getAllByRole('cell');

@@ -107,7 +107,7 @@ enum SettingKey: string
             self::DefaultFrequencyDays => 'Días entre cuotas por defecto',
             self::DefaultInstallmentsCount => 'Número de cuotas por defecto',
             self::ReminderOffsetsDays => 'Días de recordatorio respecto al vencimiento',
-            self::OverdueAlertDays => 'Días de mora prolongada, contados después de la gracia',
+            self::OverdueAlertDays => 'Días para considerar un atraso largo, contados después de la gracia',
         };
     }
 

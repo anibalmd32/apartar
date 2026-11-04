@@ -16,7 +16,7 @@ export function ThreadContextPanel({ context, className }: { context: ThreadCont
         { label: 'Apartados activos', value: String(context.activeLayaways) },
         { label: 'Saldo pendiente', value: context.remaining },
         {
-            label: 'En mora',
+            label: 'Atrasadas',
             value: plural(context.overdueInstallments, 'cuota', 'cuotas') + (context.overdueAmount ? ` · ${context.overdueAmount}` : ''),
             danger: context.overdueInstallments > 0,
         },

@@ -110,7 +110,7 @@ it('nombra cada estado para el negocio sin repetir ninguno', function (): void {
     $labels = array_map(fn (LayawayStatus $status): string => $status->label(), LayawayStatus::cases());
 
     expect(array_unique($labels))->toHaveCount(count(LayawayStatus::cases()))
-        ->and(LayawayStatus::Overdue->label())->toBe('En mora')
+        ->and(LayawayStatus::Overdue->label())->toBe('Atrasado')
         ->and(LayawayStatus::Overdue->label())->not->toBe(LayawayStatus::Overdue->customerLabel());
 });
 

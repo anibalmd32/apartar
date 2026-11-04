@@ -128,7 +128,7 @@ export function MonthColumn({
 }) {
     const items = [
         { label: 'Pagados sin entregar', value: metrics.completedNotDelivered, href: links.completedNotDelivered, tone: 'text-success' },
-        { label: 'Mora prolongada', value: metrics.longOverdueLayaways, href: links.longOverdue, tone: 'text-error' },
+        { label: 'Atraso largo', value: metrics.longOverdueLayaways, href: links.longOverdue, tone: 'text-error' },
         { label: 'Chats sin leer', value: metrics.unreadMessages, href: bo('/chat'), tone: 'text-primary' },
     ];
 

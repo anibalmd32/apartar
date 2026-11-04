@@ -114,7 +114,7 @@ it('en Clientes el pendiente y las cuotas vencidas se ven en la tarjeta', () => 
     expect(card()).toHaveTextContent('1 cuota vencida');
     expect(card()).toHaveTextContent('Venció el 28 oct 2026');
     expect(card()).not.toHaveTextContent('Vence el');
-    expect(card()).not.toHaveTextContent('En mora');
+    expect(card()).not.toHaveTextContent('Atrasado');
     vi.useRealTimers();
 });
 

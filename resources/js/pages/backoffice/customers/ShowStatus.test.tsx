@@ -41,15 +41,15 @@ const layaway = (status: string, statusLabel: string): CustomerLayawayRow => ({
     resendCodeUrl: null,
 });
 
-it('con una cuota vencida aún en la gracia, la cabecera no dice «En mora» si el apartado sigue activo', () => {
+it('con una cuota vencida aún en la gracia, la cabecera no dice «Atrasado» si el apartado sigue activo', () => {
     render(<CustomerShow {...profileProps({ layaways: { active: [layaway('active', 'Activo')], history: [], historyTotal: 0 } })} />);
 
-    expect(within(screen.getByTestId('cabecera')).queryByText('En mora')).toBeNull();
+    expect(within(screen.getByTestId('cabecera')).queryByText('Atrasado')).toBeNull();
     expect(screen.getByText('Activo')).toBeInTheDocument();
 });
 
-it('la cabecera dice «En mora» cuando el apartado ya está en mora, igual que su tarjeta', () => {
-    render(<CustomerShow {...profileProps({ layaways: { active: [layaway('overdue', 'En mora')], history: [], historyTotal: 0 } })} />);
+it('la cabecera dice «Atrasado» cuando el apartado ya está en mora, igual que su tarjeta', () => {
+    render(<CustomerShow {...profileProps({ layaways: { active: [layaway('overdue', 'Atrasado')], history: [], historyTotal: 0 } })} />);
 
-    expect(within(screen.getByTestId('cabecera')).getByText('En mora')).toBeInTheDocument();
+    expect(within(screen.getByTestId('cabecera')).getByText('Atrasado')).toBeInTheDocument();
 });

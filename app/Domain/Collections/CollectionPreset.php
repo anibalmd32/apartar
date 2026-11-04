@@ -22,7 +22,7 @@ enum CollectionPreset: string
             self::AwaitingDownPayment => 'Esperando inicial',
             self::DueToday => 'Vencen hoy',
             self::DueWithin7Days => 'Vencen en 7 días',
-            self::LongOverdue => 'Mora prolongada',
+            self::LongOverdue => 'Atraso largo',
             self::FortnightFirstHalf => 'Corte del 1 al 15',
             self::FortnightSecondHalf => 'Corte del 16 a fin de mes',
             self::CompletedNotDelivered => 'Pagados sin entregar',

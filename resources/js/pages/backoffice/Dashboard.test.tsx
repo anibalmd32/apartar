@@ -110,7 +110,7 @@ it('una métrica caída es un guion', () => {
     render(<Dashboard {...dashboardProps({ pendingReceipts: null, longOverdueLayaways: null })} pendingReceipts={[]} collectToday={collect} />);
 
     expect(within(column('Por revisar')).getByText('—')).toBeInTheDocument();
-    expect(within(screen.getByRole('link', { name: 'Mora prolongada' }).closest('li')!).getByText('—')).toBeInTheDocument();
+    expect(within(screen.getByRole('link', { name: 'Atraso largo' }).closest('li')!).getByText('—')).toBeInTheDocument();
 });
 
 it('ya no ofrece organizar tarjetas ni cambiar a dos columnas', () => {

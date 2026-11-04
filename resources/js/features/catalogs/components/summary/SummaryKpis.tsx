@@ -28,7 +28,7 @@ export function SummaryKpis({ totals }: { totals: CatalogSummaryProps['totals'] 
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard label="Cobrado" icon={cilCash} tone="success" value={<MoneyLabel money={totals.paid} compact />} />
                 <StatCard label="Vencido sin pagar" icon={cilWarning} tone="error" value={<MoneyLabel money={totals.overdue} compact />}>
-                    {plural(totals.overdueLayaways, 'apartado en mora', 'apartados en mora')}
+                    {plural(totals.overdueLayaways, 'apartado atrasado', 'apartados atrasados')}
                 </StatCard>
                 <StatCard label="Vence en 7 días" icon={cilCalendar} tone="warning" value={<MoneyLabel money={totals.upcoming} compact />} />
                 <StatCard label="Entregados" icon={cilCheckCircle} tone="primary" value={totals.delivered}>

@@ -103,7 +103,7 @@ enum LayawayStatus: string
         return match ($this) {
             self::PendingDownPayment => 'Esperando la inicial',
             self::Active => 'Activo',
-            self::Overdue => 'En mora',
+            self::Overdue => 'Atrasado',
             self::Completed => 'Pagado',
             self::Cancelled => 'Cancelado',
             self::Expired => 'Expirado',

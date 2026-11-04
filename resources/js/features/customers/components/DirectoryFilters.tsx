@@ -25,7 +25,7 @@ interface DirectoryFiltersProps {
 
 export const DIRECTORY_FILTER_LABELS: Readonly<Record<keyof CustomerDirectoryFilters, string>> = {
     q: 'búsqueda',
-    overdue: 'con mora',
+    overdue: 'atrasados',
     due_soon: 'con vencimiento próximo',
     without_active: 'sin apartados activos',
     from: 'vence desde',
@@ -34,7 +34,7 @@ export const DIRECTORY_FILTER_LABELS: Readonly<Record<keyof CustomerDirectoryFil
 };
 
 const TOGGLES: readonly { key: 'overdue' | 'due_soon' | 'without_active'; label: string }[] = [
-    { key: 'overdue', label: 'En mora' },
+    { key: 'overdue', label: 'Atrasados' },
     { key: 'due_soon', label: 'Vencen pronto' },
     { key: 'without_active', label: 'Sin apartados activos' },
 ];

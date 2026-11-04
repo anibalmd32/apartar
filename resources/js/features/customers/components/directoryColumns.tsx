@@ -18,7 +18,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
             media: (row) => <Avatar name={row.name} size={40} tone={row.inArrears ? 'neutral' : 'accent'} />,
             title: (row) => row.name,
             subtitle: (row) => row.document ?? NO_DOCUMENT,
-            status: (row) => (row.inArrears && row.overdueInstallments === 0 ? <Badge tone="error">En mora</Badge> : null),
+            status: (row) => (row.inArrears && row.overdueInstallments === 0 ? <Badge tone="error">Atrasado</Badge> : null),
         },
         cell: (row) => (
             <div className="flex items-center gap-3">
@@ -36,7 +36,7 @@ export const directoryColumns: DataTableColumn<CustomerDirectoryRow>[] = [
                         ) : null}
                     </span>
                     <span className="text-ink-3 text-xs whitespace-nowrap">{row.document ?? NO_DOCUMENT}</span>
-                    {row.inArrears ? <Badge tone="error">En mora</Badge> : null}
+                    {row.inArrears ? <Badge tone="error">Atrasado</Badge> : null}
                 </div>
             </div>
         ),

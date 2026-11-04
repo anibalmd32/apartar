@@ -32,7 +32,7 @@ enum InstallmentStatus: string
             self::Pending => 'Pendiente',
             self::PartiallyPaid => 'Pago parcial',
             self::Paid => 'Pagada',
-            self::Overdue => 'En mora',
+            self::Overdue => 'Atrasada',
         };
     }
 }

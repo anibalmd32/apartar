@@ -8,7 +8,7 @@ import { Link } from '@inertiajs/react';
 const STATUS_LABELS: Readonly<Record<string, string>> = {
     pending_down_payment: 'Esperando la inicial',
     active: 'Activos',
-    overdue: 'En mora',
+    overdue: 'Atrasado',
     completed: 'Pagados',
     cancelled: 'Cancelados',
     expired: 'Vencidos',
