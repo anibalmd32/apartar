@@ -11,6 +11,7 @@ export interface PortalSessionView {
     readonly mode: PortalMode;
     readonly fullName: string;
     readonly businessName: string | null;
+    readonly business?: OrganizationBrand | null;
     readonly unreadChats: number;
     readonly chatChannels?: readonly string[];
 }

@@ -11,6 +11,8 @@ use App\Domain\Money\CurrencyDisplay;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Subscription\LimitEnforcer;
+use App\Domain\Subscription\PlanFeature;
+use App\Domain\Tenancy\OrganizationBrand;
 use App\Domain\Tenancy\OrganizationCapability;
 use App\Domain\Tenancy\TenantContext;
 use App\Events\MessageSent;
@@ -249,7 +251,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{mode: 'scoped'|'account', fullName: string, businessName: string|null, unreadChats: int, chatChannels: list<string>}|null
+     * @return array{mode: 'scoped'|'account', fullName: string, businessName: string|null, business?: array<string, mixed>|null, unreadChats: int, chatChannels: list<string>}|null
      */
     private function portalSession(): ?array
     {
@@ -265,13 +267,29 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
+        $organization = Organization::query()->find($customer->organization_id);
+
         return [
             'mode' => 'scoped',
             'fullName' => $customer->full_name,
-            'businessName' => (string) Organization::query()->whereKey($customer->organization_id)->value('name'),
+            'businessName' => $organization instanceof Organization ? $organization->name : '',
+            'business' => $organization instanceof Organization ? $this->portalBrand($organization) : null,
             'unreadChats' => $this->portalUnreadChats(),
             'chatChannels' => $this->portalChatChannels(),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function portalBrand(Organization $organization): array
+    {
+        $branding = app(TenantContext::class)->runFor(
+            $organization,
+            fn (): bool => app(LimitEnforcer::class)->hasFeature(PlanFeature::Branding),
+        );
+
+        return OrganizationBrand::of($organization, $branding)->toArray();
     }
 
     /**

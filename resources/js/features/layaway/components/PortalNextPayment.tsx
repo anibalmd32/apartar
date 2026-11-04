@@ -82,7 +82,10 @@ export function PortalNextPayment({ suggestion, receiptUrl, className }: PortalN
             {Number(payOff.cents) > 0 ? (
                 <div className="border-line flex flex-col gap-1 border-t pt-3">
                     <p className="text-ink-2 text-[13px]">
-                        Si prefieres pagarlo todo de una vez: <MoneyLabel money={payOff} className="text-primary-ink font-semibold" />
+                        {inReview !== null
+                            ? 'Para terminarlo de pagar, sin contar lo que está en revisión: '
+                            : 'Para terminarlo de pagar de una vez: '}
+                        <MoneyLabel money={payOff} className="text-primary-ink font-semibold" />
                     </p>
                     <p className="text-ink-3 text-xs">
                         Sin descuento por adelantar.

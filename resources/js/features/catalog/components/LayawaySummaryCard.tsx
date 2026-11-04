@@ -64,7 +64,7 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
                         <dd className="text-primary-ink text-right text-sm font-bold">Sin inicial</dd>
                     </div>
                 )}
-                <Row label="Financiado" money={plan.financedAmount} />
+                <Row label="En cuotas" money={plan.financedAmount} />
                 {plan.lastInstallmentAmount !== null ? <Row label="Última cuota" money={plan.lastInstallmentAmount} /> : null}
             </dl>
 

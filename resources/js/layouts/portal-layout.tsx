@@ -1,4 +1,4 @@
-import { Brand, BrandMark } from '@/components/shell/brand';
+import { Avatar } from '@/components/shell/avatar';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { RatePill } from '@/components/shell/rate-pill';
 import { UserMenu } from '@/components/shell/user-menu';
@@ -6,7 +6,9 @@ import { PortalNav, portalNavItems, PortalTabBar } from '@/features/account/comp
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
 import { useChatNotifications } from '@/features/chat/hooks/useChatNotifications';
 import { CookieConsent, CookiePreferencesLink } from '@/features/telemetry/components/CookieConsent';
+import { storeStyle } from '@/lib/store-brand';
 import { cn } from '@/lib/utils';
+import { type OrganizationBrand } from '@/types/backoffice';
 import { Head, Link, router } from '@inertiajs/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
@@ -31,6 +33,16 @@ export default function PortalLayout(props: PortalLayoutProps) {
 
 const PORTAL_CHAT_PROPS = ['auth'];
 
+function BusinessMark({ business, name }: { business: OrganizationBrand | null; name: string }) {
+    const logo = business?.brandingEnabled ? business.logoUrl : null;
+
+    return logo ? (
+        <img src={logo} alt="" className="border-line size-9 shrink-0 rounded-lg border object-contain" />
+    ) : (
+        <Avatar name={name} tone="neutral" className="size-9! shrink-0 rounded-lg! text-[13px]!" />
+    );
+}
+
 const NO_CHANNELS: readonly string[] = [];
 
 function PortalFrame({ title, businessName, customerName, immersive = false, children }: PortalLayoutProps) {
@@ -43,16 +55,18 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
     });
     const items = portalNavItems(isAccount, session?.unreadChats ?? 0);
 
+    const business = isAccount ? null : (session?.business ?? null);
+
     const userMenu = <UserMenu name={customerName} detail={businessName} onLogout={() => router.post(route('portal.logout'))} />;
 
     return (
-        <div className="bg-base-200 flex min-h-screen flex-col">
+        <div className="vitrina bg-base-200 flex min-h-screen flex-col" style={storeStyle(business?.brandingEnabled ? business.brandColor : null)}>
             <Head title={title} />
 
             <header className="border-line bg-base-100 sticky top-0 z-20 hidden h-[68px] items-center gap-7 border-b px-8 lg:flex xl:px-20">
-                <Link href={route('portal.dashboard')} className="flex items-center gap-2">
-                    <Brand />
-                    <span className="bg-surface-2 text-ink-2 max-w-48 truncate rounded-full px-2.5 py-[3px] text-xs font-semibold">
+                <Link href={route('portal.dashboard')} className="flex min-w-0 items-center gap-2.5">
+                    <BusinessMark business={business} name={isAccount ? 'Mi cuenta' : businessName} />
+                    <span className="max-w-56 truncate text-[1.0625rem] font-extrabold [font-stretch:90%]">
                         {isAccount ? 'Mi cuenta' : businessName}
                     </span>
                 </Link>
@@ -69,10 +83,14 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
             </header>
 
             <header className={cn('bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden', immersive && 'hidden')}>
-                <Link href={route('portal.dashboard')} aria-label="Ir al inicio de tu cuenta" className="hit-area flex shrink-0">
-                    <BrandMark className="size-[30px] rounded-lg text-[19px]" />
+                <Link
+                    href={route('portal.dashboard')}
+                    aria-label="Ir al inicio de tu cuenta"
+                    className="hit-area flex min-w-0 flex-1 items-center gap-2.5"
+                >
+                    <BusinessMark business={business} name={businessName} />
+                    <span className="min-w-0 truncate text-[1.0625rem] font-extrabold [font-stretch:90%]">{businessName}</span>
                 </Link>
-                <p className="min-w-0 flex-1 truncate text-[17px] font-bold">{businessName}</p>
                 <CurrencySwitch />
                 {userMenu}
             </header>

@@ -83,7 +83,7 @@ it('en bolívares, lo pagado se muestra en dólares y no reconvertido a la tasa 
 
     expect(screen.getByText('Pagado').nextElementSibling).toHaveTextContent('$30,00');
     expect(screen.getByText('Pagado').nextElementSibling).not.toHaveTextContent('Bs.');
-    expect(screen.getByText('Comprometido').nextElementSibling).toHaveTextContent('$120,00');
-    expect(screen.getByText('Comprometido').nextElementSibling).not.toHaveTextContent('Bs.');
-    expect(screen.getByText('Restante').nextElementSibling).toHaveTextContent('Bs. 4.500,00$90,00');
+    expect(screen.getByText('Precio total').nextElementSibling).toHaveTextContent('$120,00');
+    expect(screen.getByText('Precio total').nextElementSibling).not.toHaveTextContent('Bs.');
+    expect(screen.getByText('Te falta').nextElementSibling).toHaveTextContent('Bs. 4.500,00$90,00');
 });

@@ -99,9 +99,9 @@ export function PortalSummary({ totals, label, payUrl, today }: PortalSummaryPro
             <Headline due={due} payUrl={payUrl} />
 
             <dl className={cn('grid grid-cols-3 gap-3', due !== null && 'border-line border-t pt-3')}>
-                <Detail label="Comprometido" money={paidOnly(totals.committed)} />
+                <Detail label="Precio total" money={paidOnly(totals.committed)} />
                 <Detail label="Pagado" money={paidOnly(totals.paid)} className="text-success" />
-                <Detail label="Restante" money={totals.remaining} stacked />
+                <Detail label="Te falta" money={totals.remaining} stacked />
             </dl>
             <p className="text-ink-3 -mt-1 text-xs">
                 {totals.activeLayaways} {plural(totals.activeLayaways, 'apartado activo', 'apartados activos')}
