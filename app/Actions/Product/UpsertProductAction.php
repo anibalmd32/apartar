@@ -24,6 +24,7 @@ use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final class UpsertProductAction
@@ -66,11 +67,12 @@ final class UpsertProductAction
             $category = $this->resolveCategory($data);
             $tags = $this->resolveTags($data);
 
-            $this->assertSkuIsFree($data->sku, $product);
+            $sku = $this->skuFor($data, $product);
+            $this->assertSkuIsFree($sku, $product);
 
             $attributes = [
                 'category_id' => $category?->getKey(),
-                'sku' => $data->sku,
+                'sku' => $sku,
                 'name' => $data->name,
                 'description' => $this->descriptionFrom($data->description),
                 'price_cents' => $data->price,
@@ -211,6 +213,28 @@ final class UpsertProductAction
         return TaxonomySlug::from($requested, $this->slugIsTaken($product), 200);
     }
 
+    private function skuFor(ProductData $data, ?Product $product): string
+    {
+        if ($data->sku !== '') {
+            return $data->sku;
+        }
+
+        if ($product instanceof Product && $product->sku !== '') {
+            return $product->sku;
+        }
+
+        $prefix = Str::of(Str::ascii($data->name))->upper()->replaceMatches('/[^A-Z0-9]+/', '')->substr(0, 3)->toString();
+        $prefix = $prefix === '' ? 'PRD' : str_pad($prefix, 3, 'X');
+
+        for ($number = Product::withTrashed()->count() + 1; ; $number++) {
+            $candidate = sprintf('%s-%03d', $prefix, $number);
+
+            if (! Product::withTrashed()->where('sku', $candidate)->exists()) {
+                return $candidate;
+            }
+        }
+    }
+
     /**
      * @throws ValidationException
      */
@@ -224,7 +248,7 @@ final class UpsertProductAction
 
         if ($query->exists()) {
             throw ValidationException::withMessages([
-                'sku' => sprintf('Ya tienes un producto con el SKU «%s».', $sku),
+                'sku' => sprintf('Ya tienes un producto con el código interno «%s».', $sku),
             ]);
         }
     }

@@ -33,7 +33,7 @@ class StoreProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:200'],
 
-            'sku' => ['required', 'string', 'max:64'],
+            'sku' => ['nullable', 'string', 'max:64'],
 
             'description' => ['nullable', 'string', $this->descriptionFits()],
 
@@ -73,7 +73,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'name' => 'nombre',
-            'sku' => 'SKU',
+            'sku' => 'código interno',
             'price' => 'precio',
             'compare_at_price' => 'precio tachado',
             'down_payment' => 'cuota inicial',

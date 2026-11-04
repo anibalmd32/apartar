@@ -44,7 +44,7 @@ export function ProductIdentityFields({ data, setData, errors, product, skuSeque
                 </div>
 
                 <TextField
-                    label="SKU"
+                    label="Código interno (opcional)"
                     name="sku"
                     value={data.sku}
                     onChange={(event) => {
@@ -54,12 +54,11 @@ export function ProductIdentityFields({ data, setData, errors, product, skuSeque
                     error={errors.sku}
                     hint={
                         product === null && !skuEdited
-                            ? 'Lo sugerimos a partir del nombre. Puedes cambiarlo: es tu código interno.'
-                            : 'Tu código interno. Otro negocio puede usar el mismo sin que interfiera.'
+                            ? 'Lo sugerimos a partir del nombre. Si lo dejas vacío, lo creamos nosotros. Tus clientes no lo ven.'
+                            : 'Solo para ti: tus clientes no lo ven. Si lo dejas vacío, se queda el que tenía.'
                     }
                     maxLength={64}
                     autoComplete="off"
-                    required
                 />
 
                 {product === null ? null : (

@@ -37,7 +37,7 @@ function initialData(defaults: ProductDefaults, product?: ProductFormValues | nu
         down_payment: amountInput(product?.downPayment ?? '0.00'),
         installments_count: product?.installmentsCount ?? defaults.installmentsCount,
         frequency_days: product?.frequencyDays ?? defaults.frequencyDays,
-        stock: product?.stock ?? 0,
+        stock: product?.stock ?? 1,
         category_id: product?.categoryId === null || product?.categoryId === undefined ? '' : String(product.categoryId),
         category_name: '',
         tag_ids: product ? [...product.tagIds] : [],

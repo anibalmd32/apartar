@@ -102,6 +102,32 @@ final class UpsertProductActionTest extends TestCase
         $this->upsert()->handle($this->data(name: 'Otro', sku: 'BOSCH-01'), $this->actor);
     }
 
+    public function test_without_a_sku_one_is_made_from_the_name_and_never_repeats(): void
+    {
+        $first = $this->upsert()->handle($this->data(name: 'Vestido de lino', sku: ''), $this->actor);
+        $second = $this->upsert()->handle($this->data(name: 'Vestido floral', sku: ''), $this->actor);
+
+        $this->assertMatchesRegularExpression('/^VES-\d{3}$/', $first->sku);
+        $this->assertMatchesRegularExpression('/^VES-\d{3}$/', $second->sku);
+        $this->assertNotSame($first->sku, $second->sku);
+    }
+
+    public function test_editing_without_a_sku_keeps_the_one_it_had(): void
+    {
+        $product = $this->upsert()->handle($this->data(name: 'Taladro', sku: 'T-1'), $this->actor);
+
+        $edited = $this->upsert()->handle($this->data(name: 'Taladro percutor', sku: ''), $this->actor, $product);
+
+        $this->assertSame('T-1', $edited->sku);
+    }
+
+    public function test_a_name_without_letters_or_numbers_still_gets_a_sku(): void
+    {
+        $product = $this->upsert()->handle($this->data(name: '¡¡¡', sku: ''), $this->actor);
+
+        $this->assertMatchesRegularExpression('/^PRD-\d{3}$/', $product->sku);
+    }
+
     public function test_renaming_keeps_the_slug_and_publishing_locks_it(): void
     {
         $product = $this->upsert()->handle($this->data(name: 'Taladro'), $this->actor);
