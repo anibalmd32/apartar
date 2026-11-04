@@ -2,7 +2,7 @@ import { Avatar } from '@/components/shell/avatar';
 import { Icon } from '@/components/ui/icon';
 import { NO_PHONE } from '@/lib/identity-format';
 import { type CollectionCustomer } from '@/types/collections';
-import { cilChatBubble, cilCheckAlt, cilCopy, cilUser } from '@coreui/icons';
+import { cilChatBubble, cilCheckAlt, cilCopy } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -21,11 +21,17 @@ export function CustomerCell({ customer }: { customer: CollectionCustomer | null
         <div className="flex items-center gap-3">
             <Avatar name={customer.name} size={32} tone="accent" />
             <div className="flex min-w-0 flex-col">
-                <span className="font-semibold">{customer.name}</span>
+                {customer.url ? (
+                    <Link href={customer.url} className="hit-area font-semibold hover:underline">
+                        {customer.name}
+                    </Link>
+                ) : (
+                    <span className="font-semibold">{customer.name}</span>
+                )}
                 {customer.phone === null ? (
                     <span className="text-ink-3 text-xs">{NO_PHONE}</span>
                 ) : (
-                    <span className="text-ink-3 flex items-center gap-1.5 text-xs">
+                    <span className="text-ink-3 flex items-center gap-1.5 text-xs whitespace-nowrap">
                         <a href={`tel:${customer.phone}`} className="hit-area hover:text-base-content">
                             {customer.phoneLabel}
                         </a>
@@ -63,11 +69,6 @@ export function Contact({ customer }: { customer: CollectionCustomer | null }) {
             {customer.chatUrl ? (
                 <Link href={customer.chatUrl} className="btn btn-sm btn-square" aria-label={`Escribir a ${customer.name}`} title="Abrir el chat">
                     <Icon icon={cilChatBubble} size={14} />
-                </Link>
-            ) : null}
-            {customer.url ? (
-                <Link href={customer.url} className="btn btn-sm btn-square" aria-label={`Ficha de ${customer.name}`} title="Ver la ficha">
-                    <Icon icon={cilUser} size={14} />
                 </Link>
             ) : null}
         </span>

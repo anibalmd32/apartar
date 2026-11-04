@@ -21,24 +21,24 @@ colors:
   rule-soft: "rgb(21 23 27 / 0.1)"
   ghost-blue: "rgb(28 69 196 / 0.09)"
   ghost-ink: "rgb(21 23 27 / 0.07)"
-  night-blue: "#86a0ff"
-  night-blue-deep: "#a5b8ff"
-  on-night-blue: "#0b0d12"
-  night-red: "#ff7479"
-  night-green: "#55d996"
-  night-amber: "#f0c060"
-  chalk-ink: "#f0f1ed"
-  night-ink-2: "#b8bcc3"
-  night-ink-3: "#9aa0a8"
-  night-wall: "#08090b"
-  night-board: "#111316"
-  night-board-hi: "#16181c"
-  night-frame: "#3b4048"
-  night-frame-deep: "#24282e"
-  night-frame-hi: "#555b64"
+  night-blue: "#47a8ff"
+  night-blue-deep: "#74beff"
+  on-night-blue: "#06121f"
+  night-red: "#ff5c6c"
+  night-green: "#3ee08f"
+  night-amber: "#ffc23d"
+  chalk-ink: "#f2f3ef"
+  night-ink-2: "#bdc1c8"
+  night-ink-3: "#9da3ab"
+  night-wall: "#050607"
+  night-board: "#0c0e11"
+  night-board-hi: "#15181d"
+  night-frame: "#2a2e35"
+  night-frame-deep: "#1a1d21"
+  night-frame-hi: "#444a53"
   night-rule: "rgb(240 241 237 / 0.22)"
   night-rule-soft: "rgb(240 241 237 / 0.1)"
-  night-ghost-blue: "rgb(134 160 255 / 0.12)"
+  night-ghost-blue: "rgb(71 168 255 / 0.12)"
   night-ghost-ink: "rgb(240 241 237 / 0.08)"
 typography:
   display:
@@ -217,7 +217,7 @@ Una superficie neutra fría y pocos marcadores saturados, cada uno con un único
 ### Named Rules
 **The One Marker, One Job Rule.** Cada marcador tiene un solo papel: azul es acción y lo que dice Apartar; rojo es solo lo que resta y lo atrasado; verde es solo lo pagado; ámbar es solo lo que está en revisión; la tinta es el texto. Un éxito que no es un pago no va en verde; un error de formulario no reemplaza al rojo de «resta» como lenguaje de la cuenta; un adorno nunca se pinta con un marcador.
 
-**The Acrylic and Blackboard Rule.** Claro es acrílico blanco frío; oscuro es pizarra negra. Los dos temas son el mismo objeto con otro material, no una inversión de colores: cada token `--pz-*` tiene su pareja en `[data-theme='apartar-dark']` y toda pantalla debe funcionar en ambos.
+**The Acrylic and Blackboard Rule.** Claro es acrílico blanco frío; oscuro es pizarra negra. Los dos temas son el mismo objeto con otro material, no una inversión de colores: cada token `--pz-*` tiene su pareja en `[data-theme='apartar-dark']` y toda pantalla debe funcionar en ambos. En oscuro la pizarra es negra profunda (`#0c0e11`), nunca gris, y los marcadores son de tinta líquida viva (azul `#47a8ff`, rojo `#ff5c6c`, verde `#3ee08f`, ámbar `#ffc23d`) con texto oscuro sobre ellos; los tonos pastel o lavanda apagan la pizarra y quedan fuera. Sin brillos ni halos: el color vive en la tinta, no en una luz.
 
 ## Typography
 

@@ -70,26 +70,26 @@
 }
 
 [data-theme='apartar-dark'] {
-    --pz-wall: #08090b;
-    --pz-board: #111316;
-    --pz-board-hi: #16181c;
-    --pz-frame: #3b4048;
-    --pz-frame-deep: #24282e;
-    --pz-frame-hi: #555b64;
-    --pz-ink: #f0f1ed;
-    --pz-ink-2: #b8bcc3;
-    --pz-ink-3: #9aa0a8;
-    --pz-blue: #86a0ff;
-    --pz-blue-deep: #a5b8ff;
-    --pz-on-blue: #0b0d12;
-    --pz-red: #ff7479;
-    --pz-green: #55d996;
-    --pz-amber: #f0c060;
-    --pz-ghost: rgb(134 160 255 / 0.12);
+    --pz-wall: #050607;
+    --pz-board: #0c0e11;
+    --pz-board-hi: #15181d;
+    --pz-frame: #2a2e35;
+    --pz-frame-deep: #1a1d21;
+    --pz-frame-hi: #444a53;
+    --pz-ink: #f2f3ef;
+    --pz-ink-2: #bdc1c8;
+    --pz-ink-3: #9da3ab;
+    --pz-blue: #47a8ff;
+    --pz-blue-deep: #74beff;
+    --pz-on-blue: #06121f;
+    --pz-red: #ff5c6c;
+    --pz-green: #3ee08f;
+    --pz-amber: #ffc23d;
+    --pz-ghost: rgb(71 168 255 / 0.13);
     --pz-ghost-ink: rgb(240 241 237 / 0.08);
     --pz-rule: rgb(240 241 237 / 0.22);
     --pz-rule-soft: rgb(240 241 237 / 0.1);
-    --pz-sheen: linear-gradient(115deg, #16181c 0%, #111316 50%, #0e1013 100%);
+    --pz-sheen: linear-gradient(115deg, #13161b 0%, #0c0e11 50%, #0a0c0e 100%);
 }
 
 @theme {
