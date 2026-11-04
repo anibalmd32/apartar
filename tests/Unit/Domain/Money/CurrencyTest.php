@@ -22,9 +22,9 @@ it('no lleva símbolo ni formato, que son de MoneyFormatter', function (): void 
     expect($methods)->not->toContain('format');
 });
 
-it('se nombra con su código para elegirla en un formulario', function (Currency $currency, string $label): void {
-    expect($currency->label())->toBe($label)->toContain($currency->value);
+it('se nombra con el mismo símbolo que llevan los montos en pantalla, no con el código ISO', function (Currency $currency, string $label): void {
+    expect($currency->label())->toBe($label)->not->toContain($currency->value);
 })->with([
-    [Currency::USD, 'Dólares (USD)'],
-    [Currency::VES, 'Bolívares (VES)'],
+    [Currency::USD, 'Dólares ($)'],
+    [Currency::VES, 'Bolívares (Bs.)'],
 ]);

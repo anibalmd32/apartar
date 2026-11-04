@@ -13,8 +13,8 @@ enum Currency: string
     public function label(): string
     {
         return match ($this) {
-            self::USD => 'Dólares (USD)',
-            self::VES => 'Bolívares (VES)',
+            self::USD => 'Dólares ($)',
+            self::VES => 'Bolívares (Bs.)',
         };
     }
 }

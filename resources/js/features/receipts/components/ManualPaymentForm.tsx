@@ -113,7 +113,14 @@ export function ManualPaymentForm({
                     key={form.data.idempotency_key}
                     values={form.data}
                     errors={form.errors}
-                    onChange={(patch) => form.setData((data) => ({ ...data, ...patch }))}
+                    onChange={(patch) =>
+                        form.setData((data) => {
+                            const shortcut = suggestions.some((suggestion) => suggestion.amount === data.amount);
+                            const switched = patch.currency !== undefined && patch.currency !== data.currency;
+
+                            return { ...data, ...patch, ...(switched && shortcut && patch.amount === undefined ? { amount: '' } : {}) };
+                        })
+                    }
                     options={options}
                     preview={previewState}
                     onReadingChange={setReading}

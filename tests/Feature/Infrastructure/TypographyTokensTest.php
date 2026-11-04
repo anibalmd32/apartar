@@ -27,12 +27,12 @@ it('el rótulo pequeño compartido va en minúscula normal y sin espaciado', fun
         ->and(cssUtility('text-eyebrow'))->toBeEmpty();
 });
 
-it('el título de página mide 22px en el celular sin espaciado negativo y solo se junta desde 24px', function (): void {
+it('el título de página es condensado, mide 26px en el celular sin espaciado negativo y solo se junta en escritorio', function (): void {
     $title = cssUtility('text-h1');
     $mobile = (string) preg_replace('~@media[^{]*\{[^}]*\}~s', '', $title);
 
-    expect($mobile)->toContain('font-size: 1.375rem;')->not->toContain('letter-spacing')
-        ->and($title)->toMatch('~@media \(width >= 64rem\) \{[^}]*font-size: 1\.625rem;[^}]*letter-spacing: -0\.02em;~s');
+    expect($mobile)->toContain('font-size: 1.625rem;')->toContain('font-stretch: 82%;')->not->toContain('letter-spacing')
+        ->and($title)->toMatch('~@media \(width >= 64rem\) \{[^}]*font-size: 2\.125rem;[^}]*letter-spacing: -0\.015em;~s');
 });
 
 it('las cifras de las filas densas del panel no heredan el espaciado negativo de la cifra grande', function (): void {

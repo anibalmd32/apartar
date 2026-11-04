@@ -29,3 +29,15 @@ it('sin pendientes, o sin cifra, no pinta badge', () => {
     expect(screen.getByRole('link', { name: 'Comprobantes' })).toBeInTheDocument();
     expect(screen.queryByText(/pendientes/)).not.toBeInTheDocument();
 });
+
+it('una sección que abre con un filtro sigue marcada como actual y con su cifra', () => {
+    render(
+        <BackofficeNav
+            sections={[{ label: 'Comprobantes', href: '/backoffice?status=pending_review', capability: 'receipts' }]}
+            capabilities={['receipts']}
+            badges={{ '/backoffice': 2 }}
+        />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Comprobantes 2 pendientes' })).toHaveAttribute('href', '/backoffice?status=pending_review');
+});

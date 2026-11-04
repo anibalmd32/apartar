@@ -22,11 +22,13 @@ import {
 import { ANY_CAPABILITY, type NavSection } from './nav';
 
 export const RECEIPTS_HREF = bo('/comprobantes');
+
+const RECEIPTS_TO_REVIEW = `${RECEIPTS_HREF}?status=pending_review`;
 export const CHAT_HREF = bo('/chat');
 
 export const SECTIONS: NavSection[] = [
     { label: 'Hoy', href: bo(''), capability: ANY_CAPABILITY, icon: cilSpeedometer },
-    { label: 'Comprobantes', href: RECEIPTS_HREF, capability: 'receipts', icon: cilDescription },
+    { label: 'Comprobantes', href: RECEIPTS_TO_REVIEW, capability: 'receipts', icon: cilDescription },
     { label: 'Cobranza', href: bo('/cobranza'), capability: 'collections', icon: cilWallet },
     { label: 'Clientes', href: bo('/clientes'), capability: 'customers', icon: cilPeople },
     { label: 'Chat', href: CHAT_HREF, capability: 'chat', icon: cilChatBubble },
@@ -47,7 +49,7 @@ export const SECTIONS: NavSection[] = [
 
 export const TABS: NavSection[] = [
     { label: 'Hoy', href: bo(''), capability: ANY_CAPABILITY, icon: cilSpeedometer },
-    { label: 'Comprobantes', href: RECEIPTS_HREF, capability: 'receipts', icon: cilDescription },
+    { label: 'Comprobantes', href: RECEIPTS_TO_REVIEW, capability: 'receipts', icon: cilDescription },
     { label: 'Cobranza', href: bo('/cobranza'), capability: 'collections', icon: cilWallet },
     { label: 'Clientes', href: bo('/clientes'), capability: 'customers', icon: cilPeople },
 ];

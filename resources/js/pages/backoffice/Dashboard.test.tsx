@@ -92,7 +92,11 @@ it('cada cliente atrasado dice cuántos días y tiene su recordatorio por WhatsA
 
 it('sin pendientes, cada columna lo dice en vez de quedar vacía', () => {
     render(
-        <Dashboard {...dashboardProps()} pendingReceipts={[]} collectToday={{ totalCents: 0, outstandingCents: 0, customers: 0, late: 0, rows: [] }} />,
+        <Dashboard
+            {...dashboardProps()}
+            pendingReceipts={[]}
+            collectToday={{ totalCents: 0, outstandingCents: 0, customers: 0, late: 0, rows: [] }}
+        />,
     );
 
     expect(within(column('Por revisar')).getByText('Nada por revisar.')).toBeInTheDocument();
@@ -138,7 +142,9 @@ it('pinta los avisos con su acción', () => {
 it('escribe a mano el día y la tasa de hoy', () => {
     render(
         <Dashboard
-            {...dashboardProps({ rate: { rate: 893.2227, source: 'bcv', sourceLabel: 'BCV', publishedAt: new Date().toISOString(), isStale: false } })}
+            {...dashboardProps({
+                rate: { rate: 893.2227, source: 'bcv', sourceLabel: 'BCV', publishedAt: new Date().toISOString(), isStale: false },
+            })}
         />,
     );
 

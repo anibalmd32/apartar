@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { type OrganizationCapability } from '@/types/backoffice';
 import { cilMenu } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
-import { ANY_CAPABILITY, isCurrentSection, type NavSection } from './nav';
+import { ANY_CAPABILITY, isCurrentSection, type NavSection, sectionPath } from './nav';
 
 interface TabBarProps {
     tabs: readonly NavSection[];
@@ -52,10 +52,10 @@ export function TabBar({ tabs, capabilities, badges = {}, onMore, moreOpen }: Ta
                         key={tab.href}
                         href={tab.href}
                         aria-current={active ? 'page' : undefined}
-                        aria-label={tabLabel(tab.label, badges[tab.href] ?? 0)}
+                        aria-label={tabLabel(tab.label, badges[sectionPath(tab.href)] ?? 0)}
                         className={cn('flex flex-1 flex-col items-center gap-1 py-1.5', active ? 'text-primary-ink' : 'text-ink-3')}
                     >
-                        {item(active, tab.icon, tab.label, badges[tab.href])}
+                        {item(active, tab.icon, tab.label, badges[sectionPath(tab.href)])}
                     </Link>
                 );
             })}

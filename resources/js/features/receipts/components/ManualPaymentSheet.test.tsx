@@ -106,6 +106,41 @@ it('las sugerencias de cuota y saldo rellenan el importe en dólares', () => {
     expect(screen.getByLabelText('Importe')).toHaveValue('58,00');
 });
 
+it('si el importe salió de una sugerencia en dólares y se cambia a bolívares, el importe se vacía en vez de pasar como bolívares', () => {
+    withQueries(
+        <ManualPaymentForm
+            options={OPTIONS}
+            open
+            onClose={() => undefined}
+            title="Registrar pago manual"
+            suggestions={[{ key: 'installment-1', label: 'Cuota 1 · $5,25', amount: '5,25' }]}
+        />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cuota 1 · $5,25' }));
+    fireEvent.change(screen.getByLabelText('Moneda'), { target: { value: 'VES' } });
+
+    expect(screen.getByLabelText('Moneda')).toHaveValue('VES');
+    expect(screen.getByLabelText('Importe')).toHaveValue('');
+});
+
+it('un importe escrito a mano se conserva al cambiar la moneda', () => {
+    withQueries(
+        <ManualPaymentForm
+            options={OPTIONS}
+            open
+            onClose={() => undefined}
+            title="Registrar pago manual"
+            suggestions={[{ key: 'installment-1', label: 'Cuota 1 · $5,25', amount: '5,25' }]}
+        />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '4.700,00' } });
+    fireEvent.change(screen.getByLabelText('Moneda'), { target: { value: 'VES' } });
+
+    expect(screen.getByLabelText('Importe')).toHaveValue('4.700,00');
+});
+
 it('no deja registrar el pago hasta que la nota tenga el mínimo de caracteres', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
     withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);

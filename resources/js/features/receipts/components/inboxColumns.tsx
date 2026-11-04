@@ -11,7 +11,7 @@ function Arrival({ row, now }: { row: ReceiptInboxRow; now: number }) {
     const age = formatAge(row.submittedAt, now);
 
     return row.overdue ? (
-        <Badge tone="error">
+        <Badge tone="warning">
             <span>{age}</span>
             <span className="sr-only">Atrasado</span>
         </Badge>
@@ -20,37 +20,31 @@ function Arrival({ row, now }: { row: ReceiptInboxRow; now: number }) {
     );
 }
 
-function LayawayCell({ row }: { row: ReceiptInboxRow }) {
-    return (
-        <div className="flex items-center gap-3">
-            <FileCell row={row} />
-            {row.layaway === null ? (
-                <span className="text-ink-3">—</span>
-            ) : (
-                <div className="flex flex-col items-start gap-1">
-                    <Link href={row.layaway.url} className="hit-area font-mono text-[13px] font-semibold whitespace-nowrap hover:underline">
-                        {row.layaway.code}
-                    </Link>
-                    {row.layaway.cancelled ? (
-                        <Badge tone="neutral" outline>
-                            Apartado cancelado
-                        </Badge>
-                    ) : null}
-                </div>
-            )}
-        </div>
-    );
-}
-
 function CustomerCell({ row }: { row: ReceiptInboxRow }) {
-    if (row.customer === null) {
-        return <span className="text-ink-3">—</span>;
-    }
-
     return (
-        <div className="flex flex-col gap-0.5">
-            <span className="font-medium">{row.customer.fullName}</span>
-            <span className="text-ink-3 text-xs whitespace-nowrap">{formatDocumentNumber(row.customer.documentNumber)}</span>
+        <div className="flex min-w-0 items-center gap-3">
+            <FileCell row={row} />
+            <div className="flex min-w-0 flex-col items-start gap-0.5">
+                <span className="font-semibold">{row.customer?.fullName ?? 'Sin cliente'}</span>
+                <span className="text-ink-3 flex flex-wrap items-center gap-x-1.5 text-xs">
+                    {row.layaway === null ? null : (
+                        <Link href={row.layaway.url} className="hit-area font-semibold whitespace-nowrap tabular-nums hover:underline">
+                            {row.layaway.code}
+                        </Link>
+                    )}
+                    {row.customer === null ? null : (
+                        <>
+                            <span aria-hidden="true">·</span>
+                            <span className="whitespace-nowrap">{formatDocumentNumber(row.customer.documentNumber)}</span>
+                        </>
+                    )}
+                </span>
+                {row.layaway?.cancelled ? (
+                    <Badge tone="neutral" outline>
+                        Apartado cancelado
+                    </Badge>
+                ) : null}
+            </div>
         </div>
     );
 }
@@ -128,19 +122,14 @@ function FileCell({ row }: { row: ReceiptInboxRow }) {
 export function inboxColumns(now: number): DataTableColumn<ReceiptInboxRow>[] {
     return [
         {
-            id: 'layaway',
-            header: 'Comprobante',
-            cell: (row) => <LayawayCell row={row} />,
+            id: 'customer',
+            header: 'Cliente y apartado',
+            cell: (row) => <CustomerCell row={row} />,
             mobile: {
                 media: (row) => <Thumbnail row={row} />,
+                title: (row) => row.customer?.fullName ?? 'Sin cliente',
                 subtitle: (row) => (row.layaway === null ? null : `${row.layaway.code}${row.layaway.cancelled ? ' (cancelado)' : ''}`),
             },
-        },
-        {
-            id: 'customer',
-            header: 'Cliente',
-            cell: (row) => <CustomerCell row={row} />,
-            mobile: { title: (row) => row.customer?.fullName ?? 'Sin cliente' },
         },
         { id: 'payment', header: 'Método', cell: (row) => <PaymentCell row={row} />, mobile: { subtitle: (row) => row.methodLabel } },
         { id: 'account', header: 'Cuenta declarada', cell: (row) => <AccountCell row={row} />, mobile: 'hidden' },
@@ -164,7 +153,7 @@ export function inboxColumns(now: number): DataTableColumn<ReceiptInboxRow>[] {
             cell: (row) => (
                 <div className="flex items-center justify-end gap-3">
                     <Badge tone={STATUS_TONES[row.status]}>{row.statusLabel}</Badge>
-                    <Link href={row.reviewUrl} className={row.status === 'pending_review' ? 'btn btn-secondary btn-sm' : 'btn btn-ghost btn-sm'}>
+                    <Link href={row.reviewUrl} className={row.status === 'pending_review' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'}>
                         {row.status === 'pending_review' ? 'Revisar' : 'Ver'}
                     </Link>
                 </div>

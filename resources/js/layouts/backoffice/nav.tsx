@@ -15,10 +15,15 @@ export interface NavSection {
     readonly group?: string;
 }
 
+export function sectionPath(href: string): string {
+    return href.split('?')[0] ?? href;
+}
+
 export function isCurrentSection(href: string, url: string): boolean {
     const path = url.split('?')[0] ?? url;
+    const target = sectionPath(href);
 
-    return href === bo('') ? path === href : path === href || path.startsWith(`${href}/`);
+    return target === bo('') ? path === target : path === target || path.startsWith(`${target}/`);
 }
 
 interface BackofficeNavProps {
@@ -75,7 +80,7 @@ export function BackofficeNav({ sections, capabilities, badges = {} }: Backoffic
         <nav aria-label="Secciones del backoffice" className="flex flex-col gap-2">
             <ul className="flex flex-col gap-0.5">
                 {main.map((section) => (
-                    <NavLink key={section.href} section={section} current={current} badge={badges[section.href] ?? 0} />
+                    <NavLink key={section.href} section={section} current={current} badge={badges[sectionPath(section.href)] ?? 0} />
                 ))}
             </ul>
 
@@ -91,7 +96,12 @@ export function BackofficeNav({ sections, capabilities, badges = {} }: Backoffic
                                 <p className="font-hand text-ink-3 px-3 pb-0.5 text-lg leading-none">{group.label}</p>
                                 <ul className="flex flex-col gap-0.5">
                                     {group.items.map((section) => (
-                                        <NavLink key={section.href} section={section} current={current} badge={badges[section.href] ?? 0} />
+                                        <NavLink
+                                            key={section.href}
+                                            section={section}
+                                            current={current}
+                                            badge={badges[sectionPath(section.href)] ?? 0}
+                                        />
                                     ))}
                                 </ul>
                             </div>

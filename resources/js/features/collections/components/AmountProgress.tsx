@@ -22,7 +22,7 @@ export function AmountProgress({ paid, total, progress, className }: AmountProgr
                 aria-valuenow={percent}
                 aria-label={`Pagado ${percent}%`}
             >
-                <div className={cn('h-full rounded-full', percent >= 100 ? 'bg-success' : 'bg-primary')} style={{ width: `${percent}%` }} />
+                <div className="bg-success h-full rounded-full" style={{ width: `${percent}%` }} />
             </div>
             <span className="text-ink-3 flex items-center gap-1 text-xs whitespace-nowrap">
                 <MoneyLabel money={paid} compact className="text-ink-2 font-semibold" />

@@ -108,7 +108,7 @@ final class ReceiptCreateTest extends TestCase
             ->where('methods.0.value', 'pago_movil')
             ->where('methods.0.requiresReference', true)
             ->where('methods.0.defaultCurrency', 'VES')
-            ->where('currencies.1.label', 'Bolívares (VES)')
+            ->where('currencies.1.label', 'Bolívares (Bs.)')
             ->where('paidAt.min', '2026-10-02')
             ->where('paidAt.max', '2026-10-02')
             ->where('file.maxMb', 5)
