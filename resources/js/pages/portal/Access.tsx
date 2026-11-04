@@ -1,7 +1,7 @@
-import { BrandMark } from '@/components/shell/brand';
 import { Alert } from '@/components/ui/alert';
 import { Icon } from '@/components/ui/icon';
 import { CodeAccess, LinkAccess } from '@/features/account/components/PortalAccessForms';
+import { BoardBrand } from '@/features/marketing/board/BoardBrand';
 import { cn } from '@/lib/utils';
 import { type PortalAccessProps } from '@/types/portal';
 import { cilLifeRing } from '@coreui/icons';
@@ -38,16 +38,17 @@ export default function Access({ status, code = null, businessName = null, googl
             <Head title="Consulta tu apartado" />
 
             <div className="flex w-full max-w-[460px] flex-col gap-5">
-                <span className="inline-flex items-center gap-2.5">
-                    <BrandMark className="size-9 rounded-[10px] text-[22px]" />
-                    <span className="text-[19px] font-extrabold tracking-[-0.6px]">apartar</span>
-                </span>
+                {paying && businessName !== null ? (
+                    <p className="text-[1.25rem] font-extrabold [font-stretch:90%]">{businessName}</p>
+                ) : (
+                    <BoardBrand className="self-start" />
+                )}
 
                 <header className="flex flex-col gap-2">
                     {paying && businessName !== null ? (
-                        <p className="text-primary-ink text-[13px] font-semibold">Tu apartado en {businessName}</p>
+                        <p className="text-ink-2 text-[0.875rem] font-semibold">Tu apartado en {businessName}</p>
                     ) : null}
-                    <h1 className="tracking-heading text-[26px] leading-tight font-extrabold sm:text-[32px]">
+                    <h1 className="text-[1.875rem] leading-tight font-extrabold [font-stretch:88%] sm:text-[2.25rem]">
                         {code ? 'Paga tu apartado' : 'Mira tus apartados'}
                     </h1>
                     <p className="text-ink-2 text-[15px] leading-normal">
@@ -59,14 +60,7 @@ export default function Access({ status, code = null, businessName = null, googl
 
                 {status ? <Alert tone="success">{status}</Alert> : null}
 
-                {paying ? null : (
-                    <>
-                        <GoogleAccess googleUrl={googleUrl} secondary={false} />
-                        <div className="divider text-ink-3 my-0 text-xs">o entra sin cuenta</div>
-                    </>
-                )}
-
-                <section className="border-line bg-base-100 shadow-card flex flex-col gap-3.5 rounded-2xl border p-5">
+                <section className="border-line bg-base-100 flex flex-col gap-3.5 rounded-xl border p-5">
                     <div role="tablist" aria-label="Cómo quieres entrar" className="bg-surface-2 grid grid-cols-2 gap-0.5 rounded-[10px] p-[3px]">
                         {WAYS.map((option) => (
                             <button
@@ -97,12 +91,8 @@ export default function Access({ status, code = null, businessName = null, googl
                     </div>
                 </section>
 
-                {paying ? (
-                    <>
-                        <div className="divider text-ink-3 my-0 text-xs">o, si tienes cuenta</div>
-                        <GoogleAccess googleUrl={googleUrl} secondary />
-                    </>
-                ) : null}
+                <div className="divider text-ink-3 my-0 text-xs">o, si tienes cuenta de Google</div>
+                <GoogleAccess googleUrl={googleUrl} secondary />
 
                 <p className="bg-surface-2 text-ink-2 flex gap-2 rounded-xl p-3.5 text-xs leading-normal">
                     <Icon icon={cilLifeRing} className="mt-px" />

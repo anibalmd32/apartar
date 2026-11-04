@@ -105,10 +105,17 @@ it('al venir a pagar un apartado recién hecho, dice de qué negocio es y deja G
     expect(google).not.toHaveClass('btn-lg');
 });
 
-it('sin código, Google sigue siendo la primera opción', () => {
+it('el código va primero, porque es lo que tiene casi todo el que apartó; Google queda como segunda vía', () => {
     render(<Access googleUrl={GOOGLE} />);
 
     const google = screen.getByRole('link', { name: /Entrar con Google/ });
     const submit = screen.getByRole('button', { name: 'Ver mi apartado' });
-    expect(google.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(submit.compareDocumentPosition(google) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+it('cuando llega a pagar un apartado, arriba se ve el negocio y no la marca de Apartar', () => {
+    render(<Access googleUrl={GOOGLE} code="AP-7K3M9QRT" businessName="Ferretería Oriente" />);
+
+    expect(screen.getAllByText('Ferretería Oriente').length).toBeGreaterThan(0);
+    expect(screen.queryByText('apartar')).toBeNull();
 });
