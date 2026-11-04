@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Alert } from '@/components/ui/alert';
 import { Icon } from '@/components/ui/icon';
 import { CodeAccess, LinkAccess } from '@/features/account/components/PortalAccessForms';
@@ -38,11 +39,16 @@ export default function Access({ status, code = null, businessName = null, googl
             <Head title="Consulta tu apartado" />
 
             <div className="flex w-full max-w-[460px] flex-col gap-5">
-                {paying && businessName !== null ? (
-                    <p className="text-[1.25rem] font-extrabold [font-stretch:90%]">{businessName}</p>
-                ) : (
-                    <BoardBrand className="self-start" />
-                )}
+                <div className="flex items-center justify-between gap-3">
+                    {paying && businessName !== null ? (
+                        <p className="text-[1.25rem] font-extrabold [font-stretch:90%]">{businessName}</p>
+                    ) : (
+                        <a href={route('home')} aria-label="Apartar, ir al inicio" className="touch:min-h-11 inline-flex items-center">
+                            <BoardBrand />
+                        </a>
+                    )}
+                    <ThemeToggle />
+                </div>
 
                 <header className="flex flex-col gap-2">
                     {paying && businessName !== null ? (

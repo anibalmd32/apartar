@@ -21,6 +21,8 @@ final class ErrorPagesTest extends TestCase
             ->assertSee('Ir al inicio')
             ->assertSee('href="'.url('/').'"', false)
             ->assertSee('/fonts/archivo-latin.woff2', false)
+            ->assertSee('aria-label="Cambiar entre modo claro y oscuro"', false)
+            ->assertSee("[data-theme='apartar-dark']", false)
             ->assertSee('apartar');
     }
 

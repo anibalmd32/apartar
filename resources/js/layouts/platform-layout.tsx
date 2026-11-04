@@ -1,5 +1,6 @@
 import { Brand } from '@/components/shell/brand';
 import { RatePill } from '@/components/shell/rate-pill';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { UserMenu } from '@/components/shell/user-menu';
 import { DOCKED_BAR_PADDING } from '@/components/ui/form-action-bar';
 import { Icon } from '@/components/ui/icon';
@@ -80,6 +81,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                     </form>
                     <div className="flex-1" />
                     <RatePill />
+                    <ThemeToggle />
                     <PlatformBell />
                     {userMenu(false)}
                 </header>
@@ -90,6 +92,7 @@ export default function PlatformLayout({ title, description, actions, back, chil
                         <p className="text-ink-3 text-xs">Apartar</p>
                         <p className="text-h2 truncate">Plataforma</p>
                     </div>
+                    <ThemeToggle />
                     <PlatformBell />
                     {userMenu(true)}
                 </header>

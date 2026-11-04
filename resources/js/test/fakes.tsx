@@ -4,6 +4,8 @@ type RouteParams = Record<string, string>;
 
 export function fakeRoute(name: string, params: RouteParams = {}): string {
     switch (name) {
+        case 'home':
+            return '/';
         case 'catalog.show':
             return `/c/${params.catalog}`;
         case 'catalog.product':

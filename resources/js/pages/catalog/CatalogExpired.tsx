@@ -1,4 +1,5 @@
 import { Avatar } from '@/components/shell/avatar';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { type CatalogExpiredProps } from '@/types/catalog-view';
 import { cilArrowRight, cilCalendar, cilUser } from '@coreui/icons';
@@ -13,6 +14,7 @@ export default function CatalogExpired({ catalogName, businessName, storefrontUr
                 <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:min-h-[72px] lg:px-20">
                     <Avatar name={businessName} tone="accent" />
                     <p className="min-w-0 flex-1 truncate text-[15px] font-bold lg:text-base">{businessName}</p>
+                    <ThemeToggle />
                     <a href="/mi-cuenta" className="btn lg:border-line-strong max-lg:btn-square max-lg:size-11" aria-label="Mi cuenta">
                         <Icon icon={cilUser} />
                         <span className="max-lg:hidden">Mi cuenta</span>

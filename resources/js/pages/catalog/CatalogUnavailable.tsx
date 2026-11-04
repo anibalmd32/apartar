@@ -1,4 +1,5 @@
 import { Brand } from '@/components/shell/brand';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { cilLibrary, cilUser } from '@coreui/icons';
 import { Head } from '@inertiajs/react';
@@ -11,6 +12,7 @@ export default function CatalogUnavailable() {
             <header className="bg-base-100 border-line border-b">
                 <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 lg:min-h-[72px] lg:px-20">
                     <Brand />
+                    <ThemeToggle className="ml-auto" />
                     <a href="/mi-cuenta" className="btn lg:border-line-strong max-lg:btn-square max-lg:size-11" aria-label="Mi cuenta">
                         <Icon icon={cilUser} />
                         <span className="max-lg:hidden">Mi cuenta</span>

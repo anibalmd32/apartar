@@ -6,10 +6,25 @@
     <meta name="robots" content="noindex">
     <title>@yield('title') · Apartar</title>
     <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <script>
+        (function () {
+            var saved = localStorage.getItem('appearance') || 'system';
+            var dark = saved === 'dark' || (saved === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.dataset.theme = dark ? 'apartar-dark' : 'apartar';
+        })();
+    </script>
     <style>
         @font-face { font-family: 'Archivo'; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('/fonts/archivo-latin.woff2') format('woff2'); }
-        :root { color-scheme: light dark; --bg: #f4f5f2; --card: #fbfcfa; --ink: #15171b; --ink-2: #4a4f58; --ink-3: #5f646d; --line: #15171b; --primary: #1c45c4; --primary-hover: #15379f; --soft: #e6ebf9; --soft-ink: #15379f; --on-primary: #ffffff; }
-        @media (prefers-color-scheme: dark) { :root { --bg: #111316; --card: #16181c; --ink: #f0f1ed; --ink-2: #b8bcc3; --ink-3: #9aa0a8; --line: #f0f1ed; --primary: #86a0ff; --primary-hover: #a5b8ff; --soft: #1d2440; --soft-ink: #a5b8ff; --on-primary: #0b0d12; } }
+        :root { color-scheme: light; --bg: #f4f5f2; --card: #fbfcfa; --ink: #15171b; --ink-2: #4a4f58; --ink-3: #5f646d; --line: #15171b; --primary: #1c45c4; --primary-hover: #15379f; --soft: #e6ebf9; --soft-ink: #15379f; --on-primary: #ffffff; }
+        [data-theme='apartar-dark'] { color-scheme: dark; --bg: #0c0e11; --card: #15181d; --ink: #f2f3ef; --ink-2: #bdc1c8; --ink-3: #9da3ab; --line: #f2f3ef; --primary: #47a8ff; --primary-hover: #74beff; --soft: #0f2740; --soft-ink: #8cc8ff; --on-primary: #06121f; }
+        header { justify-content: space-between; }
+        .theme { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; font: inherit; font-size: 20px; }
+        .theme:hover { background: var(--soft); }
+        .theme:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+        .theme svg { width: 18px; height: 18px; fill: currentColor; }
+        .theme .sun { display: none; }
+        [data-theme='apartar-dark'] .theme .sun { display: block; }
+        [data-theme='apartar-dark'] .theme .moon { display: none; }
         * { box-sizing: border-box; }
         body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
         header { display: flex; align-items: center; height: 60px; padding: 0 16px; max-width: 1440px; width: 100%; margin: 0 auto; }
@@ -32,6 +47,10 @@
 <body>
     <header>
         <a class="brand" href="{{ url('/') }}" aria-label="Apartar, inicio">apartar</a>
+        <button class="theme" type="button" aria-label="Cambiar entre modo claro y oscuro" onclick="var d=document.documentElement;var dark=d.dataset.theme!=='apartar-dark';d.dataset.theme=dark?'apartar-dark':'apartar';localStorage.setItem('appearance',dark?'dark':'light');">
+            <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.3 2a10 10 0 1 0 9.7 12.6A8 8 0 0 1 12.3 2z"/></svg>
+            <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M11 1h2v4h-2zM11 19h2v4h-2zM1 11h4v2H1zM19 11h4v2h-4zM4.2 2.8l2.8 2.8-1.4 1.4-2.8-2.8zM17 17l2.8 2.8-1.4 1.4-2.8-2.8zM2.8 19.8l2.8-2.8 1.4 1.4-2.8 2.8zM17 7l2.8-2.8 1.4 1.4L18.4 8.4z"/></svg>
+        </button>
     </header>
     <main>
         <div class="card">

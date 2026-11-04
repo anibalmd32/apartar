@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { BoardBrand } from '@/features/marketing/board/BoardBrand';
 import { SignupCta } from '@/features/marketing/components/SignupCta';
@@ -45,6 +46,8 @@ export function SiteHeader() {
                         </Link>
                     ))}
                 </div>
+
+                <ThemeToggle className="text-pz-ink hover:bg-pz-ghost-ink" />
 
                 {loggedIn ? (
                     <Link href={route('dashboard')} className="pz-btn pz-btn-blue">

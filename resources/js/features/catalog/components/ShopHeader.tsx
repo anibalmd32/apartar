@@ -1,5 +1,7 @@
 import { Avatar } from '@/components/shell/avatar';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
+import { RateStrip, RateText } from '@/components/shell/rate-strip';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { type OrganizationBrand } from '@/types/backoffice';
 import { cilUser } from '@coreui/icons';
@@ -23,7 +25,7 @@ export function ShopHeader({ business }: { business: OrganizationBrand }) {
 
     return (
         <header className="bg-base-100 border-line border-b">
-            <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:min-h-[76px] lg:px-20">
+            <div className="mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-3 sm:gap-3 lg:min-h-[76px] lg:px-20">
                 {business.storefrontUrl ? (
                     <a
                         href={business.storefrontUrl}
@@ -36,13 +38,16 @@ export function ShopHeader({ business }: { business: OrganizationBrand }) {
                     <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
                 )}
 
+                <RateText className="max-md:hidden" />
                 <CurrencySwitch />
+                <ThemeToggle />
 
                 <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-3" aria-label="Mis apartados">
                     <Icon icon={cilUser} size={18} />
                     <span className="max-sm:hidden">Mis apartados</span>
                 </a>
             </div>
+            <RateStrip className="md:hidden" />
         </header>
     );
 }

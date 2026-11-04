@@ -6,11 +6,18 @@ const mediaQuery = (): MediaQueryList | null => (typeof window.matchMedia === 'f
 
 const prefersDark = () => mediaQuery()?.matches ?? false;
 
+export const APPEARANCE_EVENT = 'apartar:appearance';
+
+export function resolvesToDark(appearance: Appearance): boolean {
+    return appearance === 'dark' || (appearance === 'system' && prefersDark());
+}
+
 const applyTheme = (appearance: Appearance) => {
-    const isDark = appearance === 'dark' || (appearance === 'system' && prefersDark());
+    const isDark = resolvesToDark(appearance);
 
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.dataset.theme = isDark ? 'apartar-dark' : 'apartar';
+    window.dispatchEvent(new CustomEvent<Appearance>(APPEARANCE_EVENT, { detail: appearance }));
 };
 
 const handleSystemThemeChange = () => {
@@ -37,9 +44,12 @@ export function useAppearance() {
 
     useEffect(() => {
         const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
-        updateAppearance(savedAppearance || 'system');
+        setAppearance(savedAppearance || 'system');
 
-        return () => mediaQuery()?.removeEventListener('change', handleSystemThemeChange);
+        const follow = (event: Event) => setAppearance((event as CustomEvent<Appearance>).detail);
+        window.addEventListener(APPEARANCE_EVENT, follow);
+
+        return () => window.removeEventListener(APPEARANCE_EVENT, follow);
     }, []);
 
     return { appearance, updateAppearance };

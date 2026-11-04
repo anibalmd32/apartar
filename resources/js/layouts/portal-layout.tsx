@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/shell/avatar';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
-import { RatePill } from '@/components/shell/rate-pill';
+import { RateStrip, RateText } from '@/components/shell/rate-strip';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { UserMenu } from '@/components/shell/user-menu';
 import { PortalNav, portalNavItems, PortalTabBar } from '@/features/account/components/PortalNav';
 import { useAccountSession } from '@/features/account/hooks/useAccountSession';
@@ -74,8 +75,9 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
                 <PortalNav items={items} />
 
                 <div className="flex-1" />
-                {isAccount ? null : <RatePill className="max-xl:hidden" />}
+                {isAccount ? null : <RateText className="max-xl:hidden" />}
                 <CurrencySwitch />
+                <ThemeToggle />
                 <div className="flex items-center gap-2">
                     {userMenu}
                     <span className="max-w-40 truncate text-sm font-semibold">{customerName}</span>
@@ -92,8 +94,10 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
                     <span className="min-w-0 truncate text-[1.0625rem] font-extrabold [font-stretch:90%]">{businessName}</span>
                 </Link>
                 <CurrencySwitch />
+                <ThemeToggle />
                 {userMenu}
             </header>
+            {isAccount || immersive ? null : <RateStrip className="xl:hidden" />}
 
             <main
                 className={cn(

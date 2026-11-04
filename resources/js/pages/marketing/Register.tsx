@@ -1,3 +1,4 @@
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
@@ -54,6 +55,7 @@ export default function Register({ plan = null }: RegisterProps) {
                 <BoardBrand />
             </Link>
             <p className="text-pz-ink-2 flex items-center gap-2 text-[0.9375rem]">
+                <ThemeToggle className="text-pz-ink hover:bg-pz-ghost-ink" />
                 <span className="max-sm:hidden">¿Ya tienes cuenta?</span>
                 <Link href={route('login')} className="pz-btn pz-btn-line touch:min-h-11 min-h-10 px-4">
                     Entrar

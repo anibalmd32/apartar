@@ -2,6 +2,7 @@ import { AttentionBell } from '@/components/shell/attention-bell';
 import { Avatar } from '@/components/shell/avatar';
 import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { MobileSearch } from '@/components/shell/mobile-search';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { type ReactNode } from 'react';
 
 interface MobileHeaderProps {
@@ -18,6 +19,7 @@ export function MobileHeader({ organizationName, pendingReceipts, userMenu }: Mo
             <div className="flex items-center">
                 <MobileSearch />
                 <AttentionBell pendingReceipts={pendingReceipts} plain />
+                <ThemeToggle />
             </div>
             <CurrencySwitch touch />
             <div className="flex">{userMenu}</div>

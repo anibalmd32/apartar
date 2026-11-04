@@ -1,6 +1,7 @@
-import { BrandMark } from '@/components/shell/brand';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Alert } from '@/components/ui/alert';
 import { type ChipTone, IconChip } from '@/components/ui/icon-chip';
+import { BoardBrand } from '@/features/marketing/board/BoardBrand';
 import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -34,12 +35,14 @@ export default function AccessLayout({
         <main className="bg-base-200 flex min-h-screen flex-col gap-6 px-4 pt-6 pb-10 sm:items-center sm:justify-center sm:gap-7 sm:py-12">
             <Head title={title} />
 
-            <span className="inline-flex items-center gap-2.5">
-                <BrandMark className="sm:size-[38px] sm:rounded-[11px] sm:text-2xl" />
-                <span className="text-[19px] font-extrabold tracking-[-0.6px] sm:text-[22px]">apartar</span>
-            </span>
+            <div className="flex w-full items-center justify-between gap-3 sm:max-w-[440px]">
+                <a href={route('home')} className="touch:min-h-11 inline-flex items-center" aria-label="Apartar, ir al inicio">
+                    <BoardBrand />
+                </a>
+                <ThemeToggle />
+            </div>
 
-            <div className="sm:border-line sm:bg-base-100 sm:shadow-pop flex w-full flex-col gap-4 sm:max-w-[440px] sm:rounded-2xl sm:border sm:p-9">
+            <div className="sm:border-line sm:bg-base-100 flex w-full flex-col gap-4 sm:max-w-[440px] sm:rounded-xl sm:border sm:p-9">
                 {header}
 
                 <header className={cn('flex flex-col gap-4', centered && 'items-center text-center')}>

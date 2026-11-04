@@ -3,6 +3,7 @@ import { CurrencySwitch } from '@/components/shell/currency-switch';
 import { GlobalSearch } from '@/components/shell/global-search';
 import { OrganizationSwitcher } from '@/components/shell/organization-switcher';
 import { RatePill } from '@/components/shell/rate-pill';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { menuItemClass, UserMenu } from '@/components/shell/user-menu';
 import { BackLink } from '@/components/ui/back-link';
 import { DOCKED_BAR_PADDING } from '@/components/ui/form-action-bar';
@@ -136,6 +137,7 @@ function BackofficeFrame({ title, description, actions, back, badge, immersive =
                     <div className="flex-1" />
                     <RatePill />
                     <CurrencySwitch />
+                    <ThemeToggle />
                     <AttentionBell pendingReceipts={pendingReceipts} />
                     {userMenu}
                 </header>
