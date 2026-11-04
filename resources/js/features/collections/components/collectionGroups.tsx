@@ -4,6 +4,7 @@ import { AmountProgress } from '@/features/collections/components/AmountProgress
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
 import { DueBadge, customerMobile } from '@/features/collections/components/collectionMobile';
 import { DeliveryCell } from '@/features/collections/components/DeliveryCell';
+import { WhatsAppReminder } from '@/features/collections/components/WhatsAppReminder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDate } from '@/lib/dates';
 import { cn } from '@/lib/utils';
@@ -76,7 +77,14 @@ export function customerColumns(isOpen: (id: number) => boolean, onToggle: (id: 
             header: 'Acciones',
             align: 'end',
             mobile: { action: (row) => <Toggle row={row} open={isOpen(row.id)} onToggle={onToggle} /> },
-            cell: (row) => <Contact customer={row.customer} />,
+            cell: (row) => (
+                <span className="flex items-center justify-end gap-1.5">
+                    {row.daysLate > 0 ? (
+                        <WhatsAppReminder customer={row.customer} dueCents={Number(row.pending.cents)} daysLate={row.daysLate} />
+                    ) : null}
+                    <Contact customer={row.customer} />
+                </span>
+            ),
         },
     ];
 }

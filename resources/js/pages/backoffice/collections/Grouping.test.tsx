@@ -59,6 +59,7 @@ const GROUP: CollectionCustomerRow = {
 };
 
 beforeEach(() => {
+    vi.stubGlobal('route', (name: string) => `/${name}`);
     usePage.mockReturnValue({ props: { currency: { display: 'usd_primary', rate: { rate: null } }, errors: {}, flash: {} } });
     routerPost.mockReset();
     routerPut.mockReset();

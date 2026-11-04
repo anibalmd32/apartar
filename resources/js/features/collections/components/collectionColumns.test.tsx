@@ -8,7 +8,7 @@ import { type CustomerDirectoryRow } from '@/types/customers';
 import { type DataTableColumn, type TableMeta } from '@/types/data-table';
 import { render, screen, within } from '@testing-library/react';
 import { type ReactNode } from 'react';
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => ({ props: {} }),
@@ -19,6 +19,10 @@ vi.mock('@inertiajs/react', () => ({
         </a>
     ),
 }));
+
+beforeEach(() => {
+    vi.stubGlobal('route', (name: string) => `/${name}`);
+});
 
 const META: TableMeta = { page: 1, perPage: 25, sort: null, filters: {}, total: 1, lastPage: 1, hasMore: false, ignoredFilters: [] };
 
@@ -63,6 +67,18 @@ it('en Cobranza la cuota es una tarjeta que lleva al apartado, con el monto, el 
     expect(row).not.toHaveTextContent('Pagado');
     expect(row).not.toHaveTextContent('$0,00');
     expect(within(row).queryByRole('link', { name: 'Registrar pago' })).toBeNull();
+});
+
+it('en Cobranza cada cuota trae su recordatorio por WhatsApp con lo pendiente y el enlace al portal', () => {
+    render(<List rows={[INSTALLMENT]} columns={installmentColumns} href={(row) => row.layaway.url} />);
+
+    const reminder = within(card()).getByRole('link', { name: 'Recordarle a José Gregorio Martínez por WhatsApp' });
+    const text = decodeURIComponent(reminder.getAttribute('href') ?? '');
+
+    expect(reminder.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/584241234502\?text=/);
+    expect(text).toContain('Hola, José');
+    expect(text).toContain('tienes $14,50 pendientes de tu apartado');
+    expect(text).toContain('/portal.access');
 });
 
 it('en Cobranza lo abonado de una cuota aparece solo cuando hay algo', () => {

@@ -21,6 +21,7 @@ vi.mock('@inertiajs/react', () => ({
 vi.mock('@/layouts/backoffice-layout', () => ({ default: ({ children }: { children: ReactNode }) => <main>{children}</main> }));
 
 beforeEach(() => {
+    vi.stubGlobal('route', (name: string) => `/${name}`);
     vi.useFakeTimers({ shouldAdvanceTime: true });
     routerGet.mockReset();
 });

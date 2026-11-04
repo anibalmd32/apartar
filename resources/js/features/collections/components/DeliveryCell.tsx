@@ -36,7 +36,7 @@ export function DeliveryCell({ delivery, code }: { delivery: CollectionDelivery;
 
     return (
         <>
-            <button type="button" className="btn btn-secondary btn-sm whitespace-nowrap" onClick={() => setAsking(true)}>
+            <button type="button" className="btn btn-ghost btn-sm whitespace-nowrap" onClick={() => setAsking(true)}>
                 Marcar entregado
             </button>
             <Modal

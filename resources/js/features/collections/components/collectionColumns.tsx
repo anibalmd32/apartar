@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
 import { customerMobile, DueBadge, dueDateMeta, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
 import { DeliveryCell } from '@/features/collections/components/DeliveryCell';
+import { WhatsAppReminder } from '@/features/collections/components/WhatsAppReminder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { formatDate } from '@/lib/dates';
 import {
@@ -72,6 +73,7 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
         mobile: 'hidden',
         cell: (row) => (
             <span className="flex items-center justify-end gap-1.5">
+                <WhatsAppReminder customer={row.customer} dueCents={Number(row.pending.cents)} daysLate={row.daysLate} />
                 <Contact customer={row.customer} />
                 <Link href={row.layaway.url} className="btn btn-secondary btn-sm">
                     Registrar pago

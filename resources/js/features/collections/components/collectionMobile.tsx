@@ -7,6 +7,7 @@ import { type CollectionCustomer, type CollectionInstallmentRow } from '@/types/
 import { type MobileLayout } from '@/types/data-table';
 import { cilPhone } from '@coreui/icons';
 import { type ReactNode } from 'react';
+import { WhatsAppReminder } from './WhatsAppReminder';
 
 export function DueBadge({ row }: { row: CollectionInstallmentRow }) {
     if (row.daysLate > 0) {
@@ -55,11 +56,26 @@ function CallButton({ customer }: { customer: CollectionCustomer }) {
     );
 }
 
-export function customerMobile<TRow extends { customer: CollectionCustomer | null }>(): MobileLayout<TRow> {
+export function customerMobile<
+    TRow extends { customer: CollectionCustomer | null; pending?: { cents: number }; daysLate?: number },
+>(): MobileLayout<TRow> {
     return {
         media: (row) => <Avatar name={row.customer?.name ?? '—'} size={40} tone={row.customer ? 'accent' : 'neutral'} />,
         title: (row) => row.customer?.name ?? 'Sin cliente',
-        action: (row) => (row.customer ? <CallButton customer={row.customer} /> : null),
+        action: (row) =>
+            row.customer === null ? null : (
+                <span className="flex items-center gap-1.5">
+                    {row.pending !== undefined ? (
+                        <WhatsAppReminder
+                            customer={row.customer}
+                            dueCents={Number(row.pending.cents)}
+                            daysLate={row.daysLate ?? 0}
+                            className="min-h-11"
+                        />
+                    ) : null}
+                    <CallButton customer={row.customer} />
+                </span>
+            ),
     };
 }
 
