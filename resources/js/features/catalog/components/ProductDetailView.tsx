@@ -39,7 +39,7 @@ function ProductDetails({ product }: { product: ProductDetailContent }) {
     }
 
     return (
-        <div className="bg-base-100 border-line shadow-card flex flex-col gap-4 rounded-2xl border p-5">
+        <div className="border-line flex max-w-[72ch] flex-col gap-6 border-t pt-6">
             {product.description !== '' ? (
                 <section aria-labelledby="description-heading" className="flex flex-col gap-4">
                     <h2 id="description-heading" className="text-[17px] font-bold">
@@ -68,9 +68,6 @@ function ProductDetails({ product }: { product: ProductDetailContent }) {
     );
 }
 
-/**
- * The body of the public product page: gallery, price, plan, stock and details; it lays out by its own width, not the screen's.
- */
 export function ProductDetailView({ product, offer, reserve, children }: ProductDetailViewProps) {
     return (
         <div className="@container flex flex-col gap-6">
@@ -79,10 +76,8 @@ export function ProductDetailView({ product, offer, reserve, children }: Product
 
                 <div className="flex min-w-0 flex-col gap-[18px]">
                     <header className="flex flex-col gap-2">
-                        <p className="text-ink-3 text-[13px]">
-                            {product.categoryName !== '' ? `${product.categoryName} · ` : null}SKU {product.sku}
-                        </p>
-                        <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold @3xl:text-[34px]">{product.name}</h1>
+                        {product.categoryName !== '' ? <p className="text-ink-3 text-[0.8125rem]">{product.categoryName}</p> : null}
+                        <h1 className="text-[1.75rem] leading-[1.15] font-extrabold [font-stretch:88%] @3xl:text-[2.25rem]">{product.name}</h1>
                     </header>
 
                     {offer !== null ? (

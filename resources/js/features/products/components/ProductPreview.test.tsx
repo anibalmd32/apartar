@@ -103,10 +103,12 @@ it('abre la vista previa con lo escrito: nombre, precio, descripción, caracter�
     const dialog = openPreview();
 
     expect(within(dialog).getByRole('heading', { level: 1, name: 'Silla de playa' })).toBeInTheDocument();
-    expect(dialog.textContent).toContain('Hogar · SKU SIL-001');
+    expect(dialog.textContent).toContain('Hogar');
+    expect(dialog.textContent).not.toContain('SKU SIL-001');
     expect(dialog.textContent).toContain('$75,00');
     expect(dialog.textContent).toContain('Ahorras 25%');
-    expect(dialog.textContent).toContain('3 cuotas de $20,00 cada 15 días');
+    expect(dialog.textContent).toContain('en 3 cuotas cada quincena');
+    expect(dialog.textContent).toContain('Cuota 1$20,00');
     expect(within(dialog).getByText('resistente').tagName).toBe('STRONG');
     expect(dialog.querySelector('script')).toBeNull();
     expect(

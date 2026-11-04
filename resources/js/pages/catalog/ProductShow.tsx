@@ -45,7 +45,7 @@ export default function ProductShow({ catalog, product, related, chat }: Product
                 reserve={
                     <div className="flex flex-col gap-2">
                         {product.canBeReserved ? (
-                            <Link href={reserveUrl} className="btn btn-primary btn-lg btn-block">
+                            <Link href={reserveUrl} className="btn btn-primary btn-lg btn-block max-lg:hidden">
                                 <Icon icon={cilCart} />
                                 Apartar ahora
                             </Link>

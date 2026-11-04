@@ -69,12 +69,17 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-it('pinta precio, inicial, cuotas y la última cuota en las dos monedas', () => {
+it('pinta el precio en las dos monedas y el plan fecha por fecha, con la última cuota exacta', () => {
     const { container } = renderPage();
+    const plan = screen.getByRole('list', { name: 'Plan de pagos si apartas hoy' });
 
     expect(container.textContent).toContain('$250,00Bs. 10.000,00');
-    expect(container.textContent).toContain('3 cuotas de $66,66 (Bs. 2.666,40) cada 15 días');
-    expect(container.textContent).toContain('Última cuota$66,68 (Bs. 2.667,20)');
+    expect(screen.getByRole('heading', { name: /y paga el resto en 3 cuotas cada quincena/ })).toBeInTheDocument();
+    expect(plan.querySelectorAll('li')).toHaveLength(4);
+    expect(plan.querySelectorAll('li')[0]).toHaveTextContent('HoyInicial');
+    expect(plan.querySelectorAll('li')[2]).toHaveTextContent('Cuota 2$66,66');
+    expect(plan.querySelectorAll('li')[3]).toHaveTextContent('Cuota 3$66,68');
+    expect(container.textContent).not.toMatch(/\+\d+ días/);
 });
 
 it('no dice «última cuota» cuando todas son iguales', () => {
@@ -89,7 +94,7 @@ it('cambia la moneda de todos los importes sin pedir nada', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bs.' }));
 
     expect(container.textContent).toContain('Bs. 10.000,00$250,00');
-    expect(container.textContent).toContain('3 cuotas de Bs. 2.666,40 ($66,66)');
+    expect(screen.getByRole('list', { name: 'Plan de pagos si apartas hoy' }).querySelectorAll('li')[2]).toHaveTextContent('Cuota 2Bs. 2.666,40');
     expect(fetch).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
@@ -175,10 +180,23 @@ it('con varias fotos deja elegir cuál ver en grande', () => {
     const images = [1, 2].map((n) => ({ thumb: `/t${n}.webp`, card: `/c${n}.webp`, zoom: `/z${n}.webp`, alt: `Foto ${n}` }));
     renderPage(detail({ images }));
 
-    expect(screen.getByRole('img', { name: 'Foto 1' })).toHaveAttribute('src', '/z1.webp');
+    const large = () => screen.getAllByRole('img').filter((img) => img.getAttribute('src')?.startsWith('/z'));
+
+    expect(large().map((img) => img.getAttribute('src'))).toEqual(['/z1.webp']);
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver la foto 2' }));
-    expect(screen.getByRole('img', { name: 'Foto 2' })).toHaveAttribute('src', '/z2.webp');
+    expect(large().map((img) => img.getAttribute('src'))).toEqual(['/z2.webp']);
+});
+
+it('en el celular las fotos se deslizan con la imagen liviana y dicen en cuál vas', () => {
+    const images = [1, 2, 3].map((n) => ({ thumb: `/t${n}.webp`, card: `/c${n}.webp`, zoom: `/z${n}.webp`, alt: `Foto ${n}` }));
+    renderPage(detail({ images }));
+
+    const strip = screen.getByRole('list', { name: 'Fotos del producto: desliza para ver más' });
+
+    expect(Array.from(strip.querySelectorAll('img')).map((img) => img.getAttribute('src'))).toEqual(['/c1.webp', '/c2.webp', '/c3.webp']);
+    expect(strip).toHaveClass('snap-x');
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
 });
 
 it('vuelve al catálogo y enlaza los relacionados dentro de él', () => {
@@ -233,5 +251,5 @@ it('ofrece escribir al negocio como en el catálogo y la foto llena su marco', (
     );
 
     expect(screen.getByRole('button', { name: 'Escribir al negocio' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Taladro' })).toHaveClass('object-cover');
+    screen.getAllByRole('img', { name: 'Taladro' }).forEach((img) => expect(img).toHaveClass('object-cover'));
 });
