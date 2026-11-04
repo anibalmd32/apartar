@@ -54,11 +54,16 @@ final class Surface
     }
 
     /**
-     * @return array{backoffice: string, platform: string}
+     * @return array{backoffice: string, platform: string, site: string}
      */
     public static function forClient(): array
     {
-        return ['backoffice' => self::backofficePath(), 'platform' => self::platformPath()];
+        return ['backoffice' => self::backofficePath(), 'platform' => self::platformPath(), 'site' => self::siteUrl()];
+    }
+
+    public static function siteUrl(): string
+    {
+        return rtrim((string) config('app.url'), '/');
     }
 
     private static function register(?string $domain, string $prefix, Closure $routes): void

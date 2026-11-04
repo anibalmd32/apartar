@@ -1,6 +1,7 @@
 interface Surfaces {
     readonly backoffice: string;
     readonly platform: string;
+    readonly site: string;
 }
 
 declare global {
@@ -9,7 +10,7 @@ declare global {
     }
 }
 
-const DEFAULTS: Surfaces = { backoffice: '/backoffice', platform: '/plataforma' };
+const DEFAULTS: Surfaces = { backoffice: '/backoffice', platform: '/plataforma', site: '' };
 
 function base(surface: keyof Surfaces): string {
     const configured = typeof window === 'undefined' ? undefined : window.apartarSurfaces?.[surface];
@@ -29,4 +30,8 @@ export function bo(path = ''): string {
 
 export function pf(path = ''): string {
     return join(base('platform'), path);
+}
+
+export function site(path = '/'): string {
+    return join(base('site'), path);
 }

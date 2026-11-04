@@ -19,13 +19,13 @@ it('en el celular la cabecera trae la búsqueda y los pendientes', () => {
     expect(screen.getByText('Moda Valentina')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pendientes: 3' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Moneda que se muestra primero' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ver precios en (bolívares|dólares)|no hay tasa/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cambiar a modo (oscuro|claro)/ })).toBeInTheDocument();
 });
 
-it('en el celular cada botón de moneda tiene un área táctil de 44px', () => {
+it('en el celular la moneda es un solo botón de 44px para que el nombre del negocio quepa', () => {
     render(<MobileHeader organizationName="Moda Valentina" pendingReceipts={1} userMenu={null} />);
 
-    for (const name of ['USD', 'Bs.']) {
-        expect(screen.getByRole('button', { name })).toHaveClass('hit-area', 'h-[38px]', 'min-w-11');
-    }
+    expect(screen.getByRole('button', { name: /Ver precios en (bolívares|dólares)|no hay tasa/ })).toHaveClass('touch:size-11');
+    expect(screen.queryByRole('group', { name: 'Moneda que se muestra primero' })).toBeNull();
 });

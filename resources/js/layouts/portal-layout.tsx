@@ -75,12 +75,12 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
                 <PortalNav items={items} />
 
                 <div className="flex-1" />
-                {isAccount ? null : <RateText className="max-xl:hidden" />}
+                {isAccount ? null : <RateText compact className="shrink-0" />}
                 <CurrencySwitch />
-                <ThemeToggle />
+                <ThemeToggle className="border-line rounded-[10px] border" />
                 <div className="flex items-center gap-2">
                     {userMenu}
-                    <span className="max-w-40 truncate text-sm font-semibold">{customerName}</span>
+                    <span className="max-w-40 truncate text-sm font-semibold max-xl:hidden">{customerName}</span>
                 </div>
             </header>
 
@@ -90,14 +90,16 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
                     aria-label="Ir al inicio de tu cuenta"
                     className="hit-area flex min-w-0 flex-1 items-center gap-2.5"
                 >
-                    <BusinessMark business={business} name={businessName} />
-                    <span className="min-w-0 truncate text-[1.0625rem] font-extrabold [font-stretch:90%]">{businessName}</span>
+                    <BusinessMark business={business} name={isAccount ? 'Mi cuenta' : businessName} />
+                    <span className="min-w-0 truncate text-[1.0625rem] font-extrabold [font-stretch:90%]">
+                        {isAccount ? 'Mi cuenta' : businessName}
+                    </span>
                 </Link>
-                <CurrencySwitch />
+                <CurrencySwitch compact />
                 <ThemeToggle />
                 {userMenu}
             </header>
-            {isAccount || immersive ? null : <RateStrip className="xl:hidden" />}
+            {isAccount ? null : <RateStrip className={cn('lg:hidden', immersive && 'hidden')} />}
 
             <main
                 className={cn(

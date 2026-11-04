@@ -1,5 +1,5 @@
 import AccessLayout from '@/layouts/backoffice/access-layout';
-import { bo } from '@/lib/surfaces';
+import { bo, site } from '@/lib/surfaces';
 import { cilAvTimer } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 
@@ -31,9 +31,9 @@ export default function InvitationExpired({ organizationName }: InvitationExpire
                 </p>
             }
         >
-            <Link href={route('home')} className="btn btn-block h-12 text-[15px]">
+            <a href={site()} className="btn btn-block h-12 text-[15px]">
                 Ir a Apartar
-            </Link>
+            </a>
         </AccessLayout>
     );
 }

@@ -1,14 +1,18 @@
 import AccessLayout from '@/layouts/backoffice/access-layout';
 import { render, screen } from '@testing-library/react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('@inertiajs/react', () => ({ Head: () => null }));
 
-beforeEach(() => {
-    vi.stubGlobal('route', (name: string) => (name === 'home' ? 'https://apartar.app/' : `/${name}`));
+afterEach(() => {
+    delete window.apartarSurfaces;
 });
 
-it('en el acceso del negocio el logo lleva a la landing, aunque esté en otro dominio', () => {
+beforeEach(() => {
+    window.apartarSurfaces = { backoffice: '', platform: '', site: 'https://apartar.app' };
+});
+
+it('en el acceso del negocio el logo lleva a la landing del dominio principal, no a la raíz del subdominio del negocio', () => {
     render(<AccessLayout title="Entra a tu negocio">contenido</AccessLayout>);
 
     const logo = screen.getByRole('link', { name: 'Apartar, ir al inicio' });

@@ -21,7 +21,7 @@ export function MobileHeader({ organizationName, pendingReceipts, userMenu }: Mo
                 <AttentionBell pendingReceipts={pendingReceipts} plain />
                 <ThemeToggle />
             </div>
-            <CurrencySwitch touch />
+            <CurrencySwitch compact />
             <div className="flex">{userMenu}</div>
         </header>
     );

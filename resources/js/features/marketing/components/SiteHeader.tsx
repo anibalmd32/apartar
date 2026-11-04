@@ -29,7 +29,10 @@ export function SiteHeader() {
             <a href="#contenido" className="pz-btn pz-btn-blue sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3">
                 Saltar al contenido
             </a>
-            <nav aria-label="Principal" className="mx-auto flex h-16 max-w-[1440px] items-center gap-5 px-4 sm:px-6 lg:h-[84px] lg:gap-8 lg:px-12">
+            <nav
+                aria-label="Principal"
+                className="mx-auto flex h-16 max-w-[1440px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:h-[84px] lg:gap-8 lg:px-12"
+            >
                 <Link href={route('home')} className="touch:min-h-11 mr-auto flex items-center" aria-label="Apartar, inicio">
                     <BoardBrand />
                 </Link>
@@ -47,7 +50,7 @@ export function SiteHeader() {
                     ))}
                 </div>
 
-                <ThemeToggle className="text-pz-ink hover:bg-pz-ghost-ink" />
+                <ThemeToggle className="text-pz-ink hover:bg-pz-ghost-ink max-sm:hidden" />
 
                 {loggedIn ? (
                     <Link href={route('dashboard')} className="pz-btn pz-btn-blue">
@@ -81,6 +84,10 @@ export function SiteHeader() {
                                         {link.label}
                                     </Link>
                                 ))}
+                                <ThemeToggle
+                                    withLabel
+                                    className="text-pz-ink hover:bg-pz-ghost-ink justify-start rounded px-3 font-semibold sm:hidden"
+                                />
                             </PopoverPanel>
                         </>
                     )}

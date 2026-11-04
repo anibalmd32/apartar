@@ -2,6 +2,7 @@ import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Alert } from '@/components/ui/alert';
 import { type ChipTone, IconChip } from '@/components/ui/icon-chip';
 import { BoardBrand } from '@/features/marketing/board/BoardBrand';
+import { site } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { type ReactNode } from 'react';
@@ -36,7 +37,7 @@ export default function AccessLayout({
             <Head title={title} />
 
             <div className="flex w-full items-center justify-between gap-3 sm:max-w-[440px]">
-                <a href={route('home')} className="touch:min-h-11 inline-flex items-center" aria-label="Apartar, ir al inicio">
+                <a href={site()} className="touch:min-h-11 inline-flex items-center" aria-label="Apartar, ir al inicio">
                     <BoardBrand />
                 </a>
                 <ThemeToggle />

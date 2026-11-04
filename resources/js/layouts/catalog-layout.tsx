@@ -40,7 +40,7 @@ function CatalogFrame({ title, business, showsPlatformBadge, width = 'wide', chi
         >
             <Head title={title} />
 
-            <ShopHeader business={business} />
+            <ShopHeader business={business} rate={live.rate} />
             <RateChangedNotice live={live} />
 
             <main

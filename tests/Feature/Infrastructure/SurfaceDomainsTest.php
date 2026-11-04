@@ -77,7 +77,16 @@ final class SurfaceDomainsTest extends TestCase
     {
         $this->get('/')->assertOk()->assertInertia(fn ($page) => $page->component('marketing/Home'));
 
-        $this->get($this->origin(self::BACKOFFICE).'/login')->assertSee('window.apartarSurfaces = {"backoffice":"","platform":""}', false);
+        $this->get($this->origin(self::BACKOFFICE).'/login')->assertSee('window.apartarSurfaces = {"backoffice":"","platform":"","site":'.json_encode(rtrim((string) config('app.url'), '/')).'}', false);
+    }
+
+    public function test_from_a_business_subdomain_the_client_learns_the_main_site_and_not_its_own_host(): void
+    {
+        $html = $this->get($this->origin(self::BACKOFFICE).'/login')->getContent();
+
+        $this->assertIsString($html);
+        $this->assertStringContainsString('"site":'.json_encode(rtrim((string) config('app.url'), '/')), $html);
+        $this->assertStringNotContainsString('"site":'.json_encode($this->origin(self::BACKOFFICE)), $html);
     }
 
     /**

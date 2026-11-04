@@ -1,8 +1,10 @@
+import { RateText } from '@/components/shell/rate-strip';
 import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Alert } from '@/components/ui/alert';
 import { Icon } from '@/components/ui/icon';
 import { CodeAccess, LinkAccess } from '@/features/account/components/PortalAccessForms';
 import { BoardBrand } from '@/features/marketing/board/BoardBrand';
+import { site } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PortalAccessProps } from '@/types/portal';
 import { cilLifeRing } from '@coreui/icons';
@@ -43,12 +45,13 @@ export default function Access({ status, code = null, businessName = null, googl
                     {paying && businessName !== null ? (
                         <p className="text-[1.25rem] font-extrabold [font-stretch:90%]">{businessName}</p>
                     ) : (
-                        <a href={route('home')} aria-label="Apartar, ir al inicio" className="touch:min-h-11 inline-flex items-center">
+                        <a href={site()} aria-label="Apartar, ir al inicio" className="touch:min-h-11 inline-flex items-center">
                             <BoardBrand />
                         </a>
                     )}
                     <ThemeToggle />
                 </div>
+                <RateText className="-mt-3 max-w-full flex-wrap" />
 
                 <header className="flex flex-col gap-2">
                     {paying && businessName !== null ? (

@@ -1,4 +1,5 @@
 import { Avatar } from '@/components/shell/avatar';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { cilArrowLeft } from '@coreui/icons';
@@ -23,6 +24,7 @@ export function ChatHeader({ name, backHref, backLabel, heading: Heading = 'h2',
             <Avatar name={name} size={36} tone="accent" />
             <Heading className="min-w-0 flex-1 truncate text-[16px] font-bold">{name}</Heading>
             {children}
+            <ThemeToggle className="lg:hidden" />
         </header>
     );
 }

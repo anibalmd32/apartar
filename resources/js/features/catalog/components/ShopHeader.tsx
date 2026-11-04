@@ -4,9 +4,10 @@ import { RateStrip, RateText } from '@/components/shell/rate-strip';
 import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { type OrganizationBrand } from '@/types/backoffice';
+import { type RateView } from '@/types/exchange';
 import { cilUser } from '@coreui/icons';
 
-export function ShopHeader({ business }: { business: OrganizationBrand }) {
+export function ShopHeader({ business, rate }: { business: OrganizationBrand; rate?: RateView }) {
     const logo = business.brandingEnabled ? business.logoUrl : null;
 
     const identity = (
@@ -38,8 +39,9 @@ export function ShopHeader({ business }: { business: OrganizationBrand }) {
                     <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
                 )}
 
-                <RateText className="max-md:hidden" />
-                <CurrencySwitch />
+                <RateText rate={rate} className="max-md:hidden" />
+                <CurrencySwitch className="max-md:hidden" />
+                <CurrencySwitch compact className="md:hidden" />
                 <ThemeToggle />
 
                 <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-3" aria-label="Mis apartados">
@@ -47,7 +49,7 @@ export function ShopHeader({ business }: { business: OrganizationBrand }) {
                     <span className="max-sm:hidden">Mis apartados</span>
                 </a>
             </div>
-            <RateStrip className="md:hidden" />
+            <RateStrip rate={rate} className="md:hidden" />
         </header>
     );
 }

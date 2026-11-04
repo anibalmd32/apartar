@@ -137,7 +137,7 @@ function BackofficeFrame({ title, description, actions, back, badge, immersive =
                     <div className="flex-1" />
                     <RatePill />
                     <CurrencySwitch />
-                    <ThemeToggle />
+                    <ThemeToggle className="border-line rounded-[10px] border" />
                     <AttentionBell pendingReceipts={pendingReceipts} />
                     {userMenu}
                 </header>

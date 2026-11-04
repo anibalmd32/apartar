@@ -9,10 +9,10 @@ import { cilChatBubble } from '@coreui/icons';
 import { Link, usePage } from '@inertiajs/react';
 
 export default function ChatIndex({ threads }: PortalChatIndexProps) {
-    const { auth } = usePage<{ auth?: { portal?: { fullName: string } | null } }>().props;
+    const { auth } = usePage<{ auth?: { portal?: { fullName: string; businessName: string | null } | null } }>().props;
 
     return (
-        <PortalLayout title="Chat" businessName="Chat" customerName={auth?.portal?.fullName ?? ''}>
+        <PortalLayout title="Chat" businessName={auth?.portal?.businessName ?? 'Mi cuenta'} customerName={auth?.portal?.fullName ?? ''}>
             <h1 className="tracking-heading text-[24px] leading-tight font-extrabold max-lg:sr-only lg:text-[30px]">Tus conversaciones</h1>
 
             {threads.length === 0 ? (
