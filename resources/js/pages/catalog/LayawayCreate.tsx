@@ -1,6 +1,7 @@
 import { IconChip } from '@/components/ui/icon-chip';
 import { LayawaySteps } from '@/features/catalog/components/LayawaySteps';
 import { LayawaySummaryCard } from '@/features/catalog/components/LayawaySummaryCard';
+import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { LayawayForm } from '@/features/layaway/components/LayawayForm';
 import { useLayawayForm } from '@/features/layaway/hooks/useLayawayForm';
 import { track } from '@/features/telemetry/hooks/useTelemetry';
@@ -36,7 +37,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                     productUrl={route('catalog.product', { catalog: catalog.slug, product: product.slug })}
                     requiresDownPayment={plan?.requiresDownPayment ?? true}
                 />
-                <h1 className="tracking-heading text-[26px] leading-[1.3] font-extrabold lg:text-[34px]">Aparta tu producto</h1>
+                <h1 className="text-[1.75rem] leading-tight font-extrabold [font-stretch:88%] lg:text-[2.25rem]">Aparta tu producto</h1>
             </div>
 
             {!product.canBeReserved || plan === null ? (
@@ -49,10 +50,26 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                 </div>
             ) : (
                 <div className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-                    <section
-                        aria-labelledby="data-heading"
-                        className="bg-base-100 border-line shadow-card flex flex-col gap-4 rounded-2xl border p-5"
+                    <aside
+                        aria-label="Lo que vas a apartar"
+                        className="bg-base-100 border-line flex items-center gap-3 rounded-xl border p-3 lg:hidden"
                     >
+                        {product.images[0] ? <img src={product.images[0].thumb} alt="" className="size-14 shrink-0 rounded-lg object-cover" /> : null}
+                        <span className="flex min-w-0 flex-col">
+                            <span className="truncate text-[0.9375rem] font-bold">{product.name}</span>
+                            <span className="text-ink-2 text-[0.875rem]">
+                                {plan.requiresDownPayment ? (
+                                    <>
+                                        Hoy pagas <MoneyLabel money={plan.downPayment} className="text-base-content font-bold" />
+                                    </>
+                                ) : (
+                                    'Sin inicial: solo cuotas'
+                                )}
+                            </span>
+                        </span>
+                    </aside>
+
+                    <section aria-labelledby="data-heading" className="bg-base-100 border-line flex flex-col gap-4 rounded-xl border p-5">
                         <div className="flex flex-col gap-2">
                             <h2 id="data-heading" className="text-[22px] font-bold">
                                 Tus datos

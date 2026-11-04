@@ -76,6 +76,18 @@ it('enseña el código bien visible, el plazo de la inicial y el tercer paso', (
     expect(screen.getByText('Paga la inicial').closest('li')).toHaveAttribute('aria-current', 'step');
 });
 
+it('con inicial pendiente no dice «ya está apartado»: dice que lo reservó y ofrece guardarse el código por WhatsApp', () => {
+    renderPage();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('¡Lo reservaste!');
+    expect(screen.queryByText(/ya está apartado/)).toBeNull();
+
+    const keep = screen.getByRole('link', { name: 'Enviármelo por WhatsApp' });
+
+    expect(keep.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(decodeURIComponent(keep.getAttribute('href') ?? '')).toContain('AP-7K3MQ2XH');
+});
+
 it('no enseña las cuentas de cobro: lleva a pagar con el código ya puesto', () => {
     renderPage();
 
@@ -113,7 +125,7 @@ it('sin correo, avisa de que es el único canal e invita a anotar el código', (
     renderPage({ hasEmail: false });
 
     const warning = screen.getByRole('alert');
-    expect(warning).toHaveTextContent('Anota este código ahora.');
+    expect(warning).toHaveTextContent('Guarda este código ahora.');
     expect(warning).toHaveTextContent('no te llegará ninguno');
 });
 
@@ -127,7 +139,7 @@ it('con correo, dice que también va por ahí', () => {
     renderPage({ hasEmail: true });
 
     expect(screen.getByRole('alert')).toHaveTextContent('También te lo enviamos por correo');
-    expect(screen.queryByText(/Anota este código ahora/)).toBeNull();
+    expect(screen.queryByText(/Guarda este código ahora/)).toBeNull();
 });
 
 it('con cuenta, avisa de que sigue el catálogo y ofrece dejarlo con un clic', () => {

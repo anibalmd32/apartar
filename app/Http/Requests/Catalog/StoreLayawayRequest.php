@@ -40,9 +40,9 @@ final class StoreLayawayRequest extends FormRequest
     {
         return [
             'quantity' => 'cantidad',
-            'fullName' => 'nombre',
-            'documentNumber' => 'documento',
-            'phone' => 'teléfono',
+            'fullName' => 'nombre y apellido',
+            'documentNumber' => 'cédula o RIF',
+            'phone' => 'teléfono celular',
             'email' => 'correo',
             'termsAccepted' => 'aceptación de las condiciones',
         ];
@@ -55,6 +55,7 @@ final class StoreLayawayRequest extends FormRequest
     {
         return [
             'termsAccepted.accepted' => 'Para apartar tienes que aceptar las condiciones.',
+            'email.email' => 'Revisa el correo: le falta algo, por ejemplo la @ o el dominio.',
             'idempotencyKey.*' => 'El formulario se quedó a medias. Recarga la página y vuelve a intentarlo.',
         ];
     }

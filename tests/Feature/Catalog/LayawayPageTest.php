@@ -217,6 +217,15 @@ final class LayawayPageTest extends TestCase
         $this->assertSame(0, DB::table('layaways')->count());
     }
 
+    public function test_the_errors_name_each_field_as_the_form_labels_it(): void
+    {
+        $this->submit(['fullName' => '', 'documentNumber' => '', 'email' => 'maria'])->assertSessionHasErrors([
+            'fullName' => 'Completa el campo nombre y apellido.',
+            'documentNumber' => 'Completa el campo cédula o RIF.',
+            'email' => 'Revisa el correo: le falta algo, por ejemplo la @ o el dominio.',
+        ]);
+    }
+
     public function test_insufficient_stock_comes_back_on_the_quantity(): void
     {
         DB::table('products')->where('id', $this->product->getKey())->update(['stock' => 1]);

@@ -11,6 +11,10 @@ import { type LayawayThanksProps } from '@/types/layaway';
 import { cilArrowRight, cilCalendar, cilCheckCircle, cilClock } from '@coreui/icons';
 import { Link, router } from '@inertiajs/react';
 
+function keepCodeUrl(code: string, business: string): string {
+    return `https://wa.me/?text=${encodeURIComponent(`Mi apartado en ${business}: ${code}. Con este código y mi cédula veo mis pagos en ${route('portal.access')}`)}`;
+}
+
 export default function LayawayThanks({ catalog, layaway, payUrl, follow }: LayawayThanksProps) {
     return (
         <CatalogLayout
@@ -21,17 +25,19 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
         >
             <LayawaySteps current={3} requiresDownPayment={layaway.plan.requiresDownPayment} />
 
-            <div className="bg-base-100 border-line shadow-card mx-auto flex w-full max-w-[640px] flex-col gap-[18px] rounded-2xl border p-5 lg:p-10">
+            <div className="bg-base-100 border-line mx-auto flex w-full max-w-[640px] flex-col gap-[18px] rounded-xl border p-5 lg:p-10">
                 <header className="flex flex-col items-center gap-2 text-center">
-                    <IconChip icon={cilCheckCircle} tone="success" size={64} className="mb-2 rounded-2xl" />
-                    <h1 className="tracking-heading text-[24px] leading-[1.3] font-extrabold lg:text-[30px]">¡Listo, ya está apartado!</h1>
+                    <h1 className="flex items-center gap-2 text-[1.625rem] leading-tight font-extrabold [font-stretch:88%] lg:text-[2rem]">
+                        <Icon icon={cilCheckCircle} size={26} className="text-success shrink-0" />
+                        {layaway.plan.requiresDownPayment ? '¡Lo reservaste!' : '¡Listo, ya está apartado!'}
+                    </h1>
                     <p className="text-ink-2 text-sm">
                         {layaway.productName} · {layaway.plan.quantity === 1 ? '1 unidad' : `${layaway.plan.quantity} unidades`}
                     </p>
                 </header>
 
-                <div className="bg-primary-soft flex flex-col items-center gap-1 rounded-2xl p-5 text-center">
-                    <p className="text-label text-ink-3">Tu código de apartado</p>
+                <div className="bg-primary-soft flex flex-col items-center gap-1 rounded-xl p-5 text-center">
+                    <p className="text-label text-ink-2">Tu código de apartado</p>
                     <div className="flex items-center gap-1.5">
                         <p
                             className="text-[26px] font-extrabold tracking-[2px] select-all lg:text-[32px]"
@@ -46,13 +52,22 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                             className="text-primary-ink hover:bg-base-100 inline-flex size-11 items-center justify-center rounded-xl"
                         />
                     </div>
+                    <p className="text-ink-2 text-sm">Guárdalo: con él y tu cédula ves tus pagos cuando quieras.</p>
+                    <a
+                        href={keepCodeUrl(layaway.code, catalog.business.name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm touch:min-h-11 mt-2"
+                    >
+                        Enviármelo por WhatsApp
+                    </a>
                 </div>
 
                 {layaway.hasEmail ? null : (
-                    <Alert tone="warning">
+                    <Alert tone="info">
                         <span>
-                            <strong>Anota este código ahora.</strong> No dejaste correo, así que no te llegará ninguno: esta pantalla es el único
-                            sitio donde aparece. Con él y tu cédula podrás{' '}
+                            <strong>Guarda este código ahora.</strong> No dejaste correo, así que no te llegará ninguno: envíatelo por WhatsApp o
+                            hazle una captura. Con él y tu cédula podrás{' '}
                             <Link href={route('portal.access')} className="link">
                                 consultar tu apartado
                             </Link>

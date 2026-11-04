@@ -164,3 +164,10 @@ it('el formulario va primero y las cuotas se abren con «Ver tus cuotas»', () =
     fireEvent.click(screen.getByText(/Ver tus cuotas/));
     expect(toggle).toHaveAttribute('open');
 });
+
+it('en el celular dice arriba qué se aparta y cuánto se paga hoy, antes de pedir los datos', () => {
+    renderPage();
+    const summary = screen.getByRole('complementary', { name: 'Lo que vas a apartar' });
+    expect(summary).toHaveClass('lg:hidden');
+    expect(summary).toHaveTextContent(/Hoy pagas/);
+});
