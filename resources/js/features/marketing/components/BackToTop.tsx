@@ -25,7 +25,7 @@ export function BackToTop() {
             tabIndex={visible ? 0 : -1}
             aria-hidden={visible ? undefined : true}
             className={cn(
-                'border-line bg-base-100 shadow-pop text-base-content fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 flex size-12 cursor-pointer items-center justify-center rounded-full border transition-[opacity,transform] duration-200 lg:right-8 lg:bottom-8',
+                'bg-pz-board text-pz-ink fixed right-3 bottom-[calc(var(--consent-height,0px)+1rem+env(safe-area-inset-bottom))] z-30 flex size-12 cursor-pointer items-center justify-center rounded-md shadow-[0_10px_24px_-10px_rgb(0_0_0/0.35),inset_0_0_0_2px_var(--pz-ink)] transition-[opacity,transform] duration-200 lg:right-8 lg:bottom-8',
                 visible ? 'opacity-100' : 'pointer-events-none translate-y-2 opacity-0',
             )}
         >

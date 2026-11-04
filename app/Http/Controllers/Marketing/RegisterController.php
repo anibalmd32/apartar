@@ -32,6 +32,10 @@ final class RegisterController extends Controller
      */
     public function slug(Request $request, RegisterOrganizationAction $register): JsonResponse
     {
+        if ($request->hasSession()) {
+            $request->session()->reflash();
+        }
+
         return response()->json($register->availability(mb_substr((string) $request->query('slug', ''), 0, 100)));
     }
 

@@ -197,6 +197,18 @@ final class RegisterOrganizationTest extends TestCase
             ->assertSessionHasErrors('owner_password');
     }
 
+    public function test_a_slug_check_that_lands_between_the_refused_submit_and_the_form_keeps_the_errors(): void
+    {
+        $this->from('/registro')
+            ->post('/registro', [...self::VALID, 'owner_password_confirmation' => 'OtraCosaLarga123'])
+            ->assertRedirect('/registro');
+
+        $this->getJson('/registro/enlace?slug=ferreteria-el-tornillo')->assertOk();
+
+        $this->get('/registro')->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('errors.owner_password'));
+    }
+
     public function test_the_sixth_registration_from_one_ip_is_throttled(): void
     {
         for ($attempt = 1; $attempt <= 5; $attempt++) {

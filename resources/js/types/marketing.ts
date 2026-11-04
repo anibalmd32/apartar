@@ -10,14 +10,21 @@ export interface PricingPlan {
     readonly code: string;
     readonly name: string;
     readonly price: string;
+    readonly priceCents: number;
     readonly period: string;
     readonly isFree: boolean;
     readonly limits: readonly PlanLimitView[];
     readonly features: readonly string[];
 }
 
+export interface PricingRate {
+    readonly date: string;
+    readonly rate: string;
+}
+
 export interface PricingProps {
     readonly plans: readonly PricingPlan[];
+    readonly rate?: PricingRate | null;
 }
 
 export interface LegalSection {

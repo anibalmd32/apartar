@@ -1,10 +1,12 @@
-import { BrandMark } from '@/components/shell/brand';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { TextField } from '@/components/ui/text-field';
+import { BoardBrand } from '@/features/marketing/board/BoardBrand';
+import { BoardFrame } from '@/features/marketing/board/BoardFrame';
 import { OrganizationIdentityFields } from '@/features/marketing/components/OrganizationIdentityFields';
 import { RegisterBrandPanel } from '@/features/marketing/components/RegisterBrandPanel';
+import { SiteFooter } from '@/features/marketing/components/SiteFooter';
 import { PasswordStrength } from '@/layouts/auth/password-strength';
 import { type RegisterProps } from '@/types/marketing';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -38,38 +40,43 @@ export default function Register({ plan = null }: RegisterProps) {
         event.preventDefault();
 
         post(route('register'), {
-            onFinish: () => reset('owner_password', 'owner_password_confirmation'),
+            onError: (failed) => {
+                if (failed.owner_password !== undefined) {
+                    reset('owner_password', 'owner_password_confirmation');
+                }
+            },
         });
     };
 
+    const header = (
+        <header className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:h-[84px] lg:px-12">
+            <Link href={route('home')} className="touch:min-h-11 flex items-center" aria-label="Apartar, inicio">
+                <BoardBrand />
+            </Link>
+            <p className="text-pz-ink-2 flex items-center gap-2 text-[0.9375rem]">
+                <span className="max-sm:hidden">¿Ya tienes cuenta?</span>
+                <Link href={route('login')} className="pz-btn pz-btn-line touch:min-h-11 min-h-10 px-4">
+                    Entrar
+                </Link>
+            </p>
+        </header>
+    );
+
     return (
-        <main className="bg-base-200 flex min-h-screen">
+        <>
             <Head title="Crear mi negocio" />
-
-            <RegisterBrandPanel />
-
-            <div className="flex flex-1 flex-col">
-                <header className="flex h-[60px] items-center justify-between px-4 lg:hidden">
-                    <Link href={route('home')} className="inline-flex items-center gap-2.5" aria-label="Apartar, inicio">
-                        <BrandMark />
-                        <span className="text-lg font-extrabold tracking-[-0.6px]">apartar</span>
-                    </Link>
-                    <Link href={route('login')} className="btn btn-ghost btn-sm touch:h-11 touch:px-4 rounded-full">
-                        Entrar
-                    </Link>
-                </header>
-
-                <div className="flex flex-1 items-start justify-center px-4 pt-4 pb-10 lg:items-center lg:p-10">
-                    <div className="flex w-full max-w-[440px] flex-col gap-4">
-                        <header className="flex flex-col gap-4">
-                            <h1 className="tracking-heading text-[28px] font-extrabold lg:text-[32px]">Crea tu cuenta</h1>
-                            <p className="text-ink-2 text-[15px]">Empiezas en el plan Gratis, sin tarjeta y sin período de prueba que se acabe.</p>
-                            {plan !== null ? (
-                                <Alert tone="info">
-                                    Elegiste {plan.name}. Al crear tu cuenta te llevamos a Suscripción para pasar a {plan.name} cuando quieras.
-                                </Alert>
-                            ) : null}
+            <BoardFrame header={header} footer={<SiteFooter />}>
+                <div className="mx-auto grid max-w-[1280px] gap-10 px-4 pt-4 pb-16 sm:px-6 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-20 lg:px-12 lg:pt-10 lg:pb-24">
+                    <div className="flex flex-col gap-6 lg:order-2">
+                        <header className="flex flex-col gap-3">
+                            <h1 className="font-vinyl text-[3rem] sm:text-[3.5rem]">Crea tu cuenta</h1>
+                            <p className="text-pz-ink-2 text-[1.0625rem] leading-relaxed">
+                                {plan === null
+                                    ? 'Empiezas en el plan Gratis, sin tarjeta y sin período de prueba que se acabe.'
+                                    : `Tu cuenta empieza en el plan Gratis, sin tarjeta. Después te llevamos a Suscripción para pasar a ${plan.name} cuando quieras.`}
+                            </p>
                         </header>
+                        <RegisterBrandPanel className="lg:hidden" />
 
                         {errors.organization_slug ? <Alert tone="warning">{errors.organization_slug}</Alert> : null}
 
@@ -126,13 +133,23 @@ export default function Register({ plan = null }: RegisterProps) {
                                 required
                             />
 
-                            <p className="text-ink-2 text-[13px] leading-normal">
+                            <p className="text-pz-ink-2 text-[0.9375rem] leading-normal">
                                 Al crear tu cuenta aceptas los{' '}
-                                <a className="link link-primary" href={route('legal.terms')} target="_blank" rel="noopener noreferrer">
+                                <a
+                                    className="text-pz-blue font-semibold underline"
+                                    href={route('legal.terms')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
                                     Términos de servicio
                                 </a>{' '}
                                 y la{' '}
-                                <a className="link link-primary" href={route('legal.privacy')} target="_blank" rel="noopener noreferrer">
+                                <a
+                                    className="text-pz-blue font-semibold underline"
+                                    href={route('legal.privacy')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
                                     Política de privacidad
                                 </a>{' '}
                                 de Apartar.
@@ -142,16 +159,10 @@ export default function Register({ plan = null }: RegisterProps) {
                                 Crear mi cuenta gratis
                             </Button>
                         </form>
-
-                        <p className="text-ink-2 text-center text-sm">
-                            ¿Ya tienes cuenta?{' '}
-                            <Link href={route('login')} className="link link-primary link-hover ml-1 font-bold">
-                                Entrar
-                            </Link>
-                        </p>
                     </div>
+                    <RegisterBrandPanel className="max-lg:hidden lg:order-1 lg:pt-6" />
                 </div>
-            </div>
-        </main>
+            </BoardFrame>
+        </>
     );
 }

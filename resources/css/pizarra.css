@@ -127,6 +127,27 @@
     background-position: bottom;
 }
 
+.pizarra {
+    --color-primary: var(--pz-blue);
+    --color-primary-content: var(--pz-on-blue);
+    --color-base-100: var(--pz-board-hi);
+    --color-base-200: var(--pz-board);
+    --color-base-300: var(--pz-rule-soft);
+    --color-base-content: var(--pz-ink);
+    --color-error: var(--pz-red);
+    --color-success: var(--pz-green);
+    --surface-2: var(--pz-ghost-ink);
+    --line: var(--pz-rule);
+    --line-strong: color-mix(in oklab, var(--pz-ink) 55%, transparent);
+    --ink-2: var(--pz-ink-2);
+    --ink-3: var(--pz-ink-3);
+    --primary-hover: var(--pz-blue-deep);
+    --primary-soft: var(--pz-ghost);
+    --primary-ink: var(--pz-blue);
+    --radius-field: 6px;
+    --radius-box: 8px;
+}
+
 @layer components {
     .pizarra {
         font-family: var(--font-display);

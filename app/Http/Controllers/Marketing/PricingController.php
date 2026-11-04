@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Marketing;
 
+use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
 use App\Domain\Subscription\PlanFeature;
 use App\Domain\Subscription\UsageMetric;
 use App\Http\Controllers\Controller;
+use App\Models\ExchangeRate;
 use App\Models\Plan;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,11 +41,14 @@ final class PricingController extends Controller
             ->values()
             ->all();
 
-        return Inertia::render('marketing/Pricing', ['plans' => $plans]);
+        return Inertia::render('marketing/Pricing', [
+            'plans' => $plans,
+            'rate' => $this->latestBcvRate(),
+        ]);
     }
 
     /**
-     * @return array{code: string, name: string, price: string, period: string, isFree: bool, limits: list<array{key: string, label: string, limit: int|null}>, features: list<string>}
+     * @return array{code: string, name: string, price: string, priceCents: int, period: string, isFree: bool, limits: list<array{key: string, label: string, limit: int|null}>, features: list<string>}
      */
     private function planView(Plan $plan): array
     {
@@ -51,6 +56,7 @@ final class PricingController extends Controller
             'code' => $plan->code,
             'name' => $plan->name,
             'price' => $this->price($plan),
+            'priceCents' => $plan->price_cents,
             'period' => $this->period($plan),
             'isFree' => $plan->price_cents === 0,
             'limits' => array_map(fn (string $key): array => $this->limit($plan, $key), self::LIMITS),
@@ -59,6 +65,20 @@ final class PricingController extends Controller
                 $plan->enabledFeatures(),
             ),
         ];
+    }
+
+    /**
+     * @return array{date: string, rate: string}|null
+     */
+    private function latestBcvRate(): ?array
+    {
+        $rate = ExchangeRate::query()
+            ->where('source', RateSource::Bcv->value)
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->first(['rate', 'published_at']);
+
+        return $rate === null ? null : ['date' => $rate->published_at->format('Y-m-d'), 'rate' => $rate->rate];
     }
 
     private function price(Plan $plan): string

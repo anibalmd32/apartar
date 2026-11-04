@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Marketing;
 
 use App\Domain\Subscription\PlanFeature;
+use App\Models\ExchangeRate;
 use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
+use Carbon\CarbonImmutable;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +54,27 @@ final class PricingPageTest extends TestCase
                 ->where('plans.0.limits.5', ['key' => 'storage_mb', 'label' => 'MB de almacenamiento', 'limit' => 200])
                 ->where('plans.1.limits.5', ['key' => 'storage_mb', 'label' => 'GB de almacenamiento', 'limit' => 5])
                 ->where('plans.2.limits.5', ['key' => 'storage_mb', 'label' => 'GB de almacenamiento', 'limit' => 25]));
+    }
+
+    public function test_each_plan_travels_with_its_price_in_cents_and_the_page_with_the_latest_bcv_rate(): void
+    {
+        Plan::query()->update(['is_public' => true]);
+        ExchangeRate::query()->delete();
+        ExchangeRate::factory()->create(['rate' => '880.00000000', 'published_at' => CarbonImmutable::parse('2026-11-02 00:00:00')]);
+        ExchangeRate::factory()->create(['rate' => '893.22000000', 'published_at' => CarbonImmutable::parse('2026-11-04 00:00:00')]);
+        ExchangeRate::factory()->parallel()->create(['rate' => '1000.00000000', 'published_at' => CarbonImmutable::parse('2026-11-04 17:00:00')]);
+
+        $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('plans.0.priceCents', 0)
+            ->where('plans.1.priceCents', Plan::query()->where('code', 'pro')->value('price_cents'))
+            ->where('rate', ['date' => '2026-11-04', 'rate' => '893.22000000']));
+    }
+
+    public function test_without_a_saved_rate_the_page_offers_no_bolivar_equivalent(): void
+    {
+        ExchangeRate::query()->delete();
+
+        $this->get('/precios')->assertInertia(fn (AssertableInertia $page) => $page->where('rate', null));
     }
 
     public function test_a_change_in_the_table_is_what_the_page_shows(): void

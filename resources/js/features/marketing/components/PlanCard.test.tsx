@@ -13,17 +13,34 @@ beforeEach(() => {
 
 const storage = { key: 'storage_mb', label: 'GB de almacenamiento', limit: 5 };
 
-const free: PricingPlan = { code: 'free', name: 'Gratis', price: '$0', period: 'para siempre', isFree: true, limits: [], features: [] };
+const free: PricingPlan = {
+    code: 'free',
+    name: 'Gratis',
+    price: '$0',
+    priceCents: 0,
+    period: 'para siempre',
+    isFree: true,
+    limits: [],
+    features: [],
+};
 const pro: PricingPlan = {
     code: 'pro',
     name: 'Pro',
     price: '$15',
+    priceCents: 1500,
     period: 'al mes',
     isFree: false,
     limits: [storage],
     features: ['Exportación a Excel', 'Analítica completa'],
 };
-const business: PricingPlan = { ...pro, code: 'business', name: 'Negocio', price: '$39', features: [...pro.features, 'Dominio propio'] };
+const business: PricingPlan = {
+    ...pro,
+    code: 'business',
+    name: 'Negocio',
+    price: '$39',
+    priceCents: 3900,
+    features: [...pro.features, 'Dominio propio'],
+};
 
 function card(plan: PricingPlan, previous?: PricingPlan) {
     render(
@@ -64,4 +81,16 @@ it('un plan superior resume lo heredado y solo lista lo que agrega', () => {
     expect(screen.getByText('Dominio propio')).toBeInTheDocument();
     expect(screen.queryByText('Exportación a Excel')).not.toBeInTheDocument();
     expect(screen.getByText('al mes')).toBeInTheDocument();
+});
+
+it('un plan de pago dice cuánto es en bolívares a la tasa de hoy; el gratis no', () => {
+    render(
+        <ul>
+            <PlanCard plan={free} rate="893.22000000" />
+            <PlanCard plan={pro} previous={free} rate="893.22000000" />
+        </ul>,
+    );
+
+    expect(screen.getAllByText(/a la tasa de hoy/)).toHaveLength(1);
+    expect(screen.getByText('= Bs. 13.398,30 a la tasa de hoy')).toBeInTheDocument();
 });

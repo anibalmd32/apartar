@@ -1,15 +1,17 @@
 import Register from '@/pages/marketing/Register';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
+
+const form = vi.hoisted(() => ({ post: vi.fn(), reset: vi.fn() }));
 
 vi.mock('@inertiajs/react', async () => ({
     useForm: (initial: Record<string, string>) => ({
         data: initial,
         setData: vi.fn(),
-        post: vi.fn(),
+        post: form.post,
         processing: false,
         errors: {},
-        reset: vi.fn(),
+        reset: form.reset,
     }),
     Head: () => null,
     Link: (await import('@/test/fakes')).FakeLink,
@@ -40,14 +42,29 @@ it('el botón de crear la cuenta usa la forma primaria del sistema', () => {
     expect(submit).not.toHaveClass('h-12');
 });
 
-it('avisa el plan elegido en los precios', () => {
+it('con un plan elegido en los precios dice en una sola frase que empieza gratis y luego pasa a ese plan', () => {
     render(<Register plan={{ code: 'pro', name: 'Pro' }} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Elegiste Pro');
+    expect(screen.getByText(/empieza en el plan Gratis, sin tarjeta. Después te llevamos a Suscripción para pasar a Pro/)).toBeInTheDocument();
+    expect(screen.queryByText(/Empiezas en el plan Gratis/)).not.toBeInTheDocument();
 });
 
 it('la ayuda de la contraseña empieza con mayúscula', () => {
     render(<Register plan={null} />);
 
     expect(screen.getByText('Mínimo 6 caracteres, con letras y números.')).toBeInTheDocument();
+});
+
+it('un error que no es de la contraseña no borra las contraseñas ya escritas', () => {
+    render(<Register plan={null} />);
+
+    fireEvent.submit(screen.getByRole('button', { name: 'Crear mi cuenta gratis' }).closest('form')!);
+
+    const options = form.post.mock.calls.at(-1)?.[1] as { onError: (errors: Record<string, string>) => void };
+
+    options.onError({ owner_name: 'Completa el campo nombre.' });
+    expect(form.reset).not.toHaveBeenCalled();
+
+    options.onError({ owner_password: 'La confirmación no coincide.' });
+    expect(form.reset).toHaveBeenCalledWith('owner_password', 'owner_password_confirmation');
 });

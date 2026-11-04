@@ -49,7 +49,7 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
             />
 
             <TextField
-                label="Enlace de tu catálogo"
+                label="Enlace de tu tienda"
                 name="organization_slug"
                 prefix="apartar.app/"
                 value={value.organization_slug}
@@ -58,7 +58,9 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
                 error={errors.organization_slug}
                 hint={
                     availability.state === 'free' ? (
-                        <span className="text-success font-semibold">¡Disponible!</span>
+                        <span>
+                            <span className="text-success font-semibold">¡Disponible!</span> Lo compartes por WhatsApp.
+                        </span>
                     ) : availability.state === 'taken' ? (
                         <span className="text-warning">
                             Ya está en uso.
@@ -67,7 +69,7 @@ export function OrganizationIdentityFields({ value, onChange, errors, slugEndpoi
                                     {' '}
                                     <button
                                         type="button"
-                                        className="text-primary-ink cursor-pointer font-semibold underline"
+                                        className="text-primary-ink touch:min-h-11 inline-flex min-h-8 cursor-pointer items-center font-semibold underline"
                                         onClick={() => changeSlug(availability.suggestion ?? '')}
                                     >
                                         Usar {availability.suggestion}
