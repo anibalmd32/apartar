@@ -20,7 +20,7 @@ final class ErrorPagesTest extends TestCase
             ->assertSee('No encontramos esta página')
             ->assertSee('Ir al inicio')
             ->assertSee('href="'.url('/').'"', false)
-            ->assertSee('/fonts/plus-jakarta-sans-latin.woff2', false)
+            ->assertSee('/fonts/archivo-latin.woff2', false)
             ->assertSee('apartar');
     }
 

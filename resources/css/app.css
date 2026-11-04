@@ -14,51 +14,51 @@
     prefersdark: false;
     color-scheme: light;
 
-    --color-base-100: #ffffff;
-    --color-base-200: #f5f6fa;
-    --color-base-300: #e9ecf3;
-    --color-base-content: #151a2d;
-    --color-primary: #5046e5;
+    --color-base-100: #fbfcfa;
+    --color-base-200: #f4f5f2;
+    --color-base-300: #e6e8e4;
+    --color-base-content: #15171b;
+    --color-primary: #1c45c4;
     --color-primary-content: #ffffff;
-    --color-secondary: #eeedfd;
-    --color-secondary-content: #4338ca;
-    --color-accent: #0e9f8e;
-    --color-accent-content: #ffffff;
-    --color-neutral: #151a2d;
-    --color-neutral-content: #ffffff;
-    --color-info: #1b64bf;
+    --color-secondary: #e6ebf9;
+    --color-secondary-content: #15379f;
+    --color-accent: #15171b;
+    --color-accent-content: #fbfcfa;
+    --color-neutral: #15171b;
+    --color-neutral-content: #fbfcfa;
+    --color-info: #2a5db0;
     --color-info-content: #ffffff;
-    --color-success: #157a3c;
+    --color-success: #0d6b41;
     --color-success-content: #ffffff;
-    --color-warning: #8f5c12;
+    --color-warning: #8a5a0b;
     --color-warning-content: #ffffff;
-    --color-error: #c22d3b;
+    --color-error: #c21d27;
     --color-error-content: #ffffff;
 
-    --radius-selector: 0.3125rem;
-    --radius-field: 0.625rem;
-    --radius-box: 1rem;
+    --radius-selector: 0.25rem;
+    --radius-field: 0.375rem;
+    --radius-box: 0.625rem;
     --size-selector: 0.25rem;
     --size-field: 0.25rem;
     --border: 1px;
     --depth: 0;
     --noise: 0;
 
-    --surface-2: #f1f3f8;
-    --line: #e3e6ee;
-    --line-strong: #cdd2de;
-    --ink-2: #4a5268;
-    --ink-3: #646b80;
-    --primary-hover: #4338ca;
-    --primary-soft: #eeedfd;
-    --primary-ink: #4338ca;
-    --info-soft: #e5f0fd;
-    --success-soft: #e5f6ec;
-    --warning-soft: #fef4dd;
-    --error-soft: #fce8ea;
-    --neutral-soft: #eef0f4;
-    --card-shadow: 0 2px 6px 0 rgb(21 26 45 / 0.06);
-    --pop-shadow: 0 12px 32px -8px rgb(21 26 45 / 0.18);
+    --surface-2: #eceee9;
+    --line: #dcdfd9;
+    --line-strong: #b9bdb6;
+    --ink-2: #4a4f58;
+    --ink-3: #5f646d;
+    --primary-hover: #15379f;
+    --primary-soft: #e6ebf9;
+    --primary-ink: #15379f;
+    --info-soft: #e3ecf8;
+    --success-soft: #e2f1e8;
+    --warning-soft: #f8eed9;
+    --error-soft: #f8e3e3;
+    --neutral-soft: #eceee9;
+    --card-shadow: none;
+    --pop-shadow: 0 14px 32px -12px rgb(21 23 27 / 0.3);
 }
 
 @plugin 'daisyui/theme' {
@@ -67,82 +67,51 @@
     prefersdark: true;
     color-scheme: dark;
 
-    --color-base-100: #141824;
-    --color-base-200: #0c0f17;
-    --color-base-300: #242a3c;
-    --color-base-content: #edeff5;
-    --color-primary: #6a62ec;
-    --color-primary-content: #ffffff;
-    --color-secondary: #25234a;
-    --color-secondary-content: #a9a3f8;
-    --color-accent: #0e9f8e;
-    --color-accent-content: #ffffff;
-    --color-neutral: #edeff5;
-    --color-neutral-content: #0c0f17;
-    --color-info: #5aa7ff;
-    --color-info-content: #0c0f17;
-    --color-success: #45c97a;
-    --color-success-content: #0c0f17;
-    --color-warning: #f2c14e;
-    --color-warning-content: #0c0f17;
-    --color-error: #f2707b;
-    --color-error-content: #0c0f17;
+    --color-base-100: #16181c;
+    --color-base-200: #111316;
+    --color-base-300: #23262c;
+    --color-base-content: #f0f1ed;
+    --color-primary: #86a0ff;
+    --color-primary-content: #0b0d12;
+    --color-secondary: #1d2440;
+    --color-secondary-content: #a5b8ff;
+    --color-accent: #f0f1ed;
+    --color-accent-content: #111316;
+    --color-neutral: #f0f1ed;
+    --color-neutral-content: #111316;
+    --color-info: #7fb0ff;
+    --color-info-content: #0b0d12;
+    --color-success: #55d996;
+    --color-success-content: #0b0d12;
+    --color-warning: #f0c060;
+    --color-warning-content: #0b0d12;
+    --color-error: #ff7479;
+    --color-error-content: #0b0d12;
 
-    --radius-selector: 0.3125rem;
-    --radius-field: 0.625rem;
-    --radius-box: 1rem;
+    --radius-selector: 0.25rem;
+    --radius-field: 0.375rem;
+    --radius-box: 0.625rem;
     --size-selector: 0.25rem;
     --size-field: 0.25rem;
     --border: 1px;
     --depth: 0;
     --noise: 0;
 
-    --surface-2: #1b2030;
-    --line: #262c3d;
-    --line-strong: #353c52;
-    --ink-2: #b7bdcc;
-    --ink-3: #8a91a5;
-    --primary-hover: #7770f1;
-    --primary-soft: #25234a;
-    --primary-ink: #a9a3f8;
-    --info-soft: #132840;
-    --success-soft: #132c1f;
-    --warning-soft: #2e2610;
-    --error-soft: #341a1f;
-    --neutral-soft: #20263a;
+    --surface-2: #1c1f24;
+    --line: #262a30;
+    --line-strong: #3a3f47;
+    --ink-2: #b8bcc3;
+    --ink-3: #9aa0a8;
+    --primary-hover: #a5b8ff;
+    --primary-soft: #1d2440;
+    --primary-ink: #a5b8ff;
+    --info-soft: #14243d;
+    --success-soft: #12291d;
+    --warning-soft: #2c2410;
+    --error-soft: #331a1c;
+    --neutral-soft: #1c1f24;
     --card-shadow: none;
-    --pop-shadow: 0 16px 40px -8px rgb(0 0 0 / 0.55);
-}
-
-@font-face {
-    font-family: 'Plus Jakarta Sans';
-    font-style: normal;
-    font-weight: 200 800;
-    font-display: swap;
-    src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-        U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: 'Plus Jakarta Sans';
-    font-style: normal;
-    font-weight: 200 800;
-    font-display: swap;
-    src: url('/fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-        U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-    font-family: 'Plus Jakarta Sans Fallback';
-    src: local('Arial'), local('ArialMT'), local('Helvetica Neue'), local('Roboto');
-    size-adjust: 104.98%;
-    ascent-override: 98.88%;
-    descent-override: 21.15%;
-    line-gap-override: 0%;
+    --pop-shadow: 0 16px 40px -10px rgb(0 0 0 / 0.6);
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -154,7 +123,7 @@
 
 @theme {
     --font-sans:
-        'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Archivo', 'Archivo Fallback', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
