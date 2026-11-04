@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconChip } from '@/components/ui/icon-chip';
 import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
+import { ToolDisclosure } from '@/components/ui/tool-disclosure';
 import { CustomerLayaways } from '@/features/customers/components/CustomerLayaways';
 import { BalanceRow, ContactStrip } from '@/features/customers/components/CustomerProfile';
 import { CustomerReceipts } from '@/features/customers/components/CustomerReceipts';
@@ -141,14 +142,15 @@ export default function CustomerShow(props: CustomerShowProps) {
                         </SectionCard>
                     ) : null}
 
-                    <section aria-label="Fusionar con otra ficha" className="bg-surface-2 border-line flex flex-col gap-2 rounded-2xl border p-5">
-                        <h2 className="text-base font-bold">¿Registro duplicado?</h2>
-                        <p className="text-ink-2 text-[13px]">
-                            Si esta persona apartó con otra cédula o teléfono, puedes unir las dos fichas: se moverán sus apartados, pagos y
-                            comprobantes.
-                        </p>
-                        <MergeCustomerDialog merge={props.merge} />
-                    </section>
+                    <ToolDisclosure title="¿Registro duplicado?" hint="Une esta ficha con otra de la misma persona.">
+                        <div className="flex flex-col gap-3">
+                            <p className="text-ink-2 text-[0.875rem]">
+                                Si esta persona apartó con otra cédula o teléfono, puedes unir las dos fichas: se moverán sus apartados, pagos y
+                                comprobantes.
+                            </p>
+                            <MergeCustomerDialog merge={props.merge} />
+                        </div>
+                    </ToolDisclosure>
                 </div>
             </div>
             {manage.dialogs}

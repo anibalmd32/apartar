@@ -12,12 +12,16 @@ export function PlanUsage({ className }: { className?: string }) {
     }
 
     const near = plan.isNearLimit('products');
+
+    if (!near) {
+        return null;
+    }
     const percentage = usage?.percentage ?? 0;
 
     const body = (
         <>
             <span className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-bold">Uso del plan</span>
+                <span className="text-[13px] font-bold">Te acercas al límite</span>
                 <span className="text-primary-ink text-xs font-bold">{plan.state.planName}</span>
             </span>
             {usage ? (
@@ -28,7 +32,7 @@ export function PlanUsage({ className }: { className?: string }) {
                     {usage.limit === null ? null : (
                         <span className="bg-base-300 block h-1.5 overflow-hidden rounded-full" aria-hidden="true">
                             <span
-                                className={cn('block h-full rounded-full', near ? 'bg-warning' : 'bg-primary')}
+                                className="bg-warning block h-full rounded-full"
                                 style={{ width: `${Math.min(100, Math.max(percentage, usage.used > 0 ? 3 : 0))}%` }}
                             />
                         </span>

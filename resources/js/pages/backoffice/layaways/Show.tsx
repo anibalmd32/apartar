@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
+import { ToolDisclosure } from '@/components/ui/tool-disclosure';
 import { CancelLayawayDialog } from '@/features/layaway/components/CancelLayawayDialog';
 import { LayawayActivity } from '@/features/layaway/components/LayawayActivity';
 import { LayawayCustomerCard } from '@/features/layaway/components/LayawayCustomerCard';
@@ -95,9 +96,9 @@ export default function LayawayShow({
                     </SectionCard>
 
                     {reallocation !== null ? (
-                        <SectionCard title="Reasignar un pago" aria-label="Reasignar un pago">
+                        <ToolDisclosure title="Reasignar un pago" hint="Para mover lo que entró a otra cuota cuando se aplicó mal.">
                             <AllocationEditor options={reallocation} />
-                        </SectionCard>
+                        </ToolDisclosure>
                     ) : null}
                 </div>
 
