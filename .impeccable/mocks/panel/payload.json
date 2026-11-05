@@ -1,0 +1,43 @@
+{
+  "title": "Elige cómo se organiza el panel del negocio",
+  "question": "El mundo ya está decidido (la pizarra). Aquí eliges la estructura del inicio del panel y su navegación. El sorteo puso tres sobre la mesa; la primera lleva la marca del sorteo.",
+  "options": [
+    {
+      "id": "mostrador",
+      "kind": "assigned",
+      "label": "Mostrador por cliente",
+      "kicker": "THE ROLL",
+      "thesis": "El inicio es el mostrador: buscas a la persona y ves, por cliente, qué toca hoy y con qué botón se resuelve.",
+      "palette": ["#f4f5f2", "#1c45c4", "#c21d27", "#0d6b41", "#15171b"],
+      "materials": ["acrílico", "renglones de marcador", "avatares de iniciales"],
+      "viewport": "Buscador grande arriba («¿A quién buscas?») y «Nuevo apartado»; debajo, la lista de clientes con algo pendiente hoy, cada uno con su estado en una palabra y su acción: Recordar por WhatsApp, Revisar, Marcar entregado.",
+      "risk": "Las cifras del negocio (cuánto entró, cuánto falta) quedan en segundo plano; hay que llevarlas a una franja compacta.",
+      "html": ".impeccable/mocks/panel/lead.html"
+    },
+    {
+      "id": "quincena",
+      "kind": "dealt",
+      "label": "Calendario de quincena",
+      "thesis": "El inicio ordena las cuotas por cuándo vencen: atrasadas, hoy, esta semana y el resto de la quincena.",
+      "palette": ["#f4f5f2", "#c21d27", "#1c45c4", "#15171b"],
+      "materials": ["columnas por fecha", "renglones con «Recordar»"],
+      "viewport": "Arriba, los comprobantes por revisar y lo que entró y falta; debajo, cuatro columnas por fecha de vencimiento con cada cuota y su botón «Recordar».",
+      "risk": "En el celular las cuatro columnas se apilan y la vista pierde su forma; el cliente con varios apartados aparece repetido.",
+      "html": ".impeccable/mocks/panel/calendar.html"
+    },
+    {
+      "id": "pizarra",
+      "kind": "dealt",
+      "label": "Pizarra del mostrador",
+      "thesis": "El inicio es una pizarra de tres columnas escritas: por revisar, por cobrar hoy y lo que entró este mes, cada una con su lista.",
+      "palette": ["#f4f5f2", "#1c45c4", "#c21d27", "#0d6b41", "#15171b"],
+      "materials": ["cifras grandes de vinilo", "títulos a mano", "renglones"],
+      "viewport": "Tres columnas iguales con una cifra grande cada una (3 por revisar, $51,00 por cobrar hoy, $412,00 este mes) y debajo la lista de personas con su botón.",
+      "risk": "Se acerca a la fila de tarjetas de cifras que hoy tiene el panel; la acción más urgente compite con las otras dos.",
+      "html": ".impeccable/mocks/panel/board.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "steer": true
+}

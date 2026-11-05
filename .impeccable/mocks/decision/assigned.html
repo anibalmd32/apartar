@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pizarra del día</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+  :root{--board:#f6f7f4;--frame:#a9afb5;--frame-dark:#7d838a;--blue:#1d47c9;--red:#d3222c;--ink:#17191d;--green:#11774a;--ghost:rgba(29,71,201,.07)}
+  *{box-sizing:border-box;margin:0}
+  body{width:1440px;height:900px;background:#d9dcdf;font-family:Archivo,sans-serif;color:var(--ink);overflow:hidden}
+  .board{position:absolute;inset:18px 18px 0 18px;background:linear-gradient(115deg,#fbfcfa 0%,#f3f5f2 55%,#eef1ee 100%);border:14px solid var(--frame);border-bottom:0;border-radius:6px 6px 0 0;box-shadow:inset 0 0 0 1px #fff,0 1px 0 var(--frame-dark)}
+  nav{display:flex;align-items:center;gap:36px;padding:22px 44px 0;font-weight:700;font-size:17px}
+  nav .logo{font-variation-settings:'wdth' 70;font-weight:900;font-size:34px;letter-spacing:-.01em;color:var(--blue)}
+  nav .sp{flex:1}
+  nav a{color:var(--ink);text-decoration:none}
+  nav .in{border:2.5px solid var(--ink);padding:9px 18px;border-radius:4px}
+  .date{position:absolute;left:62px;top:110px;font-family:'Gochi Hand';font-size:30px;color:var(--ink)}
+  .date b{color:var(--blue);font-weight:400}
+  .ghost{position:absolute;left:520px;top:104px;font-family:'Gochi Hand';font-size:30px;color:var(--ghost);transform:rotate(-1deg)}
+  h1{position:absolute;left:58px;top:168px;width:820px;font-variation-settings:'wdth' 66;font-weight:900;font-size:128px;line-height:.86;letter-spacing:-.015em;text-transform:uppercase}
+  h1 em{font-style:normal;color:var(--blue)}
+  .sub{position:absolute;left:62px;top:520px;width:600px;font-size:22px;line-height:1.4;font-weight:500}
+  .cta{position:absolute;left:62px;top:640px;display:flex;gap:16px;align-items:center}
+  .cta .p{background:var(--blue);color:#fff;font-weight:800;font-size:22px;padding:20px 30px;border-radius:6px}
+  .cta .s{font-family:'Gochi Hand';font-size:26px;color:var(--ink);border-bottom:3px solid var(--red);padding-bottom:2px}
+  .sum{position:absolute;left:900px;top:150px;width:470px;font-family:'Gochi Hand';font-size:34px;line-height:1.25}
+  .sum .title{font-size:38px;color:var(--ink)}
+  .sum .price{font-family:Archivo;font-variation-settings:'wdth' 70;font-weight:900;font-size:76px;color:var(--ink);letter-spacing:-.01em}
+  .sum .bs{color:var(--blue);font-size:30px}
+  .row{display:flex;justify-content:space-between;border-bottom:2px dashed rgba(23,25,29,.25);padding:6px 0}
+  .row.done{color:#8a8f95;text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:3px}
+  .row .ck{color:var(--green)}
+  .resta{margin-top:14px;display:flex;justify-content:space-between;font-size:40px;color:var(--red)}
+  .resta span:last-child{border:3px solid var(--red);border-radius:50%;padding:0 18px}
+  .pick{position:absolute;left:900px;top:690px;display:flex;gap:10px;font-family:Archivo;font-weight:800;font-size:18px}
+  .pick span{border:2.5px solid var(--ink);padding:8px 16px;border-radius:999px}
+  .pick .on{background:var(--ink);color:#fff}
+  .tray{position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(#c3c8cd,#9aa0a6);border-top:2px solid #e9ecee;display:flex;gap:28px;align-items:center;padding-left:120px}
+  .mk{width:150px;height:22px;border-radius:11px 4px 4px 11px;background:#222}
+  .mk.b{background:var(--blue)} .mk.r{background:var(--red)} .mk.g{background:var(--green)}
+  .label{position:absolute;right:46px;top:110px;font-size:13px;font-weight:700;color:#7d838a;text-transform:uppercase;letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div class="board">
+  <nav><span class="logo">apartar</span><span class="sp"></span><a>Cómo funciona</a><a>Precios</a><a class="in">Entrar</a></nav>
+  <div class="date">Miércoles 4 de nov. · Tasa BCV <b>Bs. 889,58</b></div>
+  <div class="ghost">Martes 3 · Tasa BCV Bs. 887,12</div>
+  <h1>Se aparta con <em>inicial.</em> El resto, en cuotas.</h1>
+  <p class="sub">Tu catálogo en un enlace. Tu cliente aparta, ve cuánto le falta y te paga a ti, en dólares o bolívares a la tasa del día.</p>
+  <div class="cta"><span class="p">Crear mi catálogo gratis</span><span class="s">sin tarjeta</span></div>
+  <div class="sum">
+    <div class="title">Vestido de lino · talla M</div>
+    <div class="price">$48,00</div>
+    <div class="bs">= Bs. 42.699,84 hoy</div>
+    <div class="row done"><span>Inicial</span><span>$12,00 <span class="ck">✓</span></span></div>
+    <div class="row done"><span>Cuota 1 · 18 nov</span><span>$12,00 <span class="ck">✓</span></span></div>
+    <div class="row"><span>Cuota 2 · 2 dic</span><span>$12,00</span></div>
+    <div class="row"><span>Cuota 3 · 16 dic</span><span>$12,00</span></div>
+    <div class="resta"><span>Resta</span><span>$24,00</span></div>
+  </div>
+  <div class="pick"><span>2 cuotas</span><span class="on">3 cuotas</span><span>4 cuotas</span></div>
+  <div class="label">ejemplo</div>
+  <div class="tray"><span class="mk b"></span><span class="mk"></span><span class="mk r"></span><span class="mk g"></span></div>
+</div>
+</body>
+</html>
