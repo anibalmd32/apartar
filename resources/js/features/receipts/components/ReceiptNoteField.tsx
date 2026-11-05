@@ -1,6 +1,6 @@
 import { FieldError } from '@/components/ui/field-error';
 import { cn } from '@/lib/utils';
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export const NOTE_MAX_LENGTH = 500;
 
@@ -14,6 +14,30 @@ export function ReceiptNoteField({ value, onChange, error }: ReceiptNoteFieldPro
     const id = useId();
     const hintId = `${id}-hint`;
     const errorId = `${id}-error`;
+    const [shown, setShown] = useState(value !== '' || error !== undefined);
+    const [asked, setAsked] = useState(false);
+    const field = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (asked) {
+            field.current?.focus();
+        }
+    }, [asked]);
+
+    if (!shown && value === '' && error === undefined) {
+        return (
+            <button
+                type="button"
+                className="hit-area text-primary-ink self-start text-sm font-semibold hover:underline"
+                onClick={() => {
+                    setShown(true);
+                    setAsked(true);
+                }}
+            >
+                Agregar una nota (opcional)
+            </button>
+        );
+    }
 
     return (
         <fieldset className="fieldset w-full">
@@ -22,6 +46,7 @@ export function ReceiptNoteField({ value, onChange, error }: ReceiptNoteFieldPro
             </label>
 
             <textarea
+                ref={field}
                 id={id}
                 name="note"
                 className={cn('textarea w-full', error && 'textarea-error')}

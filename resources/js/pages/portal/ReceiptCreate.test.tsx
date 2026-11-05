@@ -91,6 +91,9 @@ it('preselecciona la única cuenta sin volver a preguntar el método, y la suger
     expect(screen.getByLabelText('Número de referencia')).toHaveAttribute('inputmode', 'numeric');
     expect(checkedIn('Moneda')).toBe('VES');
     expect(screen.getByLabelText('Monto que pagaste')).toHaveValue('1.275,00');
+    expect(screen.queryByText('J-12345678-9', { exact: false })).toBeNull();
+    expect(document.querySelector('[data-paid-to]')).toHaveTextContent('Pagaste a');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver los datos' }));
     expect(screen.getByText('J-12345678-9', { exact: false })).toBeInTheDocument();
 });
 
@@ -108,7 +111,8 @@ it('con varias cuentas no elige ninguna, y elegir una pone su método', () => {
     expect(screen.queryByLabelText('Método de pago')).toBeNull();
     expect(screen.getByLabelText('Número de referencia')).toHaveAttribute('inputmode', 'text');
     expect(checkedIn('Moneda')).toBe('USD');
-    expect(screen.getAllByText('pagos@oriente.com')).toHaveLength(2);
+    expect(document.querySelector('[data-paid-to]')).toHaveTextContent('pagos@oriente.com');
+    expect(screen.queryByRole('group', { name: '¿A cuál cuenta vas a pagar?' })).toBeNull();
 });
 
 it('sin cuentas de cobro, quita el campo y avisa', () => {
@@ -170,7 +174,7 @@ it('lee el comprobante, rellena lo que encontró y envía multipart con los nomb
     expect(screen.getAllByText('captura.png')).toHaveLength(1);
     expect(fetch).toHaveBeenCalledWith('/mi-cuenta/apartados/AP-7K3M9QRT/comprobante/leer', expect.objectContaining({ method: 'POST' }));
     expect(screen.queryByText(/\bIA\b|inteligencia artificial/)).toBeNull();
-
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar una nota (opcional)' }));
     fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Cuota de octubre' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar comprobante' }));
 

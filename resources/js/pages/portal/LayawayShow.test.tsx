@@ -99,7 +99,7 @@ it('ofrece subir el comprobante; el aviso de la acción anterior lo da el Toaste
         props: {
             auth: { portal: { fullName: 'María González' } },
             currency: { display: 'usd_primary', timezone: 'America/Caracas', rate: { rate: null } },
-            status: 'Recibimos tu comprobante. Lo revisaremos pronto.',
+            status: 'Recibimos tu comprobante. Cuando el negocio lo revise, aquí verás si lo aprobó.',
         },
     });
 

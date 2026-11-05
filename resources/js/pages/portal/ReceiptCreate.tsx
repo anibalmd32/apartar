@@ -2,6 +2,7 @@ import { Alert } from '@/components/ui/alert';
 import { BackLink } from '@/components/ui/back-link';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { PaidToSummary } from '@/features/receipts/components/PaidToSummary';
 import { PayInstructions } from '@/features/receipts/components/PayInstructions';
 import { ReceiptForm } from '@/features/receipts/components/ReceiptForm';
 import { ReceiptLayawayCard } from '@/features/receipts/components/ReceiptLayawayCard';
@@ -23,8 +24,10 @@ export default function ReceiptCreate(props: ReceiptCreatePageProps) {
     const { auth } = usePage<{ auth: { portal: PortalSessionView | null } }>().props;
     const form = useReceiptForm(props);
     const [paid, setPaid] = useState(replaces !== null);
+    const [showAccounts, setShowAccounts] = useState(false);
     const uploadHeading = useRef<HTMLHeadingElement>(null);
     const open = paid || Object.keys(form.errors).some((field) => field !== 'paymentAccount');
+    const paidTo = open && !showAccounts ? form.selectedAccount : null;
 
     const startUpload = () => {
         if (paymentAccounts.length > 1 && form.data.paymentAccount === null) {
@@ -35,6 +38,7 @@ export default function ReceiptCreate(props: ReceiptCreatePageProps) {
 
         form.clearErrors('paymentAccount');
         setPaid(true);
+        setShowAccounts(false);
         afterPaint(() => {
             uploadHeading.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
             uploadHeading.current?.focus({ preventScroll: true });
@@ -64,13 +68,17 @@ export default function ReceiptCreate(props: ReceiptCreatePageProps) {
                 ) : null}
 
                 <div className="border-line bg-base-100 shadow-card flex flex-col gap-4 rounded-2xl border p-5">
-                    <PayInstructions
-                        form={form}
-                        paymentAccounts={paymentAccounts}
-                        suggestion={suggestion}
-                        coveredByReview={coveredByReview}
-                        businessName={business.name}
-                    />
+                    {paidTo !== null ? (
+                        <PaidToSummary account={paidTo} onShow={() => setShowAccounts(true)} />
+                    ) : (
+                        <PayInstructions
+                            form={form}
+                            paymentAccounts={paymentAccounts}
+                            suggestion={suggestion}
+                            coveredByReview={coveredByReview}
+                            businessName={business.name}
+                        />
+                    )}
 
                     {open ? null : (
                         <Button variant={covered ? 'secondary' : 'primary'} size="lg" block onClick={startUpload}>
@@ -89,7 +97,10 @@ export default function ReceiptCreate(props: ReceiptCreatePageProps) {
                             <h2 id="upload-heading" ref={uploadHeading} tabIndex={-1} className="text-[17px] font-bold outline-none">
                                 Sube el comprobante
                             </h2>
-                            <p className="text-ink-2 text-[13px]">{business.name} lo revisará y te descontará lo que corresponda.</p>
+                            <p className="text-ink-2 text-[13px]">
+                                No es automático: lo revisa una persona de {business.name}. Cuando lo apruebe, se descuenta de lo que te falta y lo
+                                verás en tu apartado. Si dejaste tu correo, también te llega un aviso.
+                            </p>
                         </header>
                         <ReceiptForm {...props} form={form} businessName={business.name} />
                     </section>

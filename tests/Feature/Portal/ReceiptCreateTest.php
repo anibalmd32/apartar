@@ -10,7 +10,6 @@ use App\Domain\Money\Currency;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Payment\RejectionReasonCode;
 use App\Domain\Tenancy\OrganizationStatus;
-use App\Http\Controllers\Portal\ReceiptController;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\Layaway;
@@ -199,7 +198,7 @@ final class ReceiptCreateTest extends TestCase
     {
         $this->post($this->storeUrl(), $this->payload())
             ->assertRedirect(route('portal.layaways.show', ['code' => $this->layaway->code]))
-            ->assertSessionHas('status', ReceiptController::SUBMITTED_STATUS);
+            ->assertSessionHas('status', 'Recibimos tu comprobante. Cuando el negocio lo revise, aquí verás si lo aprobó.');
 
         $receipt = $this->withinOrganization($this->organization, fn (): Receipt => Receipt::query()->sole());
         $this->assertSame(ReceiptStatus::PendingReview, $receipt->status);

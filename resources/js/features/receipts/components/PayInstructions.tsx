@@ -21,7 +21,7 @@ interface PayInstructionsProps {
 
 const HEADING = 'text-[20px] leading-tight font-extrabold lg:text-[24px] lg:tracking-heading';
 
-function accountLabel(account: PaymentAccountView): string {
+export function accountLabel(account: PaymentAccountView): string {
     return [account.methodLabel, account.bank, formatAccountIdentifier(account)].filter((part) => part !== null && part !== '').join(' · ');
 }
 

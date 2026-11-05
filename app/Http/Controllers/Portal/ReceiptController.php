@@ -49,7 +49,7 @@ final class ReceiptController extends Controller
 {
     use ProjectsMoney;
 
-    public const SUBMITTED_STATUS = 'Recibimos tu comprobante. Lo revisaremos pronto.';
+    public const SUBMITTED_STATUS = 'Recibimos tu comprobante. Cuando el negocio lo revise, aquí verás si lo aprobó.';
 
     public function __construct(
         private readonly TenantContext $context,

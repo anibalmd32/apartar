@@ -77,6 +77,8 @@ it('primero dice cuánto pagar y a dónde, y el formulario aparece al decir que 
     expect(screen.getByRole('heading', { name: 'Sube el comprobante' })).toBeInTheDocument();
     expect(screen.getByLabelText('Captura o PDF del pago')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Ya pagué, subir el comprobante' })).toBeNull();
+    expect(screen.queryByText('J-12345678-9', { exact: false })).toBeNull();
+    expect(screen.getByText(/No es automático: lo revisa una persona de/)).toHaveTextContent('Si dejaste tu correo, también te llega un aviso.');
 });
 
 it('si sustituye un comprobante rechazado, abre directo el formulario', () => {
