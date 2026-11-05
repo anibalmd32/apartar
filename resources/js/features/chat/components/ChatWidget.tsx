@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button, buttonClass } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { JsonRequestError, postJson } from '@/lib/json';
 import { cn } from '@/lib/utils';
@@ -23,9 +23,14 @@ function useScrolledPast(offset: number): boolean {
     return past;
 }
 
-function Panel({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+function Panel({ onClose, inline, children }: { onClose: () => void; inline: boolean; children: ReactNode }) {
     return (
-        <div className="bg-base-100 border-line shadow-pop rounded-box flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 border p-3">
+        <div
+            className={cn(
+                'bg-base-100 border-line rounded-box flex flex-col gap-2 border p-3',
+                inline ? 'w-full' : 'shadow-pop w-[min(24rem,calc(100vw-2rem))]',
+            )}
+        >
             <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-bold">Escribir al negocio</p>
                 <button type="button" className="btn btn-ghost btn-sm btn-square" aria-label="Cerrar" onClick={onClose}>
@@ -37,7 +42,7 @@ function Panel({ onClose, children }: { onClose: () => void; children: ReactNode
     );
 }
 
-export function ChatWidget({ chat }: { chat: CatalogChatState }) {
+export function ChatWidget({ chat, inline = false }: { chat: CatalogChatState; inline?: boolean }) {
     const [open, setOpen] = useState(false);
     const [draft, setDraft] = useState('');
     const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
@@ -65,6 +70,15 @@ export function ChatWidget({ chat }: { chat: CatalogChatState }) {
         }
     };
 
+    if (!open && inline) {
+        return (
+            <button type="button" onClick={() => setOpen(true)} className={cn(buttonClass('secondary', 'lg'), 'btn-block')}>
+                <Icon icon={cilChatBubble} size={18} />
+                Escribir al negocio
+            </button>
+        );
+    }
+
     if (!open) {
         return (
             <button
@@ -87,7 +101,7 @@ export function ChatWidget({ chat }: { chat: CatalogChatState }) {
 
     if (!chat.canWrite) {
         return (
-            <Panel onClose={() => setOpen(false)}>
+            <Panel onClose={() => setOpen(false)} inline={inline}>
                 <p className="text-ink-2 text-sm" role="status">
                     Para escribirle a este negocio, aparta algo o entra con tu cédula y el código de tu apartado.
                 </p>
@@ -96,7 +110,7 @@ export function ChatWidget({ chat }: { chat: CatalogChatState }) {
     }
 
     return (
-        <Panel onClose={() => setOpen(false)}>
+        <Panel onClose={() => setOpen(false)} inline={inline}>
             <form
                 className="flex flex-col gap-2"
                 onSubmit={(event) => {
@@ -132,11 +146,14 @@ export function ChatWidget({ chat }: { chat: CatalogChatState }) {
     );
 }
 
-export function ChatDock({ chat }: { chat: CatalogChatState }) {
+export function ChatDock({ chat, className }: { chat: CatalogChatState; className?: string }) {
     return (
         <div
             data-chat-dock
-            className="fixed right-4 bottom-[calc(var(--overlay-bottom)+var(--consent-height)+1rem)] z-30 flex flex-col items-end lg:right-10 lg:bottom-[calc(var(--consent-height)+2rem)]"
+            className={cn(
+                'fixed right-4 bottom-[calc(var(--overlay-bottom)+var(--consent-height)+1rem)] z-30 flex flex-col items-end lg:right-10 lg:bottom-[calc(var(--consent-height)+2rem)]',
+                className,
+            )}
         >
             <ChatWidget chat={chat} />
         </div>

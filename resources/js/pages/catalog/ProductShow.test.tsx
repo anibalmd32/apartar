@@ -250,6 +250,8 @@ it('ofrece escribir al negocio como en el catálogo y la foto llena su marco', (
         />,
     );
 
-    expect(screen.getByRole('button', { name: 'Escribir al negocio' })).toBeInTheDocument();
+    const [inline, floating] = screen.getAllByRole('button', { name: 'Escribir al negocio' });
+    expect(inline!.closest('[data-chat-inline]')).toHaveClass('lg:hidden');
+    expect(floating!.closest('[data-chat-dock]')).toHaveClass('max-lg:hidden');
     screen.getAllByRole('img', { name: 'Taladro' }).forEach((img) => expect(img).toHaveClass('object-cover'));
 });

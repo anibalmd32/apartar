@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { ProductDetailView } from '@/features/catalog/components/ProductDetailView';
 import { ProductGridCard } from '@/features/catalog/components/ProductGridCard';
 import { ReserveBar } from '@/features/catalog/components/ReserveBar';
-import { ChatDock } from '@/features/chat/components/ChatWidget';
+import { ChatDock, ChatWidget } from '@/features/chat/components/ChatWidget';
 import { useDwellTime } from '@/features/telemetry/hooks/useDwellTime';
 import { track } from '@/features/telemetry/hooks/useTelemetry';
 import CatalogLayout from '@/layouts/catalog-layout';
@@ -66,6 +66,11 @@ export default function ProductShow({ catalog, product, related, chat }: Product
                                 {product.unavailableReason}
                             </p>
                         ) : null}
+                        {chat !== undefined ? (
+                            <div data-chat-inline className="lg:hidden">
+                                <ChatWidget chat={chat} inline />
+                            </div>
+                        ) : null}
                     </div>
                 }
             />
@@ -86,7 +91,7 @@ export default function ProductShow({ catalog, product, related, chat }: Product
             ) : null}
 
             {product.canBeReserved ? <ReserveBar product={product} href={reserveUrl} /> : null}
-            {chat !== undefined ? <ChatDock chat={chat} /> : null}
+            {chat !== undefined ? <ChatDock chat={chat} className="max-lg:hidden" /> : null}
         </CatalogLayout>
     );
 }

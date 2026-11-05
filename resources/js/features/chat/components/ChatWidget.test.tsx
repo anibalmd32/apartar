@@ -1,4 +1,4 @@
-import { ChatDock } from '@/features/chat/components/ChatWidget';
+import { ChatDock, ChatWidget } from '@/features/chat/components/ChatWidget';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 
@@ -52,4 +52,15 @@ it('abierto se puede cerrar y vuelve el botón', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
     expect(screen.getByRole('button', { name: 'Escribir al negocio' })).toBeInTheDocument();
+});
+
+it('dentro de la ficha se ve como un botón con su texto y se abre en el mismo sitio', () => {
+    render(<ChatWidget chat={CHAT} inline />);
+
+    const button = screen.getByRole('button', { name: 'Escribir al negocio' });
+    expect(button).toHaveClass('btn-block');
+    expect(button).not.toHaveClass('rounded-full');
+
+    fireEvent.click(button);
+    expect(screen.getByRole('status').parentElement).toHaveClass('w-full');
 });
