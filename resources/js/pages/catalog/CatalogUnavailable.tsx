@@ -1,21 +1,20 @@
-import { Brand } from '@/components/shell/brand';
 import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
+import { storeStyle } from '@/lib/store-brand';
 import { cilLibrary, cilUser } from '@coreui/icons';
 import { Head } from '@inertiajs/react';
 
 export default function CatalogUnavailable() {
     return (
-        <div className="bg-base-200 flex min-h-screen flex-col">
+        <div data-store-page className="vitrina bg-base-200 flex min-h-screen flex-col" style={storeStyle(null)}>
             <Head title="Catálogo no disponible" />
 
             <header className="bg-base-100 border-line border-b">
-                <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 lg:min-h-[72px] lg:px-20">
-                    <Brand />
-                    <ThemeToggle className="ml-auto" />
-                    <a href="/mi-cuenta" className="btn lg:border-line-strong max-lg:btn-square max-lg:size-11" aria-label="Mi cuenta">
-                        <Icon icon={cilUser} />
-                        <span className="max-lg:hidden">Mi cuenta</span>
+                <div className="mx-auto flex max-w-[1440px] items-center justify-end gap-1.5 px-4 py-3 sm:gap-3 lg:min-h-[76px] lg:px-20">
+                    <ThemeToggle />
+                    <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-2.5 sm:px-3" aria-label="Mis apartados">
+                        <Icon icon={cilUser} size={18} />
+                        <span className="max-sm:hidden">Mis apartados</span>
                     </a>
                 </div>
             </header>
@@ -35,10 +34,12 @@ export default function CatalogUnavailable() {
 
                     <div className="bg-base-100 border-line shadow-card mt-4 flex w-full flex-col items-center gap-3 rounded-2xl border p-6">
                         <p className="text-sm font-bold">¿Ya apartaste aquí? Tu apartado sigue vigente.</p>
-                        <p className="text-ink-2 text-[13px]">Puedes ver tus cuotas, subir comprobantes y escribirle al negocio desde Mi cuenta.</p>
+                        <p className="text-ink-2 text-[13px]">
+                            Puedes ver tus cuotas, subir comprobantes y escribirle al negocio desde Mis apartados.
+                        </p>
                         <div className="flex flex-wrap justify-center gap-2">
                             <a href="/mi-cuenta" className="btn btn-primary">
-                                Ir a Mi cuenta
+                                Ver mis apartados
                             </a>
                             <a href="/mi-cuenta/acceso" className="btn">
                                 Entrar con mi código
@@ -47,11 +48,6 @@ export default function CatalogUnavailable() {
                     </div>
                 </div>
             </main>
-
-            <footer className="flex items-center justify-center gap-1.5 px-4 pt-6 pb-8">
-                <span className="text-ink-3 text-xs">Hecho con</span>
-                <span className="text-ink-2 text-[13px] font-extrabold tracking-[-0.2px]">apartar</span>
-            </footer>
         </div>
     );
 }

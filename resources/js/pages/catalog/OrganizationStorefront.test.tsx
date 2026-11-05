@@ -1,4 +1,5 @@
 import CatalogExpired from '@/pages/catalog/CatalogExpired';
+import CatalogUnavailable from '@/pages/catalog/CatalogUnavailable';
 import OrganizationStorefront from '@/pages/catalog/OrganizationStorefront';
 import { type OrganizationBrand } from '@/types/backoffice';
 import { type StorefrontCatalog } from '@/types/catalog-view';
@@ -87,6 +88,8 @@ it('cuenta lo que el negocio dice de sí y cuántos productos tiene cada catálo
     expect(screen.getByText('C.C. Sambil, Caracas')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '0414-5551234' })).toHaveAttribute('href', 'tel:0414-555-1234');
     expect(screen.getByText('24 productos')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Lo que puedes apartar' })).toBeInTheDocument();
+    expect(document.querySelector('[data-featured]')).toHaveTextContent('Ver los 24 productos');
 });
 
 it('la campaña terminada dice hasta qué día estuvo disponible', () => {
@@ -106,6 +109,9 @@ it('la cabecera de la tienda no repite las iniciales y ofrece escribir por Whats
     );
 
     expect(screen.getAllByText('FO')).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 2, name: 'Catálogos' })).toBeInTheDocument();
+    expect(document.querySelector('[data-featured]')).toBeNull();
+    expect(screen.getByText('Aparta con una inicial y paga el resto en cuotas, directo con Ferretería Oriente.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Escribir por WhatsApp' })).toHaveAttribute('href', 'https://wa.me/584145551234');
 });
 
@@ -120,4 +126,20 @@ it('un teléfono fijo no ofrece WhatsApp', () => {
     );
 
     expect(screen.queryByRole('link', { name: 'Escribir por WhatsApp' })).toBeNull();
+});
+
+it('el catálogo que no existe se ve como una tienda neutra, sin la marca de Apartar', () => {
+    const { container } = render(<CatalogUnavailable />);
+
+    expect(container.querySelector('[data-store-page]')).toHaveClass('vitrina');
+    expect(container.textContent).not.toMatch(/apartar$|Hecho con/i);
+    expect(screen.queryByRole('link', { name: /Apartar/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Ver mis apartados' })).toHaveAttribute('href', '/mi-cuenta');
+});
+
+it('la campaña terminada lleva los colores de la tienda y no los de Apartar', () => {
+    const { container } = render(<CatalogExpired catalogName="Ofertas" businessName="Ferretería Oriente" storefrontUrl={null} />);
+
+    expect(container.querySelector('[data-store-page]')).toHaveClass('vitrina');
+    expect(screen.getByRole('link', { name: 'Mis apartados' })).toHaveAttribute('href', '/mi-cuenta');
 });

@@ -1,23 +1,26 @@
 import { Avatar } from '@/components/shell/avatar';
 import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { Icon } from '@/components/ui/icon';
+import { storeStyle } from '@/lib/store-brand';
 import { type CatalogExpiredProps } from '@/types/catalog-view';
 import { cilArrowRight, cilCalendar, cilUser } from '@coreui/icons';
 import { Head } from '@inertiajs/react';
 
 export default function CatalogExpired({ catalogName, businessName, storefrontUrl, endedOn, withdrawn = false }: CatalogExpiredProps) {
     return (
-        <div className="bg-base-200 flex min-h-screen flex-col">
+        <div data-store-page className="vitrina bg-base-200 flex min-h-screen flex-col" style={storeStyle(null)}>
             <Head title={withdrawn ? `${catalogName} no está disponible` : `${catalogName} terminó`} />
 
             <header className="bg-base-100 border-line border-b">
-                <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 lg:min-h-[72px] lg:px-20">
-                    <Avatar name={businessName} tone="accent" />
-                    <p className="min-w-0 flex-1 truncate text-[15px] font-bold lg:text-base">{businessName}</p>
+                <div className="mx-auto flex max-w-[1440px] items-center gap-1.5 px-4 py-3 sm:gap-3 lg:min-h-[76px] lg:px-20">
+                    <Avatar name={businessName} tone="neutral" className="size-10! rounded-xl! text-[15px]! sm:size-11!" />
+                    <p className="min-w-0 flex-1 truncate text-[1.0625rem] leading-tight font-extrabold [font-stretch:90%] lg:text-xl">
+                        {businessName}
+                    </p>
                     <ThemeToggle />
-                    <a href="/mi-cuenta" className="btn lg:border-line-strong max-lg:btn-square max-lg:size-11" aria-label="Mi cuenta">
-                        <Icon icon={cilUser} />
-                        <span className="max-lg:hidden">Mi cuenta</span>
+                    <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-2.5 sm:px-3" aria-label="Mis apartados">
+                        <Icon icon={cilUser} size={18} />
+                        <span className="max-sm:hidden">Mis apartados</span>
                     </a>
                 </div>
             </header>
@@ -56,7 +59,7 @@ export default function CatalogExpired({ catalogName, businessName, storefrontUr
                     ) : null}
 
                     <a href="/mi-cuenta" className="text-primary-ink text-sm font-semibold hover:underline">
-                        ¿Tienes un apartado? Entra a Mi cuenta
+                        ¿Tienes un apartado? Míralo en Mis apartados
                     </a>
                 </div>
             </main>

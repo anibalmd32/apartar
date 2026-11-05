@@ -85,14 +85,17 @@ final class StorefrontTest extends TestCase
         $this->assertSame((string) $unknown->getContent(), (string) $off->getContent());
     }
 
-    public function test_con_un_solo_catalogo_la_tienda_lleva_directo_a_el(): void
+    public function test_con_un_solo_catalogo_la_tienda_existe_y_lo_muestra(): void
     {
         $this->withinOrganization($this->organization, function (): void {
             Catalog::factory()->published()->create(['slug' => 'unico']);
             Catalog::factory()->published()->create(['is_listed' => false]);
         });
 
-        $this->visit($this->organization)->assertRedirect(CatalogShareLink::of('unico'));
+        $this->visit($this->organization)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('catalog/OrganizationStorefront')
+            ->has('catalogs', 1)
+            ->where('catalogs.0.url', CatalogShareLink::of('unico')));
     }
 
     public function test_a_storefront_that_is_on_but_empty_is_a_page(): void
