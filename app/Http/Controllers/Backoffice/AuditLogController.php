@@ -11,6 +11,7 @@ use App\Http\Controllers\Concerns\ResolvesTableState;
 use App\Http\Controllers\Controller;
 use App\Models\AuditEntry;
 use App\Models\User;
+use App\Support\Auditing\AuditSubjectName;
 use App\Support\TableState;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -130,7 +131,7 @@ final class AuditLogController extends Controller
             'id' => $entry->getKey(),
             'event' => $entry->event,
             'eventLabel' => $this->labelOf($entry),
-            'description' => $entry->description,
+            'description' => AuditSubjectName::humanize($entry->description),
             'actor' => $this->actorOf($entry, $names),
             'properties' => $entry->properties?->toArray() ?? [],
             'occurredAt' => $entry->created_at?->toIso8601String(),

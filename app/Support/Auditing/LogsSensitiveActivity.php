@@ -85,7 +85,7 @@ trait LogsSensitiveActivity
 
         $key = $subject->getKey();
 
-        return $key === null ? null : class_basename($subject).' #'.$key;
+        return is_int($key) || is_string($key) ? AuditSubjectName::of($subject, $key) : null;
     }
 
     private function auditTrail(): AuditTrail
