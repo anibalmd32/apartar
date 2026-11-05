@@ -13,16 +13,20 @@ interface ChatHeaderProps {
     heading?: 'h1' | 'h2';
     backOnDesktop?: boolean;
     children?: ReactNode;
+    subtitle?: ReactNode;
 }
 
-export function ChatHeader({ name, backHref, backLabel, heading: Heading = 'h2', backOnDesktop = false, children }: ChatHeaderProps) {
+export function ChatHeader({ name, backHref, backLabel, heading: Heading = 'h2', backOnDesktop = false, subtitle, children }: ChatHeaderProps) {
     return (
         <header className="border-line bg-base-100 flex min-h-14 shrink-0 items-center gap-2 border-b py-1.5 pr-3 pl-1 lg:gap-3 lg:px-5 lg:py-3">
             <Link href={backHref} className={cn('btn btn-ghost btn-square size-11 shrink-0', !backOnDesktop && 'lg:hidden')} aria-label={backLabel}>
                 <Icon icon={cilArrowLeft} size={20} />
             </Link>
             <Avatar name={name} size={36} tone="accent" />
-            <Heading className="min-w-0 flex-1 truncate text-[16px] font-bold">{name}</Heading>
+            <div className="flex min-w-0 flex-1 flex-col">
+                <Heading className="truncate text-[16px] font-bold">{name}</Heading>
+                {subtitle}
+            </div>
             {children}
             <ThemeToggle className="lg:hidden" />
         </header>

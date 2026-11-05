@@ -54,14 +54,15 @@ export function SiteHeader() {
 
                 {loggedIn ? (
                     <Link href={route('dashboard')} className="pz-btn pz-btn-blue">
-                        Ir a mi negocio
+                        <span className="max-[359px]:hidden">Ir a mi negocio</span>
+                        <span className="min-[360px]:hidden">Mi negocio</span>
                     </Link>
                 ) : (
                     <div className="flex items-center gap-2 lg:gap-3">
                         <Link href={route('login')} className="pz-btn pz-btn-line touch:min-h-11 hidden min-h-10 px-4 sm:inline-flex">
                             Entrar
                         </Link>
-                        <SignupCta className="px-4 max-sm:w-auto sm:px-6" />
+                        <SignupCta shortLabel="Empezar" className="px-3 whitespace-nowrap max-sm:w-auto min-[360px]:px-4 sm:px-6" />
                     </div>
                 )}
 

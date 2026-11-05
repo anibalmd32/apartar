@@ -9,6 +9,7 @@ import { OrganizationIdentityFields } from '@/features/marketing/components/Orga
 import { RegisterBrandPanel } from '@/features/marketing/components/RegisterBrandPanel';
 import { SiteFooter } from '@/features/marketing/components/SiteFooter';
 import { PasswordStrength } from '@/layouts/auth/password-strength';
+import { site } from '@/lib/surfaces';
 import { type RegisterProps } from '@/types/marketing';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -51,7 +52,7 @@ export default function Register({ plan = null }: RegisterProps) {
 
     const header = (
         <header className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:h-[84px] lg:px-12">
-            <Link href={route('home')} className="touch:min-h-11 flex items-center" aria-label="Apartar, inicio">
+            <Link href={site()} className="touch:min-h-11 flex items-center" aria-label="Apartar, inicio">
                 <BoardBrand />
             </Link>
             <p className="text-pz-ink-2 flex items-center gap-2 text-[0.9375rem]">

@@ -1,3 +1,4 @@
+import { RateText } from '@/components/shell/rate-strip';
 import { ChatHeader } from '@/features/chat/components/ChatHeader';
 import { ChatThreadView } from '@/features/chat/components/ChatThreadView';
 import PortalLayout from '@/layouts/portal-layout';
@@ -16,6 +17,7 @@ export default function Chat({ businessName, thread }: PortalChatProps) {
                     backHref={route('portal.chat.index')}
                     backLabel="Volver a tus conversaciones"
                     backOnDesktop
+                    subtitle={<RateText className="text-xs lg:hidden" />}
                 />
                 <ChatThreadView thread={thread} me="customer" className="flex-1" placeholder={`Escribe a ${businessName}…`} />
             </section>

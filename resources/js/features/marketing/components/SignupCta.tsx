@@ -16,12 +16,22 @@ interface SignupCtaProps {
     className?: string;
     href?: string;
     label?: string;
+    shortLabel?: string;
 }
 
-export function SignupCta({ tone = 'primary', className, href, label = SIGNUP_LABEL }: SignupCtaProps) {
+export function SignupCta({ tone = 'primary', className, href, label = SIGNUP_LABEL, shortLabel }: SignupCtaProps) {
+    const rest = shortLabel !== undefined && label.startsWith(shortLabel) ? label.slice(shortLabel.length) : null;
+
     return (
         <Link href={href ?? route('register')} className={cn(CTA_SHAPE, 'max-sm:w-full', TONES[tone], className)}>
-            {label}
+            {rest === null ? (
+                label
+            ) : (
+                <>
+                    {shortLabel}
+                    <span className="max-[359px]:hidden">{rest}</span>
+                </>
+            )}
         </Link>
     );
 }

@@ -45,13 +45,16 @@ it('la cabecera del sitio invita a registrarse con el mismo botón azul que el r
     expect(cta).not.toHaveClass('hidden');
 });
 
-it('el acceso al negocio invita a registrarse con «Empezar gratis»', () => {
+it('el acceso al negocio invita a registrarse con «Empezar gratis» en el sitio principal', () => {
+    window.apartarSurfaces = { backoffice: '', platform: '', site: 'https://apartar.app' };
     render(<Login />);
 
-    const links = signupLinks();
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="https://apartar.app/registro"]'));
 
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveTextContent(/^Empezar gratis$/);
+    expect(document.querySelector('a[href="https://apartar.app/mi-cuenta/acceso"]')).not.toBeNull();
+    delete window.apartarSurfaces;
 });
 
 it('«Entrar» en la cabecera del sitio mide 44px en el celular', () => {
@@ -66,5 +69,5 @@ it('«Entrar» en la cabecera del sitio mide 44px en el celular', () => {
 it('«Entra a Mi cuenta» del acceso al negocio es un objetivo de 44px', () => {
     render(<Login />);
 
-    expect(document.querySelector('a[href="/portal.access"]')).toHaveClass('touch:min-h-11', 'inline-flex');
+    expect(document.querySelector('a[href="/mi-cuenta/acceso"]')).toHaveClass('touch:min-h-11', 'inline-flex');
 });

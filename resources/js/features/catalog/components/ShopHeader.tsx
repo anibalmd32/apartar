@@ -13,9 +13,9 @@ export function ShopHeader({ business, rate }: { business: OrganizationBrand; ra
     const identity = (
         <>
             {logo !== null ? (
-                <img src={logo} alt="" className="border-line size-11 shrink-0 rounded-xl border object-contain lg:size-12" />
+                <img src={logo} alt="" className="border-line size-10 shrink-0 rounded-xl border object-contain sm:size-11 lg:size-12" />
             ) : (
-                <Avatar name={business.name} tone="neutral" className="size-11! rounded-xl! text-[15px]! lg:size-12!" />
+                <Avatar name={business.name} tone="neutral" className="size-10! rounded-xl! text-[15px]! sm:size-11! lg:size-12!" />
             )}
             <span className="flex min-w-0 flex-col">
                 <span className="truncate text-[1.0625rem] leading-tight font-extrabold [font-stretch:90%] lg:text-xl">{business.name}</span>
@@ -26,17 +26,17 @@ export function ShopHeader({ business, rate }: { business: OrganizationBrand; ra
 
     return (
         <header className="bg-base-100 border-line border-b">
-            <div className="mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-3 sm:gap-3 lg:min-h-[76px] lg:px-20">
+            <div className="mx-auto flex max-w-[1440px] items-center gap-1.5 px-4 py-3 sm:gap-3 lg:min-h-[76px] lg:px-20">
                 {business.storefrontUrl ? (
                     <a
                         href={business.storefrontUrl}
-                        className="flex min-w-0 flex-1 items-center gap-3"
+                        className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3"
                         aria-label={`${business.name}, ver la tienda`}
                     >
                         {identity}
                     </a>
                 ) : (
-                    <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
+                    <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">{identity}</div>
                 )}
 
                 <RateText rate={rate} className="max-md:hidden" />
@@ -44,7 +44,7 @@ export function ShopHeader({ business, rate }: { business: OrganizationBrand; ra
                 <CurrencySwitch compact className="md:hidden" />
                 <ThemeToggle />
 
-                <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-3" aria-label="Mis apartados">
+                <a href="/mi-cuenta" className="btn btn-ghost touch:min-h-11 shrink-0 gap-2 px-2.5 sm:px-3" aria-label="Mis apartados">
                     <Icon icon={cilUser} size={18} />
                     <span className="max-sm:hidden">Mis apartados</span>
                 </a>

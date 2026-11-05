@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { IconTextField } from '@/components/ui/icon-text-field';
 import { SIGNUP_LABEL } from '@/features/marketing/components/SignupCta';
 import AccessLayout from '@/layouts/backoffice/access-layout';
-import { bo } from '@/lib/surfaces';
+import { bo, site } from '@/lib/surfaces';
 import { cilEnvelopeClosed, cilLockLocked } from '@coreui/icons';
 import { Link, useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -42,14 +42,14 @@ export default function Login({ status }: LoginProps) {
                 <div className="border-line flex flex-col gap-3 border-t pt-4">
                     <p>
                         ¿Aún no tienes cuenta?{' '}
-                        <Link href={route('register')} className="link link-primary link-hover ml-1 font-bold">
+                        <Link href={site('/registro')} className="link link-primary link-hover ml-1 font-bold">
                             {SIGNUP_LABEL}
                         </Link>
                     </p>
                     <p className="text-ink-3 text-[13px]">
                         ¿Eres cliente?{' '}
                         <Link
-                            href={route('portal.access')}
+                            href={site('/mi-cuenta/acceso')}
                             className="text-ink-2 link-hover touch:min-h-11 ml-1 inline-flex items-center font-semibold"
                         >
                             Entra a Mi cuenta

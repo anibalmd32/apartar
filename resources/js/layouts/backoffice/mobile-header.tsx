@@ -19,7 +19,7 @@ export function MobileHeader({ organizationName, pendingReceipts, userMenu }: Mo
             <div className="flex items-center">
                 <MobileSearch />
                 <AttentionBell pendingReceipts={pendingReceipts} plain />
-                <ThemeToggle />
+                <ThemeToggle className="max-[379px]:hidden" />
             </div>
             <CurrencySwitch compact />
             <div className="flex">{userMenu}</div>

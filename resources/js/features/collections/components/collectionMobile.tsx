@@ -66,12 +66,7 @@ export function customerMobile<
             row.customer === null ? null : (
                 <span className="flex items-center gap-1.5">
                     {row.pending !== undefined ? (
-                        <WhatsAppReminder
-                            customer={row.customer}
-                            dueCents={Number(row.pending.cents)}
-                            daysLate={row.daysLate ?? 0}
-                            className="min-h-11"
-                        />
+                        <WhatsAppReminder customer={row.customer} dueCents={Number(row.pending.cents)} daysLate={row.daysLate ?? 0} iconOnly />
                     ) : null}
                     <CallButton customer={row.customer} />
                 </span>

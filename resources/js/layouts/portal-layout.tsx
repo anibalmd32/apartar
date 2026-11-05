@@ -84,7 +84,7 @@ function PortalFrame({ title, businessName, customerName, immersive = false, chi
                 </div>
             </header>
 
-            <header className={cn('bg-base-200 flex h-14 items-center gap-3 px-4 lg:hidden', immersive && 'hidden')}>
+            <header className={cn('bg-base-200 flex h-14 items-center gap-2 px-4 lg:hidden', immersive && 'hidden')}>
                 <Link
                     href={route('portal.dashboard')}
                     aria-label="Ir al inicio de tu cuenta"
