@@ -70,7 +70,7 @@ export default [
         },
     },
     {
-        ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'storage', 'docker'],
+        ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'storage', 'docker', '.agents', '.claude', '.impeccable'],
     },
     prettier, // Turn off all rules that might conflict with Prettier
 ];
