@@ -119,6 +119,28 @@ it('no ofrece pagar lo que ya no se paga ni lo que está en revisión, y dice po
     expect(screen.queryByRole('button', { name: 'Pagar F-2026-0002' })).toBeNull();
 });
 
+it('sin factura por pagar la tabla ocupa todo el ancho, sin reservar la columna del panel', () => {
+    render(<SubscriptionInvoices {...props([invoice({ id: 1, number: 'F-2026-0001', status: 'paid', payUrl: null })])} />);
+
+    const layout = screen.getByRole('table').closest('.grid');
+
+    expect(layout).not.toBeNull();
+    expect(layout!.className).not.toContain('grid-cols-[');
+});
+
+it('en el celular pagar una factura es un botón de icono', () => {
+    render(
+        <SubscriptionInvoices
+            {...props([invoice({ id: 1, number: 'F-2026-0001', status: 'pending' }), invoice({ id: 2, number: 'F-2026-0002', status: 'overdue' })])}
+        />,
+    );
+
+    const pay = screen.getByRole('button', { name: 'Pagar F-2026-0002' });
+
+    expect(pay.querySelector('svg')).not.toBeNull();
+    expect(pay.querySelector('span')).toHaveClass('max-md:sr-only');
+});
+
 it('lleva al panel la factura que se elige en la tabla', () => {
     render(
         <SubscriptionInvoices

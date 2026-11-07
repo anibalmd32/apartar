@@ -26,15 +26,17 @@ export default function CreateOrganization() {
             description="Abres tu propio negocio con la misma cuenta y cambias entre ellos desde el menú de negocios."
         >
             <SectionCard title="Tu negocio" subtitle="Empiezas en el plan Gratis. Por ahora cada persona puede tener un solo negocio propio.">
-                <form className="flex max-w-[440px] flex-col gap-4" onSubmit={submit} noValidate>
+                <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
                     {errors.organization_slug ? <Alert tone="warning">{errors.organization_slug}</Alert> : null}
 
-                    <OrganizationIdentityFields
-                        value={{ organization_name: data.organization_name, organization_slug: data.organization_slug }}
-                        onChange={(identity) => setData((previous) => ({ ...previous, ...identity }))}
-                        errors={errors}
-                        slugEndpoint={route('organizations.slug')}
-                    />
+                    <div className="grid grid-cols-1 items-start gap-x-6 md:grid-cols-2">
+                        <OrganizationIdentityFields
+                            value={{ organization_name: data.organization_name, organization_slug: data.organization_slug }}
+                            onChange={(identity) => setData((previous) => ({ ...previous, ...identity }))}
+                            errors={errors}
+                            slugEndpoint={route('organizations.slug')}
+                        />
+                    </div>
 
                     <div className="flex justify-end">
                         <Button type="submit" loading={processing}>

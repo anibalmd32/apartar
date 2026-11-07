@@ -1,8 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { formatDate, formatPeriod } from '@/lib/dates';
 import { INVOICE_TONES as STATUS_TONES } from '@/lib/status-tones';
 import { type InvoiceRow, type InvoiceStatus } from '@/types/invoice';
+import { cilCreditCard } from '@coreui/icons';
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
     pending: 'Pendiente',
@@ -77,7 +79,8 @@ export function InvoiceTable({
                                 {isPayable(invoice) && invoice.id !== selectedId ? (
                                     <div>
                                         <Button size="sm" variant="soft" aria-label={`Pagar ${invoice.number}`} onClick={() => onSelect(invoice.id)}>
-                                            Pagar
+                                            <Icon icon={cilCreditCard} className="md:hidden" />
+                                            <span className="max-md:sr-only">Pagar</span>
                                         </Button>
                                     </div>
                                 ) : null}

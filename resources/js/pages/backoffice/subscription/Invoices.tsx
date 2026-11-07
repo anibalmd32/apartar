@@ -3,6 +3,7 @@ import { InvoicePayPanel } from '@/features/subscription/components/InvoicePayPa
 import { InvoiceTable, isPayable } from '@/features/subscription/components/InvoiceTable';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatDate } from '@/lib/dates';
+import { cn } from '@/lib/utils';
 import { type InvoicesPageProps } from '@/types/invoice';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -32,7 +33,7 @@ export default function SubscriptionInvoices({ invoices, methods, currencies, fi
                         </Alert>
                     ) : null}
 
-                    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+                    <div className={cn('grid grid-cols-1 items-start gap-6', selected !== null && 'xl:grid-cols-[minmax(0,1fr)_380px]')}>
                         <InvoiceTable invoices={invoices} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
                         {selected !== null ? (
                             <InvoicePayPanel

@@ -163,10 +163,10 @@ export default function ProfileEdit({ profile }: ProfileProps) {
 
     return (
         <BackofficeLayout title="Mi perfil" description="Tus datos para entrar a Apartar y tu contraseña.">
-            <div className="flex w-full max-w-2xl flex-col gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 items-start gap-4 lg:gap-6 xl:grid-cols-2">
                 <ProfileDetails profile={profile} onDirty={setDetailsDirty} />
                 <PasswordChange onDirty={setPasswordDirty} />
-                <p className="text-ink-3 flex items-center gap-2 text-xs">
+                <p className="text-ink-3 flex items-center gap-2 text-xs xl:col-span-2">
                     <Icon icon={cilInfo} />
                     El tema claro u oscuro se cambia desde el menú de tu foto, arriba a la derecha.
                 </p>

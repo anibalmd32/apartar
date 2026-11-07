@@ -129,9 +129,7 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
                         </form>
                     </SectionCard>
 
-                    {catalog === null ? (
-                        <Alert tone="info">Crea el catálogo y podrás añadirle productos, ordenarlos y publicarlo.</Alert>
-                    ) : (
+                    {catalog === null ? null : (
                         <SectionCard title="Productos">
                             <CatalogProductSorter
                                 catalogId={catalog.id}
@@ -144,11 +142,13 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
                     )}
                 </div>
 
-                {catalog === null ? null : (
-                    <div className="flex flex-col gap-4 lg:gap-6">
+                <div className="flex flex-col gap-4 lg:gap-6">
+                    {catalog === null ? (
+                        <Alert tone="info">Crea el catálogo y podrás añadirle productos, ordenarlos y publicarlo.</Alert>
+                    ) : (
                         <CatalogPublishPanel catalog={catalog} blockers={blockers} />
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </BackofficeLayout>
     );

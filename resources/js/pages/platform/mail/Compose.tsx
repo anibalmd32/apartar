@@ -10,6 +10,7 @@ import { dateTime } from '@/features/platform/mail/format';
 import { useLeaveGuard } from '@/hooks/use-leave-guard';
 import PlatformLayout from '@/layouts/platform-layout';
 import { pf } from '@/lib/surfaces';
+import { cn } from '@/lib/utils';
 import { type ComposeSource } from '@/types/mail';
 import { cilPaperclip, cilSend } from '@coreui/icons';
 import { useForm, usePage } from '@inertiajs/react';
@@ -36,7 +37,7 @@ export default function MailCompose({ mode, modeLabel, from, source, defaults }:
 
     return (
         <PlatformLayout title={modeLabel} description={`Sale desde ${from}.`} back={<BackLink href={back.href}>{back.label}</BackLink>}>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className={cn('grid grid-cols-1 gap-4', source !== null && 'lg:grid-cols-[minmax(0,1fr)_360px]')}>
                 <SectionCard aria-label="Correo">
                     <form
                         className="flex flex-col gap-1"

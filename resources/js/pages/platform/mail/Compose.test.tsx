@@ -37,6 +37,14 @@ it('las direcciones abren el teclado de correo sin mayúsculas y la copia se añ
     expect(screen.getByLabelText('Copia')).toHaveAttribute('inputmode', 'email');
 });
 
+it('un correo nuevo sin original ocupa todo el ancho, sin una columna vacía a la derecha', () => {
+    render(<MailCompose mode="new" modeLabel="Correo nuevo" from="info@apartar.app" source={null} defaults={defaults} />);
+
+    const layout = screen.getByRole('region', { name: 'Correo' }).parentElement!;
+
+    expect(layout.className).not.toContain('grid-cols-[');
+});
+
 it('vuelve a la pestaña de correos desde la que se abrió', () => {
     url = '/plataforma/correos/redactar?volver=%2Fplataforma%2Fcorreos%2Fenviados%3Fpagina%3D2';
     render(<MailCompose mode="new" modeLabel="Correo nuevo" from="info@apartar.app" source={null} defaults={defaults} />);
