@@ -48,7 +48,21 @@ it('en el celular cada persona del equipo se apila como tarjeta con sus datos ro
     expect(cells[0]).toHaveAttribute('data-cell', 'primary');
     expect(cells.slice(1, 4).map((cell) => cell.getAttribute('data-label'))).toEqual(['Rol', 'Estado', 'Último acceso']);
     expect(cells[4]).toHaveAttribute('data-cell', 'actions');
-    expect(within(cells[4]!).getByRole('button', { name: 'Desactivar' })).toBeInTheDocument();
+    expect(within(cells[4]!).getByRole('button', { name: 'Desactivar a Ana Pérez' })).toBeInTheDocument();
+});
+
+it('en el celular las acciones de una persona del equipo son solo iconos y el texto queda para escritorio', () => {
+    render(<TeamIndex members={[member(), member({ id: 2, name: 'Luis Mora', isPending: true })]} usage={usage} />);
+
+    const section = screen.getByRole('region', { name: 'Personas con acceso' });
+    const labels = ['Desactivar a Ana Pérez', 'Reenviar el enlace a Luis Mora', 'Revocar la invitación de Luis Mora'];
+
+    labels.forEach((name) => {
+        const button = within(section).getByRole('button', { name });
+
+        expect(button.querySelector('svg')).not.toBeNull();
+        expect(button.querySelector('span')).toHaveClass('max-md:sr-only');
+    });
 });
 
 it('el botón de invitar queda separado del rol cuando el formulario va en una columna', () => {

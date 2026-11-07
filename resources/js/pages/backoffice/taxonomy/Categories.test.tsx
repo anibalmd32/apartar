@@ -44,11 +44,15 @@ it('en el celular las categorías se apilan como tarjetas sin ancho mínimo que 
     expect(cells.map((cell) => cell.getAttribute('data-cell'))).toEqual(['shrink', 'primary', 'shrink', 'actions']);
 });
 
-it('editar y eliminar se leen con texto en la tarjeta, no solo con un icono', () => {
+it('editar y eliminar son solo iconos en la tarjeta y su nombre queda para el lector de pantalla', () => {
     render(<CategoriesIndex categories={[category(1, 'Vestidos')]} />);
 
-    expect(screen.getByRole('button', { name: 'Editar Vestidos' })).toHaveTextContent('Editar');
-    expect(screen.getByRole('button', { name: 'Eliminar Vestidos' })).toHaveTextContent('Eliminar');
+    for (const name of ['Editar Vestidos', 'Eliminar Vestidos']) {
+        const button = screen.getByRole('button', { name });
+
+        expect(button).toHaveClass('btn-square');
+        expect(button.querySelector('span')).toHaveClass('sr-only');
+    }
 });
 
 it('en el celular se ordena con flechas y el orden se guarda desde la lista', async () => {

@@ -91,7 +91,7 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
                 </div>
             </div>
 
-            <div className="border-line flex items-center justify-between gap-2 border-t pt-3 sm:shrink-0 sm:flex-col sm:items-end sm:border-0 sm:pt-0">
+            <div className="border-line flex items-center justify-center gap-6 border-t pt-3 sm:shrink-0 sm:flex-col sm:items-end sm:justify-between sm:gap-2 sm:border-0 sm:pt-0">
                 <label
                     className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px] font-medium"
                     title={cannotActivate ? 'Tu plan no admite otra cuenta activa.' : undefined}
@@ -105,14 +105,24 @@ export function PaymentAccountRow({ account, atLimit, onEdit }: PaymentAccountRo
                     />
                     <span className="sm:sr-only">Disponible</span>
                 </label>
-                <div className="flex gap-1">
-                    <Button variant="ghost" onClick={onEdit} className="min-h-11">
-                        <Icon icon={cilPencil} size={14} />
-                        Editar
+                <div className="flex gap-3 sm:gap-1">
+                    <Button
+                        variant="ghost"
+                        onClick={onEdit}
+                        className="max-sm:btn-square min-h-11 max-sm:size-11"
+                        aria-label={`Editar la cuenta de ${account.methodLabel}`}
+                    >
+                        <Icon icon={cilPencil} size={16} />
+                        <span className="max-sm:sr-only">Editar</span>
                     </Button>
-                    <Button variant="ghost" onClick={() => setConfirming(true)} className="text-error min-h-11">
-                        <Icon icon={cilTrash} size={14} />
-                        Eliminar
+                    <Button
+                        variant="ghost"
+                        onClick={() => setConfirming(true)}
+                        className="text-error max-sm:btn-square min-h-11 max-sm:size-11"
+                        aria-label={`Eliminar la cuenta de ${account.methodLabel}`}
+                    >
+                        <Icon icon={cilTrash} size={16} />
+                        <span className="max-sm:sr-only">Eliminar</span>
                     </Button>
                 </div>
             </div>

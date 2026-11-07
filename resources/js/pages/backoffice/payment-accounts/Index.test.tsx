@@ -55,3 +55,17 @@ it('el nombre del banco no se corta y cada botón de copiar mide 44 px en el cel
     expect(screen.getAllByText('Banco de Venezuela').every((element) => !element.classList.contains('truncate'))).toBe(true);
     expect(screen.getByRole('button', { name: 'Copiar teléfono del pago móvil' })).toHaveClass('max-lg:size-11');
 });
+
+it('en el celular editar y eliminar una cuenta son botones de icono centrados junto al interruptor', () => {
+    render(<PaymentAccountsIndex accounts={[account]} methods={[]} usage={{ used: 1, limit: 5, percentage: 20, isAtLimit: false }} />);
+
+    const edit = screen.getByRole('button', { name: 'Editar la cuenta de Pago móvil' });
+    const remove = screen.getByRole('button', { name: 'Eliminar la cuenta de Pago móvil' });
+
+    for (const button of [edit, remove]) {
+        expect(button).toHaveClass('max-sm:btn-square');
+        expect(button.querySelector('span')).toHaveClass('max-sm:sr-only');
+    }
+
+    expect(edit.parentElement?.parentElement).toHaveClass('justify-center');
+});

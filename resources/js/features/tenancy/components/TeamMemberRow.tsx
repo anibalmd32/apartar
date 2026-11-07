@@ -2,9 +2,11 @@ import { Avatar } from '@/components/shell/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Icon } from '@/components/ui/icon';
 import { SelectField } from '@/components/ui/select-field';
 import { bo } from '@/lib/surfaces';
 import { type OrganizationRole, type TeamMember } from '@/types/backoffice';
+import { cilBan, cilSend, cilUserFollow, cilUserUnfollow } from '@coreui/icons';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -106,12 +108,20 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                 <div className="flex flex-wrap justify-end gap-1">
                     {member.isPending ? (
                         <>
-                            <Button size="sm" variant="ghost" onClick={() => act('/reenviar')}>
-                                Reenviar enlace
+                            <Button size="sm" variant="ghost" onClick={() => act('/reenviar')} aria-label={`Reenviar el enlace a ${member.name}`}>
+                                <Icon icon={cilSend} className="md:hidden" />
+                                <span className="max-md:sr-only">Reenviar enlace</span>
                             </Button>
 
-                            <Button size="sm" variant="ghost" className="text-error" onClick={() => setConfirming('revoke')}>
-                                Revocar
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-error"
+                                onClick={() => setConfirming('revoke')}
+                                aria-label={`Revocar la invitación de ${member.name}`}
+                            >
+                                <Icon icon={cilBan} className="md:hidden" />
+                                <span className="max-md:sr-only">Revocar</span>
                             </Button>
                         </>
                     ) : null}
@@ -123,8 +133,10 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                             disabled={cannotDisable}
                             title={cannotDisable ? disableReason : undefined}
                             onClick={() => setConfirming('disable')}
+                            aria-label={`Desactivar a ${member.name}`}
                         >
-                            Desactivar
+                            <Icon icon={cilUserUnfollow} className="md:hidden" />
+                            <span className="max-md:sr-only">Desactivar</span>
                         </Button>
                     ) : null}
 
@@ -135,8 +147,10 @@ export function TeamMemberRow({ member, atLimit }: TeamMemberRowProps) {
                             disabled={atLimit}
                             title={atLimit ? 'Tu plan no admite más usuarios activos.' : undefined}
                             onClick={() => act('/activar')}
+                            aria-label={`Reactivar a ${member.name}`}
                         >
-                            Reactivar
+                            <Icon icon={cilUserFollow} className="md:hidden" />
+                            <span className="max-md:sr-only">Reactivar</span>
                         </Button>
                     )}
                 </div>

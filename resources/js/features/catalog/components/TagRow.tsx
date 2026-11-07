@@ -33,20 +33,20 @@ export function TagRow({ tag, onEdit }: TagRowProps) {
 
             <td data-cell="actions" className="text-right">
                 <div className="flex flex-wrap justify-end gap-1">
-                    <Button size="sm" variant="ghost" className="text-ink-2 md:btn-square" onClick={onEdit} aria-label={`Editar ${tag.name}`}>
+                    <Button size="sm" variant="ghost" className="text-ink-2 btn-square" onClick={onEdit} aria-label={`Editar ${tag.name}`}>
                         <Icon icon={cilPencil} />
-                        <span className="md:sr-only">Editar</span>
+                        <span className="sr-only">Editar</span>
                     </Button>
 
                     <Button
                         size="sm"
                         variant="ghost"
-                        className="text-ink-2 hover:text-error md:btn-square"
+                        className="text-ink-2 hover:text-error btn-square"
                         onClick={() => setConfirming(true)}
                         aria-label={`Eliminar ${tag.name}`}
                     >
                         <Icon icon={cilTrash} />
-                        <span className="md:sr-only">Eliminar</span>
+                        <span className="sr-only">Eliminar</span>
                     </Button>
                 </div>
                 <ConfirmDialog
