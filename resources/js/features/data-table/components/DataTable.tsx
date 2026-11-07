@@ -1,3 +1,4 @@
+import { type MobileVariant } from '@/features/data-table/components/MobileList';
 import { SelectionBar } from '@/features/data-table/components/SelectionControls';
 import { TableBody } from '@/features/data-table/components/TableBody';
 import { TableHeader } from '@/features/data-table/components/TableHeader';
@@ -18,6 +19,7 @@ interface DataTableProps<TRow extends RowData> {
     selectionActions?: ReactNode;
     rowHref?: (row: TRow) => string | null | undefined;
     expanded?: (row: TRow) => ReactNode;
+    mobileVariant?: MobileVariant;
 }
 
 export function DataTable<TRow extends RowData>({
@@ -30,6 +32,7 @@ export function DataTable<TRow extends RowData>({
     selectionActions,
     rowHref,
     expanded,
+    mobileVariant,
 }: DataTableProps<TRow>) {
     const ignored = table.meta.ignoredFilters.map((key) => filterLabels[key] ?? key);
     const narrowed = Object.values(table.meta.filters).some(
@@ -54,6 +57,7 @@ export function DataTable<TRow extends RowData>({
                 label={label}
                 rowHref={rowHref}
                 expanded={expanded}
+                mobileVariant={mobileVariant}
                 header={
                     <TableHeader table={table.table} columns={table.columns} sort={table.meta.sort} onSort={table.toggleSort} selection={selection} />
                 }

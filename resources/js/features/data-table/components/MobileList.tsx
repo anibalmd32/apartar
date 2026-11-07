@@ -1,10 +1,13 @@
 import { CompactList, CompactRow } from '@/components/ui/compact-list';
+import { MobileCard } from '@/features/data-table/components/MobileCard';
 import { PageCheckbox, RowCheckbox } from '@/features/data-table/components/SelectionControls';
 import { useLongPress } from '@/features/data-table/hooks/useLongPress';
 import { type RowSelection } from '@/features/data-table/hooks/useRowSelection';
 import { cn } from '@/lib/utils';
 import { type DataTableColumn, type MobileSlot } from '@/types/data-table';
 import { Fragment, type ReactNode, useState } from 'react';
+
+export type MobileVariant = 'list' | 'card';
 
 interface MobileListProps<TRow> {
     rows: readonly { id: string; original: TRow }[];
@@ -14,6 +17,7 @@ interface MobileListProps<TRow> {
     selection?: RowSelection<TRow>;
     rowHref?: (row: TRow) => string | null | undefined;
     expanded?: (row: TRow) => ReactNode;
+    variant?: MobileVariant;
 }
 
 function blank(node: ReactNode): boolean {
@@ -92,8 +96,30 @@ function MobileRow<TRow>({
     );
 }
 
-export function MobileList<TRow>({ rows, columns, loading, label, selection, rowHref, expanded }: MobileListProps<TRow>) {
+export function MobileList<TRow>({ rows, columns, loading, label, selection, rowHref, expanded, variant = 'list' }: MobileListProps<TRow>) {
     const [selecting, setSelecting] = useState(false);
+
+    if (variant === 'card') {
+        const amountLabel = columns.find(
+            (column) => column.mobile === 'amount' || (typeof column.mobile === 'object' && column.mobile.amount),
+        )?.header;
+
+        return (
+            <ul aria-label={label} aria-busy={loading || undefined} className={cn('flex flex-col gap-3 md:hidden', loading && 'opacity-50')}>
+                {rows.map((row) => (
+                    <MobileCard
+                        key={row.id}
+                        slots={slotsOf(columns, row.original)}
+                        fallbackTitle={columns[0]?.cell(row.original)}
+                        href={rowHref?.(row.original) ?? null}
+                        amountLabel={amountLabel}
+                        expanded={expanded?.(row.original)}
+                    />
+                ))}
+            </ul>
+        );
+    }
+
     const canSelect = selection !== undefined && selection.selectableCount > 0;
     const active = selecting && canSelect;
 

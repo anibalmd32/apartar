@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
-import { customerMobile, DueBadge, dueDateMeta, dueMeta, expiryBadge } from '@/features/collections/components/collectionMobile';
+import { customerMobile, DueBadge, dueDateMeta, dueMeta, expiryBadge, PaymentLink } from '@/features/collections/components/collectionMobile';
 import { DeliveryCell } from '@/features/collections/components/DeliveryCell';
 import { WhatsAppReminder } from '@/features/collections/components/WhatsAppReminder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
@@ -14,18 +14,30 @@ import {
 import { type DataTableColumn } from '@/types/data-table';
 import { Link } from '@inertiajs/react';
 
-export function deliveryColumn<TRow extends { delivery: CollectionDelivery; layaway: { code: string } }>(): DataTableColumn<TRow> {
+export function deliveryColumn<TRow extends { delivery: CollectionDelivery; layaway: { code: string } }>(withAction = false): DataTableColumn<TRow> {
     return {
         id: 'delivery',
         header: 'Entrega',
-        mobile: { meta: (row) => <DeliveryCell delivery={row.delivery} code={row.layaway.code} /> },
+        mobile: {
+            meta: (row) => (row.delivery.deliveredAt === null ? null : <DeliveryCell delivery={row.delivery} code={row.layaway.code} />),
+            ...(withAction ? { action: (row: TRow) => <DeliveryCell delivery={row.delivery} code={row.layaway.code} iconOnly /> } : {}),
+        },
         cell: (row) => <DeliveryCell delivery={row.delivery} code={row.layaway.code} />,
     };
 }
 
+function MobilePaymentActions({ row }: { row: { delivery: CollectionDelivery; layaway: { code: string; url: string } } }) {
+    return (
+        <>
+            <PaymentLink layaway={row.layaway} />
+            <DeliveryCell delivery={row.delivery} code={row.layaway.code} iconOnly />
+        </>
+    );
+}
+
 export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
     { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
-    { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'layaway', header: 'Apartado', mobile: 'hidden', cell: (row) => <LayawayLink layaway={row.layaway} /> },
     { id: 'product', header: 'Producto', mobile: { subtitle: (row) => row.productName }, cell: (row) => row.productName },
     {
         id: 'number',
@@ -36,7 +48,7 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
     {
         id: 'due',
         header: 'Vence',
-        mobile: { status: (row) => <DueBadge row={row} />, meta: (row) => formatDate(row.dueDate) },
+        mobile: { status: (row) => <DueBadge row={row} />, meta: (row) => `${formatDate(row.dueDate)} · ${row.layaway.code}` },
         cell: (row) => (
             <div className="flex flex-col gap-1">
                 <span>{formatDate(row.dueDate)}</span>
@@ -70,7 +82,7 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
         id: 'actions',
         header: 'Acciones',
         align: 'end',
-        mobile: 'hidden',
+        mobile: { action: (row) => <MobilePaymentActions row={row} /> },
         cell: (row) => (
             <span className="flex items-center justify-end gap-1.5">
                 <WhatsAppReminder customer={row.customer} dueCents={Number(row.pending.cents)} daysLate={row.daysLate} />
@@ -85,7 +97,7 @@ export const installmentColumns: DataTableColumn<CollectionInstallmentRow>[] = [
 
 export const layawayColumns: DataTableColumn<CollectionLayawayRow>[] = [
     { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
-    { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'layaway', header: 'Apartado', mobile: { meta: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
     { id: 'product', header: 'Producto', mobile: 'subtitle', cell: (row) => row.productName },
     {
         id: 'completed',
@@ -100,7 +112,7 @@ export const layawayColumns: DataTableColumn<CollectionLayawayRow>[] = [
         mobile: 'amount',
         cell: (row) => <MoneyLabel money={row.total} className="font-semibold" compact />,
     },
-    deliveryColumn<CollectionLayawayRow>(),
+    deliveryColumn<CollectionLayawayRow>(true),
 ];
 
 function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
@@ -118,7 +130,7 @@ function ExpiryCell({ expiresAt }: { expiresAt: string | null }) {
 
 export const downPaymentColumns: DataTableColumn<CollectionDownPaymentRow>[] = [
     { id: 'customer', header: 'Cliente', mobile: customerMobile(), cell: (row) => <CustomerCell customer={row.customer} /> },
-    { id: 'layaway', header: 'Apartado', mobile: { subtitle: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
+    { id: 'layaway', header: 'Apartado', mobile: { meta: (row) => row.layaway.code }, cell: (row) => <LayawayLink layaway={row.layaway} /> },
     { id: 'product', header: 'Producto', mobile: 'subtitle', cell: (row) => row.productName },
     {
         id: 'expires',
@@ -148,7 +160,7 @@ export const downPaymentColumns: DataTableColumn<CollectionDownPaymentRow>[] = [
         id: 'actions',
         header: 'Acciones',
         align: 'end',
-        mobile: 'hidden',
+        mobile: { action: (row) => <MobilePaymentActions row={row} /> },
         cell: (row) => (
             <span className="flex items-center justify-end gap-1.5">
                 <Contact customer={row.customer} />

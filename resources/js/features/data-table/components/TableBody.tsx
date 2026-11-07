@@ -1,4 +1,4 @@
-import { MobileList } from '@/features/data-table/components/MobileList';
+import { MobileList, type MobileVariant } from '@/features/data-table/components/MobileList';
 import { RowCheckbox } from '@/features/data-table/components/SelectionControls';
 import { type RowSelection } from '@/features/data-table/hooks/useRowSelection';
 import { type DataTableColumn } from '@/types/data-table';
@@ -16,6 +16,7 @@ interface TableBodyProps<TRow extends RowData> {
     label: string;
     rowHref?: (row: TRow) => string | null | undefined;
     expanded?: (row: TRow) => ReactNode;
+    mobileVariant?: MobileVariant;
 }
 
 function Skeleton({ rows, columns }: { rows: number; columns: number }) {
@@ -44,6 +45,7 @@ export function TableBody<TRow extends RowData>({
     label,
     rowHref,
     expanded,
+    mobileVariant,
 }: TableBodyProps<TRow>) {
     const rows = table.getRowModel().rows;
 
@@ -96,7 +98,16 @@ export function TableBody<TRow extends RowData>({
                 </table>
             </div>
 
-            <MobileList rows={rows} columns={columns} loading={loading} label={label} selection={selection} rowHref={rowHref} expanded={expanded} />
+            <MobileList
+                rows={rows}
+                columns={columns}
+                loading={loading}
+                label={label}
+                selection={selection}
+                rowHref={rowHref}
+                expanded={expanded}
+                variant={mobileVariant}
+            />
         </>
     );
 }

@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { AmountProgress } from '@/features/collections/components/AmountProgress';
 import { Contact, CustomerCell, LayawayLink } from '@/features/collections/components/collectionCells';
-import { DueBadge, customerMobile } from '@/features/collections/components/collectionMobile';
+import { DueBadge, ICON_ACTION, customerMobile } from '@/features/collections/components/collectionMobile';
 import { DeliveryCell } from '@/features/collections/components/DeliveryCell';
 import { WhatsAppReminder } from '@/features/collections/components/WhatsAppReminder';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
@@ -12,11 +12,21 @@ import { type CollectionCustomerRow, type CollectionInstallmentRow } from '@/typ
 import { type DataTableColumn } from '@/types/data-table';
 import { cilChevronBottom } from '@coreui/icons';
 
-function Toggle({ row, open, onToggle }: { row: CollectionCustomerRow; open: boolean; onToggle: (id: number) => void }) {
+function Toggle({
+    row,
+    open,
+    onToggle,
+    className,
+}: {
+    row: CollectionCustomerRow;
+    open: boolean;
+    onToggle: (id: number) => void;
+    className?: string;
+}) {
     return (
         <button
             type="button"
-            className="btn btn-ghost btn-sm btn-square"
+            className={className ?? 'btn btn-ghost btn-sm btn-square'}
             aria-expanded={open}
             aria-label={`${open ? 'Ocultar' : 'Ver'} las cuotas de ${row.customer?.name ?? 'este cliente'}`}
             onClick={(event) => {
@@ -25,7 +35,7 @@ function Toggle({ row, open, onToggle }: { row: CollectionCustomerRow; open: boo
                 onToggle(row.id);
             }}
         >
-            <Icon icon={cilChevronBottom} size={14} className={cn('transition-transform', open && 'rotate-180')} />
+            <Icon icon={cilChevronBottom} size={className ? 18 : 14} className={cn('transition-transform', open && 'rotate-180')} />
         </button>
     );
 }
@@ -76,7 +86,7 @@ export function customerColumns(isOpen: (id: number) => boolean, onToggle: (id: 
             id: 'actions',
             header: 'Acciones',
             align: 'end',
-            mobile: { action: (row) => <Toggle row={row} open={isOpen(row.id)} onToggle={onToggle} /> },
+            mobile: { action: (row) => <Toggle row={row} open={isOpen(row.id)} onToggle={onToggle} className={ICON_ACTION} /> },
             cell: (row) => (
                 <span className="flex items-center justify-end gap-1.5">
                     {row.daysLate > 0 ? (

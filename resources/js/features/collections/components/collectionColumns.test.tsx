@@ -28,10 +28,20 @@ const META: TableMeta = { page: 1, perPage: 25, sort: null, filters: {}, total: 
 
 const usd = (cents: number, label: string) => ({ cents: centsUsd(cents), usd: label, ves: null });
 
-function List<TRow extends { id: number }>({ rows, columns, href }: { rows: TRow[]; columns: DataTableColumn<TRow>[]; href: (row: TRow) => string }) {
+function List<TRow extends { id: number }>({
+    rows,
+    columns,
+    href,
+    cards = false,
+}: {
+    rows: TRow[];
+    columns: DataTableColumn<TRow>[];
+    href: (row: TRow) => string;
+    cards?: boolean;
+}) {
     const table = useServerTable({ rows, meta: META, columns });
 
-    return <DataTable label="Lista" table={table} empty="Nada." rowHref={href} />;
+    return <DataTable label="Lista" table={table} empty="Nada." rowHref={href} mobileVariant={cards ? 'card' : undefined} />;
 }
 
 const card = () => within(screen.getByRole('list', { name: 'Lista' })).getByRole('listitem');
@@ -52,7 +62,7 @@ const INSTALLMENT: CollectionInstallmentRow = {
 };
 
 it('en Cobranza la cuota es una tarjeta que lleva al apartado, con el monto, el atraso y un botón para llamar', () => {
-    render(<List rows={[INSTALLMENT]} columns={installmentColumns} href={(row) => row.layaway.url} />);
+    render(<List rows={[INSTALLMENT]} columns={installmentColumns} href={(row) => row.layaway.url} cards />);
 
     const row = card();
     const call = within(row).getByRole('link', { name: 'Llamar a José Gregorio Martínez al 0424-1234502' });
@@ -62,11 +72,32 @@ it('en Cobranza la cuota es una tarjeta que lleva al apartado, con el monto, el 
     expect(call).toHaveClass('size-11');
     expect(row).toHaveTextContent('$14,50');
     expect(row).toHaveTextContent('5 días de atraso');
-    expect(row).toHaveTextContent('AP-YZE96F5Q · Vestido negro · Cuota 2 de 4');
-    expect(row).toHaveTextContent('28 oct 2026');
+    expect(row).toHaveTextContent('Vestido negro · Cuota 2 de 4');
+    expect(row).toHaveTextContent('28 oct 2026 · AP-YZE96F5Q');
+    expect(row).toHaveTextContent('Importe');
     expect(row).not.toHaveTextContent('Pagado');
     expect(row).not.toHaveTextContent('$0,00');
-    expect(within(row).queryByRole('link', { name: 'Registrar pago' })).toBeNull();
+});
+
+it('en Cobranza las acciones de la tarjeta van al pie, centradas y solo con iconos', () => {
+    render(
+        <List
+            rows={[{ ...INSTALLMENT, delivery: { deliveredAt: null, url: '/apartados/AP-YZE96F5Q/entregar' } }]}
+            columns={installmentColumns}
+            href={(row) => row.layaway.url}
+            cards
+        />,
+    );
+
+    const footer = card().querySelector('[data-card-actions]') as HTMLElement;
+    const actions = [...within(footer).getAllByRole('link'), ...within(footer).getAllByRole('button')];
+
+    expect(footer).toHaveClass('justify-center');
+    expect(within(footer).getByRole('link', { name: 'Registrar un pago de AP-YZE96F5Q' })).toHaveAttribute('href', '/apartados/AP-YZE96F5Q');
+    expect(within(footer).getByRole('link', { name: 'Escribir a José Gregorio Martínez por el chat' })).toHaveAttribute('href', '/chat/1');
+    expect(within(footer).getByRole('button', { name: 'Marcar AP-YZE96F5Q como entregado' })).toBeInTheDocument();
+    expect(actions).toHaveLength(5);
+    actions.forEach((action) => expect(action).toHaveTextContent(/^$/));
 });
 
 it('en Cobranza cada cuota trae su recordatorio por WhatsApp con lo pendiente y el enlace al portal', () => {

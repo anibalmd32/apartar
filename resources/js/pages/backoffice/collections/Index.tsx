@@ -133,6 +133,7 @@ function CollectionTable<TRow extends CollectionInstallmentRow | CollectionLayaw
             filterLabels={COLLECTION_FILTER_LABELS}
             rowHref={props.rowHref ?? ((row) => row.layaway.url)}
             expanded={props.expanded}
+            mobileVariant="card"
             empty={emptyMessage(props, narrowed)}
             toolbar={
                 <>

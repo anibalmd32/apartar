@@ -5,7 +5,8 @@ import { formatDate } from '@/lib/dates';
 import { todayIso } from '@/lib/iso-date';
 import { type CollectionCustomer, type CollectionInstallmentRow } from '@/types/collections';
 import { type MobileLayout } from '@/types/data-table';
-import { cilPhone } from '@coreui/icons';
+import { cilChatBubble, cilMoney, cilPhone } from '@coreui/icons';
+import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 import { WhatsAppReminder } from './WhatsAppReminder';
 
@@ -40,6 +41,8 @@ export function expiryBadge(expiresAt: string | null): ReactNode {
     return hours < 24 ? <Badge tone="warning">{hours === 1 ? 'Queda 1 hora' : `Quedan ${hours} horas`}</Badge> : null;
 }
 
+export const ICON_ACTION = 'btn btn-square size-11 min-h-11';
+
 function CallButton({ customer }: { customer: CollectionCustomer }) {
     if (customer.phone === null) {
         return null;
@@ -48,11 +51,31 @@ function CallButton({ customer }: { customer: CollectionCustomer }) {
     return (
         <a
             href={`tel:${customer.phone}`}
-            className="btn btn-square size-11 min-h-11"
+            className={ICON_ACTION}
             aria-label={`Llamar a ${customer.name} al ${customer.phoneLabel ?? customer.phone}`}
         >
             <Icon icon={cilPhone} size={18} />
         </a>
+    );
+}
+
+function ChatButton({ customer }: { customer: CollectionCustomer }) {
+    if (!customer.chatUrl) {
+        return null;
+    }
+
+    return (
+        <Link href={customer.chatUrl} className={ICON_ACTION} aria-label={`Escribir a ${customer.name} por el chat`}>
+            <Icon icon={cilChatBubble} size={18} />
+        </Link>
+    );
+}
+
+export function PaymentLink({ layaway }: { layaway: { code: string; url: string } }) {
+    return (
+        <Link href={layaway.url} className={`${ICON_ACTION} btn-primary`} aria-label={`Registrar un pago de ${layaway.code}`}>
+            <Icon icon={cilMoney} size={18} />
+        </Link>
     );
 }
 
@@ -64,12 +87,13 @@ export function customerMobile<
         title: (row) => row.customer?.name ?? 'Sin cliente',
         action: (row) =>
             row.customer === null ? null : (
-                <span className="flex items-center gap-1.5">
+                <>
                     {row.pending !== undefined ? (
                         <WhatsAppReminder customer={row.customer} dueCents={Number(row.pending.cents)} daysLate={row.daysLate ?? 0} iconOnly />
                     ) : null}
+                    <ChatButton customer={row.customer} />
                     <CallButton customer={row.customer} />
-                </span>
+                </>
             ),
     };
 }

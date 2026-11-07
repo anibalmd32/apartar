@@ -117,7 +117,7 @@ it('cada cliente se despliega para ver sus cuotas con producto y entrega', () =>
     expect(within(installments).getByText('Bolso tote')).toBeInTheDocument();
     expect(within(installments).getByText('Entregado el 1 sept 2026')).toBeInTheDocument();
 
-    fireEvent.click(within(installments).getByRole('button', { name: 'Marcar entregado' }));
+    fireEvent.click(within(installments).getByRole('button', { name: 'Marcar AP-7K3M9QRT como entregado' }));
     expect(routerPost).not.toHaveBeenCalled();
 
     const dialog = screen.getByRole('dialog', { name: '¿Marcar AP-7K3M9QRT como entregado?' });
