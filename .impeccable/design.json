@@ -1,82 +1,792 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-04T12:00:00-04:00",
+  "generatedAt": "2026-11-07T17:30:00-04:00",
   "title": "Design System: Apartar",
   "extensions": {
     "colorMeta": {
-      "marker-blue": { "role": "primary", "displayName": "Marcador azul", "canonical": "#1c45c4", "cssVar": "--pz-blue", "darkPair": "night-blue", "tonalRamp": ["#0b1a4d", "#112673", "#15379f", "#1c45c4", "#4a6ad6", "#47a8ff", "#bccaff", "#e6ebf9"] },
-      "marker-blue-deep": { "role": "primary", "displayName": "Marcador azul hondo", "canonical": "#15379f", "cssVar": "--pz-blue-deep", "darkPair": "night-blue-deep", "tonalRamp": ["#0b1a4d", "#112673", "#15379f", "#1c45c4", "#4a6ad6", "#47a8ff", "#bccaff", "#e6ebf9"] },
-      "on-blue": { "role": "primary", "displayName": "Sobre azul", "canonical": "#ffffff", "cssVar": "--pz-on-blue", "darkPair": "on-night-blue", "tonalRamp": ["#15171b", "#2b2e34", "#4a4f58", "#6e737c", "#9da3ab", "#c4c8cd", "#e6e8e4", "#ffffff"] },
-      "marker-red": { "role": "secondary", "displayName": "Marcador rojo", "canonical": "#c21d27", "cssVar": "--pz-red", "darkPair": "night-red", "tonalRamp": ["#4a0a0e", "#6e1016", "#99161f", "#c21d27", "#e0474f", "#ff5c6c", "#ffb3b5", "#f8e3e3"] },
-      "marker-green": { "role": "secondary", "displayName": "Marcador verde", "canonical": "#0d6b41", "cssVar": "--pz-green", "darkPair": "night-green", "tonalRamp": ["#05301d", "#08462a", "#0d6b41", "#178a57", "#2fb377", "#3ee08f", "#a6ecc7", "#e2f1e8"] },
-      "review-amber": { "role": "tertiary", "displayName": "Marcador ámbar", "canonical": "#8a5a0b", "cssVar": "--color-warning", "darkPair": "night-amber", "tonalRamp": ["#3a2604", "#5c3d07", "#8a5a0b", "#b07613", "#d69a2c", "#ffc23d", "#f7dda3", "#f8eed9"] },
-      "ink": { "role": "neutral", "displayName": "Tinta", "canonical": "#15171b", "cssVar": "--pz-ink", "darkPair": "chalk-ink", "tonalRamp": ["#050607", "#15171b", "#2b2e34", "#4a4f58", "#5f646d", "#9da3ab", "#d5d8dc", "#f4f5f2"] },
-      "ink-2": { "role": "neutral", "displayName": "Tinta media", "canonical": "#4a4f58", "cssVar": "--pz-ink-2", "darkPair": "night-ink-2", "tonalRamp": ["#050607", "#15171b", "#2b2e34", "#4a4f58", "#5f646d", "#9da3ab", "#d5d8dc", "#f4f5f2"] },
-      "ink-3": { "role": "neutral", "displayName": "Tinta tenue", "canonical": "#5f646d", "cssVar": "--pz-ink-3", "darkPair": "night-ink-3", "tonalRamp": ["#050607", "#15171b", "#2b2e34", "#4a4f58", "#5f646d", "#9da3ab", "#d5d8dc", "#f4f5f2"] },
-      "wall": { "role": "neutral", "displayName": "Pared", "canonical": "#dde0e3", "cssVar": "--pz-wall", "darkPair": "night-wall", "tonalRamp": ["#1a1d21", "#2a2e35", "#5c626a", "#8f959c", "#b6bbc1", "#dde0e3", "#eef0ed", "#fbfcfa"] },
-      "board": { "role": "neutral", "displayName": "Pizarra acrílica", "canonical": "#f4f5f2", "cssVar": "--pz-board", "darkPair": "night-board", "tonalRamp": ["#1a1d21", "#2a2e35", "#5c626a", "#8f959c", "#b6bbc1", "#dde0e3", "#f4f5f2", "#fbfcfa"] },
-      "board-hi": { "role": "neutral", "displayName": "Brillo del acrílico", "canonical": "#fbfcfa", "cssVar": "--pz-board-hi", "darkPair": "night-board-hi", "tonalRamp": ["#1a1d21", "#2a2e35", "#5c626a", "#8f959c", "#b6bbc1", "#dde0e3", "#f4f5f2", "#fbfcfa"] },
-      "frame": { "role": "neutral", "displayName": "Marco de aluminio", "canonical": "#b6bbc1", "cssVar": "--pz-frame", "darkPair": "night-frame", "tonalRamp": ["#1a1d21", "#2a2e35", "#5c626a", "#8f959c", "#b6bbc1", "#dde0e3", "#e8ebed", "#fbfcfa"] },
-      "frame-deep": { "role": "neutral", "displayName": "Bandeja de marcadores", "canonical": "#8f959c", "cssVar": "--pz-frame-deep", "darkPair": "night-frame-deep", "tonalRamp": ["#1a1d21", "#2a2e35", "#5c626a", "#8f959c", "#b6bbc1", "#dde0e3", "#e8ebed", "#fbfcfa"] },
-      "frame-hi": { "role": "neutral", "displayName": "Canto del marco", "canonical": "#e8ebed", "cssVar": "--pz-frame-hi", "darkPair": "night-frame-hi", "tonalRamp": ["#1a1d21", "#2a2e35", "#5c626a", "#8f959c", "#b6bbc1", "#dde0e3", "#e8ebed", "#fbfcfa"] },
-      "rule": { "role": "neutral", "displayName": "Renglón", "canonical": "rgb(21 23 27 / 0.2)", "cssVar": "--pz-rule", "darkPair": "night-rule", "tonalRamp": ["#15171b", "#2b2e34", "#4a4f58", "#6e737c", "#9da3ab", "#c4c8cd", "#e6e8e4", "#f4f5f2"] },
-      "rule-soft": { "role": "neutral", "displayName": "Raya de sección", "canonical": "rgb(21 23 27 / 0.1)", "cssVar": "--pz-rule-soft", "darkPair": "night-rule-soft", "tonalRamp": ["#15171b", "#2b2e34", "#4a4f58", "#6e737c", "#9da3ab", "#c4c8cd", "#e6e8e4", "#f4f5f2"] },
-      "ghost-blue": { "role": "neutral", "displayName": "Fantasma azul", "canonical": "rgb(28 69 196 / 0.09)", "cssVar": "--pz-ghost", "darkPair": "night-ghost-blue", "tonalRamp": ["#0b1a4d", "#112673", "#15379f", "#1c45c4", "#4a6ad6", "#47a8ff", "#bccaff", "#e6ebf9"] },
-      "ghost-ink": { "role": "neutral", "displayName": "Fantasma de tinta", "canonical": "rgb(21 23 27 / 0.07)", "cssVar": "--pz-ghost-ink", "darkPair": "night-ghost-ink", "tonalRamp": ["#15171b", "#2b2e34", "#4a4f58", "#6e737c", "#9da3ab", "#c4c8cd", "#e6e8e4", "#f4f5f2"] },
-      "night-blue": { "role": "primary", "displayName": "Marcador azul (pizarra negra)", "canonical": "#47a8ff", "cssVar": "--pz-blue", "theme": "apartar-dark", "tonalRamp": ["#0b1a4d", "#112673", "#2a46b8", "#4a6ad6", "#6a87f0", "#47a8ff", "#bccaff", "#e6ebff"] },
-      "night-blue-deep": { "role": "primary", "displayName": "Marcador azul hondo (pizarra negra)", "canonical": "#74beff", "cssVar": "--pz-blue-deep", "theme": "apartar-dark", "tonalRamp": ["#0b1a4d", "#112673", "#2a46b8", "#4a6ad6", "#6a87f0", "#74beff", "#c8d3ff", "#e6ebff"] },
-      "on-night-blue": { "role": "primary", "displayName": "Sobre azul (pizarra negra)", "canonical": "#06121f", "cssVar": "--pz-on-blue", "theme": "apartar-dark", "tonalRamp": ["#06121f", "#15181d", "#1a1d21", "#2a2e35", "#444a53", "#9da3ab", "#d5d8dc", "#f2f3ef"] },
-      "night-red": { "role": "secondary", "displayName": "Marcador rojo (pizarra negra)", "canonical": "#ff5c6c", "cssVar": "--pz-red", "theme": "apartar-dark", "tonalRamp": ["#331a1c", "#6e1016", "#99161f", "#c21d27", "#e0474f", "#ff5c6c", "#ffb3b5", "#ffe3e4"] },
-      "night-green": { "role": "secondary", "displayName": "Marcador verde (pizarra negra)", "canonical": "#3ee08f", "cssVar": "--pz-green", "theme": "apartar-dark", "tonalRamp": ["#12291d", "#08462a", "#0d6b41", "#178a57", "#2fb377", "#3ee08f", "#a6ecc7", "#e2f8ec"] },
-      "night-amber": { "role": "tertiary", "displayName": "Marcador ámbar (pizarra negra)", "canonical": "#ffc23d", "cssVar": "--color-warning", "theme": "apartar-dark", "tonalRamp": ["#2c2410", "#5c3d07", "#8a5a0b", "#b07613", "#d69a2c", "#ffc23d", "#f7dda3", "#fbf0d6"] },
-      "chalk-ink": { "role": "neutral", "displayName": "Tinta clara", "canonical": "#f2f3ef", "cssVar": "--pz-ink", "theme": "apartar-dark", "tonalRamp": ["#050607", "#15181d", "#2a2e35", "#444a53", "#9da3ab", "#bdc1c8", "#d5d8dc", "#f2f3ef"] },
-      "night-ink-2": { "role": "neutral", "displayName": "Tinta media (pizarra negra)", "canonical": "#bdc1c8", "cssVar": "--pz-ink-2", "theme": "apartar-dark", "tonalRamp": ["#050607", "#15181d", "#2a2e35", "#444a53", "#9da3ab", "#bdc1c8", "#d5d8dc", "#f2f3ef"] },
-      "night-ink-3": { "role": "neutral", "displayName": "Tinta tenue (pizarra negra)", "canonical": "#9da3ab", "cssVar": "--pz-ink-3", "theme": "apartar-dark", "tonalRamp": ["#050607", "#15181d", "#2a2e35", "#444a53", "#9da3ab", "#bdc1c8", "#d5d8dc", "#f2f3ef"] },
-      "night-wall": { "role": "neutral", "displayName": "Pared de noche", "canonical": "#050607", "cssVar": "--pz-wall", "theme": "apartar-dark", "tonalRamp": ["#050607", "#0c0e11", "#15181d", "#1a1d21", "#2a2e35", "#444a53", "#8f959c", "#d5d8dc"] },
-      "night-board": { "role": "neutral", "displayName": "Pizarra negra", "canonical": "#0c0e11", "cssVar": "--pz-board", "theme": "apartar-dark", "tonalRamp": ["#050607", "#0c0e11", "#15181d", "#1a1d21", "#2a2e35", "#444a53", "#8f959c", "#d5d8dc"] },
-      "night-board-hi": { "role": "neutral", "displayName": "Brillo de la pizarra negra", "canonical": "#15181d", "cssVar": "--pz-board-hi", "theme": "apartar-dark", "tonalRamp": ["#050607", "#0c0e11", "#15181d", "#1a1d21", "#2a2e35", "#444a53", "#8f959c", "#d5d8dc"] },
-      "night-frame": { "role": "neutral", "displayName": "Marco de noche", "canonical": "#2a2e35", "cssVar": "--pz-frame", "theme": "apartar-dark", "tonalRamp": ["#050607", "#0c0e11", "#1a1d21", "#2a2e35", "#444a53", "#8f959c", "#b6bbc1", "#dde0e3"] },
-      "night-frame-deep": { "role": "neutral", "displayName": "Bandeja de noche", "canonical": "#1a1d21", "cssVar": "--pz-frame-deep", "theme": "apartar-dark", "tonalRamp": ["#050607", "#0c0e11", "#1a1d21", "#2a2e35", "#444a53", "#8f959c", "#b6bbc1", "#dde0e3"] },
-      "night-frame-hi": { "role": "neutral", "displayName": "Canto del marco de noche", "canonical": "#444a53", "cssVar": "--pz-frame-hi", "theme": "apartar-dark", "tonalRamp": ["#050607", "#0c0e11", "#1a1d21", "#2a2e35", "#444a53", "#8f959c", "#b6bbc1", "#dde0e3"] },
-      "night-rule": { "role": "neutral", "displayName": "Renglón de noche", "canonical": "rgb(240 241 237 / 0.22)", "cssVar": "--pz-rule", "theme": "apartar-dark", "tonalRamp": ["#050607", "#15181d", "#2a2e35", "#444a53", "#9da3ab", "#bdc1c8", "#d5d8dc", "#f2f3ef"] },
-      "night-rule-soft": { "role": "neutral", "displayName": "Raya de sección de noche", "canonical": "rgb(240 241 237 / 0.1)", "cssVar": "--pz-rule-soft", "theme": "apartar-dark", "tonalRamp": ["#050607", "#15181d", "#2a2e35", "#444a53", "#9da3ab", "#bdc1c8", "#d5d8dc", "#f2f3ef"] },
-      "night-ghost-blue": { "role": "neutral", "displayName": "Fantasma azul de noche", "canonical": "rgb(71 168 255 / 0.12)", "cssVar": "--pz-ghost", "theme": "apartar-dark", "tonalRamp": ["#0b1a4d", "#112673", "#2a46b8", "#4a6ad6", "#6a87f0", "#47a8ff", "#bccaff", "#e6ebff"] },
-      "night-ghost-ink": { "role": "neutral", "displayName": "Fantasma de tinta de noche", "canonical": "rgb(240 241 237 / 0.08)", "cssVar": "--pz-ghost-ink", "theme": "apartar-dark", "tonalRamp": ["#050607", "#15181d", "#2a2e35", "#444a53", "#9da3ab", "#bdc1c8", "#d5d8dc", "#f2f3ef"] }
+      "marker-blue": {
+        "role": "primary",
+        "displayName": "Marcador azul",
+        "canonical": "#1c45c4",
+        "cssVar": "--pz-blue",
+        "darkPair": "night-blue",
+        "tonalRamp": [
+          "#0b1a4d",
+          "#112673",
+          "#15379f",
+          "#1c45c4",
+          "#4a6ad6",
+          "#47a8ff",
+          "#bccaff",
+          "#e6ebf9"
+        ]
+      },
+      "marker-blue-deep": {
+        "role": "primary",
+        "displayName": "Marcador azul hondo",
+        "canonical": "#15379f",
+        "cssVar": "--pz-blue-deep",
+        "darkPair": "night-blue-deep",
+        "tonalRamp": [
+          "#0b1a4d",
+          "#112673",
+          "#15379f",
+          "#1c45c4",
+          "#4a6ad6",
+          "#47a8ff",
+          "#bccaff",
+          "#e6ebf9"
+        ]
+      },
+      "on-blue": {
+        "role": "primary",
+        "displayName": "Sobre azul",
+        "canonical": "#ffffff",
+        "cssVar": "--pz-on-blue",
+        "darkPair": "on-night-blue",
+        "tonalRamp": [
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#6e737c",
+          "#9da3ab",
+          "#c4c8cd",
+          "#e6e8e4",
+          "#ffffff"
+        ]
+      },
+      "marker-red": {
+        "role": "secondary",
+        "displayName": "Marcador rojo",
+        "canonical": "#c21d27",
+        "cssVar": "--pz-red",
+        "darkPair": "night-red",
+        "tonalRamp": [
+          "#4a0a0e",
+          "#6e1016",
+          "#99161f",
+          "#c21d27",
+          "#e0474f",
+          "#ff5c6c",
+          "#ffb3b5",
+          "#f8e3e3"
+        ]
+      },
+      "marker-green": {
+        "role": "secondary",
+        "displayName": "Marcador verde",
+        "canonical": "#0d6b41",
+        "cssVar": "--pz-green",
+        "darkPair": "night-green",
+        "tonalRamp": [
+          "#05301d",
+          "#08462a",
+          "#0d6b41",
+          "#178a57",
+          "#2fb377",
+          "#3ee08f",
+          "#a6ecc7",
+          "#e2f1e8"
+        ]
+      },
+      "review-amber": {
+        "role": "tertiary",
+        "displayName": "Marcador ámbar",
+        "canonical": "#8a5a0b",
+        "cssVar": "--color-warning",
+        "darkPair": "night-amber",
+        "tonalRamp": [
+          "#3a2604",
+          "#5c3d07",
+          "#8a5a0b",
+          "#b07613",
+          "#d69a2c",
+          "#ffc23d",
+          "#f7dda3",
+          "#f8eed9"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#15171b",
+        "cssVar": "--pz-ink",
+        "darkPair": "chalk-ink",
+        "tonalRamp": [
+          "#050607",
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#5f646d",
+          "#9da3ab",
+          "#d5d8dc",
+          "#f4f5f2"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Tinta media",
+        "canonical": "#4a4f58",
+        "cssVar": "--pz-ink-2",
+        "darkPair": "night-ink-2",
+        "tonalRamp": [
+          "#050607",
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#5f646d",
+          "#9da3ab",
+          "#d5d8dc",
+          "#f4f5f2"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Tinta tenue",
+        "canonical": "#5f646d",
+        "cssVar": "--pz-ink-3",
+        "darkPair": "night-ink-3",
+        "tonalRamp": [
+          "#050607",
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#5f646d",
+          "#9da3ab",
+          "#d5d8dc",
+          "#f4f5f2"
+        ]
+      },
+      "wall": {
+        "role": "neutral",
+        "displayName": "Pared",
+        "canonical": "#dde0e3",
+        "cssVar": "--pz-wall",
+        "darkPair": "night-wall",
+        "tonalRamp": [
+          "#1a1d21",
+          "#2a2e35",
+          "#5c626a",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3",
+          "#eef0ed",
+          "#fbfcfa"
+        ]
+      },
+      "board": {
+        "role": "neutral",
+        "displayName": "Pizarra acrílica",
+        "canonical": "#f4f5f2",
+        "cssVar": "--pz-board",
+        "darkPair": "night-board",
+        "tonalRamp": [
+          "#1a1d21",
+          "#2a2e35",
+          "#5c626a",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3",
+          "#f4f5f2",
+          "#fbfcfa"
+        ]
+      },
+      "board-hi": {
+        "role": "neutral",
+        "displayName": "Brillo del acrílico",
+        "canonical": "#fbfcfa",
+        "cssVar": "--pz-board-hi",
+        "darkPair": "night-board-hi",
+        "tonalRamp": [
+          "#1a1d21",
+          "#2a2e35",
+          "#5c626a",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3",
+          "#f4f5f2",
+          "#fbfcfa"
+        ]
+      },
+      "frame": {
+        "role": "neutral",
+        "displayName": "Marco de aluminio",
+        "canonical": "#b6bbc1",
+        "cssVar": "--pz-frame",
+        "darkPair": "night-frame",
+        "tonalRamp": [
+          "#1a1d21",
+          "#2a2e35",
+          "#5c626a",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3",
+          "#e8ebed",
+          "#fbfcfa"
+        ]
+      },
+      "frame-deep": {
+        "role": "neutral",
+        "displayName": "Bandeja de marcadores",
+        "canonical": "#8f959c",
+        "cssVar": "--pz-frame-deep",
+        "darkPair": "night-frame-deep",
+        "tonalRamp": [
+          "#1a1d21",
+          "#2a2e35",
+          "#5c626a",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3",
+          "#e8ebed",
+          "#fbfcfa"
+        ]
+      },
+      "frame-hi": {
+        "role": "neutral",
+        "displayName": "Canto del marco",
+        "canonical": "#e8ebed",
+        "cssVar": "--pz-frame-hi",
+        "darkPair": "night-frame-hi",
+        "tonalRamp": [
+          "#1a1d21",
+          "#2a2e35",
+          "#5c626a",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3",
+          "#e8ebed",
+          "#fbfcfa"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Renglón",
+        "canonical": "rgb(21 23 27 / 0.2)",
+        "cssVar": "--pz-rule",
+        "darkPair": "night-rule",
+        "tonalRamp": [
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#6e737c",
+          "#9da3ab",
+          "#c4c8cd",
+          "#e6e8e4",
+          "#f4f5f2"
+        ]
+      },
+      "rule-soft": {
+        "role": "neutral",
+        "displayName": "Raya de sección",
+        "canonical": "rgb(21 23 27 / 0.1)",
+        "cssVar": "--pz-rule-soft",
+        "darkPair": "night-rule-soft",
+        "tonalRamp": [
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#6e737c",
+          "#9da3ab",
+          "#c4c8cd",
+          "#e6e8e4",
+          "#f4f5f2"
+        ]
+      },
+      "ghost-blue": {
+        "role": "neutral",
+        "displayName": "Fantasma azul",
+        "canonical": "rgb(28 69 196 / 0.09)",
+        "cssVar": "--pz-ghost",
+        "darkPair": "night-ghost-blue",
+        "tonalRamp": [
+          "#0b1a4d",
+          "#112673",
+          "#15379f",
+          "#1c45c4",
+          "#4a6ad6",
+          "#47a8ff",
+          "#bccaff",
+          "#e6ebf9"
+        ]
+      },
+      "ghost-ink": {
+        "role": "neutral",
+        "displayName": "Fantasma de tinta",
+        "canonical": "rgb(21 23 27 / 0.07)",
+        "cssVar": "--pz-ghost-ink",
+        "darkPair": "night-ghost-ink",
+        "tonalRamp": [
+          "#15171b",
+          "#2b2e34",
+          "#4a4f58",
+          "#6e737c",
+          "#9da3ab",
+          "#c4c8cd",
+          "#e6e8e4",
+          "#f4f5f2"
+        ]
+      },
+      "night-blue": {
+        "role": "primary",
+        "displayName": "Marcador azul (pizarra negra)",
+        "canonical": "#47a8ff",
+        "cssVar": "--pz-blue",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#0b1a4d",
+          "#112673",
+          "#2a46b8",
+          "#4a6ad6",
+          "#6a87f0",
+          "#47a8ff",
+          "#bccaff",
+          "#e6ebff"
+        ]
+      },
+      "night-blue-deep": {
+        "role": "primary",
+        "displayName": "Marcador azul hondo (pizarra negra)",
+        "canonical": "#74beff",
+        "cssVar": "--pz-blue-deep",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#0b1a4d",
+          "#112673",
+          "#2a46b8",
+          "#4a6ad6",
+          "#6a87f0",
+          "#74beff",
+          "#c8d3ff",
+          "#e6ebff"
+        ]
+      },
+      "on-night-blue": {
+        "role": "primary",
+        "displayName": "Sobre azul (pizarra negra)",
+        "canonical": "#06121f",
+        "cssVar": "--pz-on-blue",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#06121f",
+          "#15181d",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      },
+      "night-red": {
+        "role": "secondary",
+        "displayName": "Marcador rojo (pizarra negra)",
+        "canonical": "#ff5c6c",
+        "cssVar": "--pz-red",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#331a1c",
+          "#6e1016",
+          "#99161f",
+          "#c21d27",
+          "#e0474f",
+          "#ff5c6c",
+          "#ffb3b5",
+          "#ffe3e4"
+        ]
+      },
+      "night-green": {
+        "role": "secondary",
+        "displayName": "Marcador verde (pizarra negra)",
+        "canonical": "#3ee08f",
+        "cssVar": "--pz-green",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#12291d",
+          "#08462a",
+          "#0d6b41",
+          "#178a57",
+          "#2fb377",
+          "#3ee08f",
+          "#a6ecc7",
+          "#e2f8ec"
+        ]
+      },
+      "night-amber": {
+        "role": "tertiary",
+        "displayName": "Marcador ámbar (pizarra negra)",
+        "canonical": "#ffc23d",
+        "cssVar": "--color-warning",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#2c2410",
+          "#5c3d07",
+          "#8a5a0b",
+          "#b07613",
+          "#d69a2c",
+          "#ffc23d",
+          "#f7dda3",
+          "#fbf0d6"
+        ]
+      },
+      "chalk-ink": {
+        "role": "neutral",
+        "displayName": "Tinta clara",
+        "canonical": "#f2f3ef",
+        "cssVar": "--pz-ink",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#15181d",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#bdc1c8",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      },
+      "night-ink-2": {
+        "role": "neutral",
+        "displayName": "Tinta media (pizarra negra)",
+        "canonical": "#bdc1c8",
+        "cssVar": "--pz-ink-2",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#15181d",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#bdc1c8",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      },
+      "night-ink-3": {
+        "role": "neutral",
+        "displayName": "Tinta tenue (pizarra negra)",
+        "canonical": "#9da3ab",
+        "cssVar": "--pz-ink-3",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#15181d",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#bdc1c8",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      },
+      "night-wall": {
+        "role": "neutral",
+        "displayName": "Pared de noche",
+        "canonical": "#050607",
+        "cssVar": "--pz-wall",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#0c0e11",
+          "#15181d",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#8f959c",
+          "#d5d8dc"
+        ]
+      },
+      "night-board": {
+        "role": "neutral",
+        "displayName": "Pizarra negra",
+        "canonical": "#0c0e11",
+        "cssVar": "--pz-board",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#0c0e11",
+          "#15181d",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#8f959c",
+          "#d5d8dc"
+        ]
+      },
+      "night-board-hi": {
+        "role": "neutral",
+        "displayName": "Brillo de la pizarra negra",
+        "canonical": "#15181d",
+        "cssVar": "--pz-board-hi",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#0c0e11",
+          "#15181d",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#8f959c",
+          "#d5d8dc"
+        ]
+      },
+      "night-frame": {
+        "role": "neutral",
+        "displayName": "Marco de noche",
+        "canonical": "#2a2e35",
+        "cssVar": "--pz-frame",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#0c0e11",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3"
+        ]
+      },
+      "night-frame-deep": {
+        "role": "neutral",
+        "displayName": "Bandeja de noche",
+        "canonical": "#1a1d21",
+        "cssVar": "--pz-frame-deep",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#0c0e11",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3"
+        ]
+      },
+      "night-frame-hi": {
+        "role": "neutral",
+        "displayName": "Canto del marco de noche",
+        "canonical": "#444a53",
+        "cssVar": "--pz-frame-hi",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#0c0e11",
+          "#1a1d21",
+          "#2a2e35",
+          "#444a53",
+          "#8f959c",
+          "#b6bbc1",
+          "#dde0e3"
+        ]
+      },
+      "night-rule": {
+        "role": "neutral",
+        "displayName": "Renglón de noche",
+        "canonical": "rgb(240 241 237 / 0.22)",
+        "cssVar": "--pz-rule",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#15181d",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#bdc1c8",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      },
+      "night-rule-soft": {
+        "role": "neutral",
+        "displayName": "Raya de sección de noche",
+        "canonical": "rgb(240 241 237 / 0.1)",
+        "cssVar": "--pz-rule-soft",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#15181d",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#bdc1c8",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      },
+      "night-ghost-blue": {
+        "role": "neutral",
+        "displayName": "Fantasma azul de noche",
+        "canonical": "rgb(71 168 255 / 0.12)",
+        "cssVar": "--pz-ghost",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#0b1a4d",
+          "#112673",
+          "#2a46b8",
+          "#4a6ad6",
+          "#6a87f0",
+          "#47a8ff",
+          "#bccaff",
+          "#e6ebff"
+        ]
+      },
+      "night-ghost-ink": {
+        "role": "neutral",
+        "displayName": "Fantasma de tinta de noche",
+        "canonical": "rgb(240 241 237 / 0.08)",
+        "cssVar": "--pz-ghost-ink",
+        "theme": "apartar-dark",
+        "tonalRamp": [
+          "#050607",
+          "#15181d",
+          "#2a2e35",
+          "#444a53",
+          "#9da3ab",
+          "#bdc1c8",
+          "#d5d8dc",
+          "#f2f3ef"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Vinilo", "purpose": "Titular de la primera pantalla de cada página, en mayúsculas (utilidad font-vinyl).", "textTransform": "uppercase", "fontStretch": "68%" },
-      "headline": { "displayName": "Vinilo de sección", "purpose": "Títulos de sección en mayúsculas, de 2.75rem en móvil a 4.5rem en escritorio.", "textTransform": "uppercase", "fontStretch": "68%" },
-      "figure": { "displayName": "Cifra de vinilo", "purpose": "La cifra que manda: precio del ejemplo, precio de un plan; en el panel, la cifra de cada columna.", "fontStretch": "68%" },
-      "title": { "displayName": "Título de trabajo", "purpose": "Títulos de paso y subtítulos de documento.", "fontStretch": "85%" },
-      "body": { "displayName": "Cuerpo", "purpose": "Explicación en tinta media, entre 44 y 56ch." },
-      "body-panel": { "displayName": "Cuerpo del panel", "purpose": "Tamaño base del panel del negocio y de los temas daisyUI." },
-      "annotation": { "displayName": "Marcador a mano", "purpose": "Solo anotaciones: día, tasa, rótulos, «ejemplo» y la cuenta de ejemplo escrita en la pizarra." },
-      "label": { "displayName": "Botón", "purpose": "Texto de los botones pz-btn.", "fontStretch": "92%" },
-      "brand": { "displayName": "Marca", "purpose": "La palabra «apartar» en minúsculas y marcador azul, en cabecera y pie.", "fontStretch": "72%" }
+      "display": {
+        "displayName": "Vinilo",
+        "purpose": "Titular de la primera pantalla de cada página, en mayúsculas (utilidad font-vinyl).",
+        "textTransform": "uppercase",
+        "fontStretch": "68%"
+      },
+      "headline": {
+        "displayName": "Vinilo de sección",
+        "purpose": "Títulos de sección en mayúsculas, de 2.75rem en móvil a 4.5rem en escritorio.",
+        "textTransform": "uppercase",
+        "fontStretch": "68%"
+      },
+      "figure": {
+        "displayName": "Cifra de vinilo",
+        "purpose": "La cifra que manda: precio del ejemplo, precio de un plan; en el panel, la cifra de cada columna.",
+        "fontStretch": "68%"
+      },
+      "title": {
+        "displayName": "Título de trabajo",
+        "purpose": "Títulos de paso y subtítulos de documento.",
+        "fontStretch": "85%"
+      },
+      "body": {
+        "displayName": "Cuerpo",
+        "purpose": "Explicación en tinta media, entre 44 y 56ch."
+      },
+      "body-panel": {
+        "displayName": "Cuerpo del panel",
+        "purpose": "Tamaño base del panel del negocio y de los temas daisyUI."
+      },
+      "annotation": {
+        "displayName": "Marcador a mano",
+        "purpose": "Solo anotaciones: día, tasa, rótulos, «ejemplo» y la cuenta de ejemplo escrita en la pizarra."
+      },
+      "label": {
+        "displayName": "Botón",
+        "purpose": "Texto de los botones pz-btn.",
+        "fontStretch": "92%"
+      },
+      "brand": {
+        "displayName": "Marca",
+        "purpose": "La palabra «apartar» en minúsculas y marcador azul, en cabecera y pie.",
+        "fontStretch": "72%"
+      }
     },
     "shadows": [
-      { "name": "frame-on-wall", "value": "inset 0 1px 0 var(--pz-frame-hi), 0 6px 14px -6px rgb(0 0 0 / 0.3)", "purpose": "Solo el marco de aluminio sobre la pared." },
-      { "name": "board-inset", "value": "inset 0 1px 3px rgb(0 0 0 / 0.12)", "purpose": "Solo la pizarra hundida dentro del marco." },
-      { "name": "marker-lip", "value": "0 1px 0 var(--pz-blue-deep)", "purpose": "Canto inferior del botón azul." },
-      { "name": "line-stroke", "value": "inset 0 0 0 2px var(--pz-ink)", "purpose": "Borde de marcador de botones de línea, chips y controles flotantes; no mueve la caja." },
-      { "name": "float", "value": "0 14px 32px -10px rgb(0 0 0 / 0.35), inset 0 0 0 2px var(--pz-ink)", "purpose": "Menú móvil que flota sobre la pizarra." },
-      { "name": "float-small", "value": "0 10px 24px -10px rgb(0 0 0 / 0.35), inset 0 0 0 2px var(--pz-ink)", "purpose": "Botón de volver arriba." },
-      { "name": "pop", "value": "0 14px 32px -12px rgb(21 23 27 / 0.3)", "purpose": "Modales y menús desplegables del panel (tema claro; oscuro: 0 16px 40px -10px rgb(0 0 0 / 0.6))." }
+      {
+        "name": "frame-on-wall",
+        "value": "inset 0 1px 0 var(--pz-frame-hi), 0 6px 14px -6px rgb(0 0 0 / 0.3)",
+        "purpose": "Solo el marco de aluminio sobre la pared."
+      },
+      {
+        "name": "board-inset",
+        "value": "inset 0 1px 3px rgb(0 0 0 / 0.12)",
+        "purpose": "Solo la pizarra hundida dentro del marco."
+      },
+      {
+        "name": "marker-lip",
+        "value": "0 1px 0 var(--pz-blue-deep)",
+        "purpose": "Canto inferior del botón azul."
+      },
+      {
+        "name": "line-stroke",
+        "value": "inset 0 0 0 2px var(--pz-ink)",
+        "purpose": "Borde de marcador de botones de línea, chips y controles flotantes; no mueve la caja."
+      },
+      {
+        "name": "float",
+        "value": "0 14px 32px -10px rgb(0 0 0 / 0.35), inset 0 0 0 2px var(--pz-ink)",
+        "purpose": "Menú móvil que flota sobre la pizarra."
+      },
+      {
+        "name": "float-small",
+        "value": "0 10px 24px -10px rgb(0 0 0 / 0.35), inset 0 0 0 2px var(--pz-ink)",
+        "purpose": "Botón de volver arriba."
+      },
+      {
+        "name": "pop",
+        "value": "0 14px 32px -12px rgb(21 23 27 / 0.3)",
+        "purpose": "Modales y menús desplegables del panel (tema claro; oscuro: 0 16px 40px -10px rgb(0 0 0 / 0.6))."
+      }
     ],
     "motion": [
-      { "name": "ease-marker", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Curva de todo trazo de marcador y de las transiciones de los botones." },
-      { "name": "button-state", "value": "160ms var(--ease-marker)", "purpose": "Fondo, color, sombra y desplazamiento de 1px al presionar un botón." },
-      { "name": "pz-write", "value": "520ms var(--ease-marker), clip-path inset(0 100% 0 0) a inset(0)", "purpose": "La cuenta nueva se escribe de izquierda a derecha, solo al reescribirla; 70ms entre renglones." },
-      { "name": "pz-erase", "value": "900ms var(--ease-marker), opacity 1 a 0 con blur 0 a 2px", "purpose": "La cuenta anterior se borra como rastro." },
-      { "name": "pz-circle", "value": "700ms var(--ease-marker), stroke-dashoffset 1 a 0", "purpose": "El círculo de marcador se vuelve a trazar alrededor de «Resta»." },
-      { "name": "reduced-motion", "value": "animation: none", "purpose": "Con prefers-reduced-motion el cambio es inmediato y el rastro borrado queda oculto." }
+      {
+        "name": "ease-marker",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Curva de todo trazo de marcador y de las transiciones de los botones."
+      },
+      {
+        "name": "button-state",
+        "value": "160ms var(--ease-marker)",
+        "purpose": "Fondo, color, sombra y desplazamiento de 1px al presionar un botón."
+      },
+      {
+        "name": "pz-write",
+        "value": "520ms var(--ease-marker), clip-path inset(0 100% 0 0) a inset(0)",
+        "purpose": "La cuenta nueva se escribe de izquierda a derecha, solo al reescribirla; 70ms entre renglones."
+      },
+      {
+        "name": "pz-erase",
+        "value": "900ms var(--ease-marker), opacity 1 a 0 con blur 0 a 2px",
+        "purpose": "La cuenta anterior se borra como rastro."
+      },
+      {
+        "name": "pz-circle",
+        "value": "700ms var(--ease-marker), stroke-dashoffset 1 a 0",
+        "purpose": "El círculo de marcador se vuelve a trazar alrededor de «Resta»."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation: none",
+        "purpose": "Con prefers-reduced-motion el cambio es inmediato y el rastro borrado queda oculto."
+      }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "40rem" },
-      { "name": "md", "value": "48rem" },
-      { "name": "lg", "value": "64rem" },
-      { "name": "xl", "value": "80rem" },
-      { "name": "touch", "value": "(pointer: coarse), (width < 64rem)" }
+      {
+        "name": "sm",
+        "value": "40rem"
+      },
+      {
+        "name": "md",
+        "value": "48rem"
+      },
+      {
+        "name": "lg",
+        "value": "64rem"
+      },
+      {
+        "name": "xl",
+        "value": "80rem"
+      },
+      {
+        "name": "touch",
+        "value": "(pointer: coarse), (width < 64rem)"
+      }
     ]
   },
   "components": [
@@ -151,6 +861,22 @@
       "description": "Marca a la izquierda, enlaces en tinta subrayados al pasar, «Entrar» de línea y «Empezar gratis» en azul.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\">apartar</a><a class=\"ds-link\" href=\"#\">Cómo funciona</a><a class=\"ds-link\" href=\"#\" aria-current=\"page\">Precios</a><a class=\"ds-link\" href=\"#\">Soy cliente</a><a class=\"ds-nav-line\" href=\"#\">Entrar</a><a class=\"ds-nav-blue\" href=\"#\">Empezar gratis</a></nav>",
       "css": ".ds-nav { display: flex; align-items: center; gap: 1.75rem; height: 84px; padding: 0 3rem; font-family: 'Archivo', sans-serif; background: var(--pz-board, #f4f5f2); } .ds-brand { margin-right: auto; font-size: 2.125rem; font-weight: 900; font-stretch: 72%; letter-spacing: -0.01em; line-height: 1; color: var(--pz-blue, #1c45c4); text-decoration: none; } .ds-link { font-size: 0.9375rem; font-weight: 600; color: var(--pz-ink, #15171b); text-decoration: none; text-underline-offset: 0.3em; text-decoration-thickness: 2px; } .ds-link:hover { text-decoration: underline; } .ds-link[aria-current='page'] { text-decoration: underline; text-decoration-color: var(--pz-blue, #1c45c4); } .ds-nav-line, .ds-nav-blue { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1rem; border-radius: 6px; font-weight: 750; font-stretch: 92%; text-decoration: none; } .ds-nav-line { color: var(--pz-ink, #15171b); box-shadow: inset 0 0 0 2px var(--pz-ink, #15171b); } .ds-nav-line:hover { background: var(--pz-ghost-ink, rgb(21 23 27 / 0.07)); } .ds-nav-blue { background: var(--pz-blue, #1c45c4); color: var(--pz-on-blue, #ffffff); padding: 0 1.5rem; } .ds-nav-blue:hover { background: var(--pz-blue-deep, #15379f); } .ds-nav a:focus-visible { outline: 3px solid var(--pz-blue, #1c45c4); outline-offset: 3px; border-radius: 4px; }"
+    },
+    {
+      "name": "Franja de acciones de icono",
+      "kind": "custom",
+      "refersTo": "panel-row-actions",
+      "description": "En el celular, las acciones de una fila del panel: botones cuadrados de 44px solo con icono (el nombre en aria-label), centrados al pie tras una raya.",
+      "html": "<div class=\"ds-actions\"><button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Editar Vestidos\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 20l1-4L16 5l3 3L8 19z\"/></svg></button><button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Eliminar Vestidos\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13\"/></svg></button></div>",
+      "css": ".ds-actions { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--line, #dcdfd9); } .ds-icon-btn { display: inline-flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; border-radius: 0.375rem; border: 1px solid var(--line-strong, #b9bdb6); background: var(--color-base-100, #fbfcfa); color: var(--color-base-content, #15171b); transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-icon-btn:hover { background: var(--surface-2, #eceee9); } .ds-icon-btn:focus-visible { outline: 3px solid var(--color-primary, #1c45c4); outline-offset: 3px; } .ds-icon-btn-blue { border-color: transparent; background: var(--color-primary, #1c45c4); color: var(--color-primary-content, #ffffff); } .ds-icon-btn-blue:hover { background: var(--pz-blue-deep, #15379f); } .ds-icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }"
+    },
+    {
+      "name": "Tarjeta de cobranza",
+      "kind": "card",
+      "refersTo": "collection-card",
+      "description": "Una cuota por cobrar en el celular: cliente y monto rotulado arriba, producto y cuota debajo, atraso y fecha en una línea, y las acciones de icono al pie con registrar pago como único azul.",
+      "html": "<article class=\"ds-ccard\"><div class=\"ds-ccard-body\"><div class=\"ds-ccard-head\"><span class=\"ds-avatar\">GS</span><div class=\"ds-ccard-text\"><p class=\"ds-ccard-name\">Gabriela Suárez</p><p class=\"ds-ccard-sub\">Bolso tejido artesanal · Cuota 1 de 4</p></div><p class=\"ds-ccard-amount\"><span>$5,25</span><small>Importe</small></p></div><div class=\"ds-ccard-meta\"><span class=\"ds-late\">6 días de atraso</span><span>1 nov 2026 · AP-AXXCXJAH</span></div></div><div class=\"ds-ccard-actions\"><a class=\"ds-icon-btn\" href=\"#\" aria-label=\"Recordarle a Gabriela Suárez por WhatsApp\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 20l1.2-3.6A8 8 0 1 1 8 19.2z\"/><path d=\"M9.2 8.6c.3 2.6 2.4 4.9 5.2 5.4l1-1.2 1.9.8-.4 1.6c-3.9.4-8.2-3.4-8.1-7.6l1.6-.4.8 1.9z\"/></svg></a><a class=\"ds-icon-btn\" href=\"#\" aria-label=\"Escribir a Gabriela Suárez por el chat\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 5h16v11H9l-5 4z\"/></svg></a><a class=\"ds-icon-btn\" href=\"#\" aria-label=\"Llamar a Gabriela Suárez\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h3l1.5 4.5-2 1.5a11 11 0 0 0 6.5 6.5l1.5-2L21 15v3a3 3 0 0 1-3 3A15 15 0 0 1 3 6a3 3 0 0 1 3-3z\"/></svg></a><a class=\"ds-icon-btn ds-icon-btn-blue\" href=\"#\" aria-label=\"Registrar un pago de AP-AXXCXJAH\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"1.5\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/></svg></a><button class=\"ds-icon-btn\" type=\"button\" aria-label=\"Marcar AP-AXXCXJAH como entregado\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 6h11v10H3zM14 10h4l3 3v3h-7z\"/><circle cx=\"7\" cy=\"17.5\" r=\"1.5\"/><circle cx=\"17\" cy=\"17.5\" r=\"1.5\"/></svg></button></div></article>",
+      "css": ".ds-ccard { display: flex; flex-direction: column; max-width: 22.5rem; overflow: hidden; border: 1px solid var(--line, #dcdfd9); border-radius: 1rem; background: var(--color-base-100, #fbfcfa); color: var(--color-base-content, #15171b); font-family: 'Archivo', 'Archivo Fallback', sans-serif; font-variant-numeric: tabular-nums; } .ds-ccard-body { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; } .ds-ccard-head { display: flex; align-items: flex-start; gap: 0.75rem; } .ds-avatar { display: inline-flex; width: 2.5rem; height: 2.5rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 9999px; background: var(--surface-2, #eceee9); font-size: 0.875rem; font-weight: 700; } .ds-ccard-text { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 0.125rem; } .ds-ccard-name { margin: 0; font-size: 0.9375rem; font-weight: 600; line-height: 1.375; } .ds-ccard-sub { margin: 0; color: var(--ink-2, #4a4f58); font-size: 0.8125rem; line-height: 1.375; } .ds-ccard-amount { display: flex; flex-shrink: 0; flex-direction: column; align-items: flex-end; margin: 0; line-height: 1.375; } .ds-ccard-amount span { font-size: 1rem; font-weight: 700; } .ds-ccard-amount small { color: var(--ink-3, #5f646d); font-size: 0.6875rem; font-weight: 500; } .ds-ccard-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; color: var(--ink-2, #4a4f58); font-size: 0.8125rem; } .ds-late { display: inline-flex; align-items: center; gap: 0.375rem; border-radius: 9999px; padding: 0.125rem 0.5rem; background: color-mix(in oklab, var(--color-error, #c21d27) 12%, transparent); color: var(--color-error, #c21d27); font-weight: 600; } .ds-late::before { content: ''; width: 0.375rem; height: 0.375rem; border-radius: 9999px; background: currentColor; } .ds-ccard-actions { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.5rem 1rem; border-top: 1px solid var(--line, #dcdfd9); } .ds-icon-btn { display: inline-flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; border-radius: 0.375rem; border: 1px solid var(--line-strong, #b9bdb6); background: var(--color-base-100, #fbfcfa); color: var(--color-base-content, #15171b); transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-icon-btn:hover { background: var(--surface-2, #eceee9); } .ds-icon-btn:focus-visible { outline: 3px solid var(--color-primary, #1c45c4); outline-offset: 3px; } .ds-icon-btn-blue { border-color: transparent; background: var(--color-primary, #1c45c4); color: var(--color-primary-content, #ffffff); } .ds-icon-btn-blue:hover { background: var(--pz-blue-deep, #15379f); } .ds-icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }"
     }
   ],
   "narrative": {
@@ -165,14 +891,46 @@
       "Movimiento de marcador (escribir, borrar, encerrar) solo cuando la cuenta se reescribe."
     ],
     "rules": [
-      { "name": "The One Marker, One Job Rule", "body": "Cada marcador tiene un solo papel: azul es acción y lo que dice Apartar; rojo es solo lo que resta y lo atrasado; verde es solo lo pagado; ámbar es solo lo que está en revisión; la tinta es el texto. Un éxito que no es un pago no va en verde; un error de formulario no reemplaza al rojo de «resta» como lenguaje de la cuenta; un adorno nunca se pinta con un marcador.", "section": "colors" },
-      { "name": "The Acrylic and Blackboard Rule", "body": "Claro es acrílico blanco frío; oscuro es pizarra negra. Los dos temas son el mismo objeto con otro material, no una inversión de colores: cada token `--pz-*` tiene su pareja en `[data-theme='apartar-dark']` y toda pantalla debe funcionar en ambos.", "section": "colors" },
-      { "name": "The Annotation-Only Hand Rule", "body": "La letra a mano es solo para anotar: el día, la tasa, los rótulos («En tu panel», «Hasta», «Tasa BCV de los últimos días»), «ejemplo» y la cuenta de ejemplo escrita en la pizarra. Nunca va en párrafos, nunca en botones, campos, navegación ni controles, y nunca en datos reales del panel.", "section": "typography" },
-      { "name": "The Vinyl Caps Rule", "body": "Todo titular de página o sección es vinilo condensado en mayúsculas (`font-vinyl`). El saludo del portal simulado en el inicio («Hola, María») no es un titular del sitio: imita el lado del cliente y por eso va en vinilo sin mayúsculas.", "section": "typography" },
-      { "name": "The Tabular Figures Rule", "body": "Toda la pizarra activa cifras tabulares (`font-variant-numeric: tabular-nums` en `.pizarra`). Los montos se alinean a la derecha de su renglón y se escriben al estilo venezolano (`$12,00`, `Bs. 42.874,56`).", "section": "typography" },
-      { "name": "The Today-First Rule", "body": "El tiempo ordena la página: el día y la tasa de hoy van arriba, a mano; lo de ayer queda debajo como rastro tachado y tenue; las fechas de las cuotas son el eje de la cuenta.", "section": "layout" },
-      { "name": "The Ruled Lines, Not Cards Rule", "body": "Las listas se escriben en renglones punteados (`pz-rule-dashed`: trazos de 5px cada 9px, 2px de alto, en `rule`), con el nombre a la izquierda y el monto a la derecha. No se encierra contenido en tarjetas con borde, fondo o sombra.", "section": "layout" },
-      { "name": "The No Decorative Shadow Rule", "body": "Ninguna sombra adorna. Una sombra solo existe si describe el objeto físico (marco, pizarra, labio del marcador) o algo que de verdad flota sobre la pizarra. Un renglón, una cifra, un plan o una columna nunca llevan sombra.", "section": "elevation" }
+      {
+        "name": "The One Marker, One Job Rule",
+        "body": "Cada marcador tiene un solo papel: azul es acción y lo que dice Apartar; rojo es solo lo que resta y lo atrasado; verde es solo lo pagado; ámbar es solo lo que está en revisión; la tinta es el texto. Un éxito que no es un pago no va en verde; un error de formulario no reemplaza al rojo de «resta» como lenguaje de la cuenta; un adorno nunca se pinta con un marcador.",
+        "section": "colors"
+      },
+      {
+        "name": "The Acrylic and Blackboard Rule",
+        "body": "Claro es acrílico blanco frío; oscuro es pizarra negra. Los dos temas son el mismo objeto con otro material, no una inversión de colores: cada token `--pz-*` tiene su pareja en `[data-theme='apartar-dark']` y toda pantalla debe funcionar en ambos. En oscuro la pizarra es negra profunda (`#0c0e11`), nunca gris, y los marcadores son de tinta líquida viva (azul `#47a8ff`, rojo `#ff5c6c`, verde `#3ee08f`, ámbar `#ffc23d`) con texto oscuro sobre ellos; los tonos pastel o lavanda apagan la pizarra y quedan fuera. Sin brillos ni halos: el color vive en la tinta, no en una luz.",
+        "section": "colors"
+      },
+      {
+        "name": "The Annotation-Only Hand Rule",
+        "body": "La letra a mano es solo para anotar: el día, la tasa, los rótulos («En tu panel», «Hasta», «Tasa BCV de los últimos días»), «ejemplo» y la cuenta de ejemplo escrita en la pizarra. Nunca va en párrafos, nunca en botones, campos, navegación ni controles, y nunca en datos reales del panel.",
+        "section": "typography"
+      },
+      {
+        "name": "The Vinyl Caps Rule",
+        "body": "Todo titular de página o sección es vinilo condensado en mayúsculas (`font-vinyl`). El saludo del portal simulado en el inicio («Hola, María») no es un titular del sitio: imita el lado del cliente y por eso va en vinilo sin mayúsculas.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Toda la pizarra activa cifras tabulares (`font-variant-numeric: tabular-nums` en `.pizarra`). Los montos se alinean a la derecha de su renglón y se escriben al estilo venezolano (`$12,00`, `Bs. 42.874,56`).",
+        "section": "typography"
+      },
+      {
+        "name": "The Today-First Rule",
+        "body": "El tiempo ordena la página: el día y la tasa de hoy van arriba, a mano; lo de ayer queda debajo como rastro tachado y tenue; las fechas de las cuotas son el eje de la cuenta.",
+        "section": "layout"
+      },
+      {
+        "name": "The Ruled Lines, Not Cards Rule",
+        "body": "Las listas se escriben en renglones punteados (`pz-rule-dashed`: trazos de 5px cada 9px, 2px de alto, en `rule`), con el nombre a la izquierda y el monto a la derecha. No se encierra contenido en tarjetas con borde, fondo o sombra.",
+        "section": "layout"
+      },
+      {
+        "name": "The No Decorative Shadow Rule",
+        "body": "Ninguna sombra adorna. Una sombra solo existe si describe el objeto físico (marco, pizarra, labio del marcador) o algo que de verdad flota sobre la pizarra. Un renglón, una cifra, un plan o una columna nunca llevan sombra.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "**Do** usar el marcador azul para la acción y para lo que dice Apartar, el rojo solo para lo que resta y lo atrasado, el verde solo para lo pagado, el ámbar solo para lo que está en revisión y la tinta para el texto.",
