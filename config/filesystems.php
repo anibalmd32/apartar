@@ -2,7 +2,32 @@
 
 declare(strict_types=1);
 
+$uploads = [
+    'public' => storage_path('app/public'),
+    'receipts' => storage_path('app/private/receipts'),
+    'mail' => storage_path('app/private/mail'),
+    'exports' => storage_path('app/private/exports'),
+];
+
+$onR2 = env('UPLOADS_STORAGE', 'local') === 'r2';
+
+$r2 = static fn (string $bucket, string $root, bool $throw, ?string $url = null): array => [
+    'driver' => 's3',
+    'key' => env('R2_ACCESS_KEY_ID'),
+    'secret' => env('R2_SECRET_ACCESS_KEY'),
+    'region' => 'auto',
+    'endpoint' => env('R2_ENDPOINT'),
+    'use_path_style_endpoint' => true,
+    'bucket' => $bucket,
+    'root' => $root,
+    'url' => $url,
+    'retain_visibility' => false,
+    'throw' => $throw,
+];
+
 return [
+
+    'uploads' => $uploads,
 
     /*
     |--------------------------------------------------------------------------
@@ -39,35 +64,33 @@ return [
             'throw' => false,
         ],
 
-        'public' => [
+        'public' => $onR2 ? $r2((string) env('R2_PUBLIC_BUCKET'), '', false, env('R2_PUBLIC_URL')) : [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => $uploads['public'],
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
 
-        'receipts' => [
+        'receipts' => $onR2 ? $r2((string) env('R2_PRIVATE_BUCKET'), 'receipts', true) : [
             'driver' => 'local',
-            'root' => storage_path('app/private/receipts'),
+            'root' => $uploads['receipts'],
             'serve' => false,
             'throw' => true,
             'visibility' => 'private',
         ],
 
-        'mail' => [
+        'mail' => $onR2 ? $r2((string) env('R2_PRIVATE_BUCKET'), 'mail', true) : [
             'driver' => 'local',
-            'root' => storage_path('app/private/mail'),
+            'root' => $uploads['mail'],
             'serve' => false,
             'throw' => true,
             'visibility' => 'private',
         ],
 
-        // firmada de descarga.
-        //
-        'exports' => [
+        'exports' => $onR2 ? $r2((string) env('R2_PRIVATE_BUCKET'), 'exports', true) : [
             'driver' => 'local',
-            'root' => storage_path('app/private/exports'),
+            'root' => $uploads['exports'],
             'serve' => false,
             'throw' => true,
             'visibility' => 'private',
