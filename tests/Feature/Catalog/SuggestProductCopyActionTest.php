@@ -14,12 +14,15 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Ai\Prompts\AgentPrompt;
+use League\Flysystem\Filesystem as Flysystem;
+use League\Flysystem\InMemory\InMemoryFilesystemAdapter;
 use RuntimeException;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
@@ -158,6 +161,21 @@ final class SuggestProductCopyActionTest extends TestCase
 
         ProductCopywriter::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->count() === 2);
         ProductCopywriter::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->count() === 4);
+    }
+
+    public function test_las_fotos_guardadas_en_un_disco_remoto_tambien_se_envian(): void
+    {
+        $memory = new InMemoryFilesystemAdapter;
+        Storage::set('public', new FilesystemAdapter(new Flysystem($memory), $memory, ['driver' => 'local']));
+
+        $product = Product::factory()->create();
+        app(AttachProductImagesAction::class)->handle($product, [$this->image('guardada.png')]);
+
+        ProductCopywriter::fake([$this->answer()]);
+
+        $this->copywriter()->handle($this->actor, CopywritingMode::Suggest, 'Silla', product: $product->fresh());
+
+        ProductCopywriter::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->count() === 1);
     }
 
     public function test_the_daily_quota_is_counted_per_organization(): void

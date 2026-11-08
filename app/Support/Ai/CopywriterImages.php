@@ -95,12 +95,33 @@ final class CopywriterImages
     private function fromMedia(Media $media): ?LocalImage
     {
         $converted = $media->hasGeneratedConversion(self::STORED_CONVERSION);
-        $path = $converted ? $media->getPath(self::STORED_CONVERSION) : $media->getPath();
 
-        if (! is_file($path)) {
+        try {
+            $stream = $media->stream($converted ? self::STORED_CONVERSION : '');
+        } catch (Throwable) {
             return null;
         }
 
-        return AiImage::fromPath($path, $converted ? 'image/webp' : $media->mime_type);
+        if (! is_resource($stream)) {
+            return null;
+        }
+
+        $target = sys_get_temp_dir().'/'.uniqid('apartar-ai-', true);
+        $copy = fopen($target, 'wb');
+        $written = $copy !== false && stream_copy_to_stream($stream, $copy) !== false;
+
+        fclose($stream);
+
+        if ($copy !== false) {
+            fclose($copy);
+        }
+
+        $this->temporary[] = $target;
+
+        if (! $written) {
+            return null;
+        }
+
+        return AiImage::fromPath($target, $converted ? 'image/webp' : $media->mime_type);
     }
 }
