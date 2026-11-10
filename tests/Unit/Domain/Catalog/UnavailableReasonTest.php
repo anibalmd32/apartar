@@ -10,7 +10,12 @@ use App\Models\Product;
 
 function productWithStock(int $stock): Product
 {
-    return (new Product)->forceFill(['status' => ProductStatus::Published, 'stock' => $stock]);
+    return (new Product)->forceFill([
+        'status' => ProductStatus::Published,
+        'stock' => $stock,
+        'price_cents' => new Money(25_000),
+        'down_payment_cents' => new Money(5_000),
+    ]);
 }
 
 function coherentPlan(): FinancingPlan
@@ -29,6 +34,13 @@ it('dice agotado sin unidades', function (): void {
 it('dice no apartable sin plan, aunque además esté agotado', function (): void {
     expect(UnavailableReason::of(productWithStock(5), null))->toBe(UnavailableReason::NotReservable)
         ->and(UnavailableReason::of(productWithStock(0), null))->toBe(UnavailableReason::NotReservable);
+});
+
+it('deja apartar una venta al contado aunque no tenga plan de cuotas', function (): void {
+    $cashSale = productWithStock(1)->forceFill(['down_payment_cents' => new Money(25_000)]);
+
+    expect(UnavailableReason::of($cashSale, null))->toBeNull()
+        ->and(UnavailableReason::of($cashSale->forceFill(['stock' => 0]), null))->toBe(UnavailableReason::OutOfStock);
 });
 
 it('dice no apartable si el estado no lo admite', function (): void {
