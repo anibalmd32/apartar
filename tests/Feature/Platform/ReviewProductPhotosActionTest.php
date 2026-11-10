@@ -13,7 +13,10 @@ use App\Models\Organization;
 use App\Models\PlatformActivity;
 use App\Models\Product;
 use App\Models\ProductPhotoReview;
+use App\Models\User;
+use App\Notifications\ProductPhotosReviewedNotification;
 use App\Support\Auditing\PlatformAudit;
+use Illuminate\Support\Facades\Notification;
 use InvalidArgumentException;
 use Tests\Concerns\ActsAsPlatformOperator;
 use Tests\Concerns\ReusesMigratedDatabase;
@@ -88,6 +91,44 @@ final class ReviewProductPhotosActionTest extends TestCase
         }
 
         $this->assertSame(PhotoReviewStatus::Approved, $this->review->fresh()?->status);
+    }
+
+    public function test_the_owners_and_whoever_asked_hear_about_the_decision_by_mail(): void
+    {
+        Notification::fake();
+
+        [$owner, $requester, $disabled] = $this->withinOrganization($this->organization, function (): array {
+            $requester = User::factory()->create();
+            $this->review->forceFill(['requested_by' => $requester->getKey()])->save();
+
+            return [User::query()->where('role', 'owner')->firstOrFail(), $requester, User::factory()->owner()->disabled()->create()];
+        });
+        $this->withoutOrganization();
+
+        $this->reviews()->reject($this->review, 'No vendemos animales.', $this->operator());
+
+        Notification::assertSentTo($owner, ProductPhotosReviewedNotification::class, function (ProductPhotosReviewedNotification $notification) use ($owner): bool {
+            $mail = $notification->toMail($owner);
+
+            return ! $notification->approved
+                && $mail->subject === 'No aprobamos las fotos de «Gato persa»'
+                && in_array('Motivo: No vendemos animales.', $mail->introLines, true)
+                && str_ends_with((string) $mail->actionUrl, '/productos/'.$this->review->product_id.'/editar');
+        });
+        Notification::assertSentTo($requester, ProductPhotosReviewedNotification::class);
+        Notification::assertNotSentTo($disabled, ProductPhotosReviewedNotification::class);
+    }
+
+    public function test_an_approval_mail_says_it_can_be_published(): void
+    {
+        Notification::fake();
+
+        $this->reviews()->approve($this->review, $this->operator());
+
+        $owner = $this->withinOrganization($this->organization, fn (): User => User::query()->where('role', 'owner')->firstOrFail());
+
+        Notification::assertSentTo($owner, ProductPhotosReviewedNotification::class, fn (ProductPhotosReviewedNotification $notification): bool => $notification->approved
+            && $notification->toMail($owner)->subject === 'Aprobamos las fotos de «Gato persa»');
     }
 
     private function reviews(): ReviewProductPhotosAction

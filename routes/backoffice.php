@@ -189,6 +189,9 @@ Surface::backofficeRoutes(function (): void {
             Route::post('productos/{product}/despublicar', [ProductController::class, 'unpublish'])
                 ->name('products.unpublish');
 
+            Route::post('productos/{product}/revision-fotos', [ProductController::class, 'requestPhotoReview'])
+                ->name('products.photo-review');
+
             Route::post('productos/{product}/restaurar', [ProductController::class, 'restore'])
                 ->name('products.restore');
 

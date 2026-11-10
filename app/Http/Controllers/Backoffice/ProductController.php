@@ -42,6 +42,7 @@ use App\Support\CatalogShareLink;
 use App\Support\DecimalInput;
 use App\Support\HumanDate;
 use App\Support\Settings;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -194,6 +195,20 @@ final class ProductController extends Controller
 
         return to_route('products.index')
             ->with('status', 'Producto despublicado. Vuelve a estar en borrador y deja de verse.');
+    }
+
+    public function requestPhotoReview(Request $request, Product $product, OpenPhotoReviewAction $reviews): RedirectResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        try {
+            $reviews->again($product, $actor);
+        } catch (DomainException $exception) {
+            throw ValidationException::withMessages(['photo_review' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Pediste otra revisión. Te avisaremos por correo cuando Apartar revise las fotos.');
     }
 
     public function restore(Request $request, Product $product, ChangeProductStatusAction $status): RedirectResponse
@@ -453,7 +468,7 @@ final class ProductController extends Controller
     {
         $state = $this->tableState($request, InventorySort::whitelist(), InventorySort::Created, descendingByDefault: true);
 
-        $query = Product::query()->with(['category', 'editor:id,name', 'media'])->withCount('catalogs')->withReservedUnits();
+        $query = Product::query()->with(['category', 'editor:id,name', 'media', 'photoReview'])->withCount('catalogs')->withReservedUnits();
 
         InventoryFilters::resolve($request->query->all(), $state)->apply($query);
 
@@ -489,6 +504,7 @@ final class ProductController extends Controller
             'categoryName' => $product->category?->name,
             'catalogsCount' => (int) $product->getAttribute('catalogs_count'),
             'scheduledFor' => $this->scheduledFor($product),
+            'photoReview' => $product->photoReview?->status->blocksPublishing() === true ? $product->photoReview->status->value : null,
             'thumbUrl' => ($media = $product->getFirstMedia(Product::IMAGES)) instanceof Media ? ImageSet::of($media)->toArray()['thumb'] : null,
             'plan' => [
                 'downPayment' => $this->money($product->down_payment_cents),

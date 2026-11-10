@@ -74,3 +74,25 @@ it('el botón de archivar del producto también usa el icono de archivo', () => 
 
     expect(screen.getByRole('button', { name: 'Archivar producto' }).querySelector('svg')).toHaveAttribute('viewBox', `0 0 ${cilArchive[0]}`);
 });
+
+it('marca los productos con fotos en revisión o rechazadas', () => {
+    function Reviewed() {
+        const table = useServerTable({
+            rows: [
+                { ...PRODUCT, id: 8, status: 'draft', photoReview: 'pending' },
+                { ...PRODUCT, id: 9, status: 'draft', name: 'Paisaje', photoReview: 'rejected' },
+            ] satisfies ProductListItem[],
+            meta: { ...META, total: 2 },
+            columns: COLUMNS,
+        });
+
+        return <DataTable label="Inventario" table={table} empty="Nada." rowHref={(product) => `/productos/${product.id}/editar`} />;
+    }
+
+    render(<Reviewed />);
+
+    const [pending, rejected] = within(screen.getByRole('list', { name: 'Inventario' })).getAllByRole('listitem');
+
+    expect(pending).toHaveTextContent('Fotos en revisión');
+    expect(rejected).toHaveTextContent('Fotos rechazadas');
+});

@@ -15,6 +15,7 @@ use App\Models\ProductPhotoReview;
 use App\Models\User;
 use App\Support\Ai\HeldCopySuggestions;
 use App\Support\Auditing\LogsSensitiveActivity;
+use DomainException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -66,6 +67,25 @@ final class OpenPhotoReviewAction
 
             return $review;
         });
+    }
+
+    /**
+     * @throws AuthorizationException
+     * @throws DomainException
+     */
+    public function again(Product $product, User $actor): ProductPhotoReview
+    {
+        $rejected = $product->photoReview()->first();
+
+        if (! $rejected instanceof ProductPhotoReview || $rejected->status !== PhotoReviewStatus::Rejected) {
+            throw new DomainException('Solo se puede pedir otra revisión después de que Apartar rechace las fotos.');
+        }
+
+        return $this->handle($product, $actor, $rejected->subject, mb_substr(
+            sprintf('El negocio cambió las fotos y pidió otra revisión. Motivo del rechazo anterior: %s', $rejected->rejection_reason ?? ''),
+            0,
+            SuggestProductCopyAction::MAX_OBSERVATION_LENGTH,
+        ));
     }
 
     /**

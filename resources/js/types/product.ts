@@ -133,6 +133,7 @@ export interface ProductListItem {
     readonly categoryName: string | null;
     readonly catalogsCount: number;
     readonly scheduledFor: string | null;
+    readonly photoReview?: Exclude<PhotoReviewStatus, 'approved'> | null;
     readonly thumbUrl?: string | null;
     readonly plan?: { readonly downPayment: MoneyView; readonly installments: number; readonly frequencyDays: number };
     readonly updatedAt: string | null;

@@ -1,9 +1,36 @@
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
+import { bo } from '@/lib/surfaces';
 import { type ProductFormValues } from '@/types/product';
+import { useForm } from '@inertiajs/react';
 
 interface ProductNoticesProps {
     product: ProductFormValues | null;
     reviewRequested: boolean;
+}
+
+function RejectedPhotos({ productId, reason }: { productId: number; reason: string | null }) {
+    const again = useForm({ photo_review: '' });
+
+    return (
+        <Alert tone="error" title="Apartar rechazó las fotos">
+            <div className="flex flex-col items-start gap-2">
+                <p>
+                    {reason ?? 'Las fotos no muestran un producto que se pueda vender.'} Cambia las fotos y pide otra revisión para poder publicarlo.
+                </p>
+                <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={again.processing}
+                    onClick={() => again.post(bo(`/productos/${productId}/revision-fotos`), { preserveScroll: true })}
+                >
+                    Pedir otra revisión
+                </Button>
+                {again.errors.photo_review ? <FieldError>{again.errors.photo_review}</FieldError> : null}
+            </div>
+        </Alert>
+    );
 }
 
 export function ProductNotices({ product, reviewRequested }: ProductNoticesProps) {
@@ -24,11 +51,7 @@ export function ProductNotices({ product, reviewRequested }: ProductNoticesProps
                 </Alert>
             ) : null}
 
-            {review?.status === 'rejected' ? (
-                <Alert tone="error" title="Apartar rechazó las fotos">
-                    {review.rejectionReason ?? 'Las fotos no muestran un producto que se pueda vender.'} Cambia las fotos para poder publicarlo.
-                </Alert>
-            ) : null}
+            {product !== null && review?.status === 'rejected' ? <RejectedPhotos productId={product.id} reason={review.rejectionReason} /> : null}
         </>
     );
 }

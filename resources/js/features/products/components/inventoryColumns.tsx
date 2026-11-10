@@ -20,6 +20,8 @@ function StatusBadges({ product, label }: { product: ProductListItem; label: str
             ) : (
                 <Badge tone="info">Programado {product.scheduledFor}</Badge>
             )}
+            {product.photoReview === 'pending' ? <Badge tone="warning">Fotos en revisión</Badge> : null}
+            {product.photoReview === 'rejected' ? <Badge tone="error">Fotos rechazadas</Badge> : null}
         </div>
     );
 }

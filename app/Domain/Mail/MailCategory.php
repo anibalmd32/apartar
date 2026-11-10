@@ -23,6 +23,7 @@ final class MailCategory
         'InvoiceOverdueNotification' => 'Factura vencida',
         'LayawayCodeNotification' => 'Código del apartado',
         'LayawayConfirmationNotification' => 'Confirmación del apartado',
+        'ProductPhotosReviewedNotification' => 'Fotos de producto revisadas',
         'SubscriptionReceiptReviewedNotification' => 'Comprobante revisado',
         'SubscriptionSuspendedNotification' => 'Suscripción suspendida',
         'SupportAccessGrantedNotification' => 'Acceso de soporte',

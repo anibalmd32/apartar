@@ -7,15 +7,20 @@ namespace App\Actions\Platform;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\PhotoReviewAlreadyClosedException;
 use App\Domain\Catalog\PhotoReviewStatus;
+use App\Domain\Tenancy\OrganizationRole;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\PlatformUser;
 use App\Models\ProductPhotoReview;
+use App\Models\User;
+use App\Notifications\ProductPhotosReviewedNotification;
 use App\Support\Auditing\LogsSensitiveActivity;
 use App\Support\Auditing\PlatformAudit;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use InvalidArgumentException;
+use Throwable;
 
 final class ReviewProductPhotosAction
 {
@@ -90,6 +95,29 @@ final class ReviewProductPhotosAction
             ['review_id' => $closed->getKey(), 'product_id' => $closed->product_id],
         );
 
+        $this->notifyBusiness($organization, $closed);
+
         return $closed;
+    }
+
+    private function notifyBusiness(Organization $organization, ProductPhotoReview $review): void
+    {
+        try {
+            $recipients = $this->context->runFor($organization, fn () => User::query()
+                ->whereNull('disabled_at')
+                ->where(fn ($query) => $query->where('role', OrganizationRole::Owner)->orWhere('id', $review->requested_by))
+                ->orderBy('id')
+                ->get()
+                ->unique(fn (User $user): string => mb_strtolower($user->email)));
+
+            Notification::send($recipients, new ProductPhotosReviewedNotification(
+                $review->status === PhotoReviewStatus::Approved,
+                $review->product->name,
+                $review->rejection_reason,
+                route('products.edit', $review->product_id),
+            ));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 }

@@ -14,6 +14,7 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\ProductPhotoReview;
 use App\Models\User;
+use DomainException;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
@@ -78,6 +79,28 @@ final class OpenPhotoReviewActionTest extends TestCase
 
         $this->assertSame(PhotoReviewStatus::Pending, $product->fresh()?->photoReview?->status);
         $this->assertSame(2, ProductPhotoReview::query()->count());
+    }
+
+    public function test_after_a_rejection_the_business_can_ask_for_another_review(): void
+    {
+        $product = Product::factory()->create();
+        ProductPhotoReview::factory()->rejected('Es una foto de un gato.')->create(['product_id' => $product->getKey(), 'subject' => PhotoSubject::Animal]);
+
+        $review = $this->opener()->again($product, $this->actor);
+
+        $this->assertSame(PhotoReviewStatus::Pending, $review->status);
+        $this->assertSame(PhotoSubject::Animal, $review->subject);
+        $this->assertSame('El negocio cambió las fotos y pidió otra revisión. Motivo del rechazo anterior: Es una foto de un gato.', $review->observation);
+    }
+
+    public function test_another_review_is_only_for_rejected_photos(): void
+    {
+        $pending = Product::factory()->create();
+        ProductPhotoReview::factory()->create(['product_id' => $pending->getKey()]);
+
+        $this->assertThrows(fn () => $this->opener()->again($pending, $this->actor), DomainException::class);
+        $this->assertThrows(fn () => $this->opener()->again(Product::factory()->create(), $this->actor), DomainException::class);
+        $this->assertSame(1, ProductPhotoReview::query()->count());
     }
 
     public function test_a_pass_that_does_not_exist_opens_nothing(): void
