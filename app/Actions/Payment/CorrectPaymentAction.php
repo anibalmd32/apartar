@@ -7,6 +7,7 @@ namespace App\Actions\Payment;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
+use App\Domain\Layaway\StaffReason;
 use App\Domain\Payment\DuplicateReceiptException;
 use App\Domain\Payment\IdempotencyKeyReusedException;
 use App\Domain\Payment\PaymentAttachment;
@@ -51,7 +52,8 @@ final class CorrectPaymentAction
         Gate::forUser($actor)->authorize('manage', $target);
 
         $moving = (int) $target->getKey() !== (int) $source->getKey();
-        $reason = $moving ? sprintf('Se movió a %s: %s', $target->code, $data->note) : sprintf('Se corrigió: %s', $data->note);
+        $reason = (new StaffReason($data->note ?? ''))->text;
+        $reason = $moving ? sprintf('Se movió a %s: %s', $target->code, $reason) : sprintf('Se corrigió: %s', $reason);
 
         return DB::transaction(function () use ($payment, $target, $data, $actor, $moving, $reason): Payment {
             $this->void->handle($payment, $actor, mb_substr($reason, 0, 500));

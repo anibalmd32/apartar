@@ -59,7 +59,10 @@ export function paymentMissing(options: PaymentFieldOptions, values: PaymentFiel
         [values.method === '', 'Elige el método del pago.'],
         [referencePending, 'Escribe el banco y el número de referencia del pago.'],
         [fileTooLarge(options, values.file), `El comprobante pasa de ${options.file.maxMb} MB.`],
-        [values.note.trim().length < NOTE_MIN_LENGTH, `Escribe la nota del pago, de al menos ${NOTE_MIN_LENGTH} caracteres.`],
+        [
+            options.noteRequired === true && values.note.trim().length < NOTE_MIN_LENGTH,
+            `Escribe el motivo, de al menos ${NOTE_MIN_LENGTH} caracteres.`,
+        ],
         [loading, 'Estamos calculando a qué cuotas va el pago.'],
         [excessPending, 'Confirma que registras el pago con lo que sobra sin asignar.'],
         [

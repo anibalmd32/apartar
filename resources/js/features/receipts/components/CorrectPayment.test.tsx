@@ -103,7 +103,7 @@ it('editar abre el formulario con los datos del pago y guarda en la ruta de corr
 
     expect(screen.getByLabelText('Importe')).toHaveValue('60,00');
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30,00' } });
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Era de 30, no de 60.' } });
+    fireEvent.change(screen.getByLabelText('Motivo (obligatorio)'), { target: { value: 'Era de 30, no de 60.' } });
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });

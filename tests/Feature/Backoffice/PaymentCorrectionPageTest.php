@@ -128,6 +128,18 @@ final class PaymentCorrectionPageTest extends TestCase
             ->assertSessionHasErrors(['destino' => 'No hay un apartado con ese código en tu negocio.']);
     }
 
+    public function test_corregir_un_pago_sigue_pidiendo_el_motivo(): void
+    {
+        [, $payment] = $this->paidLayaway();
+
+        $this->post(route('payments.correct', $payment), ['note' => ''] + $this->fields('60,00'))
+            ->assertSessionHasErrors('note');
+        $this->post(route('payments.correct', $payment), ['note' => 'Corto'] + $this->fields('60,00'))
+            ->assertSessionHasErrors('note');
+
+        $this->assertNull(DB::table('payments')->where('id', $payment->getKey())->value('voided_at'));
+    }
+
     /**
      * @return array<string, string>
      */

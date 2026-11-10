@@ -19,13 +19,20 @@ export function ReadingStatus({ state }: { state: ReadingState }) {
     ) : null;
 }
 
-export function PaymentNoteField({ value, error, onChange }: { value: string; error?: string; onChange: (value: string) => void }) {
+interface PaymentNoteFieldProps {
+    value: string;
+    error?: string;
+    required: boolean;
+    onChange: (value: string) => void;
+}
+
+export function PaymentNoteField({ value, error, required, onChange }: PaymentNoteFieldProps) {
     const noteId = useId();
 
     return (
         <div className="flex flex-col gap-1">
             <label className="fieldset-legend" htmlFor={noteId}>
-                Nota (obligatoria)
+                {required ? 'Motivo (obligatorio)' : 'Nota (opcional)'}
             </label>
             <textarea
                 id={noteId}
@@ -35,12 +42,12 @@ export function PaymentNoteField({ value, error, onChange }: { value: string; er
                 maxLength={500}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                required
+                required={required}
                 aria-invalid={error !== undefined}
                 aria-describedby={`${noteId}-hint`}
             />
             <span id={`${noteId}-hint`} className="text-ink-3 text-xs">
-                De al menos {NOTE_MIN_LENGTH} caracteres: quién lo recibió, dónde y cómo.
+                {required ? `De al menos ${NOTE_MIN_LENGTH} caracteres: qué corriges y por qué.` : 'Por ejemplo, quién lo recibió, dónde y cómo.'}
             </span>
             {error !== undefined ? <span className="text-error text-sm">{error}</span> : null}
         </div>

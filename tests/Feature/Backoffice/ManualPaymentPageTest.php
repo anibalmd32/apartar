@@ -81,6 +81,18 @@ final class ManualPaymentPageTest extends TestCase
             ->where('payments.0.note', self::NOTE));
     }
 
+    public function test_a_payment_can_be_recorded_without_a_note(): void
+    {
+        $layaway = $this->layawayIn($this->organization);
+        $this->actingAs($this->member);
+
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '50.00', 'note' => '']))
+            ->assertRedirect(route('layaways.show', $layaway))
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull(DB::table('payments')->value('note'));
+    }
+
     public function test_a_payment_below_the_down_payment_is_credited_and_the_page_shows_what_is_missing(): void
     {
         $layaway = $this->layawayIn($this->organization);
@@ -136,7 +148,7 @@ final class ManualPaymentPageTest extends TestCase
         $this->withoutOrganization();
         $this->actingAs($this->member)->from(route('layaways.show', $layaway));
 
-        $this->post(route('layaways.payments.store', $layaway), $this->payload(['note' => 'Efectivo']))->assertSessionHasErrors('note');
+        $this->post(route('layaways.payments.store', $layaway), $this->payload(['note' => str_repeat('a', 501)]))->assertSessionHasErrors('note');
         $this->post(route('layaways.payments.store', $layaway), $this->payload(['amount' => '0.00']))->assertSessionHasErrors('amount');
         $this->post(route('layaways.payments.store', $layaway), $this->payload(['paid_at' => '2026-09-12']))
             ->assertSessionHasErrors(['paid_at' => 'La fecha del pago no puede ser futura.']);

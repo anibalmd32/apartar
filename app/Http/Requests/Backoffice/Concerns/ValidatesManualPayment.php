@@ -63,7 +63,7 @@ trait ValidatesManualPayment
                 new UniqueReceiptFingerprint(null, null, recordedByBusiness: true, exceptIdempotencyKey: $this->paymentIdempotencyKey(), exceptPayment: $this->correctedPayment()),
             ],
             'paid_at' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$earliest, 'before_or_equal:'.$latest],
-            'note' => ['required', 'string', 'min:'.StaffReason::MIN, 'max:'.StaffReason::MAX],
+            'note' => ['nullable', 'string', 'max:'.StaffReason::MAX],
             'idempotency_key' => ['required', 'string', 'uuid'],
             'confirm_excess' => ['nullable', 'integer', 'min:1'],
             'confirm_stale_rate' => ['nullable', 'string', 'max:100'],

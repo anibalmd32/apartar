@@ -91,7 +91,7 @@ it('registra el pago con su clave, tras confirmar el sobrante', async () => {
     fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '0123456789' } });
     fireEvent.change(screen.getByLabelText('Moneda'), { target: { value: 'USD' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '160,00' } });
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Recibido en tienda por Ana.' } });
 
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
@@ -130,7 +130,7 @@ it('tras registrar, el formulario vuelve a empezar con otra clave', async () => 
     const record = async () => {
         fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
         fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30.00' } });
-        fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
+        fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Recibido en tienda por Ana.' } });
         await act(async () => {
             await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
         });
@@ -161,7 +161,7 @@ it('pide confirmar una tasa de más de 30 días y manda su publicación', async 
     chooseBank('Banesco');
     fireEvent.change(screen.getByLabelText('Número de referencia'), { target: { value: '0123456789' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '1200.00' } });
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Recibido en tienda por Ana.' } });
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
@@ -183,7 +183,7 @@ it('pide banco y referencia solo a los métodos que los llevan y manda el compro
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'pago_movil' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '1275.00' } });
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Pago móvil confirmado por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Pago móvil confirmado por Ana.' } });
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
@@ -210,7 +210,7 @@ it('no deja registrar con un comprobante de más del máximo', async () => {
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30.00' } });
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Recibido en tienda por Ana.' } });
     const heavy = new File(['x'], 'pesado.pdf', { type: 'application/pdf' });
     Object.defineProperty(heavy, 'size', { value: 6 * 1024 * 1024 });
     fireEvent.change(screen.getByLabelText(/Elegir archivo/), { target: { files: [heavy] } });

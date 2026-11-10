@@ -59,6 +59,7 @@ export interface PaymentFieldOptions {
     readonly file: { readonly accept: string; readonly maxMb: number };
     readonly readUrl: string;
     readonly rateOfDayUrl: string;
+    readonly noteRequired?: boolean;
 }
 
 export interface ManualPaymentOptions extends PaymentFieldOptions {

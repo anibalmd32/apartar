@@ -61,11 +61,11 @@ it('al salir del importe lo completa con dos decimales', () => {
     expect(amount).toHaveValue('14,50');
 });
 
-it('la referencia abre el teclado numérico y la nota se marca obligatoria', () => {
+it('la referencia abre el teclado numérico y la nota es opcional', () => {
     renderFields({ method: 'pago_movil', currency: 'VES' });
 
     expect(screen.getByLabelText('Número de referencia')).toHaveAttribute('inputmode', 'numeric');
-    expect(screen.getByLabelText('Nota (obligatoria)')).toBeRequired();
+    expect(screen.getByLabelText('Nota (opcional)')).not.toBeRequired();
 });
 
 it('el recuadro vacío de la vista previa no usa el color de éxito', () => {
@@ -83,8 +83,11 @@ it('dice qué le falta al pago', () => {
     expect(paymentMissing(MANUAL_PAYMENT_OPTIONS, { ...values, method: 'pago_movil' }, IDLE)).toBe(
         'Escribe el banco y el número de referencia del pago.',
     );
-    expect(paymentMissing(MANUAL_PAYMENT_OPTIONS, { ...values, method: 'efectivo_usd' }, IDLE)).toBe(
-        'Escribe la nota del pago, de al menos 10 caracteres.',
+    expect(paymentMissing(MANUAL_PAYMENT_OPTIONS, { ...values, method: 'efectivo_usd' }, IDLE)).toBeNull();
+    expect(paymentMissing({ ...MANUAL_PAYMENT_OPTIONS, noteRequired: true }, { ...values, method: 'efectivo_usd' }, IDLE)).toBe(
+        'Escribe el motivo, de al menos 10 caracteres.',
     );
-    expect(paymentMissing(MANUAL_PAYMENT_OPTIONS, { ...values, method: 'efectivo_usd', note: 'Recibido en tienda.' }, IDLE)).toBeNull();
+    expect(
+        paymentMissing({ ...MANUAL_PAYMENT_OPTIONS, noteRequired: true }, { ...values, method: 'efectivo_usd', note: 'Recibido en tienda.' }, IDLE),
+    ).toBeNull();
 });

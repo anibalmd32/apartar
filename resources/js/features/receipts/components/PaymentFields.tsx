@@ -129,7 +129,12 @@ export function PaymentFields({ values, errors, onChange, options, preview: { pr
                 <PaymentAmountFields values={values} errors={errors} onChange={onChange} options={options} />
             </fieldset>
 
-            <PaymentNoteField value={values.note} error={errors.note} onChange={(note) => onChange({ note })} />
+            <PaymentNoteField
+                value={values.note}
+                error={errors.note}
+                required={options.noteRequired === true}
+                onChange={(note) => onChange({ note })}
+            />
 
             <section
                 aria-label="Vista previa del pago"

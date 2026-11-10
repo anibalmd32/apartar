@@ -21,7 +21,7 @@ use InvalidArgumentException;
 
 final readonly class ManualPaymentData
 {
-    public string $note;
+    public ?string $note;
 
     /**
      * @throws InvalidArgumentException
@@ -34,7 +34,7 @@ final readonly class ManualPaymentData
         public Currency $currency,
         public ?string $rateOverride,
         public CarbonImmutable $paidAt,
-        string $note,
+        ?string $note,
         public string $idempotencyKey,
         public ?int $confirmedExcessCents = null,
         public ?string $confirmedStaleRate = null,
@@ -61,7 +61,13 @@ final readonly class ManualPaymentData
             throw new InvalidArgumentException('Un sobrante confirmado es de al menos un centavo.');
         }
 
-        $this->note = (new StaffReason($note))->text;
+        $trimmed = trim($note ?? '');
+
+        if (mb_strlen($trimmed) > StaffReason::MAX) {
+            throw new InvalidArgumentException(sprintf('La nota del pago tiene como máximo %d caracteres.', StaffReason::MAX));
+        }
+
+        $this->note = $trimmed === '' ? null : $trimmed;
     }
 
     public function manualRate(): ?ManualRate

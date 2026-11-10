@@ -25,9 +25,13 @@ it('lleva el importe en su moneda y la nota recortada', function (): void {
         ->and($data->idempotencyKey)->toBe('6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f');
 });
 
-it('exige una nota de 10 a 500 caracteres', function (string $note): void {
-    manualPayment(note: $note);
-})->throws(InvalidArgumentException::class)->with(['vacía' => [''], 'corta' => ['efectivo'], 'larga' => [str_repeat('a', 501)]]);
+it('la nota es opcional y una vacía queda sin nota', function (string $note, ?string $expected): void {
+    expect(manualPayment(note: $note)->note)->toBe($expected);
+})->with(['vacía' => ['', null], 'solo espacios' => ['   ', null], 'corta' => [' efectivo ', 'efectivo']]);
+
+it('no acepta una nota de más de 500 caracteres', function (): void {
+    manualPayment(note: str_repeat('a', 501));
+})->throws(InvalidArgumentException::class);
 
 it('no se construye con un importe de cero o negativo', function (string $amount): void {
     manualPayment(amount: $amount);

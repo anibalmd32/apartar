@@ -21,8 +21,8 @@ export function CorrectPaymentSheet({ payment, fields, onClose }: CorrectPayment
             open
             onClose={onClose}
             title="Editar pago"
-            description={`Se anula el pago de ${payment.amountUsd.usd} y se registra con estos datos. En la nota, explica qué corriges.`}
-            options={{ ...fields, storeUrl: correction.storeUrl, previewUrl: correction.previewUrl }}
+            description={`Se anula el pago de ${payment.amountUsd.usd} y se registra con estos datos. En el motivo, explica qué corriges.`}
+            options={{ ...fields, storeUrl: correction.storeUrl, previewUrl: correction.previewUrl, noteRequired: true }}
             initial={correction.values}
             submitLabel="Guardar la corrección"
         />

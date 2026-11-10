@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Payment\ManualPaymentData;
+use App\Domain\Layaway\StaffReason;
 use App\Http\Requests\Backoffice\Concerns\ValidatesManualPayment;
 use App\Models\Layaway;
 use App\Models\Payment;
@@ -43,7 +44,7 @@ final class CorrectPaymentRequest extends FormRequest
     {
         [$min, $max] = ManualPaymentDates::bounds($this->organizationTimezone());
 
-        return $this->paymentRules($min, $max) + ['destino' => ['nullable', 'string', 'max:20']];
+        return ['note' => ['required', 'string', 'min:'.StaffReason::MIN, 'max:'.StaffReason::MAX]] + $this->paymentRules($min, $max) + ['destino' => ['nullable', 'string', 'max:20']];
     }
 
     /**

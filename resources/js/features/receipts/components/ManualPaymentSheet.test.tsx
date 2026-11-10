@@ -64,7 +64,7 @@ it('el pago manual se registra desde el pie de la hoja y la cierra al terminar',
 
     fireEvent.change(screen.getByLabelText('Método'), { target: { value: 'efectivo_usd' } });
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '30,00' } });
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
+    fireEvent.change(screen.getByLabelText('Nota (opcional)'), { target: { value: 'Recibido en tienda por Ana.' } });
     await act(async () => {
         await vi.advanceTimersByTimeAsync(PREVIEW_DEBOUNCE_MS + 10);
     });
@@ -141,7 +141,7 @@ it('un importe escrito a mano se conserva al cambiar la moneda', () => {
     expect(screen.getByLabelText('Importe')).toHaveValue('4.700,00');
 });
 
-it('no deja registrar el pago hasta que la nota tenga el mínimo de caracteres', async () => {
+it('deja registrar el pago sin nota', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ preview: PREVIEW }), { status: 200 }));
     withQueries(<ManualPaymentForm options={OPTIONS} open onClose={() => undefined} title="Registrar pago manual" />);
 
@@ -152,12 +152,6 @@ it('no deja registrar el pago hasta que la nota tenga el mínimo de caracteres',
     });
 
     const record = screen.getByRole('button', { name: 'Registrar el pago' });
-    expect(record).toBeDisabled();
-    expect(screen.getByText(/De al menos 10 caracteres/)).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'En tienda' } });
-    expect(record).toBeDisabled();
-
-    fireEvent.change(screen.getByLabelText('Nota (obligatoria)'), { target: { value: 'Recibido en tienda por Ana.' } });
+    expect(screen.getByLabelText('Nota (opcional)')).toHaveValue('');
     await vi.waitFor(() => expect(record).toBeEnabled());
 });
