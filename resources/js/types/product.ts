@@ -13,11 +13,12 @@ export interface TaxonomyOption {
 }
 
 export interface FinancingPlanView {
+    readonly isCashSale?: boolean;
     readonly downPayment: MoneyView;
     readonly installmentsCount: number;
     readonly frequencyDays: number;
-    readonly installmentAmount: MoneyView;
-    readonly lastInstallmentAmount: MoneyView;
+    readonly installmentAmount: MoneyView | null;
+    readonly lastInstallmentAmount: MoneyView | null;
     readonly hasUnevenLastInstallment: boolean;
     readonly financedAmount: MoneyView;
     readonly total: MoneyView;
@@ -66,6 +67,7 @@ export interface ProductFormValues {
     readonly slugIsLocked: boolean;
     readonly updatedAt: string | null;
     readonly photoReview?: PhotoReviewState | null;
+    readonly isCashSale?: boolean;
     readonly publicUrl?: string | null;
 }
 
@@ -135,7 +137,7 @@ export interface ProductListItem {
     readonly scheduledFor: string | null;
     readonly photoReview?: Exclude<PhotoReviewStatus, 'approved'> | null;
     readonly thumbUrl?: string | null;
-    readonly plan?: { readonly downPayment: MoneyView; readonly installments: number; readonly frequencyDays: number };
+    readonly plan?: { readonly isCashSale?: boolean; readonly downPayment: MoneyView; readonly installments: number; readonly frequencyDays: number };
     readonly updatedAt: string | null;
     readonly updatedBy: string | null;
 }

@@ -11,9 +11,56 @@ function frequencyLabel(days: number): string {
     return days === 1 ? 'cada día' : `cada ${days} días`;
 }
 
-export function ProductGridCard({ product }: { product: ProductCard }) {
+function CardPlanLine({ product }: { product: ProductCard }) {
     const withoutDownPayment = Number(product.downPayment.cents) === 0;
+    const installment = product.installmentAmount;
 
+    if (product.isCashSale || installment === null) {
+        return (
+            <p className="text-primary-ink mt-auto flex items-start gap-1.5 pt-1 text-[0.8125rem] leading-snug font-semibold">
+                <Icon icon={cilCalendar} size={14} className="mt-0.5 shrink-0" />
+                Al contado, sin cuotas
+            </p>
+        );
+    }
+
+    return (
+        <p className="text-primary-ink mt-auto flex items-start gap-1.5 pt-1 text-[0.8125rem] leading-snug font-semibold">
+            <Icon icon={cilCalendar} size={14} className="mt-0.5 shrink-0" />
+            <span aria-hidden="true">
+                {withoutDownPayment ? (
+                    'Sin inicial'
+                ) : (
+                    <>
+                        Inicial <PrimaryAmount money={product.downPayment} />
+                    </>
+                )}
+                {' · '}
+                {product.installmentsCount} {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de <PrimaryAmount money={installment} />
+            </span>
+            <span className="sr-only">
+                {withoutDownPayment ? (
+                    'Sin inicial, '
+                ) : (
+                    <>
+                        Inicial <MoneyLabel money={product.downPayment} /> y{' '}
+                    </>
+                )}
+                {product.installmentsCount} {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de <MoneyLabel money={installment} />{' '}
+                {frequencyLabel(product.frequencyDays)}
+                {product.lastInstallmentAmount !== null ? (
+                    <>
+                        {' '}
+                        (la última, <MoneyLabel money={product.lastInstallmentAmount} />)
+                    </>
+                ) : null}
+                .
+            </span>
+        </p>
+    );
+}
+
+export function ProductGridCard({ product }: { product: ProductCard }) {
     return (
         <Link
             href={route('catalog.product', { catalog: product.catalogSlug, product: product.slug })}
@@ -50,39 +97,7 @@ export function ProductGridCard({ product }: { product: ProductCard }) {
                         ) : null}
                     </div>
 
-                    <p className="text-primary-ink mt-auto flex items-start gap-1.5 pt-1 text-[0.8125rem] leading-snug font-semibold">
-                        <Icon icon={cilCalendar} size={14} className="mt-0.5 shrink-0" />
-                        <span aria-hidden="true">
-                            {withoutDownPayment ? (
-                                'Sin inicial'
-                            ) : (
-                                <>
-                                    Inicial <PrimaryAmount money={product.downPayment} />
-                                </>
-                            )}
-                            {' · '}
-                            {product.installmentsCount} {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de{' '}
-                            <PrimaryAmount money={product.installmentAmount} />
-                        </span>
-                        <span className="sr-only">
-                            {withoutDownPayment ? (
-                                'Sin inicial, '
-                            ) : (
-                                <>
-                                    Inicial <MoneyLabel money={product.downPayment} /> y{' '}
-                                </>
-                            )}
-                            {product.installmentsCount} {product.installmentsCount === 1 ? 'cuota' : 'cuotas'} de{' '}
-                            <MoneyLabel money={product.installmentAmount} /> {frequencyLabel(product.frequencyDays)}
-                            {product.lastInstallmentAmount !== null ? (
-                                <>
-                                    {' '}
-                                    (la última, <MoneyLabel money={product.lastInstallmentAmount} />)
-                                </>
-                            ) : null}
-                            .
-                        </span>
-                    </p>
+                    <CardPlanLine product={product} />
                 </div>
             </article>
         </Link>

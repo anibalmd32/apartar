@@ -7,7 +7,7 @@ import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 
 export interface ProductFormData {
-    [key: string]: string | number | null | number[] | string[];
+    [key: string]: string | number | boolean | null | number[] | string[];
     name: string;
     sku: string;
     slug: string;
@@ -23,6 +23,7 @@ export interface ProductFormData {
     tag_ids: number[];
     tag_names: string[];
     photo_review_pass: string;
+    cash_sale: boolean;
 }
 
 const PREVIEW_DEBOUNCE_MS = 300;
@@ -44,6 +45,7 @@ function initialData(defaults: ProductDefaults, product?: ProductFormValues | nu
         tag_ids: product ? [...product.tagIds] : [],
         tag_names: [],
         photo_review_pass: '',
+        cash_sale: product?.isCashSale ?? false,
     };
 }
 

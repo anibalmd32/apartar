@@ -3,7 +3,7 @@ import { type ProductDetail } from '@/types/catalog-view';
 import { Link } from '@inertiajs/react';
 
 interface ReserveBarProps {
-    product: Pick<ProductDetail, 'name' | 'price' | 'downPayment'>;
+    product: Pick<ProductDetail, 'name' | 'price' | 'downPayment' | 'isCashSale'>;
     href: string;
 }
 
@@ -21,7 +21,9 @@ export function ReserveBar({ product, href }: ReserveBarProps) {
                 <div className="flex min-w-0 flex-1 flex-col">
                     <PrimaryAmount money={product.price} className="truncate text-lg leading-tight font-extrabold" />
                     <span className="text-ink-2 truncate text-xs">
-                        {withoutDownPayment ? (
+                        {product.isCashSale ? (
+                            'Al contado'
+                        ) : withoutDownPayment ? (
                             'Sin inicial'
                         ) : (
                             <>

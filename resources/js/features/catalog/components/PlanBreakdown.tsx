@@ -5,7 +5,10 @@ import { type ProductDetail } from '@/types/catalog-view';
 
 export type PriceOffer = Pick<ProductDetail, 'price' | 'compareAtPrice' | 'savingsPercent'>;
 
-export type PlanOffer = Pick<ProductDetail, 'downPayment' | 'installmentAmount' | 'lastInstallmentAmount' | 'installmentsCount' | 'frequencyDays'>;
+export type PlanOffer = Pick<
+    ProductDetail,
+    'isCashSale' | 'downPayment' | 'installmentAmount' | 'lastInstallmentAmount' | 'installmentsCount' | 'frequencyDays'
+>;
 
 const VISIBLE_ROWS = 5;
 
@@ -62,7 +65,14 @@ export function PlanBreakdown({ product }: { product: PlanOffer }) {
     const installment = product.installmentAmount;
 
     if (installment === null) {
-        return null;
+        return product.isCashSale ? (
+            <section aria-labelledby="plan-heading" className="flex flex-col gap-1">
+                <h2 id="plan-heading" className="text-[1.0625rem] leading-snug font-bold">
+                    Al contado: apártalo hoy pagando <MoneyLabel money={product.downPayment} /> de una vez
+                </h2>
+                <p className="text-ink-3 text-[0.8125rem]">Este producto no se vende en cuotas.</p>
+            </section>
+        ) : null;
     }
 
     const today = caracasToday();

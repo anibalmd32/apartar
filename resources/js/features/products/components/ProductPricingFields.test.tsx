@@ -69,3 +69,61 @@ it('con inicial mantiene la pista de siempre', () => {
     expect(screen.getByText('Menor que el precio: lo que queda es lo que se financia.')).toBeInTheDocument();
     expect(screen.queryByText('Sin inicial: el apartado arranca activo y solo se paga en cuotas.')).toBeNull();
 });
+
+function cashPlan(): FinancingPlanView {
+    return {
+        isCashSale: true,
+        downPayment: money(15_000, '$150,00'),
+        installmentsCount: 0,
+        frequencyDays: 0,
+        installmentAmount: null,
+        lastInstallmentAmount: null,
+        hasUnevenLastInstallment: false,
+        financedAmount: money(0, '$0,00'),
+        total: money(15_000, '$150,00'),
+        compareAtPrice: null,
+        savingsPercent: null,
+    };
+}
+
+it('con la inicial igual al precio sugiere en naranja marcarlo al contado y la casilla parpadea', () => {
+    renderFields(cashPlan());
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Si lo cobras completo de una vez, marca «Venta al contado».');
+    expect(screen.getByRole('alert')).toHaveClass('alert-warning');
+    expect(screen.getByRole('checkbox', { name: /Venta al contado/ }).closest('label')).toHaveClass('animate-pulse', 'ring-warning');
+    expect(screen.getByText('Vista previa del plan').parentElement).toHaveTextContent('Al contado: $150,00 en un solo pago.');
+});
+
+it('al marcar «Venta al contado» la inicial pasa a ser el precio; al desmarcarla vuelve a cero', () => {
+    const setData = vi.fn();
+    render(<ProductPricingFields data={DATA} setData={setData as never} errors={{}} plan={plan(3_000)} />);
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('checkbox', { name: /Venta al contado/ }).closest('label')).not.toHaveClass('animate-pulse');
+
+    screen.getByRole('checkbox', { name: /Venta al contado/ }).click();
+
+    const update = setData.mock.calls[0]?.[0] as (previous: ProductFormData) => ProductFormData;
+    expect(update(DATA)).toMatchObject({ cash_sale: true, down_payment: '150.00' });
+    expect(update({ ...DATA, cash_sale: true })).toMatchObject({ cash_sale: true });
+
+    const unset = vi.fn();
+    render(
+        <ProductPricingFields data={{ ...DATA, cash_sale: true, down_payment: '150.00' }} setData={unset as never} errors={{}} plan={cashPlan()} />,
+    );
+    screen.getAllByRole('checkbox', { name: /Venta al contado/ })[1]!.click();
+
+    const revert = unset.mock.calls[0]?.[0] as (previous: ProductFormData) => ProductFormData;
+    expect(revert({ ...DATA, cash_sale: true, down_payment: '150.00' })).toMatchObject({ cash_sale: false, down_payment: '0,00' });
+});
+
+it('una venta al contado esconde la inicial, las cuotas y la frecuencia, y no sugiere nada', () => {
+    render(
+        <ProductPricingFields data={{ ...DATA, cash_sale: true, down_payment: '150.00' }} setData={vi.fn() as never} errors={{}} plan={cashPlan()} />,
+    );
+
+    expect(screen.getByRole('checkbox', { name: /Venta al contado/ })).toBeChecked();
+    expect(screen.getByLabelText('Cuota inicial').closest('.hidden')).not.toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+});

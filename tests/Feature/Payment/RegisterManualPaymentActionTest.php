@@ -125,6 +125,22 @@ final class RegisterManualPaymentActionTest extends TestCase
         );
     }
 
+    public function test_paying_a_cash_sale_in_full_announces_it_as_paid_without_a_schedule(): void
+    {
+        Notification::fake();
+        $layaway = $this->layawayIn($this->organization, terms: new LayawayTerms(new Money(20_000), new Money(20_000), 1, 4, 15));
+        DB::table('customers')->where('id', $layaway->customer_id)->update(['email' => 'maria@ejemplo.test']);
+
+        $this->register($layaway, '200.00', Currency::USD);
+
+        $customer = Customer::query()->withoutGlobalScopes()->findOrFail($layaway->customer_id);
+
+        $this->assertSame('completed', DB::table('layaways')->where('id', $layaway->getKey())->value('status'));
+        $this->assertSame(0, DB::table('installments')->where('layaway_id', $layaway->getKey())->count());
+        Notification::assertNotSentTo($customer, CustomerMessageNotification::class, fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayActivated);
+        Notification::assertSentTo($customer, CustomerMessageNotification::class, fn (CustomerMessageNotification $notification): bool => $notification->type === NotificationType::LayawayCompleted);
+    }
+
     public function test_a_payment_below_the_down_payment_is_credited_and_one_crossing_it_activates(): void
     {
         $layaway = $this->layawayIn($this->organization);

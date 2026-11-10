@@ -7,19 +7,22 @@ interface LayawayStepsProps {
     current: 2 | 3;
     productUrl?: string;
     requiresDownPayment?: boolean;
+    cashSale?: boolean;
 }
 
 const STEPS = ['Producto', 'Tus datos', 'Paga la inicial'] as const;
 
 const STEPS_WITHOUT_DOWN_PAYMENT = ['Producto', 'Tus datos', 'Paga tus cuotas'] as const;
 
-export function LayawaySteps({ current, productUrl, requiresDownPayment = true }: LayawayStepsProps) {
+const STEPS_CASH_SALE = ['Producto', 'Tus datos', 'Paga el total'] as const;
+
+export function LayawaySteps({ current, productUrl, requiresDownPayment = true, cashSale = false }: LayawayStepsProps) {
     return (
         <ol
             aria-label="Pasos del apartado"
             className="mx-auto flex max-w-full items-center justify-center gap-2.5 overflow-x-auto overflow-y-hidden text-sm"
         >
-            {(requiresDownPayment ? STEPS : STEPS_WITHOUT_DOWN_PAYMENT).map((label, index) => {
+            {(cashSale ? STEPS_CASH_SALE : requiresDownPayment ? STEPS : STEPS_WITHOUT_DOWN_PAYMENT).map((label, index) => {
                 const n = index + 1;
                 const done = n < current;
                 const active = n === current;

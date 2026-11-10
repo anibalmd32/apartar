@@ -120,9 +120,11 @@ export function inventoryColumns(statusLabels: Readonly<Record<ProductStatus, st
                         <span className="font-semibold">{product.name}</span>
                         <span className="text-ink-3 text-xs">
                             {product.sku}
-                            {product.plan
-                                ? ` · ${Number(product.plan.downPayment.cents) === 0 ? 'Sin inicial · ' : `Inicial ${product.plan.downPayment.usd} + `}${product.plan.installments} ${product.plan.installments === 1 ? 'cuota' : 'cuotas'}`
-                                : ''}
+                            {product.plan?.isCashSale
+                                ? ' · Al contado'
+                                : product.plan
+                                  ? ` · ${Number(product.plan.downPayment.cents) === 0 ? 'Sin inicial · ' : `Inicial ${product.plan.downPayment.usd} + `}${product.plan.installments} ${product.plan.installments === 1 ? 'cuota' : 'cuotas'}`
+                                  : ''}
                         </span>
                     </div>
                 </div>

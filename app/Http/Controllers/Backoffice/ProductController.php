@@ -274,7 +274,7 @@ final class ProductController extends Controller
         );
 
         if (! $plan instanceof FinancingPlan) {
-            return null;
+            return $this->cashPlan($request, $product);
         }
 
         $compareAt = $this->compareAtAmount($request, $product);
@@ -290,6 +290,35 @@ final class ProductController extends Controller
             'total' => $this->money($plan->price),
             'compareAtPrice' => $compareAt === null ? null : $this->money($compareAt),
             'savingsPercent' => Savings::percent($plan->price, $compareAt),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function cashPlan(Request $request, ?Product $product): ?array
+    {
+        $price = $this->termAmount($request, 'price', $product?->price_cents);
+        $downPayment = $this->termAmount($request, 'down_payment', $product?->down_payment_cents);
+
+        if ($price->cents <= 0 || $downPayment->cents !== $price->cents) {
+            return null;
+        }
+
+        $compareAt = $this->compareAtAmount($request, $product);
+
+        return [
+            'isCashSale' => true,
+            'downPayment' => $this->money($price),
+            'installmentsCount' => 0,
+            'frequencyDays' => 0,
+            'installmentAmount' => null,
+            'lastInstallmentAmount' => null,
+            'hasUnevenLastInstallment' => false,
+            'financedAmount' => $this->money(new Money(0)),
+            'total' => $this->money($price),
+            'compareAtPrice' => $compareAt === null ? null : $this->money($compareAt),
+            'savingsPercent' => Savings::percent($price, $compareAt),
         ];
     }
 
@@ -388,6 +417,7 @@ final class ProductController extends Controller
                 ? null
                 : $this->decimals($product->compare_at_price_cents),
             'downPayment' => $this->decimals($product->down_payment_cents),
+            'isCashSale' => $product->isCashSale(),
             'installmentsCount' => $product->installments_count,
             'frequencyDays' => $product->frequency_days,
             'stock' => $product->onHandUnits(),
@@ -507,6 +537,7 @@ final class ProductController extends Controller
             'photoReview' => $product->photoReview?->status->blocksPublishing() === true ? $product->photoReview->status->value : null,
             'thumbUrl' => ($media = $product->getFirstMedia(Product::IMAGES)) instanceof Media ? ImageSet::of($media)->toArray()['thumb'] : null,
             'plan' => [
+                'isCashSale' => $product->isCashSale(),
                 'downPayment' => $this->money($product->down_payment_cents),
                 'installments' => $product->installments_count,
                 'frequencyDays' => $product->frequency_days,

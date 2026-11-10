@@ -30,13 +30,13 @@ it('acepta unos términos corrientes', function (): void {
     expect(terms())->toBe([]);
 });
 
-it('exige que la inicial sea menor que el precio', function (int $down, bool $valid): void {
+it('acepta la inicial igual al precio como venta al contado, pero no por encima', function (int $down, bool $valid): void {
     $violations = terms(price: 10_000, down: $down);
 
     expect(array_key_exists('down_payment_cents', $violations))->toBe(! $valid);
 })->with([
     'un céntimo por debajo' => [9_999, true],
-    'igual al precio' => [10_000, false],
+    'igual al precio: al contado' => [10_000, true],
     'por encima del precio' => [10_001, false],
     'sin inicial' => [0, true],
     'negativa' => [-1, false],
@@ -112,7 +112,7 @@ it('rechaza existencias negativas', function (int $stock, bool $valid): void {
 ]);
 
 it('devuelve todas las reglas incumplidas de una vez', function (): void {
-    $violations = terms(price: 0, compareAt: 0, down: 0, installments: 99, frequency: 0, stock: -1);
+    $violations = terms(price: 0, compareAt: 0, down: 1, installments: 99, frequency: 0, stock: -1);
 
     expect(array_keys($violations))->toEqualCanonicalizing([
         'price',

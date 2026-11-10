@@ -190,8 +190,19 @@ final class ProductPageTest extends TestCase
     public function test_impossible_terms_carry_no_plan(): void
     {
         $this->actingAs($this->owner())
-            ->get('/backoffice/productos/crear?price=100.00&down_payment=100.00&installments_count=3&frequency_days=15')
+            ->get('/backoffice/productos/crear?price=100.00&down_payment=120.00&installments_count=3&frequency_days=15')
             ->assertInertia(fn (AssertableInertia $page) => $page->where('plan', null));
+    }
+
+    public function test_a_down_payment_equal_to_the_price_previews_a_cash_sale(): void
+    {
+        $this->actingAs($this->owner())
+            ->get('/backoffice/productos/crear?price=100.00&down_payment=100,00&installments_count=3&frequency_days=15')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('plan.isCashSale', true)
+                ->where('plan.total.cents', 10_000)
+                ->where('plan.installmentAmount', null)
+                ->where('plan.financedAmount.cents', 0));
     }
 
     public function test_creating_a_product_lands_on_its_form_as_a_draft(): void
@@ -267,7 +278,7 @@ final class ProductPageTest extends TestCase
         $owner = $this->owner();
 
         $this->actingAs($owner)
-            ->post('/backoffice/productos', $this->payload(['down_payment' => '250.00']))
+            ->post('/backoffice/productos', $this->payload(['down_payment' => '999.00']))
             ->assertSessionHasErrors('down_payment');
 
         $this->actingAs($owner)
@@ -275,6 +286,26 @@ final class ProductPageTest extends TestCase
             ->assertSessionHasErrors('compare_at_price');
 
         $this->assertSame(0, $this->inTenant(fn (): int => Product::query()->count()));
+    }
+
+    public function test_a_cash_sale_stores_the_whole_price_as_the_down_payment(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload(['cash_sale' => true, 'down_payment' => '0']))
+            ->assertSessionHasNoErrors();
+
+        $product = $this->inTenant(fn (): Product => Product::query()->sole());
+
+        $this->assertSame(25_000, $product->down_payment_cents->cents);
+        $this->assertTrue($product->isCashSale());
+
+        $this->get('/backoffice/productos/'.$product->getKey().'/editar')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('product.isCashSale', true));
+
+        $this->get('/backoffice/productos')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('rows.0.plan.isCashSale', true));
     }
 
     public function test_an_amount_with_more_than_two_decimals_is_rejected(): void

@@ -20,8 +20,9 @@ export interface ProductCard {
     readonly name: string;
     readonly price: MoneyView;
     readonly compareAtPrice: MoneyView | null;
+    readonly isCashSale?: boolean;
     readonly downPayment: MoneyView;
-    readonly installmentAmount: MoneyView;
+    readonly installmentAmount: MoneyView | null;
     readonly lastInstallmentAmount: MoneyView | null;
     readonly installmentsCount: number;
     readonly frequencyDays: number;
@@ -34,8 +35,7 @@ export interface ProductCard {
     readonly savingsPercent?: number | null;
 }
 
-export interface ProductDetail extends Omit<ProductCard, 'image' | 'installmentAmount'> {
-    readonly installmentAmount: MoneyView | null;
+export interface ProductDetail extends Omit<ProductCard, 'image'> {
     readonly description: string;
     readonly sku: string;
     readonly images: readonly ImageSet[];

@@ -36,6 +36,7 @@ export default function LayawayCreate({ catalog, product, plan, quantity, consen
                     current={2}
                     productUrl={route('catalog.product', { catalog: catalog.slug, product: product.slug })}
                     requiresDownPayment={plan?.requiresDownPayment ?? true}
+                    cashSale={plan !== null && Number(plan.financedAmount.cents) === 0}
                 />
                 <h1 className="text-[1.75rem] leading-tight font-extrabold [font-stretch:88%] lg:text-[2.25rem]">Aparta tu producto</h1>
             </div>

@@ -1,10 +1,12 @@
 import { NumberField } from '@/components/ui/number-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { CashSaleToggle } from '@/features/products/components/CashSaleToggle';
 import { FinancingPlanPreview } from '@/features/products/components/FinancingPlanPreview';
 import { FrequencyField } from '@/features/products/components/FrequencyField';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
 import { typedAmount } from '@/lib/amount-typing';
+import { amountInput } from '@/lib/money';
 import { type FinancingPlanView } from '@/types/product';
 
 interface ProductPricingFieldsProps extends ProductFieldsProps {
@@ -12,6 +14,13 @@ interface ProductPricingFieldsProps extends ProductFieldsProps {
 }
 
 export function ProductPricingFields({ data, setData, errors, plan }: ProductPricingFieldsProps) {
+    const cash = data.cash_sale;
+
+    const changePrice = (price: string) => setData((previous) => ({ ...previous, price, ...(previous.cash_sale ? { down_payment: price } : {}) }));
+
+    const toggleCash = (checked: boolean) =>
+        setData((previous) => ({ ...previous, cash_sale: checked, down_payment: checked ? previous.price : amountInput('0.00') }));
+
     return (
         <SectionCard title="Precio y plan de pago" subtitle="Así lo verá tu cliente en el catálogo.">
             <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
@@ -21,7 +30,7 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                     prefix="$"
                     inputMode="decimal"
                     value={data.price}
-                    onChange={(event) => setData('price', typedAmount(event))}
+                    onChange={(event) => changePrice(typedAmount(event))}
                     error={errors.price}
                     autoComplete="off"
                     required
@@ -40,7 +49,9 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
                 />
             </div>
 
-            <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-3">
+            <CashSaleToggle checked={cash} suggest={!cash && plan?.isCashSale === true} onChange={toggleCash} />
+
+            <div className={cash ? 'hidden' : 'grid grid-cols-1 gap-x-3 sm:grid-cols-3'}>
                 <TextField
                     label="Cuota inicial"
                     name="down_payment"

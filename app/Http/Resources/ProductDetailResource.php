@@ -54,6 +54,7 @@ final class ProductDetailResource extends JsonResource
             'name' => $product->name,
             'price' => $this->money($product->price_cents),
             'compareAtPrice' => $product->compare_at_price_cents === null ? null : $this->money($product->compare_at_price_cents),
+            'isCashSale' => $product->isCashSale(),
             'downPayment' => $this->money($product->down_payment_cents),
             'installmentAmount' => $plan === null ? null : $this->money($plan->installmentAmount()),
             'lastInstallmentAmount' => $plan !== null && $plan->hasUnevenLastInstallment() ? $this->money($plan->lastInstallmentAmount()) : null,

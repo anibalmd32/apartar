@@ -45,6 +45,7 @@ export function previewOffer(plan: FinancingPlanView | null): ProductOffer | nul
     }
 
     return {
+        isCashSale: plan.isCashSale ?? false,
         price: plan.total,
         compareAtPrice: plan.compareAtPrice,
         savingsPercent: plan.savingsPercent,

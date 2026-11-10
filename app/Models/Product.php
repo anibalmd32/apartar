@@ -280,6 +280,11 @@ class Product extends Model implements HasMedia
         return $query;
     }
 
+    public function isCashSale(): bool
+    {
+        return $this->price_cents->cents > 0 && $this->down_payment_cents->cents === $this->price_cents->cents;
+    }
+
     public function isScheduled(): bool
     {
         return $this->status === ProductStatus::Published

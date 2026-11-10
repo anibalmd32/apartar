@@ -55,9 +55,9 @@ final class CoherentFinancingTerms implements DataAwareRule, ValidationRule, Val
 
         if ($downPayment->cents < 0) {
             $violations['down_payment_cents'] = 'La cuota inicial no puede ser negativa.';
-        } elseif ($downPayment->cents >= $price->cents) {
-            $violations['down_payment_cents'] = 'La cuota inicial tiene que ser menor que el precio: '
-                .'con la inicial igual al precio no queda nada que financiar.';
+        } elseif ($downPayment->cents > $price->cents) {
+            $violations['down_payment_cents'] = 'La cuota inicial no puede ser mayor que el precio. '
+                .'Si lo cobras completo de una vez, márcalo como venta al contado.';
         }
 
         if ($compareAtPrice instanceof Money && $compareAtPrice->cents <= $price->cents) {

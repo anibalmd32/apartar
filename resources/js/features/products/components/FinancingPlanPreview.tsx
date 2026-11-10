@@ -18,6 +18,19 @@ export function FinancingPlanPreview({ plan }: FinancingPlanPreviewProps) {
         );
     }
 
+    if (plan.isCashSale || plan.installmentAmount === null) {
+        return (
+            <div className="bg-primary-soft flex flex-col gap-1 rounded-xl p-4">
+                <p className="text-label text-ink-3">Vista previa del plan</p>
+                <p className="text-ink-2 text-sm">
+                    Al contado: <MoneyLabel money={plan.total} compact className="text-base-content text-[22px] font-extrabold" /> en un solo pago.
+                </p>
+                <p className="text-ink-2 text-xs">Tu cliente lo aparta pagando el total de una vez. No hay cuotas.</p>
+            </div>
+        );
+    }
+
+    const installment = plan.installmentAmount;
     const installments = Array.from({ length: plan.installmentsCount }, (_, index) => index + 1);
     const requiresDownPayment = Number(plan.downPayment.cents) > 0;
 
@@ -34,8 +47,8 @@ export function FinancingPlanPreview({ plan }: FinancingPlanPreviewProps) {
                     <>Sin inicial: </>
                 )}
                 <span className="text-base-content text-[22px] font-extrabold">{plan.installmentsCount} ×</span>{' '}
-                <MoneyLabel money={plan.installmentAmount} compact className="text-base-content text-[22px] font-extrabold" /> cada{' '}
-                {plan.frequencyDays} {days(plan.frequencyDays)}
+                <MoneyLabel money={installment} compact className="text-base-content text-[22px] font-extrabold" /> cada {plan.frequencyDays}{' '}
+                {days(plan.frequencyDays)}
             </p>
 
             <ol aria-hidden="true" className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
@@ -53,7 +66,7 @@ export function FinancingPlanPreview({ plan }: FinancingPlanPreviewProps) {
                 ))}
             </ol>
 
-            {plan.hasUnevenLastInstallment ? (
+            {plan.hasUnevenLastInstallment && plan.lastInstallmentAmount !== null ? (
                 <p className="text-ink-2 text-xs">
                     Última cuota: <MoneyLabel money={plan.lastInstallmentAmount} className="font-semibold" />. El reparto no es exacto y el resto va a
                     la última, para que la suma cuadre al céntimo.

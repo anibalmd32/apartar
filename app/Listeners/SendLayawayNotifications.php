@@ -54,6 +54,10 @@ final class SendLayawayNotifications implements ShouldQueue
             return;
         }
 
+        if ($layaway->terms()->financedAmount()->cents === 0) {
+            return;
+        }
+
         if ($layaway->terms()->requiresDownPayment()) {
             $this->notices->activated($layaway);
 

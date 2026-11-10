@@ -23,6 +23,10 @@ class StoreProductRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge(DecimalInput::normalizeKeys($this->all(), ['price', 'compare_at_price', 'down_payment']));
+
+        if ($this->boolean('cash_sale')) {
+            $this->merge(['down_payment' => $this->input('price')]);
+        }
     }
 
     /**
@@ -54,6 +58,8 @@ class StoreProductRequest extends FormRequest
             'tag_names.*' => ['string', 'max:80'],
 
             'photo_review_pass' => ['nullable', 'string', 'max:64'],
+
+            'cash_sale' => ['sometimes', 'boolean'],
         ] + $this->specificationRules() + $this->imageRules();
     }
 

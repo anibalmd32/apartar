@@ -266,7 +266,7 @@ final class ProductShowTest extends TestCase
     public function test_incoherent_terms_are_not_reservable_and_do_not_break_the_page(): void
     {
         $this->stock([$this->product('Taladro')]);
-        DB::table('products')->where('slug', 'taladro')->update(['down_payment_cents' => 25_000]);
+        DB::table('products')->where('slug', 'taladro')->update(['down_payment_cents' => 30_000]);
 
         $this->visit('taladro')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->where('product.canBeReserved', false)
@@ -360,6 +360,22 @@ final class ProductShowTest extends TestCase
         $this->visit('taladro')->assertInertia(fn (AssertableInertia $page) => $page
             ->where('product.specifications', ['Potencia de 800 W', 'Velocidad de 3000 rpm'])
             ->missing('product.specificationGroups'));
+    }
+
+    public function test_a_cash_sale_is_reservable_and_shows_in_cards_without_installments(): void
+    {
+        $this->stock([
+            $this->product('Taladro', ['price_cents' => 20_000, 'down_payment_cents' => 20_000]),
+            $this->product('Sierra', ['price_cents' => 15_000, 'down_payment_cents' => 15_000]),
+        ]);
+
+        $this->visit('taladro')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('product.isCashSale', true)
+            ->where('product.canBeReserved', true)
+            ->where('product.installmentAmount', null)
+            ->where('related.0.slug', 'sierra')
+            ->where('related.0.isCashSale', true)
+            ->where('related.0.installmentAmount', null));
     }
 
     public function test_related_products_are_from_this_catalog_same_category_first(): void

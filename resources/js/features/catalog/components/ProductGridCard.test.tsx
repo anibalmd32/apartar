@@ -53,3 +53,10 @@ it('sin inicial lo dice en vez de mostrar un cero', () => {
         screen.getByText((_, element) => element?.getAttribute('aria-hidden') === 'true' && /Sin inicial/.test(element.textContent ?? '')),
     ).toHaveTextContent('Sin inicial · 4 cuotas de $8,75');
 });
+
+it('un producto al contado dice que no tiene cuotas en lugar del plan', () => {
+    render(<ProductGridCard product={{ ...PRODUCT, isCashSale: true, downPayment: money(4_500, '$45,00'), installmentAmount: null }} />);
+
+    expect(screen.getByText('Al contado, sin cuotas')).toBeInTheDocument();
+    expect(screen.queryByText(/cuotas de/)).not.toBeInTheDocument();
+});

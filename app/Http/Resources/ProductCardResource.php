@@ -34,7 +34,7 @@ final class ProductCardResource extends JsonResource
     {
         $product = $this->resource;
 
-        $plan = new FinancingPlan(
+        $plan = FinancingPlan::tryFrom(
             $product->price_cents,
             $product->down_payment_cents,
             $product->installments_count,
@@ -48,13 +48,14 @@ final class ProductCardResource extends JsonResource
             'compareAtPrice' => $product->compare_at_price_cents === null
                 ? null
                 : $this->money($product->compare_at_price_cents),
-            'downPayment' => $this->money($plan->downPayment),
-            'installmentAmount' => $this->money($plan->installmentAmount()),
-            'lastInstallmentAmount' => $plan->hasUnevenLastInstallment()
+            'isCashSale' => $product->isCashSale(),
+            'downPayment' => $this->money($product->down_payment_cents),
+            'installmentAmount' => $plan === null ? null : $this->money($plan->installmentAmount()),
+            'lastInstallmentAmount' => $plan !== null && $plan->hasUnevenLastInstallment()
                 ? $this->money($plan->lastInstallmentAmount())
                 : null,
-            'installmentsCount' => $plan->installmentsCount,
-            'frequencyDays' => $plan->frequencyDays,
+            'installmentsCount' => $product->installments_count,
+            'frequencyDays' => $product->frequency_days,
             'image' => $this->image($product),
             'categoryName' => (string) $product->category?->name,
             'tags' => $product->tags->map(fn (Tag $tag): string => $tag->name)->values()->all(),

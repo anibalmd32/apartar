@@ -56,7 +56,9 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
 
             <dl>
                 <Row label="Total" money={plan.total} />
-                {plan.requiresDownPayment ? (
+                {Number(plan.financedAmount.cents) === 0 ? (
+                    <Row label="Al contado (pagas ahora)" money={plan.downPayment} strong />
+                ) : plan.requiresDownPayment ? (
                     <Row label="Inicial (pagas ahora)" money={plan.downPayment} strong />
                 ) : (
                     <div className="flex items-baseline justify-between gap-4 py-1.5">
@@ -64,7 +66,7 @@ export function LayawaySummaryCard({ productName, image, unitPrice, plan, stale 
                         <dd className="text-primary-ink text-right text-sm font-bold">Sin inicial</dd>
                     </div>
                 )}
-                <Row label="En cuotas" money={plan.financedAmount} />
+                {Number(plan.financedAmount.cents) > 0 ? <Row label="En cuotas" money={plan.financedAmount} /> : null}
                 {plan.lastInstallmentAmount !== null ? <Row label="Última cuota" money={plan.lastInstallmentAmount} /> : null}
             </dl>
 

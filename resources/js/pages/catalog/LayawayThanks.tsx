@@ -23,7 +23,11 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
             showsPlatformBadge={catalog.showsPlatformBadge}
             width="narrow"
         >
-            <LayawaySteps current={3} requiresDownPayment={layaway.plan.requiresDownPayment} />
+            <LayawaySteps
+                current={3}
+                requiresDownPayment={layaway.plan.requiresDownPayment}
+                cashSale={Number(layaway.plan.financedAmount.cents) === 0}
+            />
 
             <div className="bg-base-100 border-line mx-auto flex w-full max-w-[640px] flex-col gap-[18px] rounded-xl border p-5 lg:p-10">
                 <header className="flex flex-col items-center gap-2 text-center">
@@ -81,7 +85,8 @@ export default function LayawayThanks({ catalog, layaway, payUrl, follow }: Laya
                         <IconChip icon={cilClock} tone="warning" size={36} className="shrink-0" />
                         <div className="flex flex-col gap-0.5">
                             <h2 id="next-heading" className="text-sm font-bold">
-                                Para confirmarlo, paga la inicial de <MoneyLabel money={layaway.plan.downPayment} />
+                                Para confirmarlo, paga {Number(layaway.plan.financedAmount.cents) === 0 ? 'el total' : 'la inicial'} de{' '}
+                                <MoneyLabel money={layaway.plan.downPayment} />
                             </h2>
                             {layaway.expiresAt !== null ? (
                                 <p className="text-ink-2 text-xs">

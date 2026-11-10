@@ -20,7 +20,7 @@ enum UnavailableReason: string
             return self::BusinessUnavailable;
         }
 
-        if ($plan === null || ! $product->status->canBeReserved()) {
+        if (($plan === null && ! $product->isCashSale()) || ! $product->status->canBeReserved()) {
             return self::NotReservable;
         }
 
