@@ -38,6 +38,26 @@ it('junta los comprobantes por revisar con los avisos y enlaza cada uno', () => 
     expect(screen.getByText('acceso de soporte tuyo sigue abierto', { exact: false }).closest('a')).toHaveAttribute('href', '/plataforma/soporte');
 });
 
+it('avisa de los productos con fotos por revisar y de los que llevan más de 48 h', () => {
+    props = {
+        platformOperator: {
+            pendingReceipts: 0,
+            pendingPhotoReviews: 3,
+            alerts: [{ key: 'latePhotoReviews', count: 1, tone: 'warning', href: '/plataforma/revisiones' }],
+        },
+    };
+
+    render(<PlatformBell />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Avisos: 2' }));
+
+    expect(screen.getByText('productos con fotos por revisar', { exact: false }).closest('a')).toHaveAttribute('href', '/plataforma/revisiones');
+    expect(screen.getByText('revisión de fotos lleva más de 48 h esperando', { exact: false }).closest('a')).toHaveAttribute(
+        'href',
+        '/plataforma/revisiones',
+    );
+});
+
 it('sin avisos, lo dice', () => {
     props = { platformOperator: { pendingReceipts: 0, alerts: [] } };
 

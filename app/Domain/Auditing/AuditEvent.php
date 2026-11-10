@@ -20,6 +20,7 @@ enum AuditEvent: string
     case ProductPricingChanged = 'product.pricing_changed';
     case ProductStatusChanged = 'product.status_changed';
     case ProductPhotoReviewRequested = 'product.photo_review_requested';
+    case ProductPhotoReviewed = 'product.photo_reviewed';
     case CatalogPublished = 'catalog.published';
     case CatalogUnpublished = 'catalog.unpublished';
     case CatalogExpirationScheduled = 'catalog.expiration_scheduled';
@@ -63,7 +64,7 @@ enum AuditEvent: string
             self::InstallmentRescheduled, self::LayawayDelivered,
             self::ReconciliationCorrected => AuditArea::Collections,
 
-            self::ProductPricingChanged, self::ProductStatusChanged, self::ProductPhotoReviewRequested, self::CatalogPublished,
+            self::ProductPricingChanged, self::ProductStatusChanged, self::ProductPhotoReviewRequested, self::ProductPhotoReviewed, self::CatalogPublished,
             self::CatalogUnpublished, self::CatalogExpirationScheduled => AuditArea::Catalog,
 
             self::CustomerCreated, self::CustomerUpdated, self::CustomerDeleted, self::CustomerMerged, self::CustomerIdentityConflict,
@@ -100,6 +101,7 @@ enum AuditEvent: string
             self::ProductPricingChanged => 'App\Actions\Product\UpsertProductAction',
             self::ProductStatusChanged => 'App\Actions\Product\ChangeProductStatusAction',
             self::ProductPhotoReviewRequested => 'App\Actions\Product\OpenPhotoReviewAction',
+            self::ProductPhotoReviewed => 'App\Actions\Platform\ReviewProductPhotosAction',
             self::CatalogPublished, self::CatalogExpirationScheduled => 'App\Actions\Catalog\PublishCatalogAction',
             self::CatalogUnpublished => 'App\Actions\Catalog\UnpublishCatalogAction',
 
@@ -153,6 +155,7 @@ enum AuditEvent: string
             self::ProductPricingChanged => 'Condiciones de pago del producto cambiadas',
             self::ProductStatusChanged => 'Estado del producto cambiado',
             self::ProductPhotoReviewRequested => 'Fotos del producto enviadas a revisión',
+            self::ProductPhotoReviewed => 'Fotos del producto revisadas por Apartar',
             self::CatalogPublished => 'Catálogo publicado',
             self::CatalogUnpublished => 'Catálogo despublicado',
             self::CatalogExpirationScheduled => 'Fecha de expiración del catálogo cambiada',

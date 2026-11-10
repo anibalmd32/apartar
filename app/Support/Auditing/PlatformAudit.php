@@ -50,6 +50,10 @@ final class PlatformAudit
 
     public const MAIL_SENT = 'mail.sent';
 
+    public const PRODUCT_PHOTOS_APPROVED = 'product_photos.approved';
+
+    public const PRODUCT_PHOTOS_REJECTED = 'product_photos.rejected';
+
     /**
      * @var array<string, string>
      */
@@ -73,6 +77,8 @@ final class PlatformAudit
         self::OPERATOR_ENABLED => 'Reactivó un operador',
         self::OPERATOR_PASSWORD_RESET => 'Restableció una contraseña',
         self::MAIL_SENT => 'Envió un correo',
+        self::PRODUCT_PHOTOS_APPROVED => 'Aprobó las fotos de un producto',
+        self::PRODUCT_PHOTOS_REJECTED => 'Rechazó las fotos de un producto',
         self::LOGIN => 'Inició sesión',
     ];
 

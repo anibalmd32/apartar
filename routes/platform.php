@@ -11,6 +11,7 @@ use App\Http\Controllers\Platform\MailInboxController;
 use App\Http\Controllers\Platform\MailMetricsController;
 use App\Http\Controllers\Platform\OperatorController;
 use App\Http\Controllers\Platform\OrganizationController;
+use App\Http\Controllers\Platform\ProductPhotoReviewController;
 use App\Http\Controllers\Platform\SentMailController;
 use App\Http\Controllers\Platform\SettingsController;
 use App\Http\Controllers\Platform\SupportAccessController;
@@ -67,6 +68,9 @@ Surface::platformRoutes(fn () => Route::name('platform.')->middleware('without-t
         Route::post('comprobantes/{receipt}/aprobar', [InvoiceController::class, 'approve'])->whereNumber('receipt')->name('receipts.approve');
         Route::post('comprobantes/{receipt}/rechazar', [InvoiceController::class, 'reject'])->whereNumber('receipt')->name('receipts.reject');
         Route::get('comprobantes/{receipt}/archivo', [InvoiceController::class, 'file'])->whereNumber('receipt')->name('receipts.file');
+        Route::get('revisiones', [ProductPhotoReviewController::class, 'index'])->name('photo-reviews.index');
+        Route::post('revisiones/{review}/aprobar', [ProductPhotoReviewController::class, 'approve'])->whereNumber('review')->name('photo-reviews.approve');
+        Route::post('revisiones/{review}/rechazar', [ProductPhotoReviewController::class, 'reject'])->whereNumber('review')->name('photo-reviews.reject');
         Route::post('facturas/{invoice}/anular', [InvoiceController::class, 'void'])->whereNumber('invoice')->name('invoices.void');
     });
 }));

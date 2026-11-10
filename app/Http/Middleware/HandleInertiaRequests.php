@@ -30,6 +30,7 @@ use App\Models\SupportAccessGrant;
 use App\Models\User;
 use App\Queries\PastDueNotice;
 use App\Queries\Platform\PlatformAlerts;
+use App\Queries\Platform\ProductPhotoReviewInbox;
 use App\Support\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -354,7 +355,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{name: string, email: string, pendingReceipts: int, activeSupportGrants: int, unreadMail: int, alerts: list<array{key: string, count: int, tone: string, href: string}>}|null
+     * @return array{name: string, email: string, pendingReceipts: int, pendingPhotoReviews: int, activeSupportGrants: int, unreadMail: int, alerts: list<array{key: string, count: int, tone: string, href: string}>}|null
      */
     private function platformOperator(Request $request): ?array
     {
@@ -368,6 +369,7 @@ class HandleInertiaRequests extends Middleware
             'name' => $operator->name,
             'email' => $operator->email,
             'pendingReceipts' => DB::table('subscription_receipts')->where('status', ReceiptStatus::PendingReview->value)->count(),
+            'pendingPhotoReviews' => app(ProductPhotoReviewInbox::class)->pendingCount(),
             'activeSupportGrants' => DB::table('support_access_grants')->whereNull('revoked_at')->where('expires_at', '>', now())->count(),
             'unreadMail' => DB::table('mail_threads')->where('unread_count', '>', 0)->count(),
             'alerts' => app(PlatformAlerts::class)->for((int) $operator->getKey()),

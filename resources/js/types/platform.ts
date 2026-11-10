@@ -69,6 +69,24 @@ export interface InvoiceRow {
     readonly voidReason: string | null;
 }
 
+export interface ReviewPhoto {
+    readonly thumb: string;
+    readonly card: string;
+    readonly zoom: string;
+    readonly alt: string;
+}
+
+export interface PendingPhotoReview {
+    readonly id: number;
+    readonly organization: { readonly id: number; readonly name: string };
+    readonly product: { readonly id: number; readonly name: string; readonly description: string };
+    readonly subject: string;
+    readonly observation: string | null;
+    readonly requestedAt: string;
+    readonly isLate: boolean;
+    readonly photos: readonly ReviewPhoto[];
+}
+
 export interface PendingSubscriptionReceipt {
     readonly id: number;
     readonly organization: { readonly id: number; readonly name: string };

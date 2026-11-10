@@ -2,7 +2,7 @@ import { menuItemClass } from '@/components/shell/user-menu';
 import { Icon } from '@/components/ui/icon';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
-import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHistory, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
+import { cilBuilding, cilDescription, cilEnvelopeClosed, cilHistory, cilImage, cilSettings, cilShieldAlt, cilSpeedometer } from '@coreui/icons';
 import { MenuItem, MenuSeparator } from '@headlessui/react';
 import { Link, usePage } from '@inertiajs/react';
 
@@ -13,10 +13,13 @@ export interface PlatformSection {
     readonly icon: string[];
 }
 
+const PHOTO_REVIEWS: PlatformSection = { label: 'Revisiones', href: pf('/revisiones'), icon: cilImage };
+
 export const PLATFORM_SECTIONS: readonly PlatformSection[] = [
     { label: 'Resumen', href: pf(''), icon: cilSpeedometer },
     { label: 'Organizaciones', href: pf('/organizaciones'), icon: cilBuilding },
     { label: 'Comprobantes', href: pf('/facturas'), icon: cilDescription },
+    PHOTO_REVIEWS,
     { label: 'Correos', href: pf('/correos/bandeja'), match: pf('/correos'), icon: cilEnvelopeClosed },
 ];
 
@@ -28,6 +31,7 @@ export const PLATFORM_SUPPORT_SECTIONS: readonly PlatformSection[] = [
 
 interface OperatorCounts {
     pendingReceipts: number;
+    pendingPhotoReviews?: number;
     activeSupportGrants: number;
     unreadMail?: number;
 }
@@ -77,6 +81,7 @@ export function PlatformNav() {
     const { url: current, props } = usePage<{ platformOperator?: OperatorCounts | null }>();
     const counts: Record<string, number> = {
         [pf('/facturas')]: props.platformOperator?.pendingReceipts ?? 0,
+        [pf('/revisiones')]: props.platformOperator?.pendingPhotoReviews ?? 0,
         [pf('/soporte')]: props.platformOperator?.activeSupportGrants ?? 0,
         [pf('/correos')]: props.platformOperator?.unreadMail ?? 0,
     };
@@ -119,7 +124,7 @@ export function PlatformSupportTabs() {
 }
 
 const TAB_BAR_SECTIONS: readonly (PlatformSection & { matches: readonly string[] })[] = [
-    ...PLATFORM_SECTIONS.map((section) => ({ ...section, matches: [sectionPath(section)] })),
+    ...PLATFORM_SECTIONS.filter((section) => section !== PHOTO_REVIEWS).map((section) => ({ ...section, matches: [sectionPath(section)] })),
     {
         label: 'Soporte',
         href: pf('/soporte'),
@@ -161,7 +166,7 @@ export function PlatformTabBar() {
 export function PlatformMenuLinks() {
     return (
         <>
-            {PLATFORM_SUPPORT_SECTIONS.filter((section) => section.href !== pf('/soporte')).map((section) => (
+            {[PHOTO_REVIEWS, ...PLATFORM_SUPPORT_SECTIONS.filter((section) => section.href !== pf('/soporte'))].map((section) => (
                 <MenuItem key={section.href}>
                     <Link href={section.href} className={menuItemClass}>
                         <Icon icon={section.icon} />

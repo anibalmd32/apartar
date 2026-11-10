@@ -33,6 +33,12 @@ final class PlatformAlerts
                 'href' => Surface::platformPath().'/facturas',
             ],
             [
+                'key' => 'latePhotoReviews',
+                'count' => app(ProductPhotoReviewInbox::class)->lateCount($now),
+                'tone' => 'warning',
+                'href' => Surface::platformPath().'/revisiones',
+            ],
+            [
                 'key' => 'graceEnding',
                 'count' => DB::table('subscriptions')
                     ->whereIn('status', [SubscriptionStatus::PastDue->value, SubscriptionStatus::Grace->value])

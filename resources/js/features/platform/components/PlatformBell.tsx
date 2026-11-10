@@ -3,12 +3,17 @@ import { Icon } from '@/components/ui/icon';
 import { pf } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 import { type PlatformAlert } from '@/types/platform';
-import { cilBan, cilBell, cilClock, cilDescription, cilShieldAlt, cilWarning } from '@coreui/icons';
+import { cilBan, cilBell, cilClock, cilDescription, cilImage, cilShieldAlt, cilWarning } from '@coreui/icons';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Link, usePage } from '@inertiajs/react';
 
 const COPY: Record<string, { icon: string[]; label: (count: number) => string }> = {
     pendingReceipts: { icon: cilDescription, label: (count) => (count === 1 ? 'comprobante por revisar' : 'comprobantes por revisar') },
+    pendingPhotoReviews: { icon: cilImage, label: (count) => (count === 1 ? 'producto con fotos por revisar' : 'productos con fotos por revisar') },
+    latePhotoReviews: {
+        icon: cilClock,
+        label: (count) => (count === 1 ? 'revisión de fotos lleva más de 48 h esperando' : 'revisiones de fotos llevan más de 48 h esperando'),
+    },
     lateReceipts: {
         icon: cilClock,
         label: (count) => (count === 1 ? 'comprobante lleva más de 48 h esperando' : 'comprobantes llevan más de 48 h esperando'),
@@ -28,14 +33,18 @@ const COPY: Record<string, { icon: string[]; label: (count: number) => string }>
 const TONES: Record<string, string> = { error: 'text-error', warning: 'text-warning', info: 'text-primary' };
 
 export function PlatformBell({ className }: { className?: string }) {
-    const operator = usePage<{ platformOperator?: { pendingReceipts: number; alerts?: readonly PlatformAlert[] } | null }>().props.platformOperator;
+    const operator = usePage<{
+        platformOperator?: { pendingReceipts: number; pendingPhotoReviews?: number; alerts?: readonly PlatformAlert[] } | null;
+    }>().props.platformOperator;
     const pending = operator?.pendingReceipts ?? 0;
+    const photos = operator?.pendingPhotoReviews ?? 0;
     const items: readonly PlatformAlert[] = [
         ...(pending > 0 ? [{ key: 'pendingReceipts', count: pending, tone: 'info', href: pf('/facturas') }] : []),
+        ...(photos > 0 ? [{ key: 'pendingPhotoReviews', count: photos, tone: 'info', href: pf('/revisiones') }] : []),
         ...(operator?.alerts ?? []),
     ];
     const urgent = items.filter((item) => item.tone !== 'info').length;
-    const total = urgent + (pending > 0 ? 1 : 0);
+    const total = urgent + (pending > 0 ? 1 : 0) + (photos > 0 ? 1 : 0);
 
     return (
         <Menu as="div" className={cn('relative', className)}>

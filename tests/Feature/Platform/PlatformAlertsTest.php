@@ -8,6 +8,7 @@ use App\Actions\Platform\GrantSupportAccessAction;
 use App\Domain\Payment\ReceiptStatus;
 use App\Domain\Subscription\InvoiceStatus;
 use App\Domain\Subscription\SubscriptionStatus;
+use App\Models\ProductPhotoReview;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionReceipt;
@@ -44,6 +45,9 @@ final class PlatformAlertsTest extends TestCase
             $invoice = SubscriptionInvoice::factory()->create(['status' => InvoiceStatus::Overdue]);
             SubscriptionReceipt::factory()->create(['subscription_invoice_id' => $invoice->getKey(), 'status' => ReceiptStatus::PendingReview, 'created_at' => $now->subHours(50)]);
             SubscriptionReceipt::factory()->create(['subscription_invoice_id' => $invoice->getKey(), 'status' => ReceiptStatus::PendingReview, 'created_at' => $now->subHour()]);
+            ProductPhotoReview::factory()->create(['created_at' => $now->subHours(49)]);
+            ProductPhotoReview::factory()->create(['created_at' => $now->subHours(2)]);
+            ProductPhotoReview::factory()->rejected()->create(['created_at' => $now->subHours(60)]);
         });
         $this->withinOrganization($ending, fn () => Subscription::query()->update(['status' => SubscriptionStatus::Grace, 'grace_ends_at' => $now->addDay()]));
         $this->withoutOrganization();
@@ -53,6 +57,6 @@ final class PlatformAlertsTest extends TestCase
 
         $alerts = collect(app(PlatformAlerts::class)->for((int) $operator->getKey()))->pluck('count', 'key')->all();
 
-        $this->assertSame(['lateReceipts' => 1, 'graceEnding' => 1, 'overdueInvoices' => 1, 'myOpenSupport' => 1, 'failedJobs' => 1], $alerts);
+        $this->assertSame(['lateReceipts' => 1, 'latePhotoReviews' => 1, 'graceEnding' => 1, 'overdueInvoices' => 1, 'myOpenSupport' => 1, 'failedJobs' => 1], $alerts);
     }
 }
