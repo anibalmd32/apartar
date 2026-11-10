@@ -1,18 +1,21 @@
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { remainingLabel } from '@/features/products/hooks/useCopywriter';
 import { richTextContentClass } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
-import { type CopySuggestion } from '@/types/product';
+import { type SuggestedCopy } from '@/types/product';
 import { useState } from 'react';
 
 interface CopySuggestionDialogProps {
-    suggestion: CopySuggestion;
+    suggestion: SuggestedCopy;
+    remaining: number | null;
+    underReview?: boolean;
     onUse: (description: string, characteristics: string[], tags: string[]) => void;
     onDiscard: () => void;
 }
 
-export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySuggestionDialogProps) {
+export function CopySuggestionDialog({ suggestion, remaining, underReview = false, onUse, onDiscard }: CopySuggestionDialogProps) {
     const tags = suggestion.tags ?? [];
     const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(suggestion.characteristics.map((_, index) => index)));
     const [checkedTags, setCheckedTags] = useState<ReadonlySet<string>>(() => new Set(tags));
@@ -57,7 +60,7 @@ export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySugge
             onClose={onDiscard}
             title="Sugerencia de la IA"
             description="Revísala antes de usarla: la IA puede equivocarse. Al usarla reemplaza la descripción actual."
-            footnote={remainingLabel(suggestion.remaining)}
+            footnote={remaining === null ? undefined : remainingLabel(remaining)}
             actions={
                 <>
                     <Button variant="secondary" onClick={onDiscard}>
@@ -67,6 +70,8 @@ export function CopySuggestionDialog({ suggestion, onUse, onDiscard }: CopySugge
                 </>
             }
         >
+            {underReview ? <Alert tone="info">El equipo de Apartar revisará las fotos. Podrás publicar el producto cuando las apruebe.</Alert> : null}
+
             <div
                 data-testid="copy-suggestion"
                 className={cn('border-line bg-surface-2 rounded-xl border px-4 py-3 text-sm', richTextContentClass)}

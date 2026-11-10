@@ -52,7 +52,16 @@ class StoreProductRequest extends FormRequest
             'tag_ids.*' => ['integer'],
             'tag_names' => ['array'],
             'tag_names.*' => ['string', 'max:80'],
+
+            'photo_review_pass' => ['nullable', 'string', 'max:64'],
         ] + $this->specificationRules() + $this->imageRules();
+    }
+
+    public function photoReviewPass(): ?string
+    {
+        $pass = $this->input('photo_review_pass');
+
+        return is_string($pass) && $pass !== '' ? $pass : null;
     }
 
     /**

@@ -7,6 +7,7 @@ namespace Tests\Feature\Catalog;
 use App\Actions\Product\ChangeProductStatusAction;
 use App\Domain\Auditing\AuditEvent;
 use App\Domain\Catalog\IncompleteProductException;
+use App\Domain\Catalog\PhotoReviewStatus;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Subscription\UsageMetric;
 use App\Jobs\TranscodeProductImage;
@@ -15,6 +16,7 @@ use App\Models\Catalog;
 use App\Models\Category;
 use App\Models\Organization;
 use App\Models\Product;
+use App\Models\ProductPhotoReview;
 use App\Models\UsageCounter;
 use App\Models\User;
 use App\Support\Media\TenantPathGenerator;
@@ -149,6 +151,26 @@ final class ChangeProductStatusActionTest extends TestCase
         $product->forceFill(['category_id' => null])->save();
 
         $this->assertMissingToPublish($product, 'category_id', 'una categoría');
+    }
+
+    public function test_photos_waiting_for_review_or_rejected_cannot_be_published(): void
+    {
+        $product = $this->publishable();
+        $review = ProductPhotoReview::factory()->create(['product_id' => $product->getKey()]);
+
+        $this->assertMissingToPublish($product, 'photo_review', 'que Apartar apruebe las fotos');
+
+        $review->forceFill(['status' => PhotoReviewStatus::Rejected, 'rejection_reason' => 'No es un producto.'])->save();
+
+        $this->assertMissingToPublish($product, 'photo_review', 'que Apartar apruebe las fotos');
+    }
+
+    public function test_approved_photos_can_be_published(): void
+    {
+        $product = $this->publishable();
+        ProductPhotoReview::factory()->approved()->create(['product_id' => $product->getKey()]);
+
+        $this->assertSame(ProductStatus::Published, $this->changer()->publish($product, $this->actor)->status);
     }
 
     public function test_publishing_without_a_description_is_refused(): void

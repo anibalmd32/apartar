@@ -35,6 +35,7 @@ use App\Http\Controllers\Backoffice\PaymentReadingController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
 use App\Http\Controllers\Backoffice\PaymentVoidController;
 use App\Http\Controllers\Backoffice\ProductController;
+use App\Http\Controllers\Backoffice\ProductCopyConfirmationController;
 use App\Http\Controllers\Backoffice\ProductCopyController;
 use App\Http\Controllers\Backoffice\ProductImageController;
 use App\Http\Controllers\Backoffice\ProfileController;
@@ -173,6 +174,10 @@ Surface::backofficeRoutes(function (): void {
             Route::post('productos/ia/sugerencia', ProductCopyController::class)
                 ->middleware('throttle:20,1')
                 ->name('products.ai.suggest');
+
+            Route::post('productos/ia/sugerencia/confirmar', ProductCopyConfirmationController::class)
+                ->middleware('throttle:20,1')
+                ->name('products.ai.confirm');
 
             Route::get('productos/{product}/editar', [ProductController::class, 'edit'])->name('products.edit');
             Route::get('productos/{product}/vista-previa', [ProductController::class, 'preview'])->name('products.preview');

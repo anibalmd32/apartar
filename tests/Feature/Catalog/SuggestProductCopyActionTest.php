@@ -282,6 +282,42 @@ final class SuggestProductCopyActionTest extends TestCase
         });
     }
 
+    public function test_photos_that_do_not_show_a_product_hold_the_suggestion_until_confirmed(): void
+    {
+        ProductCopywriter::fake([$this->answer() + ['photo_subject' => 'animal', 'photo_observation' => 'Un gato <b>dormido</b> en un sofá.']]);
+
+        $copy = $this->copywriter()->handle($this->actor, CopywritingMode::Suggest, 'Michi', uploads: [$this->image('gato.png')]);
+
+        $this->assertArrayNotHasKey('description', $copy);
+        $this->assertSame('animal', $copy['held']['subject']);
+        $this->assertSame('un animal', $copy['held']['label']);
+        $this->assertSame('Un gato dormido en un sofá.', $copy['held']['observation']);
+        $this->assertSame(40, strlen($copy['held']['token']));
+        $this->assertSame(2, $copy['remaining'], 'la sugerencia retenida también gasta cupo.');
+
+        ProductCopywriter::assertPrompted(fn (AgentPrompt $prompt): bool => str_contains((string) $prompt->agent->instructions(), 'photo_subject'));
+    }
+
+    public function test_without_photos_the_answer_about_the_photos_is_ignored(): void
+    {
+        ProductCopywriter::fake([$this->answer() + ['photo_subject' => 'other', 'photo_observation' => 'Nada.']]);
+
+        $copy = $this->copywriter()->handle($this->actor, CopywritingMode::Suggest, 'Licuadora');
+
+        $this->assertArrayNotHasKey('held', $copy);
+        $this->assertSame('<p>Una licuadora <strong>potente</strong>.</p>', $copy['description']);
+    }
+
+    public function test_a_product_in_the_photos_answers_the_suggestion_right_away(): void
+    {
+        ProductCopywriter::fake([$this->answer() + ['photo_subject' => 'product', 'photo_observation' => '']]);
+
+        $copy = $this->copywriter()->handle($this->actor, CopywritingMode::Suggest, 'Licuadora', uploads: [$this->image('licuadora.png')]);
+
+        $this->assertArrayNotHasKey('held', $copy);
+        $this->assertSame(['Color negro', 'Vaso de vidrio'], $copy['characteristics']);
+    }
+
     private function copywriter(): SuggestProductCopyAction
     {
         return app(SuggestProductCopyAction::class);

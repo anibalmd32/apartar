@@ -7,12 +7,14 @@ namespace App\Actions\Product;
 use App\Ai\Agents\ProductCopywriter;
 use App\Domain\Catalog\CopywriterUnavailableException;
 use App\Domain\Catalog\CopywritingMode;
+use App\Domain\Catalog\PhotoSubject;
 use App\Domain\Catalog\ProductDescription;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
 use App\Support\Ai\CopywriterImages;
+use App\Support\Ai\HeldCopySuggestions;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
@@ -30,6 +32,8 @@ final class SuggestProductCopyAction
 
     public const MAX_TAG_LENGTH = 40;
 
+    public const MAX_OBSERVATION_LENGTH = 300;
+
     private const KNOWN_TAGS_IN_PROMPT = 60;
 
     private const QUOTA_SECONDS = 86_400;
@@ -37,6 +41,7 @@ final class SuggestProductCopyAction
     public function __construct(
         private readonly TenantContext $context,
         private readonly CopywriterImages $images,
+        private readonly HeldCopySuggestions $held,
     ) {}
 
     public function available(): bool
@@ -57,7 +62,7 @@ final class SuggestProductCopyAction
 
     /**
      * @param  list<UploadedFile>  $uploads
-     * @return array{description: string, characteristics: list<string>, tags: list<string>, remaining: int}
+     * @return array{description: string, characteristics: list<string>, tags: list<string>, remaining: int}|array{held: array{token: string, subject: string, label: string, observation: string}, remaining: int}
      *
      * @throws AuthorizationException
      * @throws CopywriterUnavailableException
@@ -81,11 +86,43 @@ final class SuggestProductCopyAction
             throw CopywriterUnavailableException::quotaExhausted($this->limit());
         }
 
-        $copy = $this->cleaned($this->ask($mode, $this->prompt($name, $categoryName, $description), $uploads, $product));
+        $answer = $this->ask($mode, $this->prompt($name, $categoryName, $description), $uploads, $product);
+        $copy = $this->cleaned($answer);
 
         RateLimiter::hit($this->quotaKey(), self::QUOTA_SECONDS);
 
-        return $copy + ['remaining' => (int) $this->remaining()];
+        $subject = PhotoSubject::fromAnswer($answer['photo_subject'] ?? null);
+        $hasPhotos = $uploads !== [] || ($product?->hasImages() ?? false);
+
+        if (! $hasPhotos || ! $subject->needsReview()) {
+            return $copy + ['remaining' => (int) $this->remaining()];
+        }
+
+        $observation = $this->observation($answer['photo_observation'] ?? null);
+
+        return [
+            'held' => [
+                'token' => $this->held->hold(
+                    (int) $this->context->organizationId(),
+                    (int) $actor->getKey(),
+                    $product?->getKey() === null ? null : (int) $product->getKey(),
+                    $subject,
+                    $observation,
+                    $copy,
+                ),
+                'subject' => $subject->value,
+                'label' => $subject->label(),
+                'observation' => $observation,
+            ],
+            'remaining' => (int) $this->remaining(),
+        ];
+    }
+
+    private function observation(mixed $value): string
+    {
+        $text = is_string($value) ? trim((string) preg_replace('/\s+/u', ' ', strip_tags($value))) : '';
+
+        return mb_substr($text, 0, self::MAX_OBSERVATION_LENGTH);
     }
 
     /**

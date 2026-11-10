@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Ai\Agents;
 
 use App\Domain\Catalog\CopywritingMode;
+use App\Domain\Catalog\PhotoSubject;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
@@ -42,6 +43,15 @@ final class ProductCopywriter implements Agent, HasStructuredOutput
         - En minúsculas, salvo nombres propios o marcas; sin numeral (#) ni signos.
         - Si alguna de las etiquetas que ya usa el negocio describe bien el producto, úsala escrita exactamente igual en vez de crear una parecida.
         - No repitas la categoría ni el nombre completo del producto.
+
+        Qué muestran las fotos (photo_subject y photo_observation):
+        - «product» si muestran un artículo que una tienda vendería: ropa, calzado, electrónica, muebles, comida empacada, juguetes, accesorios y similares, aunque lo lleve puesto o lo sostenga una persona.
+        - «animal» si lo principal es un animal vivo, aunque sea una mascota.
+        - «person» si lo principal es una persona y no se distingue ningún artículo en venta.
+        - «other» si no muestran nada que se pueda vender como artículo: paisajes, capturas de pantalla, documentos, memes o fotos borrosas.
+        - Sin fotos, responde «product».
+        - En photo_observation describe en una frase corta y neutra lo que se ve si no es «product»; si es «product», déjala vacía.
+        - Aunque las fotos no muestren un producto, escribe igual la descripción, las características y las etiquetas.
 
         Responde únicamente con el objeto JSON pedido.
         TEXT;
@@ -84,6 +94,14 @@ final class ProductCopywriter implements Agent, HasStructuredOutput
                 ->items($schema->string()->max(40))
                 ->max(6)
                 ->description('Etiquetas cortas para encontrar el producto en el catálogo.')
+                ->required(),
+            'photo_subject' => $schema->string()
+                ->enum(array_map(fn (PhotoSubject $subject): string => $subject->value, PhotoSubject::cases()))
+                ->description('Qué muestran las fotos: product, animal, person u other.')
+                ->required(),
+            'photo_observation' => $schema->string()
+                ->max(200)
+                ->description('Frase corta sobre lo que se ve cuando no es un producto; vacía si lo es.')
                 ->required(),
         ];
     }

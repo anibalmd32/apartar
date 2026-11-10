@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\JoinClause;
 use Spatie\MediaLibrary\HasMedia;
@@ -47,6 +48,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int|null $updated_by
+ * @property-read ProductPhotoReview|null $photoReview
  */
 class Product extends Model implements HasMedia
 {
@@ -137,6 +139,21 @@ class Product extends Model implements HasMedia
     public function layaways(): HasMany
     {
         return $this->hasMany(Layaway::class);
+    }
+
+    /**
+     * @return HasOne<ProductPhotoReview, $this>
+     */
+    public function photoReview(): HasOne
+    {
+        return $this->hasOne(ProductPhotoReview::class)->latestOfMany();
+    }
+
+    public function photoReviewBlocksPublishing(): bool
+    {
+        $review = $this->photoReview()->first();
+
+        return $review instanceof ProductPhotoReview && $review->status->blocksPublishing();
     }
 
     /**

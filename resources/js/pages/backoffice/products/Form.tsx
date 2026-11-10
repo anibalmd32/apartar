@@ -1,4 +1,3 @@
-import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormActionBar } from '@/components/ui/form-action-bar';
@@ -10,6 +9,7 @@ import { ProductCopyAssistant } from '@/features/products/components/ProductCopy
 import { ProductIdentityFields } from '@/features/products/components/ProductIdentityFields';
 import { ProductImageGallery } from '@/features/products/components/ProductImageGallery';
 import { ProductInventoryFields } from '@/features/products/components/ProductInventoryFields';
+import { ProductNotices } from '@/features/products/components/ProductNotices';
 import { useProductPreview } from '@/features/products/components/ProductPreview';
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { ProductTaxonomyFields } from '@/features/products/components/ProductTaxonomyFields';
@@ -72,10 +72,17 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
             ai={ai}
             input={{ name: data.name, categoryName, description: data.description, photos: photos.files, productId: product?.id ?? null }}
             hasStoredPhotos={(product?.images.length ?? 0) > 0}
-            onApply={(description, characteristics, suggestedTags) => {
+            onApply={(description, characteristics, suggestedTags, reviewPass) => {
                 const selection = withSuggestedTags(suggestedTags, tags, { tagIds: data.tag_ids, tagNames: data.tag_names });
+                const pass = reviewPass ?? data.photo_review_pass;
 
-                setData((previous) => ({ ...previous, description, tag_ids: selection.tagIds, tag_names: selection.tagNames }));
+                setData((previous) => ({
+                    ...previous,
+                    description,
+                    tag_ids: selection.tagIds,
+                    tag_names: selection.tagNames,
+                    photo_review_pass: pass,
+                }));
                 sheet.append(characteristics);
             }}
         />
@@ -153,11 +160,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                 />
             }
         >
-            {product?.status === 'archived' ? (
-                <Alert tone="warning">
-                    Este producto está archivado: no se muestra en tus catálogos, pero conserva su sitio en ellos y su historial.
-                </Alert>
-            ) : null}
+            <ProductNotices product={product} reviewRequested={data.photo_review_pass !== ''} />
 
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
                 <form id={FORM_ID} className="contents" onSubmit={onSubmit} noValidate>

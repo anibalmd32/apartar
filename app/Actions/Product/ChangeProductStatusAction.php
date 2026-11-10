@@ -150,6 +150,10 @@ final class ChangeProductStatusAction
             $missing['description'] = 'Escribe la descripción: es lo que lee quien está decidiendo si lo aparta.';
         }
 
+        if ($product->photoReviewBlocksPublishing()) {
+            $missing['photo_review'] = 'El equipo de Apartar tiene que aprobar las fotos antes de que lo publiques.';
+        }
+
         $violations = CoherentFinancingTerms::violationsIn(
             $product->price_cents,
             $product->compare_at_price_cents,

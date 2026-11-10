@@ -23,6 +23,7 @@ function respond(status: number, body: unknown) {
 
 function Harness({ ai = AVAILABLE, initial = '' }: { ai?: AiAvailability; initial?: string }) {
     const [description, setDescription] = useState(initial);
+    const [pass, setPass] = useState<string | null>(null);
     const sheet = useSpecificationRows(null);
 
     return (
@@ -31,12 +32,14 @@ function Harness({ ai = AVAILABLE, initial = '' }: { ai?: AiAvailability; initia
                 ai={ai}
                 input={input({ description })}
                 hasStoredPhotos={false}
-                onApply={(html, characteristics) => {
+                onApply={(html, characteristics, _tags, reviewPass) => {
                     setDescription(html);
+                    setPass(reviewPass);
                     sheet.append(characteristics);
                 }}
             />
             <output data-testid="description">{description}</output>
+            <output data-testid="pass">{pass ?? ''}</output>
             <ul data-testid="rows">
                 {sheet.rows.map((row) => (
                     <li key={row.key}>{row.text}</li>
@@ -139,4 +142,63 @@ it('un fallo del proveedor se muestra sin abrir el diálogo', async () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('La IA no respondió. Intenta de nuevo en un momento.');
     expect(screen.getByRole('button', { name: 'Sugerir con IA' })).toBeEnabled();
+});
+
+it('si las fotos no muestran un producto pide confirmar antes de mostrar la sugerencia y la deja en revisión', async () => {
+    const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+            new Response(
+                JSON.stringify({
+                    held: { token: 'ficha', subject: 'animal', label: 'un animal', observation: 'Un gato en un sofá.' },
+                    remaining: 29,
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+        )
+        .mockResolvedValueOnce(
+            new Response(JSON.stringify({ description: '<p>Gato persa.</p>', characteristics: ['Color blanco'], review_pass: 'ficha' }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            }),
+        );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sugerir con IA' }));
+
+    const concern = await screen.findByRole('dialog');
+    expect(concern).toHaveTextContent('Las fotos parecen mostrar un animal, no un producto.');
+    expect(concern).toHaveTextContent('La IA vio: Un gato en un sofá.');
+    expect(screen.queryByTestId('copy-suggestion')).not.toBeInTheDocument();
+
+    fireEvent.click(within(concern).getByRole('button', { name: 'Sí, lo voy a vender' }));
+
+    const suggestion = await screen.findByTestId('copy-suggestion');
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe('/backoffice/productos/ia/sugerencia/confirmar');
+    expect(JSON.parse(String(init.body))).toEqual({ token: 'ficha' });
+    expect(suggestion.innerHTML).toBe('<p>Gato persa.</p>');
+    expect(screen.getByRole('dialog')).toHaveTextContent('El equipo de Apartar revisará las fotos.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Usar sugerencia' }));
+
+    await waitFor(() => expect(screen.getByTestId('pass')).toHaveTextContent('ficha'));
+    expect(screen.getByTestId('description')).toHaveTextContent('<p>Gato persa.</p>');
+});
+
+it('cancelar la confirmación no muestra ninguna sugerencia', async () => {
+    const fetchMock = respond(200, {
+        held: { token: 'ficha', subject: 'other', label: 'algo que no parece un producto', observation: '' },
+        remaining: 4,
+    });
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sugerir con IA' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('description')).toBeEmptyDOMElement();
+    expect(screen.getByText('Te quedan 4 sugerencias hoy')).toBeInTheDocument();
 });

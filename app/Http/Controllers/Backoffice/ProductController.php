@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Product\ChangeProductStatusAction;
+use App\Actions\Product\OpenPhotoReviewAction;
 use App\Actions\Product\PublishProductsAction;
 use App\Actions\Product\SuggestProductCopyAction;
 use App\Actions\Product\SyncImageOrderAction;
@@ -32,6 +33,7 @@ use App\Http\Resources\ProductDetailResource;
 use App\Models\Catalog;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPhotoReview;
 use App\Models\ProductSpecification;
 use App\Models\Tag;
 use App\Models\User;
@@ -86,7 +88,7 @@ final class ProductController extends Controller
         return Inertia::render('backoffice/products/Form', $this->formProps($request, null));
     }
 
-    public function store(StoreProductRequest $request, UpsertProductAction $upsert): RedirectResponse
+    public function store(StoreProductRequest $request, UpsertProductAction $upsert, OpenPhotoReviewAction $reviews): RedirectResponse
     {
         /** @var User $actor */
         $actor = $request->user();
@@ -96,6 +98,8 @@ final class ProductController extends Controller
         } catch (CrossTenantRelationException) {
             throw $this->asFieldError();
         }
+
+        $reviews->redeem($product, $actor, $request->photoReviewPass());
 
         return to_route('products.edit', $product)->with('status', 'Producto creado.');
     }
@@ -382,6 +386,25 @@ final class ProductController extends Controller
             'tagIds' => $product->tags->map(fn (Tag $tag): int => (int) $tag->getKey())->values()->all(),
             'slugIsLocked' => $product->status === ProductStatus::Published,
             'updatedAt' => $product->updated_at?->toIso8601String(),
+            'photoReview' => $this->photoReviewRow($product),
+        ];
+    }
+
+    /**
+     * @return array{status: string, subject: string, rejectionReason: string|null}|null
+     */
+    private function photoReviewRow(Product $product): ?array
+    {
+        $review = $product->photoReview;
+
+        if (! $review instanceof ProductPhotoReview) {
+            return null;
+        }
+
+        return [
+            'status' => $review->status->value,
+            'subject' => $review->subject->label(),
+            'rejectionReason' => $review->rejection_reason,
         ];
     }
 

@@ -65,6 +65,7 @@ export interface ProductFormValues {
     readonly maxImages: number;
     readonly slugIsLocked: boolean;
     readonly updatedAt: string | null;
+    readonly photoReview?: PhotoReviewState | null;
     readonly publicUrl?: string | null;
 }
 
@@ -89,11 +90,35 @@ export interface AiAvailability {
 
 export type CopywritingMode = 'suggest' | 'improve';
 
-export interface CopySuggestion {
+export interface SuggestedCopy {
     readonly description: string;
     readonly characteristics: readonly string[];
     readonly tags?: readonly string[];
+}
+
+export interface CopySuggestion extends SuggestedCopy {
     readonly remaining: number;
+}
+
+export interface HeldCopy {
+    readonly token: string;
+    readonly subject: string;
+    readonly label: string;
+    readonly observation: string;
+}
+
+export type CopyAnswer = CopySuggestion | { readonly held: HeldCopy; readonly remaining: number };
+
+export interface ConfirmedCopy extends SuggestedCopy {
+    readonly review_pass: string | null;
+}
+
+export type PhotoReviewStatus = 'pending' | 'approved' | 'rejected';
+
+export interface PhotoReviewState {
+    readonly status: PhotoReviewStatus;
+    readonly subject: string;
+    readonly rejectionReason: string | null;
 }
 
 export interface ProductListItem {

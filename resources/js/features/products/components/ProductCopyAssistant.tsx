@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DisabledReason } from '@/components/ui/disabled-reason';
 import { Icon } from '@/components/ui/icon';
 import { CopySuggestionDialog } from '@/features/products/components/CopySuggestionDialog';
+import { PhotoConcernDialog } from '@/features/products/components/PhotoConcernDialog';
 import { type CopywriterInput, remainingLabel, useCopywriter } from '@/features/products/hooks/useCopywriter';
 import { type AiAvailability, type CopywritingMode } from '@/types/product';
 import { cilLightbulb, cilPencil } from '@coreui/icons';
@@ -12,7 +13,7 @@ interface ProductCopyAssistantProps {
     ai: AiAvailability;
     input: CopywriterInput;
     hasStoredPhotos: boolean;
-    onApply: (description: string, characteristics: string[], tags: string[]) => void;
+    onApply: (description: string, characteristics: string[], tags: string[], reviewPass: string | null) => void;
 }
 
 function hasText(html: string): boolean {
@@ -73,12 +74,23 @@ export function ProductCopyAssistant({ ai, input, hasStoredPhotos, onApply }: Pr
 
             {copywriter.error ? <Alert tone="error">{copywriter.error}</Alert> : null}
 
+            {copywriter.held ? (
+                <PhotoConcernDialog
+                    held={copywriter.held}
+                    confirming={copywriter.pending === 'confirm'}
+                    onConfirm={() => void copywriter.confirm()}
+                    onCancel={copywriter.dismiss}
+                />
+            ) : null}
+
             {copywriter.suggestion ? (
                 <CopySuggestionDialog
                     suggestion={copywriter.suggestion}
+                    remaining={copywriter.remaining}
+                    underReview={copywriter.reviewPass !== null}
                     onDiscard={copywriter.dismiss}
                     onUse={(description, characteristics, tags) => {
-                        onApply(description, characteristics, tags);
+                        onApply(description, characteristics, tags, copywriter.reviewPass);
                         copywriter.dismiss();
                     }}
                 />

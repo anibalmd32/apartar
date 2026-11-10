@@ -27,6 +27,11 @@ final class CopywriterUnavailableException extends RuntimeException
         ));
     }
 
+    public static function suggestionExpired(): self
+    {
+        return new self(410, 'Esa sugerencia ya no está disponible. Pídela de nuevo.');
+    }
+
     public static function providerFailed(?Throwable $previous = null): self
     {
         return new self(503, 'La IA no respondió. Intenta de nuevo en un momento.', $previous);

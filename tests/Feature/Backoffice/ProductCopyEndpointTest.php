@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Backoffice;
 
 use App\Ai\Agents\ProductCopywriter;
+use App\Domain\Catalog\PhotoReviewStatus;
 use App\Jobs\TranscodeProductImage;
 use App\Models\Organization;
 use App\Models\Product;
@@ -180,6 +181,56 @@ final class ProductCopyEndpointTest extends TestCase
     public function test_a_guest_is_turned_away(): void
     {
         $this->post(self::URL, ['mode' => 'suggest', 'name' => 'Silla'])->assertUnauthorized();
+    }
+
+    public function test_photos_that_are_not_a_product_ask_for_confirmation_and_the_new_product_waits_for_review(): void
+    {
+        ProductCopywriter::fake([[
+            'description_html' => '<p>Un gato persa.</p>',
+            'characteristics' => ['Color blanco'],
+            'tags' => ['mascotas'],
+            'photo_subject' => 'animal',
+            'photo_observation' => 'Un gato blanco en un sofá.',
+        ]]);
+
+        $owner = $this->owner();
+
+        $held = $this->actingAs($owner)
+            ->post(self::URL, ['mode' => 'suggest', 'name' => 'Gato', 'images' => [$this->image('gato.png')]])
+            ->assertOk()
+            ->assertJsonMissingPath('description')
+            ->assertJsonPath('held.label', 'un animal')
+            ->assertJsonPath('held.observation', 'Un gato blanco en un sofá.')
+            ->assertJsonPath('remaining', 29)
+            ->json('held.token');
+
+        $pass = $this->post(self::URL.'/confirmar', ['token' => $held])
+            ->assertOk()
+            ->assertJsonPath('description', '<p>Un gato persa.</p>')
+            ->assertJsonPath('characteristics', ['Color blanco'])
+            ->json('review_pass');
+
+        $this->post(self::URL.'/confirmar', ['token' => $held])->assertStatus(410);
+
+        $this->post('/backoffice/productos', [
+            'name' => 'Gato persa',
+            'description' => '<p>Un gato persa.</p>',
+            'price' => '250.00',
+            'down_payment' => '50.00',
+            'installments_count' => 4,
+            'frequency_days' => 15,
+            'stock' => 1,
+            'photo_review_pass' => $pass,
+        ])->assertSessionHasNoErrors();
+
+        $product = $this->inTenant(fn (): Product => Product::query()->sole());
+
+        $this->assertSame(PhotoReviewStatus::Pending, $this->inTenant(fn () => $product->photoReview?->status));
+
+        $this->get('/backoffice/productos/'.$product->getKey().'/editar')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('product.photoReview.status', 'pending')
+                ->where('product.photoReview.subject', 'un animal'));
     }
 
     private function image(string $name): UploadedFile

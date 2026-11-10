@@ -22,6 +22,7 @@ export interface ProductFormData {
     category_name: string;
     tag_ids: number[];
     tag_names: string[];
+    photo_review_pass: string;
 }
 
 const PREVIEW_DEBOUNCE_MS = 300;
@@ -42,6 +43,7 @@ function initialData(defaults: ProductDefaults, product?: ProductFormValues | nu
         category_name: '',
         tag_ids: product ? [...product.tagIds] : [],
         tag_names: [],
+        photo_review_pass: '',
     };
 }
 

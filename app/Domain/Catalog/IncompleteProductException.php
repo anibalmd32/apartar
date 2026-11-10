@@ -60,6 +60,7 @@ final class IncompleteProductException extends RuntimeException
                 'images' => 'al menos una foto',
                 'category_id' => 'una categoría',
                 'description' => 'la descripción',
+                'photo_review' => 'que Apartar apruebe las fotos',
                 default => 'las condiciones de pago',
             };
         }
