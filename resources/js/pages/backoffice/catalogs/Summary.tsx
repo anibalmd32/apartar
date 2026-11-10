@@ -1,15 +1,22 @@
 import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
 import { SummaryKpis } from '@/features/catalogs/components/summary/SummaryKpis';
+import { SummaryPayments } from '@/features/catalogs/components/summary/SummaryPayments';
+import { SummaryPeriodCharts } from '@/features/catalogs/components/summary/SummaryPeriodCharts';
+import { SummaryPeriodFilter } from '@/features/catalogs/components/summary/SummaryPeriodFilter';
 import { SummaryProducts } from '@/features/catalogs/components/summary/SummaryProducts';
-import { SummaryCollected, SummaryDebtors, SummaryStatuses } from '@/features/catalogs/components/summary/SummarySide';
+import { SummarySafeguard } from '@/features/catalogs/components/summary/SummarySafeguard';
+import { SummaryDebtors, SummaryStatuses } from '@/features/catalogs/components/summary/SummarySide';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { type CatalogSummaryProps } from '@/types/catalog-summary';
 import { cilPencil } from '@coreui/icons';
 import { Link } from '@inertiajs/react';
 
-export default function CatalogSummary({ catalog, totals, statuses, products, collected, debtors }: CatalogSummaryProps) {
+export default function CatalogSummary(props: CatalogSummaryProps) {
+    const { catalog, totals, statuses, products, debtors, period, periodTotals, series, safeguard, payments, paymentsTruncated } = props;
+    const withParallel = safeguard !== null;
+
     return (
         <BackofficeLayout
             title={catalog.name}
@@ -23,14 +30,21 @@ export default function CatalogSummary({ catalog, totals, statuses, products, co
                     ← Catálogos
                 </Link>
                 <SummaryKpis totals={totals} />
+                <SummaryPeriodFilter period={period} url={catalog.url} />
+                <SummaryPeriodCharts period={period} totals={periodTotals} series={series} withParallel={withParallel} />
+                {safeguard !== null ? (
+                    <SectionCard
+                        title="Resguardo en dólar paralelo"
+                        subtitle="Lo que vale en dólar paralelo lo que cobraste en este periodo, y dónde lo tienes."
+                    >
+                        <SummarySafeguard safeguard={safeguard} />
+                    </SectionCard>
+                ) : null}
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                     <SectionCard title="Por producto">
                         <SummaryProducts products={products} />
                     </SectionCard>
                     <div className="flex flex-col gap-4">
-                        <SectionCard title="Cobrado por mes">
-                            <SummaryCollected collected={collected} />
-                        </SectionCard>
                         <SectionCard title="Apartados por estado">
                             <SummaryStatuses statuses={statuses} />
                         </SectionCard>
@@ -39,6 +53,9 @@ export default function CatalogSummary({ catalog, totals, statuses, products, co
                         </SectionCard>
                     </div>
                 </div>
+                <SectionCard title="Pagos del periodo">
+                    <SummaryPayments payments={payments} truncated={paymentsTruncated} withParallel={withParallel} />
+                </SectionCard>
             </div>
         </BackofficeLayout>
     );

@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge';
-import { BarChart } from '@/components/ui/bar-chart';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { LAYAWAY_TONES, toneOf } from '@/lib/status-tones';
 import { type CatalogSummaryProps } from '@/types/catalog-summary';
@@ -13,28 +12,6 @@ const STATUS_LABELS: Readonly<Record<string, string>> = {
     cancelled: 'Cancelados',
     expired: 'Vencidos',
 };
-
-const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
-
-function monthLabel(month: string): string {
-    const [year, number] = month.split('-');
-
-    return `${MONTHS[Number(number) - 1] ?? number} ${year?.slice(2) ?? ''}`;
-}
-
-export function SummaryCollected({ collected }: { collected: CatalogSummaryProps['collected'] }) {
-    const data = collected.map((month) => ({
-        label: monthLabel(month.month),
-        value: Number(month.amount.cents),
-        title: `${monthLabel(month.month)}: ${month.amount.usd}`,
-    }));
-
-    return data.every((datum) => datum.value === 0) ? (
-        <p className="text-ink-2 text-sm">Todavía no hay cobros en los últimos meses.</p>
-    ) : (
-        <BarChart data={data} label="Cobrado por mes" height={140} />
-    );
-}
 
 export function SummaryStatuses({ statuses }: { statuses: CatalogSummaryProps['statuses'] }) {
     return (

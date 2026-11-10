@@ -8,7 +8,6 @@ use App\Domain\Layaway\LayawayStatus;
 use App\Models\Catalog;
 use App\Models\Installment;
 use App\Models\Layaway;
-use App\Models\Payment;
 use App\Models\Product;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,8 +15,6 @@ use Illuminate\Support\Facades\DB;
 
 final readonly class CatalogSalesSummary
 {
-    public const MONTHS = 6;
-
     public const UPCOMING_DAYS = 7;
 
     public const TOP_DEBTORS = 5;
@@ -108,28 +105,6 @@ final readonly class CatalogSalesSummary
             })
             ->values()
             ->all();
-    }
-
-    /**
-     * @return list<array{month: string, cents: int}>
-     */
-    public function collectedByMonth(): array
-    {
-        $since = $this->today->startOfMonth()->subMonths(self::MONTHS - 1);
-        $sums = Payment::query()
-            ->whereIn('payments.layaway_id', $this->layaways()->select('layaways.id'))
-            ->where('payments.settled_at', '>=', $since)
-            ->toBase()
-            ->groupByRaw("date_format(payments.settled_at, '%Y-%m')")
-            ->selectRaw("date_format(payments.settled_at, '%Y-%m') as month, sum(payments.amount_cents_usd - payments.unallocated_cents) as cents")
-            ->pluck('cents', 'month')
-            ->all();
-
-        return array_map(function (int $offset) use ($since, $sums): array {
-            $month = $since->addMonths($offset)->format('Y-m');
-
-            return ['month' => $month, 'cents' => (int) ($sums[$month] ?? 0)];
-        }, range(0, self::MONTHS - 1));
     }
 
     /**

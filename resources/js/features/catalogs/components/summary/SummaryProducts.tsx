@@ -41,6 +41,11 @@ export function SummaryProducts({ products }: { products: readonly CatalogSummar
                     <span className="flex flex-col items-end whitespace-nowrap">
                         <span className="text-ink-3 text-xs">Por cobrar</span>
                         <MoneyLabel money={product.remaining} className="font-semibold" compact />
+                        {product.parallel ? (
+                            <span className="text-ink-3 text-xs">
+                                Cobrado en paralelo: <MoneyLabel money={product.parallel} compact />
+                            </span>
+                        ) : null}
                     </span>
                 </li>
             ))}

@@ -86,7 +86,7 @@ final class CatalogSummaryPageTest extends TestCase
             ->where('products.0.paid.cents', 28_000)
             ->where('products.1.name', 'Bolso')
             ->where('products.1.reserved', 0)
-            ->has('collected', 6)
+            ->has('series', 6)
             ->has('debtors', 1)
             ->where('debtors.0.remaining.cents', 12_000));
     }
