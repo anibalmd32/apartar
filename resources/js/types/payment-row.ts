@@ -1,5 +1,6 @@
 import { type MoneyView } from '@/types/money';
 import { type PaymentEvidence } from '@/types/payment';
+import { type SafeguardView } from '@/types/safeguard';
 
 export interface PaymentRow extends PaymentEvidence {
     readonly settledAt: string;
@@ -18,6 +19,7 @@ export interface PaymentRow extends PaymentEvidence {
     readonly voided?: PaymentVoid | null;
     readonly voidUrl?: string | null;
     readonly correction?: PaymentCorrection | null;
+    readonly safeguard?: SafeguardView | null;
 }
 
 export interface PaymentCorrection {

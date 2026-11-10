@@ -30,6 +30,8 @@ final class UpsertCatalogRequest extends FormRequest
             'cover' => ['sometimes', 'nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:'.self::MAX_COVER_KILOBYTES],
 
             'rate_source' => ['nullable', 'string', new UsableRateSource],
+
+            'safeguard_enabled' => ['nullable', 'boolean'],
         ];
     }
 
@@ -44,6 +46,7 @@ final class UpsertCatalogRequest extends FormRequest
             'description' => 'descripción',
             'cover' => 'portada',
             'rate_source' => 'tasa',
+            'safeguard_enabled' => 'resguardo en dólar paralelo',
         ];
     }
 
@@ -59,6 +62,7 @@ final class UpsertCatalogRequest extends FormRequest
             description: $description === '' ? null : $description,
             cover: $cover instanceof UploadedFile ? $cover : null,
             rateSource: RateSource::tryFrom($this->string('rate_source')->toString()),
+            safeguardEnabled: $this->boolean('safeguard_enabled'),
         );
     }
 }

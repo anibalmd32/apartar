@@ -49,6 +49,7 @@ final class UpsertCatalogAction
                 'slug' => $slug,
                 'description' => $data->description,
                 'rate_source' => $data->rateSource,
+                'safeguard_enabled' => $data->safeguardEnabled,
                 'cover_path' => $data->cover instanceof UploadedFile ? $this->storeCover($data->cover) : null,
                 'is_listed' => true,
                 'published_at' => null,
@@ -67,6 +68,7 @@ final class UpsertCatalogAction
             'name' => $data->name,
             'description' => $data->description,
             'rate_source' => $data->rateSource,
+            'safeguard_enabled' => $data->safeguardEnabled,
         ];
 
         if ($data->cover instanceof UploadedFile) {

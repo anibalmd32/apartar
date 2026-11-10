@@ -36,6 +36,7 @@ export interface CatalogFormValues extends CatalogListItem {
     readonly description: string | null;
     readonly coverUrl: string | null;
     readonly rateSource: RateSource | null;
+    readonly safeguardEnabled: boolean;
 }
 
 export type CatalogPublishBlockers = Readonly<Record<string, string>>;

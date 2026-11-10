@@ -13,10 +13,12 @@ use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Currency;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\UnconfirmedExcessException;
+use App\Domain\Safeguard\SafeguardDestination;
 use App\Models\ExchangeRate;
 use App\Models\Layaway;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\PaymentSafeguard;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -64,6 +66,19 @@ final class CorrectPaymentActionTest extends TestCase
         $this->assertSame(3_000, $corrected->amount_cents_usd->cents);
         $this->assertSame([[1, 3_000, 'paid'], [2, 0, 'pending']], array_slice($this->installmentsOf($layaway), 0, 2));
         $this->assertSame(8_000, (int) DB::table('layaways')->where('id', $layaway->getKey())->value('paid_cents'));
+    }
+
+    public function test_el_resguardo_del_pago_pasa_al_pago_corregido(): void
+    {
+        $layaway = $this->activeLayaway();
+        $wrong = $this->pay($layaway, '45.00');
+        $this->within(fn () => (new PaymentSafeguard)->forceFill(['payment_id' => $wrong->getKey(), 'destination' => SafeguardDestination::Zelle, 'reference' => 'Z-1'])->save());
+
+        $corrected = $this->correct($wrong, $layaway, '30.00');
+
+        $this->assertSame(1, DB::table('payment_safeguards')->count());
+        $this->assertSame($corrected->getKey(), (int) DB::table('payment_safeguards')->value('payment_id'));
+        $this->assertSame('Z-1', DB::table('payment_safeguards')->value('reference'));
     }
 
     public function test_mover_un_pago_manual_lo_saca_de_un_apartado_y_lo_aplica_en_otro(): void

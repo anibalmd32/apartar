@@ -141,6 +141,22 @@ final class CatalogPageTest extends TestCase
                 ->where('rateSources.options.3', ['value' => 'manual', 'label' => 'Tasa propia']));
     }
 
+    public function test_el_resguardo_en_dolar_paralelo_se_activa_y_se_apaga_desde_el_formulario(): void
+    {
+        $catalog = $this->inTenant(fn (): Catalog => Catalog::factory()->create());
+        $update = fn (string $enabled) => $this->actingAs($this->owner())
+            ->post("/backoffice/catalogos/{$catalog->getKey()}", ['_method' => 'put', 'name' => $catalog->name, 'safeguard_enabled' => $enabled]);
+
+        $update('1')->assertSessionHasNoErrors();
+        $this->assertTrue($catalog->refresh()->safeguard_enabled);
+
+        $this->actingAs($this->owner())->get("/backoffice/catalogos/{$catalog->getKey()}/editar")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('catalog.safeguardEnabled', true));
+
+        $update('0')->assertSessionHasNoErrors();
+        $this->assertFalse($catalog->refresh()->safeguard_enabled);
+    }
+
     public function test_the_cover_travels_with_the_form(): void
     {
         Storage::fake('public');

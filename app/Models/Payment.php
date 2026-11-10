@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use LogicException;
 
 /**
@@ -138,6 +139,14 @@ class Payment extends Model
     public function layaway(): BelongsTo
     {
         return $this->belongsTo(Layaway::class);
+    }
+
+    /**
+     * @return HasOne<PaymentSafeguard, $this>
+     */
+    public function safeguard(): HasOne
+    {
+        return $this->hasOne(PaymentSafeguard::class);
     }
 
     /**

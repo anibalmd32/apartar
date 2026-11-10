@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $cover_path
  * @property bool $is_listed
  * @property RateSource|null $rate_source
+ * @property bool $safeguard_enabled
  * @property \Illuminate\Support\Carbon|null $published_at
  * @property \Illuminate\Support\Carbon|null $expires_at
  * @property \Illuminate\Support\Carbon|null $withdrawn_at
@@ -45,6 +46,7 @@ class Catalog extends Model
         'cover_path',
         'is_listed',
         'rate_source',
+        'safeguard_enabled',
         'published_at',
         'expires_at',
     ];
@@ -57,6 +59,7 @@ class Catalog extends Model
         return [
             'is_listed' => 'boolean',
             'rate_source' => RateSource::class,
+            'safeguard_enabled' => 'boolean',
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
             'withdrawn_at' => 'datetime',

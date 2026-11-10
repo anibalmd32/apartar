@@ -3,6 +3,7 @@ import { type Currency, type MoneyView } from '@/types/money';
 import { type PaymentMethod } from '@/types/payment';
 import { type LayawayStatus } from '@/types/portal';
 import { type PaymentRow } from '@/types/receipt';
+import { type SafeguardOptions } from '@/types/safeguard';
 
 export interface BackofficeLayaway {
     readonly code: string;
@@ -100,6 +101,7 @@ export interface BackofficeLayawayShowProps {
     readonly payments: readonly PaymentRow[];
     readonly manualPayment: ManualPaymentOptions | null;
     readonly correctionFields?: PaymentFieldOptions | null;
+    readonly safeguardOptions?: SafeguardOptions | null;
     readonly reallocation: ReallocationOptions | null;
 }
 

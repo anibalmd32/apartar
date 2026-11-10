@@ -34,6 +34,7 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
         description: catalog?.description ?? '',
         cover: null as File | null,
         rate_source: catalog?.rateSource ?? '',
+        safeguard_enabled: catalog?.safeguardEnabled ?? false,
     });
 
     const onSubmit: FormEventHandler = (event) => {
@@ -137,6 +138,8 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
                         choices={rateSources}
                         rateSource={form.data.rate_source}
                         onRateSourceChange={(value) => form.setData('rate_source', value)}
+                        safeguard={form.data.safeguard_enabled}
+                        onSafeguardChange={(value) => form.setData('safeguard_enabled', value)}
                         error={form.errors.rate_source}
                     />
 

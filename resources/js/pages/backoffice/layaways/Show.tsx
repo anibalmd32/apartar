@@ -28,6 +28,7 @@ export default function LayawayShow({
     reallocation,
     activity,
     correctionFields = null,
+    safeguardOptions = null,
 }: BackofficeLayawayShowProps) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const delivery = useForm({});
@@ -92,6 +93,7 @@ export default function LayawayShow({
                             empty="Este apartado todavía no tiene pagos."
                             reopens={layaway.status === 'completed'}
                             correctionFields={correctionFields}
+                            safeguardOptions={safeguardOptions}
                         />
                     </SectionCard>
 

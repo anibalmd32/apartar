@@ -12,6 +12,8 @@ use App\Domain\Layaway\IllegalLayawayTransitionException;
 use App\Domain\Layaway\LayawayNotDeliverableException;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\MoneyFormatter;
+use App\Domain\Safeguard\ParallelEquivalents;
+use App\Domain\Safeguard\SafeguardScope;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\CancelLayawayRequest;
@@ -28,6 +30,7 @@ use App\Queries\LayawayActivityQuery;
 use App\Queries\PaymentFieldOptionsQuery;
 use App\Support\HumanDate;
 use App\Support\ManualPaymentDates;
+use App\Support\SafeguardRow;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use DateTimeZone;
@@ -64,10 +67,12 @@ final class LayawayController extends Controller
         $payments = Payment::query()
             ->withVoided()
             ->where('layaway_id', $layaway->getKey())
-            ->with(['allocations.installment', 'receipt', 'voidedBy:id,name'])
+            ->with(['allocations.installment', 'receipt', 'voidedBy:id,name', 'safeguard'])
             ->latest('settled_at')
             ->latest('id')
             ->get();
+        $safeguards = SafeguardScope::appliesTo($layaway) ? app(ParallelEquivalents::class) : null;
+        $organization = $this->context->organization();
 
         return Inertia::render('backoffice/layaways/Show', [
             'layaway' => [
@@ -118,11 +123,17 @@ final class LayawayController extends Controller
                 ];
             }, $installments),
             'payments' => $payments
-                ->map(fn (Payment $payment): array => (new PaymentRowResource($payment, $timezone, voidable: true))->resolve($request))
+                ->map(fn (Payment $payment): array => [
+                    ...(new PaymentRowResource($payment, $timezone, voidable: true))->resolve($request),
+                    'safeguard' => $safeguards !== null && $payment->voided_at === null
+                        ? SafeguardRow::of($payment, $safeguards->of($payment, $organization), $payment->safeguard, $timezone)
+                        : null,
+                ])
                 ->values()
                 ->all(),
             'reallocation' => $this->reallocationOptions($layaway, $installments, $payments->all(), $timezone),
             'manualPayment' => $layaway->status->acceptsPayments() ? $this->manualPaymentOptions($layaway, $timezone) : null,
+            'safeguardOptions' => $safeguards !== null ? SafeguardRow::options() : null,
             'correctionFields' => $editable ? $this->paymentFields->for(...ManualPaymentDates::bounds($timezone), source: $this->sources->forLayaway($layaway)) : null,
         ]);
     }

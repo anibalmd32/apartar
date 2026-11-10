@@ -17,6 +17,7 @@ use App\Domain\Payment\ReceiptAlreadyProcessedException;
 use App\Domain\Payment\UnconfirmedExcessException;
 use App\Models\Layaway;
 use App\Models\Payment;
+use App\Models\PaymentSafeguard;
 use App\Models\Receipt;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -58,26 +59,49 @@ final class CorrectPaymentAction
         return DB::transaction(function () use ($payment, $target, $data, $actor, $moving, $reason): Payment {
             $this->void->handle($payment, $actor, mb_substr($reason, 0, 500));
 
-            $receipt = $payment->receipt_id === null ? null : Receipt::query()->whereKey($payment->receipt_id)->lockForUpdate()->first();
+            return $this->keepingSafeguard($payment, $this->reapply($payment, $target, $data, $actor, $moving));
+        });
+    }
 
-            if ($receipt instanceof Receipt) {
-                if ($moving) {
-                    $receipt->forceFill(['layaway_id' => $target->getKey(), 'customer_id' => $target->customer_id])->save();
-                }
+    private function keepingSafeguard(Payment $voided, Payment $replacement): Payment
+    {
+        PaymentSafeguard::query()->where('payment_id', $voided->getKey())->update(['payment_id' => $replacement->getKey()]);
 
-                return $this->approve->handle($receipt, new ApproveReceiptData(
-                    settledAmount: $data->amount,
-                    settledCurrency: $data->currency,
-                    rateOverride: $data->rateOverride,
-                    note: $data->note,
-                    confirmedExcessCents: $data->confirmedExcessCents,
-                    confirmedStaleRate: $data->confirmedStaleRate,
-                    confirmedRateDeviation: $data->confirmedRateDeviation,
-                ), $actor)->payment;
+        return $replacement;
+    }
+
+    /**
+     * @throws AuthorizationException
+     * @throws PaymentNotApplicableException
+     * @throws ReceiptAlreadyProcessedException
+     * @throws MissingExchangeRateException
+     * @throws UnconfirmedExcessException
+     * @throws IdempotencyKeyReusedException
+     * @throws UnconfirmedStaleRateException
+     * @throws UnconfirmedRateDeviationException
+     * @throws DuplicateReceiptException
+     */
+    private function reapply(Payment $payment, Layaway $target, ManualPaymentData $data, User $actor, bool $moving): Payment
+    {
+        $receipt = $payment->receipt_id === null ? null : Receipt::query()->whereKey($payment->receipt_id)->lockForUpdate()->first();
+
+        if ($receipt instanceof Receipt) {
+            if ($moving) {
+                $receipt->forceFill(['layaway_id' => $target->getKey(), 'customer_id' => $target->customer_id])->save();
             }
 
-            return $this->manual->handle($target, $this->keepingAttachment($data, $payment), $actor, notifyCustomer: $moving);
-        });
+            return $this->approve->handle($receipt, new ApproveReceiptData(
+                settledAmount: $data->amount,
+                settledCurrency: $data->currency,
+                rateOverride: $data->rateOverride,
+                note: $data->note,
+                confirmedExcessCents: $data->confirmedExcessCents,
+                confirmedStaleRate: $data->confirmedStaleRate,
+                confirmedRateDeviation: $data->confirmedRateDeviation,
+            ), $actor)->payment;
+        }
+
+        return $this->manual->handle($target, $this->keepingAttachment($data, $payment), $actor, notifyCustomer: $moving);
     }
 
     private function keepingAttachment(ManualPaymentData $data, Payment $payment): ManualPaymentData

@@ -15,5 +15,6 @@ final readonly class CatalogData
         public ?string $description,
         public ?UploadedFile $cover,
         public ?RateSource $rateSource = null,
+        public bool $safeguardEnabled = false,
     ) {}
 }

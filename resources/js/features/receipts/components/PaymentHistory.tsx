@@ -6,9 +6,12 @@ import { type PaymentAction, PaymentRowActions } from '@/features/receipts/compo
 import { VoidPaymentSheet } from '@/features/receipts/components/VoidPaymentSheet';
 import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { appliedTo } from '@/features/receipts/lib/payment-applied';
+import { SafeguardLine } from '@/features/safeguard/components/SafeguardLine';
+import { SafeguardSheet } from '@/features/safeguard/components/SafeguardSheet';
 import { cn } from '@/lib/utils';
 import { type PaymentFieldOptions } from '@/types/layaway-backoffice';
 import { type PaymentRow, type PaymentVoid } from '@/types/receipt';
+import { type SafeguardOptions } from '@/types/safeguard';
 import { cilBan, cilCash } from '@coreui/icons';
 import { useState } from 'react';
 
@@ -17,6 +20,7 @@ interface PaymentHistoryProps {
     empty: string;
     reopens?: boolean;
     correctionFields?: PaymentFieldOptions | null;
+    safeguardOptions?: SafeguardOptions | null;
 }
 
 function detail(payment: PaymentRow): string {
@@ -41,10 +45,12 @@ function PaymentItem({
     payment,
     onAction,
     canCorrect,
+    onSafeguard,
 }: {
     payment: PaymentRow;
     onAction: (payment: PaymentRow, action: PaymentAction) => void;
     canCorrect: boolean;
+    onSafeguard: ((payment: PaymentRow) => void) | null;
 }) {
     const voided = payment.voided ?? null;
 
@@ -76,14 +82,18 @@ function PaymentItem({
                 </div>
                 {payment.note !== null ? <p className="text-ink-2 text-xs">{payment.note}</p> : null}
                 {voided !== null ? <p className="text-error text-xs">{voidLine(voided)}</p> : null}
+                {payment.safeguard && onSafeguard !== null ? (
+                    <SafeguardLine safeguard={payment.safeguard} onEdit={() => onSafeguard(payment)} />
+                ) : null}
             </div>
             {payment.voidUrl ? <PaymentRowActions payment={payment} onAction={onAction} canCorrect={canCorrect} /> : null}
         </li>
     );
 }
 
-export function PaymentHistory({ payments, empty, reopens = false, correctionFields = null }: PaymentHistoryProps) {
+export function PaymentHistory({ payments, empty, reopens = false, correctionFields = null, safeguardOptions = null }: PaymentHistoryProps) {
     const [selected, setSelected] = useState<{ payment: PaymentRow; action: PaymentAction } | null>(null);
+    const [guarding, setGuarding] = useState<PaymentRow | null>(null);
     const chosen = (action: PaymentAction): PaymentRow | null => (selected?.action === action ? selected.payment : null);
     const close = () => setSelected(null);
 
@@ -100,12 +110,22 @@ export function PaymentHistory({ payments, empty, reopens = false, correctionFie
                         payment={payment}
                         onAction={(row, action) => setSelected({ payment: row, action })}
                         canCorrect={correctionFields !== null}
+                        onSafeguard={safeguardOptions !== null ? setGuarding : null}
                     />
                 ))}
             </ul>
             <VoidPaymentSheet payment={chosen('void')} reopens={reopens} onClose={close} />
             {correctionFields !== null ? <CorrectPaymentSheet payment={chosen('edit')} fields={correctionFields} onClose={close} /> : null}
             <MovePaymentSheet payment={chosen('move')} onClose={close} />
+            {guarding?.safeguard && safeguardOptions !== null ? (
+                <SafeguardSheet
+                    key={guarding.safeguard.storeUrl}
+                    safeguard={guarding.safeguard}
+                    options={safeguardOptions}
+                    amount={guarding.amountUsd.usd}
+                    onClose={() => setGuarding(null)}
+                />
+            ) : null}
         </>
     );
 }

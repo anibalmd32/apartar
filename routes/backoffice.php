@@ -33,6 +33,7 @@ use App\Http\Controllers\Backoffice\PaymentAccountController;
 use App\Http\Controllers\Backoffice\PaymentCorrectionController;
 use App\Http\Controllers\Backoffice\PaymentReadingController;
 use App\Http\Controllers\Backoffice\PaymentReallocationController;
+use App\Http\Controllers\Backoffice\PaymentSafeguardController;
 use App\Http\Controllers\Backoffice\PaymentVoidController;
 use App\Http\Controllers\Backoffice\ProductController;
 use App\Http\Controllers\Backoffice\ProductCopyConfirmationController;
@@ -316,6 +317,19 @@ Surface::backofficeRoutes(function (): void {
                 Route::get('comprobantes/{receipt}/archivo', ReceiptFileController::class)
                     ->middleware('signed')
                     ->name('receipts.file');
+
+                Route::post('pagos/{payment}/resguardo', [PaymentSafeguardController::class, 'store'])
+                    ->whereNumber('payment')
+                    ->name('payments.safeguard.store');
+
+                Route::delete('pagos/{payment}/resguardo', [PaymentSafeguardController::class, 'destroy'])
+                    ->whereNumber('payment')
+                    ->name('payments.safeguard.destroy');
+
+                Route::get('pagos/{payment}/resguardo/archivo', [PaymentSafeguardController::class, 'proof'])
+                    ->whereNumber('payment')
+                    ->middleware('signed')
+                    ->name('payments.safeguard.proof');
 
                 Route::get('pagos/{payment}/archivo', PaymentFileController::class)
                     ->whereNumber('payment')

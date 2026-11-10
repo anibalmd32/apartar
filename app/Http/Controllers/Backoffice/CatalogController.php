@@ -212,6 +212,7 @@ final class CatalogController extends Controller
             'description' => $catalog->description,
             'coverUrl' => $this->coverUrl($catalog),
             'rateSource' => $catalog->rate_source?->value,
+            'safeguardEnabled' => $catalog->safeguard_enabled,
         ];
     }
 
