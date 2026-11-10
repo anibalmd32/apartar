@@ -7,7 +7,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('@inertiajs/react', async () => ({
     usePage: () => ({ props: {} }),
     useForm: () => ({
-        data: { email: '', password: '', remember: false },
+        data: { email: '', password: '', remember_email: false },
         setData: vi.fn(),
         post: vi.fn(),
         processing: false,

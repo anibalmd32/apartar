@@ -6,12 +6,14 @@ namespace Tests\Feature\Backoffice;
 
 use App\Domain\Tenancy\OrganizationNotActiveException;
 use App\Domain\Tenancy\OrganizationStatus;
+use App\Http\Controllers\Backoffice\Auth\LoginController;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Inertia\Testing\AssertableInertia;
+use Symfony\Component\HttpFoundation\Cookie as SymfonyCookie;
 use Tests\Concerns\ReusesMigratedDatabase;
 use Tests\TestCase;
 
@@ -236,6 +238,55 @@ final class LoginTest extends TestCase
         $this->post('/backoffice/logout')->assertRedirect(route('login'));
 
         $this->assertGuest();
+    }
+
+    public function test_remembering_the_email_keeps_it_for_the_next_login_without_extending_the_session(): void
+    {
+        $user = $this->teamMember(['email' => 'ana@ejemplo.test']);
+
+        $response = $this->post('/backoffice/login', [
+            'email' => 'Ana@Ejemplo.test',
+            'password' => 'password',
+            'remember_email' => true,
+        ])->assertRedirect(route('dashboard'));
+
+        $response->assertCookie(LoginController::REMEMBERED_EMAIL_COOKIE, 'ana@ejemplo.test');
+        $this->assertNotEmpty(array_filter(
+            $response->headers->getCookies(),
+            fn (SymfonyCookie $cookie): bool => $cookie->getName() === LoginController::REMEMBERED_EMAIL_COOKIE && $cookie->getExpiresTime() > now()->addMonths(6)->getTimestamp(),
+        ), 'el correo se recuerda por mucho tiempo.');
+        $this->assertEmpty(array_filter(
+            $response->headers->getCookies(),
+            fn (SymfonyCookie $cookie): bool => str_starts_with($cookie->getName(), 'remember_web_'),
+        ), 'la sesión no se alarga con la cookie de recordar.');
+        $this->assertSame($user->remember_token, User::withoutTenantScope()->find($user->getKey())?->remember_token);
+    }
+
+    public function test_the_login_page_fills_in_the_remembered_email_after_logging_out(): void
+    {
+        $user = $this->teamMember();
+
+        $this->actingAs($user)->post('/backoffice/logout')
+            ->assertCookieMissing(LoginController::REMEMBERED_EMAIL_COOKIE);
+
+        $this->withCookie(LoginController::REMEMBERED_EMAIL_COOKIE, 'ana@ejemplo.test')
+            ->get('/backoffice/login')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('rememberedEmail', 'ana@ejemplo.test'));
+    }
+
+    public function test_without_a_remembered_email_the_login_starts_empty(): void
+    {
+        $this->get('/backoffice/login')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('rememberedEmail', null));
+    }
+
+    public function test_unchecking_the_box_forgets_the_email(): void
+    {
+        $user = $this->teamMember();
+
+        $this->withCookie(LoginController::REMEMBERED_EMAIL_COOKIE, $user->email)
+            ->post('/backoffice/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertCookieExpired(LoginController::REMEMBERED_EMAIL_COOKIE);
     }
 
     /**

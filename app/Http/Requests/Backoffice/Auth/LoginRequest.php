@@ -36,7 +36,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-            'remember' => ['sometimes', 'boolean'],
+            'remember_email' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -47,7 +47,7 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::guard('web')->attempt($this->credentials(), $this->boolean('remember'))) {
+        if (! Auth::guard('web')->attempt($this->credentials())) {
             RateLimiter::hit($this->throttleKey(), self::DECAY_SECONDS);
 
             $this->recordFailure('credenciales inválidas');
@@ -127,6 +127,11 @@ class LoginRequest extends FormRequest
             'email' => $this->string('email')->lower()->value(),
             'password' => (string) $this->string('password'),
         ];
+    }
+
+    public function email(): string
+    {
+        return $this->string('email')->lower()->value();
     }
 
     public function throttleKey(): string

@@ -11,18 +11,19 @@ interface LoginForm {
     [key: string]: string | boolean;
     email: string;
     password: string;
-    remember: boolean;
+    remember_email: boolean;
 }
 
 interface LoginProps {
     status?: string | null;
+    rememberedEmail?: string | null;
 }
 
-export default function Login({ status }: LoginProps) {
+export default function Login({ status, rememberedEmail = null }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
-        email: '',
+        email: rememberedEmail ?? '',
         password: '',
-        remember: false,
+        remember_email: rememberedEmail !== null,
     });
 
     const submit: FormEventHandler = (event) => {
@@ -67,8 +68,8 @@ export default function Login({ status }: LoginProps) {
                     value={data.email}
                     onChange={(event) => setData('email', event.target.value)}
                     error={errors.email}
-                    autoComplete="email"
-                    autoFocus
+                    autoComplete="username"
+                    autoFocus={rememberedEmail === null}
                     required
                 />
 
@@ -82,6 +83,7 @@ export default function Login({ status }: LoginProps) {
                     onChange={(event) => setData('password', event.target.value)}
                     error={errors.password}
                     autoComplete="current-password"
+                    autoFocus={rememberedEmail !== null}
                     required
                 />
 
@@ -90,10 +92,10 @@ export default function Login({ status }: LoginProps) {
                         <input
                             type="checkbox"
                             className="checkbox checkbox-sm rounded-[5px]"
-                            checked={data.remember}
-                            onChange={(event) => setData('remember', event.target.checked)}
+                            checked={data.remember_email}
+                            onChange={(event) => setData('remember_email', event.target.checked)}
                         />
-                        Recordarme
+                        Recordar mi correo
                     </label>
 
                     <Link href={route('password.request')} className="link link-primary link-hover text-[13px] font-semibold">
