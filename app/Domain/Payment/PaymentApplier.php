@@ -12,6 +12,7 @@ use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\RateSnapshot;
 use App\Domain\Exchange\RateSource;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Exchange\StaleRate;
 use App\Domain\Layaway\DownPaymentLedger;
 use App\Domain\Layaway\InstallmentStatus;
@@ -44,6 +45,7 @@ final class PaymentApplier
         private readonly DetectOverdueAction $overdue,
         private readonly LayawayBalanceRecalculator $balance,
         private readonly ExchangeRateService $rates,
+        private readonly RateSourceResolver $sources,
         private readonly DownPaymentLedger $downPayments,
     ) {}
 
@@ -88,7 +90,7 @@ final class PaymentApplier
                 throw PaymentNotApplicableException::layawayNotCollecting($statusBefore);
             }
 
-            [$dollars, $snapshot] = $this->toDollars($settled, $rate);
+            [$dollars, $snapshot] = $this->toDollars($settled, $rate, $this->sources->forLayaway($locked));
             $downPayment = 0;
             $paidBefore = 0;
             $missing = 0;
@@ -162,7 +164,7 @@ final class PaymentApplier
                 statusBefore: $applied->statusBefore,
                 statusAfter: $applied->statusAfter,
                 staleRate: StaleRate::in($rate, $settled->currency, $paidOn),
-                rateDeviation: RateDeviation::in($rate, $this->referenceRate($paidOn), $settled->currency),
+                rateDeviation: RateDeviation::in($rate, $this->referenceRate($paidOn, $this->sources->forLayaway($layaway)), $settled->currency),
                 downPaymentPaidBeforeCents: $applied->downPaymentPaidBeforeCents,
                 downPaymentMissingCents: $applied->downPaymentMissingCents,
             );
@@ -171,11 +173,11 @@ final class PaymentApplier
         }
     }
 
-    public function referenceRate(?CarbonInterface $paidOn): ?RateSnapshot
+    public function referenceRate(?CarbonInterface $paidOn, ?RateSource $source = null): ?RateSnapshot
     {
         $organization = $this->context->organization();
 
-        return $paidOn === null ? $this->rates->current($organization) : $this->rates->on($organization, $paidOn);
+        return $paidOn === null ? $this->rates->current($organization, $source) : $this->rates->on($organization, $paidOn, $source);
     }
 
     /**
@@ -184,14 +186,16 @@ final class PaymentApplier
      * @throws MissingExchangeRateException
      * @throws PaymentNotApplicableException
      */
-    public function toDollars(Money $settled, RateSnapshot|ManualRate|null $rate): array
+    public function toDollars(Money $settled, RateSnapshot|ManualRate|null $rate, ?RateSource $source = null): array
     {
+        $source ??= $this->rates->sourceFor($this->context->organization());
+
         if ($settled->currency === Currency::USD) {
-            return [$settled, ['rate' => self::UNIT_RATE] + $this->sourceOf($rate)];
+            return [$settled, ['rate' => self::UNIT_RATE] + $this->sourceOf($rate, $source)];
         }
 
         if ($rate === null) {
-            throw MissingExchangeRateException::whileSettling($this->rates->sourceFor($this->context->organization()));
+            throw MissingExchangeRateException::whileSettling($source);
         }
 
         $applied = self::toRateScale($rate->rate);
@@ -203,7 +207,7 @@ final class PaymentApplier
             throw PaymentNotApplicableException::convertsToZero($settled, $applied);
         }
 
-        return [$dollars, ['rate' => $applied] + $this->sourceOf($rate)];
+        return [$dollars, ['rate' => $applied] + $this->sourceOf($rate, $source)];
     }
 
     private static function toRateScale(string $rate): string
@@ -216,12 +220,12 @@ final class PaymentApplier
     /**
      * @return array{source: RateSource, publishedAt: ?CarbonImmutable}
      */
-    private function sourceOf(RateSnapshot|ManualRate|null $rate): array
+    private function sourceOf(RateSnapshot|ManualRate|null $rate, RateSource $source): array
     {
         return match (true) {
             $rate instanceof RateSnapshot => ['source' => $rate->source, 'publishedAt' => $rate->publishedAt],
             $rate instanceof ManualRate => ['source' => RateSource::Manual, 'publishedAt' => null],
-            default => ['source' => $this->rates->sourceFor($this->context->organization()), 'publishedAt' => null],
+            default => ['source' => $source, 'publishedAt' => null],
         };
     }
 

@@ -1,3 +1,4 @@
+import { type RateSource } from '@/types/exchange';
 import { type MoneyView } from '@/types/money';
 import { type ProductStatus } from '@/types/product';
 
@@ -34,6 +35,7 @@ export interface CatalogListItem {
 export interface CatalogFormValues extends CatalogListItem {
     readonly description: string | null;
     readonly coverUrl: string | null;
+    readonly rateSource: RateSource | null;
 }
 
 export type CatalogPublishBlockers = Readonly<Record<string, string>>;

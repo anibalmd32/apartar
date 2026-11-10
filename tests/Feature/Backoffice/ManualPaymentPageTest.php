@@ -141,6 +141,21 @@ final class ManualPaymentPageTest extends TestCase
         $this->getJson(route('payments.rate-of-day'))->assertJsonPath('rate.rate', '42.50000000');
     }
 
+    public function test_a_layaway_whose_product_sells_at_the_parallel_rate_asks_for_that_rate(): void
+    {
+        ExchangeRate::factory()->create(['source' => RateSource::Parallel, 'rate' => '55.00000000', 'published_at' => CarbonImmutable::parse('2026-08-20 04:00:00')]);
+        $layaway = $this->layawayIn($this->organization);
+        DB::table('products')->where('id', $layaway->product_id)->update(['rate_source' => RateSource::Parallel->value]);
+        $this->withoutOrganization();
+        $this->actingAs($this->member);
+
+        $this->get(route('layaways.show', $layaway))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('manualPayment.rateOfDayUrl', route('payments.rate-of-day', ['fuente' => 'parallel']))
+            ->where('currency.rate.source', 'parallel'));
+        $this->getJson(route('payments.rate-of-day', ['paid_at' => '2026-08-22', 'fuente' => 'parallel']))
+            ->assertExactJson(['rate' => ['rate' => '55.00000000', 'sourceLabel' => 'Paralelo', 'date' => '2026-08-22']]);
+    }
+
     public function test_each_refusal_comes_back_in_its_field(): void
     {
         $layaway = $this->layawayIn($this->organization);

@@ -13,6 +13,8 @@ use App\Domain\Catalog\ProductNotAvailableException;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\RateSource;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Layaway\DownPaymentWindow;
@@ -63,6 +65,7 @@ final class LayawayCreationController extends Controller
         private readonly ExchangeRateService $rates,
         private readonly OpenLayawayAction $opening,
         private readonly PaymentFieldOptionsQuery $paymentFields,
+        private readonly RateSourceResolver $sources,
     ) {}
 
     public function create(Request $request): Response
@@ -93,7 +96,7 @@ final class LayawayCreationController extends Controller
                 'maxHours' => DownPaymentWindow::MAX_HOURS,
                 'maxDays' => DownPaymentWindow::MAX_DAYS,
             ],
-            'payment' => $this->paymentFields->for(...ManualPaymentDates::bounds($this->timezone())),
+            'payment' => fn (): array => $this->paymentFields->for(...ManualPaymentDates::bounds($this->timezone()), source: $this->sourceOf($product)),
             'urls' => [
                 'store' => route('layaways.store'),
                 'customers' => route('layaways.create.customers'),
@@ -183,13 +186,18 @@ final class LayawayCreationController extends Controller
         try {
             PaymentAmounts::assertPositive($amount, $currency, 'del pago');
             $settled = Money::fromDecimalString($amount, $currency);
-            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->on($this->context->organization(), $paidOn);
-            $preview = app(OpeningPaymentPreview::class)->for($this->termsOf($product, $quantity), $settled, $snapshot, $paidOn);
+            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->on($this->context->organization(), $paidOn, $this->sourceOf($product));
+            $preview = app(OpeningPaymentPreview::class)->for($this->termsOf($product, $quantity), $settled, $snapshot, $paidOn, $this->sourceOf($product));
         } catch (InvalidArgumentException|InvalidRateException|PaymentNotApplicableException|MissingExchangeRateException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
 
         return response()->json(['preview' => $preview->toArray()]);
+    }
+
+    private function sourceOf(?Product $product): RateSource
+    {
+        return $this->sources->forProduct($this->context->organization(), $product, null);
     }
 
     private function confirmationOf(CreatedLayaway $result): string
@@ -208,7 +216,7 @@ final class LayawayCreationController extends Controller
             ->published()
             ->where('stock', '>', 0)
             ->orderBy('name')
-            ->get(['id', 'organization_id', 'name', 'sku', 'stock'])
+            ->get(['id', 'organization_id', 'name', 'sku', 'stock', 'rate_source'])
             ->all();
     }
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Catalog\CatalogData;
+use App\Domain\Exchange\RateSource;
+use App\Rules\UsableRateSource;
 use App\Support\UniqueCatalogSlug;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -26,6 +28,8 @@ final class UpsertCatalogRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:2000'],
 
             'cover' => ['sometimes', 'nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:'.self::MAX_COVER_KILOBYTES],
+
+            'rate_source' => ['nullable', 'string', new UsableRateSource],
         ];
     }
 
@@ -39,6 +43,7 @@ final class UpsertCatalogRequest extends FormRequest
             'slug' => 'enlace',
             'description' => 'descripción',
             'cover' => 'portada',
+            'rate_source' => 'tasa',
         ];
     }
 
@@ -53,6 +58,7 @@ final class UpsertCatalogRequest extends FormRequest
             slug: $slug === '' ? null : $slug,
             description: $description === '' ? null : $description,
             cover: $cover instanceof UploadedFile ? $cover : null,
+            rateSource: RateSource::tryFrom($this->string('rate_source')->toString()),
         );
     }
 }

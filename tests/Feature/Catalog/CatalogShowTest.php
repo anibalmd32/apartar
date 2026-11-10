@@ -266,6 +266,22 @@ final class CatalogShowTest extends TestCase
             ->where('currency.timezone', $this->organization->timezone));
     }
 
+    public function test_a_catalog_with_its_own_rate_shows_bolivars_with_it_and_a_product_with_its_own_rate_keeps_it(): void
+    {
+        ExchangeRate::factory()->create(['rate' => '40.00000000']);
+        ExchangeRate::factory()->create(['source' => 'parallel', 'rate' => '50.00000000']);
+        $catalog = $this->catalogWith(1, ['rate_source' => 'parallel']);
+        $this->withinOrganization($this->organization, function () use ($catalog): void {
+            $catalog->products()->attach(Product::factory()->published()->create(['rate_source' => 'bcv']), ['position' => 2]);
+        });
+
+        $this->visit($catalog)->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('currency.rate.source', 'parallel')
+            ->where('currency.rate.rate', 50)
+            ->where('products.data.0.price.ves', 'Bs. 12.500,00')
+            ->where('products.data.1.price.ves', 'Bs. 10.000,00'));
+    }
+
     public function test_without_any_rate_only_dollars_travel(): void
     {
         $catalog = $this->catalogWith(1);

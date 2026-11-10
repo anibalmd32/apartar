@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Product;
 
 use App\Domain\Catalog\FinancingPlan;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Money;
 use Illuminate\Http\UploadedFile;
 
@@ -33,6 +34,7 @@ final readonly class ProductData
         public array $tagNames = [],
         public ?array $specifications = null,
         public array $images = [],
+        public ?RateSource $rateSource = null,
     ) {}
 
     public function financingPlan(): ?FinancingPlan

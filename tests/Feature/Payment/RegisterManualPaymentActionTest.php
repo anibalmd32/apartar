@@ -26,6 +26,7 @@ use App\Domain\Tenancy\CrossTenantRelationException;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Jobs\CompressReceiptImage;
 use App\Models\AuditEntry;
+use App\Models\Catalog;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\Layaway;
@@ -221,6 +222,25 @@ final class RegisterManualPaymentActionTest extends TestCase
         $this->assertSame([3_000, '40.00000000', RateSource::Bcv], [$friday->amount_cents_usd->cents, $friday->rate_applied, $friday->rate_source]);
         $this->assertSame([3_000, '41.00000000'], [$saturday->amount_cents_usd->cents, $saturday->rate_applied], 'el fin de semana rige la que el BCV publicó el viernes para el lunes.');
         $this->assertSame([2_000, '42.50000000'], [$today->amount_cents_usd->cents, $today->rate_applied]);
+    }
+
+    public function test_bolivars_are_converted_with_the_rate_of_the_product_or_its_catalog(): void
+    {
+        ExchangeRate::factory()->create(['source' => RateSource::Parallel, 'rate' => '50.00000000', 'published_at' => CarbonImmutable::now()->subHour()]);
+        ExchangeRate::factory()->create(['source' => RateSource::Parallel, 'rate' => '48.00000000', 'published_at' => CarbonImmutable::parse('2026-08-21 09:00:00')]);
+        $byProduct = $this->activeLayaway();
+        $byCatalog = $this->activeLayaway();
+        $this->within(fn () => DB::table('products')->where('id', $byProduct->product_id)->update(['rate_source' => RateSource::Parallel->value]));
+        $catalog = $this->within(fn (): Catalog => Catalog::factory()->create(['rate_source' => RateSource::Parallel]));
+        DB::table('layaways')->where('id', $byCatalog->getKey())->update(['catalog_id' => $catalog->getKey()]);
+
+        $today = $this->stored($this->register($byProduct, '1000.00', Currency::VES));
+        $earlier = $this->stored($this->register($byCatalog->refresh(), '960.00', Currency::VES, paidAt: '2026-08-21'));
+        $dollars = $this->stored($this->register($byCatalog, '10.00', Currency::USD));
+
+        $this->assertSame([2_000, '50.00000000', RateSource::Parallel], [$today->amount_cents_usd->cents, $today->rate_applied, $today->rate_source]);
+        $this->assertSame([2_000, '48.00000000', RateSource::Parallel], [$earlier->amount_cents_usd->cents, $earlier->rate_applied, $earlier->rate_source]);
+        $this->assertSame(RateSource::Parallel, $dollars->rate_source);
     }
 
     public function test_a_day_without_any_known_rate_asks_for_one_by_hand(): void

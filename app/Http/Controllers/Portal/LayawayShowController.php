@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Portal;
 
 use App\Domain\Account\PortalContext;
 use App\Domain\Catalog\CatalogVisibility;
+use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Layaway\NextPayment;
@@ -52,6 +54,7 @@ final class LayawayShowController extends Controller
     public function __invoke(Request $request, string $code, PortalContext $portal): Response
     {
         $layaway = $portal->findLayaway($code)->loadMissing('product.media');
+        app(CurrentRate::class)->prefer(app(RateSourceResolver::class)->overrideForLayaway($layaway));
         $organization = $this->context->organization();
         $timezone = new DateTimeZone($organization->timezone);
         $calendar = DueCalendar::of($organization, $this->settings);

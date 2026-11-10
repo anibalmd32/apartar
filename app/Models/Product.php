@@ -8,6 +8,7 @@ use App\Casts\MoneyCast;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductStatus;
 use App\Domain\Catalog\SearchMode;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Money;
 use App\Domain\Tenancy\BelongsToOrganization;
@@ -41,6 +42,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property Money $down_payment_cents
  * @property int $installments_count
  * @property int $frequency_days
+ * @property RateSource|null $rate_source
  * @property int $stock
  * @property int $stock_shortfall
  * @property ProductStatus $status
@@ -78,6 +80,7 @@ class Product extends Model implements HasMedia
         'down_payment_cents',
         'installments_count',
         'frequency_days',
+        'rate_source',
         'stock',
         'status',
         'published_at',
@@ -94,6 +97,7 @@ class Product extends Model implements HasMedia
             'down_payment_cents' => MoneyCast::class,
             'installments_count' => 'integer',
             'frequency_days' => 'integer',
+            'rate_source' => RateSource::class,
             'stock' => 'integer',
             'stock_shortfall' => 'integer',
             'status' => ProductStatus::class,

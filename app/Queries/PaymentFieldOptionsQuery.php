@@ -6,6 +6,7 @@ namespace App\Queries;
 
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Currency;
 use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptFile;
@@ -22,9 +23,9 @@ final readonly class PaymentFieldOptionsQuery
     /**
      * @return array<string, mixed>
      */
-    public function for(string $earliest, string $latest): array
+    public function for(string $earliest, string $latest, ?RateSource $source = null): array
     {
-        $rate = $this->rates->current($this->context->organization());
+        $rate = $this->rates->current($this->context->organization(), $source);
 
         return [
             'methods' => array_map(fn (PaymentMethod $method): array => [
@@ -47,7 +48,7 @@ final readonly class PaymentFieldOptionsQuery
             'rate' => $rate instanceof RateSnapshot ? ['rate' => $rate->rate, 'sourceLabel' => $rate->source->label()] : null,
             'file' => ['maxMb' => ReceiptFile::maxSizeMb(), 'accept' => ReceiptFile::ACCEPT],
             'readUrl' => route('payments.read', ['desde' => $earliest, 'hasta' => $latest]),
-            'rateOfDayUrl' => route('payments.rate-of-day'),
+            'rateOfDayUrl' => route('payments.rate-of-day', $source === null ? [] : ['fuente' => $source->value]),
         ];
     }
 }

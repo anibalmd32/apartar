@@ -99,7 +99,7 @@ enum SettingKey: string
     {
         return match ($this) {
             self::ExchangeRateSource => 'Fuente de la tasa',
-            self::ExchangeRateManual => 'Tasa manual (Bs. por USD)',
+            self::ExchangeRateManual => 'Tasa propia (Bs. por USD)',
             self::CurrencyDisplayDefault => 'Moneda que se muestra primero',
             self::GracePeriodDays => 'Días de gracia antes de marcar vencida una cuota',
             self::DownPaymentWindowHours => 'Horas para pagar el inicial',

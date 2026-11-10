@@ -8,13 +8,18 @@ use App\Actions\Catalog\CatalogData;
 use App\Actions\Catalog\SyncCatalogProductsAction;
 use App\Actions\Catalog\UpsertCatalogAction;
 use App\Domain\Catalog\CatalogVisibility;
+use App\Domain\Exchange\RateSource;
+use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Catalog;
 use App\Models\CatalogSubscription;
 use App\Models\Organization;
+use App\Models\OrganizationSetting;
 use App\Models\PaymentAccount;
 use App\Models\Product;
 use App\Models\User;
+use App\Rules\UsableRateSource;
+use App\Support\Settings;
 use Closure;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -104,6 +109,36 @@ final class CatalogPageTest extends TestCase
 
         $this->assertSame('ofertas-de-septiembre', $catalog->slug);
         $this->assertSame(CatalogVisibility::Draft, $catalog->visibility());
+    }
+
+    public function test_el_catalogo_guarda_su_tasa_y_la_tasa_propia_pide_haberla_escrito(): void
+    {
+        $catalog = $this->inTenant(fn (): Catalog => Catalog::factory()->create());
+        $update = fn (string $source) => $this->actingAs($this->owner())
+            ->post("/backoffice/catalogos/{$catalog->getKey()}", ['_method' => 'put', 'name' => $catalog->name, 'rate_source' => $source]);
+
+        $update('parallel')->assertSessionHasNoErrors();
+        $this->assertSame(RateSource::Parallel, $catalog->refresh()->rate_source);
+
+        $update('manual')->assertSessionHasErrors(['rate_source' => UsableRateSource::NO_MANUAL_RATE]);
+        $update('dolartoday')->assertSessionHasErrors('rate_source');
+        $this->assertSame(RateSource::Parallel, $catalog->refresh()->rate_source);
+
+        $this->inTenant(fn () => OrganizationSetting::query()->create(['key' => SettingKey::ExchangeRateManual->value, 'value' => '950.00']));
+        app(Settings::class)->forget($this->organization);
+        $update('manual')->assertSessionHasNoErrors();
+        $this->assertSame(RateSource::Manual, $catalog->refresh()->rate_source);
+
+        $update('')->assertSessionHasNoErrors();
+        $this->assertNull($catalog->refresh()->rate_source);
+
+        $this->actingAs($this->owner())->get("/backoffice/catalogos/{$catalog->getKey()}/editar")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('catalog.rateSource', null)
+                ->where('rateSources.businessSource', 'bcv')
+                ->where('rateSources.hasManualRate', true)
+                ->where('rateSources.options.0', ['value' => '', 'label' => 'La del negocio (BCV)'])
+                ->where('rateSources.options.3', ['value' => 'manual', 'label' => 'Tasa propia']));
     }
 
     public function test_the_cover_travels_with_the_form(): void

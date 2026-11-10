@@ -6,6 +6,7 @@ namespace App\Http\Resources\Concerns;
 
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
@@ -19,12 +20,12 @@ trait ProjectsMoney
     /**
      * @return array{cents: int, usd: string, ves: string|null}
      */
-    protected function money(Money $amount): array
+    protected function money(Money $amount, ?RateSource $source = null): array
     {
         return [
             'cents' => $amount->cents,
             'usd' => MoneyFormatter::format($amount),
-            'ves' => $this->projectedToVes($amount),
+            'ves' => $this->projectedToVes($amount, $source),
         ];
     }
 
@@ -64,9 +65,9 @@ trait ProjectsMoney
         ] : null;
     }
 
-    private function projectedToVes(Money $amount): ?string
+    private function projectedToVes(Money $amount, ?RateSource $source): ?string
     {
-        $rate = $this->currentRate()->snapshot();
+        $rate = $this->currentRate()->snapshot($source);
 
         if ($rate === null) {
             return null;

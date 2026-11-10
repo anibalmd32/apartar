@@ -7,9 +7,11 @@ namespace App\Http\Controllers\Backoffice;
 use App\Actions\Payment\ApproveReceiptAction;
 use App\Actions\Payment\ApproveReceiptData;
 use App\Actions\Payment\RejectReceiptAction;
+use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Layaway\DownPaymentExtension;
@@ -63,6 +65,7 @@ final class ReceiptReviewController extends Controller
     public function __construct(
         private readonly TenantContext $context,
         private readonly ExchangeRateService $rates,
+        private readonly RateSourceResolver $sources,
         private readonly PaymentApplier $applier,
     ) {}
 
@@ -147,7 +150,8 @@ final class ReceiptReviewController extends Controller
         $timezone = new DateTimeZone($this->context->organization()->timezone);
         /** @var Layaway $layaway */
         $layaway = Layaway::query()->findOrFail($receipt->layaway_id);
-        $rate = $this->rates->current($this->context->organization());
+        app(CurrentRate::class)->prefer($this->sources->overrideForLayaway($layaway));
+        $rate = $this->rates->current($this->context->organization(), $this->sources->forLayaway($layaway));
         $reviewable = $receipt->status->awaitsReview() && $layaway->status->acceptsPayments();
 
         [$preview, $previewError] = $reviewable
@@ -275,7 +279,7 @@ final class ReceiptReviewController extends Controller
     {
         try {
             $data = new ApproveReceiptData($amount, $currency, $rateOverride, null);
-            $rate = $data->manualRate() ?? $this->rates->on($this->context->organization(), $receipt->paid_at);
+            $rate = $data->manualRate() ?? $this->rates->on($this->context->organization(), $receipt->paid_at, $this->sources->forLayaway($layaway));
         } catch (InvalidArgumentException|InvalidRateException $exception) {
             return [null, $exception->getMessage()];
         }

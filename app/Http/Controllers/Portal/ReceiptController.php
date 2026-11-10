@@ -9,6 +9,7 @@ use App\Actions\Payment\SubmitReceiptAction;
 use App\Domain\Account\PortalContext;
 use App\Domain\Exchange\CurrentRate;
 use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Layaway\DueCalendar;
 use App\Domain\Layaway\NextPayment;
 use App\Domain\Money\Currency;
@@ -64,6 +65,7 @@ final class ReceiptController extends Controller
     public function create(Request $request, string $code, PortalContext $portal): Response
     {
         $layaway = $portal->findLayaway($code);
+        $this->rate->prefer(app(RateSourceResolver::class)->overrideForLayaway($layaway));
 
         abort_unless($layaway->status->acceptsPayments(), 403, 'Este apartado ya no recibe pagos.');
 

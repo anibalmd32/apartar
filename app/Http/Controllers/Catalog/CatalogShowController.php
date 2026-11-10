@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Catalog;
 use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Catalog\CatalogFilters;
 use App\Domain\Catalog\PublicCatalogAccess;
+use App\Domain\Exchange\CurrentRate;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CatalogViewResource;
@@ -41,6 +42,7 @@ final class CatalogShowController extends Controller
     public function __invoke(Request $request, Catalog $catalog): Response
     {
         PublicCatalogAccess::ensureOpen($catalog);
+        app(CurrentRate::class)->prefer($catalog->rate_source);
 
         $facets = null;
         $filters = null;

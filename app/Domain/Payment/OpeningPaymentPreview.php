@@ -8,6 +8,7 @@ use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateDeviation;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Exchange\StaleRate;
 use App\Domain\Layaway\AmortizationSchedule;
 use App\Domain\Layaway\LayawayStatus;
@@ -32,9 +33,9 @@ final class OpeningPaymentPreview
      * @throws PaymentNotApplicableException
      * @throws MissingExchangeRateException
      */
-    public function for(LayawayTerms $terms, Money $settled, RateSnapshot|ManualRate|null $rate, ?CarbonInterface $paidOn = null): ApprovalPreview
+    public function for(LayawayTerms $terms, Money $settled, RateSnapshot|ManualRate|null $rate, ?CarbonInterface $paidOn = null, ?RateSource $source = null): ApprovalPreview
     {
-        [$dollars, $snapshot] = $this->applier->toDollars($settled, $rate);
+        [$dollars, $snapshot] = $this->applier->toDollars($settled, $rate, $source);
         $statusBefore = $terms->requiresDownPayment() ? LayawayStatus::PendingDownPayment : LayawayStatus::Active;
         $downPayment = min($dollars->cents, $terms->totalDownPayment()->cents);
         $missing = $terms->totalDownPayment()->cents - $downPayment;
@@ -69,7 +70,7 @@ final class OpeningPaymentPreview
                 default => LayawayStatus::Active,
             },
             staleRate: StaleRate::in($rate, $settled->currency, $paidOn),
-            rateDeviation: RateDeviation::in($rate, $this->applier->referenceRate($paidOn), $settled->currency),
+            rateDeviation: RateDeviation::in($rate, $this->applier->referenceRate($paidOn, $source), $settled->currency),
             downPaymentMissingCents: $missing,
         );
     }

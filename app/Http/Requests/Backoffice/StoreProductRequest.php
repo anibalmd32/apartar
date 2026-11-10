@@ -6,10 +6,12 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Product\ProductData;
 use App\Domain\Catalog\ProductDescription;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Money\Money;
 use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
 use App\Rules\RealMimeType;
+use App\Rules\UsableRateSource;
 use App\Support\DecimalInput;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -47,6 +49,7 @@ class StoreProductRequest extends FormRequest
 
             'installments_count' => ['required', 'integer'],
             'frequency_days' => ['required', 'integer'],
+            'rate_source' => ['nullable', 'string', new UsableRateSource],
             'stock' => ['required', 'integer'],
 
             'category_id' => ['nullable', 'integer'],
@@ -94,6 +97,7 @@ class StoreProductRequest extends FormRequest
             'down_payment' => 'cuota inicial',
             'installments_count' => 'número de cuotas',
             'frequency_days' => 'días entre cuotas',
+            'rate_source' => 'tasa',
             'stock' => 'existencias',
             'slug' => 'enlace',
             'images' => 'imágenes',
@@ -177,6 +181,7 @@ class StoreProductRequest extends FormRequest
             tagNames: $this->stringList('tag_names'),
             specifications: $this->specifications(),
             images: $this->uploadedImages(),
+            rateSource: RateSource::tryFrom($this->string('rate_source')->toString()),
         );
     }
 

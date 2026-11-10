@@ -6,43 +6,80 @@ namespace App\Domain\Exchange;
 
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
+use Closure;
 
 final class CurrentRate
 {
-    private ?int $resolvedFor = null;
+    private int|false|null $resolvedFor = false;
 
-    private bool $resolved = false;
+    /**
+     * @var array<string, RateSnapshot|null>
+     */
+    private array $snapshots = [];
 
-    private ?RateSnapshot $snapshot = null;
+    private ?RateSource $preferred = null;
 
     public function __construct(
         private readonly TenantContext $context,
         private readonly ExchangeRateService $rates,
     ) {}
 
-    public function snapshot(): ?RateSnapshot
+    public function prefer(?RateSource $source): void
+    {
+        $this->preferred = $source;
+    }
+
+    /**
+     * @template TReturn
+     *
+     * @param  Closure(): TReturn  $callback
+     * @return TReturn
+     */
+    public function using(?RateSource $source, Closure $callback): mixed
+    {
+        $previous = $this->preferred;
+        $this->preferred = $source ?? $previous;
+
+        try {
+            return $callback();
+        } finally {
+            $this->preferred = $previous;
+        }
+    }
+
+    public function snapshot(?RateSource $source = null): ?RateSnapshot
     {
         $organization = $this->organization();
         $organizationId = $organization?->getKey() === null ? null : (int) $organization->getKey();
 
-        if ($this->resolved && $this->resolvedFor === $organizationId) {
-            return $this->snapshot;
+        if ($this->resolvedFor !== $organizationId) {
+            $this->snapshots = [];
+            $this->resolvedFor = $organizationId;
         }
 
-        $this->snapshot = $this->rates->current($organization);
-        $this->resolvedFor = $organizationId;
-        $this->resolved = true;
+        $source ??= $this->preferred;
+        $key = $source === null ? '' : $source->value;
 
-        return $this->snapshot;
+        if (! array_key_exists($key, $this->snapshots)) {
+            $this->snapshots[$key] = $this->rates->current($organization, $source);
+        }
+
+        return $this->snapshots[$key];
     }
 
-    public function view(): RateView
+    public function view(?RateSource $source = null): RateView
     {
-        return RateView::of($this->snapshot(), $this->source());
+        return RateView::of($this->snapshot($source), $this->source($source));
     }
 
-    private function source(): RateSource
+    private function source(?RateSource $source): RateSource
     {
+        $source ??= $this->preferred;
+
+        if ($source !== null) {
+            return $source;
+        }
+
         $organization = $this->organization();
 
         return $organization === null

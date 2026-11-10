@@ -8,6 +8,7 @@ use App\Domain\Account\FeedFilters;
 use App\Domain\Account\FeedQuery;
 use App\Domain\Account\PortalContext;
 use App\Domain\Exchange\CurrentRate;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Money\Money;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Domain\Subscription\PlanFeature;
@@ -142,10 +143,13 @@ final class PortalDashboardResource extends JsonResource
     {
         $timezone = new DateTimeZone($block->organization->timezone);
         $summaries = fn (array $layaways): array => array_map(
-            fn (Layaway $layaway): array => [
-                ...(new LayawaySummaryResource($layaway))->resolve($request),
-                'suggestion' => $this->suggestionOf($block, $layaway, $timezone, $request),
-            ],
+            fn (Layaway $layaway): array => app(CurrentRate::class)->using(
+                app(RateSourceResolver::class)->overrideForLayaway($layaway),
+                fn (): array => [
+                    ...(new LayawaySummaryResource($layaway))->resolve($request),
+                    'suggestion' => $this->suggestionOf($block, $layaway, $timezone, $request),
+                ],
+            ),
             $layaways,
         );
 

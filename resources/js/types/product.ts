@@ -1,3 +1,4 @@
+import { type RateSource } from '@/types/exchange';
 import { type MoneyView } from '@/types/money';
 
 export type ProductStatus = 'draft' | 'published' | 'archived';
@@ -56,6 +57,7 @@ export interface ProductFormValues {
     readonly downPayment: string;
     readonly installmentsCount: number;
     readonly frequencyDays: number;
+    readonly rateSource?: RateSource | null;
     readonly stock: number;
     readonly stockBreakdown: StockBreakdownView;
     readonly status: ProductStatus;

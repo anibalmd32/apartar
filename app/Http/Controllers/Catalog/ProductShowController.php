@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Domain\Catalog\CatalogExpiredException;
 use App\Domain\Catalog\PublicCatalogAccess;
+use App\Domain\Exchange\CurrentRate;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Subscription\LimitEnforcer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CatalogViewResource;
@@ -36,6 +38,7 @@ final class ProductShowController extends Controller
     public function __invoke(Request $request, Catalog $catalog, Product $product): Response
     {
         PublicCatalogAccess::ensureOpen($catalog);
+        app(CurrentRate::class)->prefer(RateSourceResolver::override($product, $catalog));
 
         $product->load(['category', 'tags', 'media', 'specifications']);
 

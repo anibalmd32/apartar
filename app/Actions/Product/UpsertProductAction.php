@@ -80,6 +80,7 @@ final class UpsertProductAction
                 'down_payment_cents' => $data->downPayment,
                 'installments_count' => $data->installmentsCount,
                 'frequency_days' => $data->frequencyDays,
+                'rate_source' => $data->rateSource,
                 'slug' => $this->resolveSlug($data, $product),
             ] + $this->stockFrom($data->stock, $reserved);
 

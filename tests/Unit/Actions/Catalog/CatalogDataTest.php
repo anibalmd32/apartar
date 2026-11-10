@@ -5,13 +5,13 @@ declare(strict_types=1);
 use App\Actions\Catalog\CatalogData;
 use Illuminate\Http\UploadedFile;
 
-it('lleva los cuatro campos del CRUD y ninguno de publicación', function (): void {
+it('lleva los campos del CRUD y la tasa, y ninguno de publicación', function (): void {
     $properties = array_map(
         fn (ReflectionProperty $property): string => $property->getName(),
         (new ReflectionClass(CatalogData::class))->getProperties(),
     );
 
-    expect($properties)->toEqualCanonicalizing(['name', 'slug', 'description', 'cover']);
+    expect($properties)->toEqualCanonicalizing(['name', 'slug', 'description', 'cover', 'rateSource']);
 });
 
 it('admite el enlace, la descripción y la portada vacíos', function (): void {

@@ -48,6 +48,7 @@ final class UpsertCatalogAction
                 'name' => $data->name,
                 'slug' => $slug,
                 'description' => $data->description,
+                'rate_source' => $data->rateSource,
                 'cover_path' => $data->cover instanceof UploadedFile ? $this->storeCover($data->cover) : null,
                 'is_listed' => true,
                 'published_at' => null,
@@ -65,6 +66,7 @@ final class UpsertCatalogAction
         $attributes = [
             'name' => $data->name,
             'description' => $data->description,
+            'rate_source' => $data->rateSource,
         ];
 
         if ($data->cover instanceof UploadedFile) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Catalog;
 
+use App\Domain\Exchange\RateSource;
 use Illuminate\Http\UploadedFile;
 
 final readonly class CatalogData
@@ -13,5 +14,6 @@ final readonly class CatalogData
         public ?string $slug,
         public ?string $description,
         public ?UploadedFile $cover,
+        public ?RateSource $rateSource = null,
     ) {}
 }

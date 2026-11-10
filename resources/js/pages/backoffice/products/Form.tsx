@@ -25,6 +25,7 @@ import { useSubmitDock } from '@/hooks/use-submit-dock';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { formatDateTime } from '@/lib/dates';
 import { bo } from '@/lib/surfaces';
+import { type RateSourceChoices } from '@/types/exchange';
 import {
     type AiAvailability,
     type FinancingPlanView,
@@ -39,6 +40,7 @@ import { type FormEventHandler } from 'react';
 interface ProductFormPageProps {
     product: ProductFormValues | null;
     defaults: ProductDefaults;
+    rateSources: RateSourceChoices;
     categories: TaxonomyOption[];
     tags: TaxonomyOption[];
     plan: FinancingPlanView | null;
@@ -54,7 +56,7 @@ const STATUS_BADGES: Readonly<Record<ProductStatus, { label: string; tone: 'neut
 
 const FORM_ID = 'product-form';
 
-export default function ProductForm({ product, defaults, categories, tags, plan, ai }: ProductFormPageProps) {
+export default function ProductForm({ product, defaults, rateSources, categories, tags, plan, ai }: ProductFormPageProps) {
     const { data, setData, errors, processing, submit, isDirty } = useProductForm(defaults, product);
 
     const sheet = useSpecificationRows(product);
@@ -180,7 +182,7 @@ export default function ProductForm({ product, defaults, categories, tags, plan,
                     <div
                         className={`flex flex-col gap-4 max-lg:order-3 lg:col-start-1 lg:gap-6 ${product === null ? 'lg:row-start-3' : 'lg:row-start-4'}`}
                     >
-                        <ProductPricingFields {...fields} plan={plan} />
+                        <ProductPricingFields {...fields} plan={plan} rateSources={rateSources} />
                     </div>
 
                     <div className="flex flex-col gap-4 max-lg:order-5 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:gap-6">

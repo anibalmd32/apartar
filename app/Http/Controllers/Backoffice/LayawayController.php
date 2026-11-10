@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Layaway\CancelLayawayAction;
 use App\Actions\Layaway\MarkDeliveredAction;
+use App\Domain\Exchange\CurrentRate;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Layaway\IllegalLayawayTransitionException;
 use App\Domain\Layaway\LayawayNotDeliverableException;
 use App\Domain\Layaway\LayawayStatus;
@@ -44,11 +46,13 @@ final class LayawayController extends Controller
         private readonly TenantContext $context,
         private readonly LayawayActivityQuery $activity,
         private readonly PaymentFieldOptionsQuery $paymentFields,
+        private readonly RateSourceResolver $sources,
     ) {}
 
     public function show(Request $request, Layaway $layaway): Response
     {
         Gate::forUser($request->user())->authorize('manage', $layaway);
+        app(CurrentRate::class)->prefer($this->sources->overrideForLayaway($layaway));
 
         $timezone = new DateTimeZone($this->context->organization()->timezone);
         $today = CarbonImmutable::now($timezone)->startOfDay();
@@ -119,7 +123,7 @@ final class LayawayController extends Controller
                 ->all(),
             'reallocation' => $this->reallocationOptions($layaway, $installments, $payments->all(), $timezone),
             'manualPayment' => $layaway->status->acceptsPayments() ? $this->manualPaymentOptions($layaway, $timezone) : null,
-            'correctionFields' => $editable ? $this->paymentFields->for(...ManualPaymentDates::bounds($timezone)) : null,
+            'correctionFields' => $editable ? $this->paymentFields->for(...ManualPaymentDates::bounds($timezone), source: $this->sources->forLayaway($layaway)) : null,
         ]);
     }
 
@@ -133,7 +137,7 @@ final class LayawayController extends Controller
         return [
             'storeUrl' => route('layaways.payments.store', $layaway),
             'previewUrl' => route('layaways.payments.preview', $layaway),
-            ...$this->paymentFields->for($min, $max),
+            ...$this->paymentFields->for($min, $max, $this->sources->forLayaway($layaway)),
         ];
     }
 

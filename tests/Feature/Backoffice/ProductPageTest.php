@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Backoffice;
 
 use App\Domain\Catalog\ProductStatus;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Settings\SettingKey;
 use App\Domain\Tenancy\OrganizationStatus;
 use App\Models\Catalog;
@@ -14,6 +15,7 @@ use App\Models\OrganizationSetting;
 use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\User;
+use App\Rules\UsableRateSource;
 use App\Support\Settings;
 use Closure;
 use Inertia\Testing\AssertableInertia;
@@ -306,6 +308,28 @@ final class ProductPageTest extends TestCase
 
         $this->get('/backoffice/productos')
             ->assertInertia(fn (AssertableInertia $page) => $page->where('rows.0.plan.isCashSale', true));
+    }
+
+    public function test_el_producto_guarda_su_propia_tasa_y_el_formulario_la_trae(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload(['rate_source' => 'manual']))
+            ->assertSessionHasErrors(['rate_source' => UsableRateSource::NO_MANUAL_RATE]);
+
+        $this->actingAs($owner)
+            ->post('/backoffice/productos', $this->payload(['rate_source' => 'parallel']))
+            ->assertSessionHasNoErrors();
+
+        $product = $this->inTenant(fn (): Product => Product::query()->sole());
+        $this->assertSame(RateSource::Parallel, $product->rate_source);
+
+        $this->get('/backoffice/productos/'.$product->getKey().'/editar')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('product.rateSource', 'parallel')
+                ->where('rateSources.options.0.value', '')
+                ->where('rateSources.hasManualRate', false));
     }
 
     public function test_an_amount_with_more_than_two_decimals_is_rejected(): void

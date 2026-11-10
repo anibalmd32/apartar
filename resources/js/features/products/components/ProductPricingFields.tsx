@@ -1,19 +1,22 @@
 import { NumberField } from '@/components/ui/number-field';
 import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
+import { RateSourceField } from '@/features/currency/components/RateSourceField';
 import { CashSaleToggle } from '@/features/products/components/CashSaleToggle';
 import { FinancingPlanPreview } from '@/features/products/components/FinancingPlanPreview';
 import { FrequencyField } from '@/features/products/components/FrequencyField';
 import { type ProductFieldsProps } from '@/features/products/hooks/useProductForm';
 import { typedAmount } from '@/lib/amount-typing';
 import { amountInput } from '@/lib/money';
+import { type RateSourceChoices } from '@/types/exchange';
 import { type FinancingPlanView } from '@/types/product';
 
 interface ProductPricingFieldsProps extends ProductFieldsProps {
     plan: FinancingPlanView | null;
+    rateSources: RateSourceChoices;
 }
 
-export function ProductPricingFields({ data, setData, errors, plan }: ProductPricingFieldsProps) {
+export function ProductPricingFields({ data, setData, errors, plan, rateSources }: ProductPricingFieldsProps) {
     const cash = data.cash_sale;
 
     const changePrice = (price: string) => setData((previous) => ({ ...previous, price, ...(previous.cash_sale ? { down_payment: price } : {}) }));
@@ -84,6 +87,14 @@ export function ProductPricingFields({ data, setData, errors, plan }: ProductPri
             </div>
 
             <FinancingPlanPreview plan={plan} />
+
+            <RateSourceField
+                choices={rateSources}
+                value={data.rate_source}
+                onChange={(rateSource) => setData('rate_source', rateSource)}
+                error={errors.rate_source}
+                hint="Solo cambia cuántos bolívares ve tu cliente; el precio en dólares es el mismo."
+            />
         </SectionCard>
     );
 }

@@ -41,6 +41,7 @@ use App\Queries\InventoryFilters;
 use App\Support\CatalogShareLink;
 use App\Support\DecimalInput;
 use App\Support\HumanDate;
+use App\Support\RateSourceChoices;
 use App\Support\Settings;
 use DomainException;
 use Illuminate\Http\JsonResponse;
@@ -241,6 +242,7 @@ final class ProductController extends Controller
         return [
             'product' => $product instanceof Product ? $this->productForm($product) : null,
             'defaults' => $this->defaults(),
+            'rateSources' => app(RateSourceChoices::class)->for('La del catálogo o, si no tiene, la del negocio (%s)'),
             'categories' => $this->categories(),
             'tags' => $this->tags(),
             'plan' => $this->plan($request, $product),
@@ -420,6 +422,7 @@ final class ProductController extends Controller
             'isCashSale' => $product->isCashSale(),
             'installmentsCount' => $product->installments_count,
             'frequencyDays' => $product->frequency_days,
+            'rateSource' => $product->rate_source?->value,
             'stock' => $product->onHandUnits(),
             'stockBreakdown' => [
                 'available' => $product->stock,

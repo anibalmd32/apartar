@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Payment;
 
 use App\Domain\Exchange\ExchangeRateService;
+use App\Domain\Exchange\RateSource;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Money\Currency;
 use App\Domain\Money\Money;
 use App\Models\Layaway;
@@ -46,7 +48,9 @@ final readonly class ReceiptsInReview
         $byLayaway = [];
 
         foreach ($ids as $id) {
-            $byLayaway[$id] = self::summing($receipts->get($id, new Collection)->all(), $organization, $rates);
+            $pending = $receipts->get($id, new Collection)->all();
+            $source = $pending === [] ? null : app(RateSourceResolver::class)->forLayaway($layaways[(int) array_search($id, $ids, true)]);
+            $byLayaway[$id] = self::summing($pending, $organization, $rates, $source);
         }
 
         return $byLayaway;
@@ -60,7 +64,7 @@ final readonly class ReceiptsInReview
     /**
      * @param  array<array-key, Receipt>  $receipts
      */
-    private static function summing(array $receipts, Organization $organization, ExchangeRateService $rates): self
+    private static function summing(array $receipts, Organization $organization, ExchangeRateService $rates, ?RateSource $source): self
     {
         $cents = 0;
         $ves = new Money(0, Currency::VES);
@@ -68,7 +72,7 @@ final readonly class ReceiptsInReview
 
         foreach ($receipts as $receipt) {
             $declared = Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency);
-            $cents += self::dollarsOf($declared, $receipt, $organization, $rates);
+            $cents += self::dollarsOf($declared, $receipt, $organization, $rates, $source);
             $ves = $ves !== null && $declared->currency === Currency::VES ? $ves->add($declared) : null;
             $last = $receipt->created_at === null ? $last : CarbonImmutable::instance($receipt->created_at);
         }
@@ -76,13 +80,13 @@ final readonly class ReceiptsInReview
         return new self(new Money($cents), count($receipts), $last, $receipts === [] ? null : $ves);
     }
 
-    private static function dollarsOf(Money $declared, Receipt $receipt, Organization $organization, ExchangeRateService $rates): int
+    private static function dollarsOf(Money $declared, Receipt $receipt, Organization $organization, ExchangeRateService $rates, ?RateSource $source): int
     {
         if ($declared->currency === Currency::USD) {
             return $declared->cents;
         }
 
-        $rate = $rates->on($organization, $receipt->paid_at) ?? $rates->current($organization);
+        $rate = $rates->on($organization, $receipt->paid_at, $source) ?? $rates->current($organization, $source);
 
         return $rate === null ? 0 : $declared->convertTo(Currency::USD, $rate)->cents;
     }

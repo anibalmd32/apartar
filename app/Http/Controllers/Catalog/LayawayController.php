@@ -11,6 +11,8 @@ use App\Domain\Catalog\CatalogUnavailableException;
 use App\Domain\Catalog\InsufficientStockException;
 use App\Domain\Catalog\ProductNotAvailableException;
 use App\Domain\Catalog\PublicCatalogAccess;
+use App\Domain\Exchange\CurrentRate;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Layaway\LayawayTerms;
 use App\Domain\Layaway\NotAcceptingLayawaysException;
 use App\Domain\Notification\LayawayConfirmationMailer;
@@ -61,6 +63,7 @@ final class LayawayController extends Controller
     public function create(Request $request, Catalog $catalog, Product $product): Response
     {
         PublicCatalogAccess::ensureOpen($catalog);
+        app(CurrentRate::class)->prefer(RateSourceResolver::override($product, $catalog));
 
         $product->load(['category', 'tags', 'media', 'specifications']);
 
@@ -132,6 +135,7 @@ final class LayawayController extends Controller
         }
 
         $layaway = Layaway::query()->where('code', $code)->firstOrFail();
+        app(CurrentRate::class)->prefer(app(RateSourceResolver::class)->overrideForLayaway($layaway));
         $customer = Customer::query()->find($layaway->customer_id);
         $terms = $layaway->terms();
 

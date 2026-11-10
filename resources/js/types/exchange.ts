@@ -10,6 +10,12 @@ export interface RateView {
     readonly isStale: boolean;
 }
 
+export interface RateSourceChoices {
+    readonly options: readonly { readonly value: string; readonly label: string }[];
+    readonly businessSource: RateSource;
+    readonly hasManualRate: boolean;
+}
+
 export interface CurrencyPageProps {
     readonly display: CurrencyDisplay;
     readonly rate: RateView;

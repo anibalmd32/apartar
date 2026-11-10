@@ -212,6 +212,27 @@ it('un negocio con tasa manual usa la oficial para los días pasados', function 
     CarbonImmutable::setTestNow();
 });
 
+it('da la tasa de la fuente que se le pide aunque el negocio use otra', function (): void {
+    CarbonImmutable::setTestNow('2026-10-31 12:00:00');
+    persistRate(RateSource::Bcv, '36.50000000', '2024-03-01 04:00:00');
+    persistRate(RateSource::Parallel, '39.10000000', '2024-03-01 04:00:00');
+    persistRate(RateSource::Bcv, '889.00000000', '2026-10-31 04:00:00');
+    persistRate(RateSource::Parallel, '1050.00000000', '2026-10-31 09:00:00');
+    Cache::flush();
+
+    $organization = Organization::factory()->create(['timezone' => 'America/Caracas']);
+    setSetting($organization, SettingKey::ExchangeRateManual, '950.00');
+
+    expect(rates()->current($organization, RateSource::Parallel)?->rate)->toBe('1050.00000000')
+        ->and(rates()->current($organization, RateSource::Manual)?->rate)->toBe('950.00')
+        ->and(rates()->current($organization)?->rate)->toBe('889.00000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-01'), RateSource::Parallel)?->rate)->toBe('39.10000000')
+        ->and(rates()->on($organization, CarbonImmutable::parse('2024-03-01'), RateSource::Manual)?->rate)->toBe('36.50000000')
+        ->and(rates()->current(null, RateSource::Parallel)?->rate)->toBe('1050.00000000');
+
+    CarbonImmutable::setTestNow();
+});
+
 function setRateSource(Organization $organization, RateSource $source): void
 {
     setSetting($organization, SettingKey::ExchangeRateSource, $source->value);

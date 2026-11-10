@@ -8,6 +8,7 @@ use App\Actions\Payment\RegisterManualPaymentAction;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\ManualRate;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\Currency;
@@ -43,6 +44,7 @@ final class ManualPaymentController extends Controller
     public function __construct(
         private readonly TenantContext $context,
         private readonly ExchangeRateService $rates,
+        private readonly RateSourceResolver $sources,
         private readonly PaymentApplier $applier,
     ) {}
 
@@ -100,7 +102,7 @@ final class ManualPaymentController extends Controller
         try {
             PaymentAmounts::assertPositive($amount, $currency, 'del pago');
             $settled = Money::fromDecimalString($amount, $currency);
-            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->on($this->context->organization(), $paidOn);
+            $snapshot = $rate !== null ? new ManualRate($rate) : $this->rates->on($this->context->organization(), $paidOn, $this->sources->forLayaway($layaway));
         } catch (InvalidArgumentException|InvalidRateException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }

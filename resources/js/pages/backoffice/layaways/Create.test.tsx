@@ -133,13 +133,13 @@ it('no deja crear sin cliente y pide el consentimiento declarado para uno nuevo'
     expect(screen.queryByRole('button', { name: 'Por qué no está disponible' })).not.toBeInTheDocument();
 });
 
-it('recarga solo el plan cuando cambia la cantidad', () => {
+it('recarga el plan y los datos del cobro, que traen la tasa del producto, cuando cambia la cantidad', () => {
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'Añadir una unidad' }));
     act(() => vi.advanceTimersByTime(PLAN_DEBOUNCE_MS));
 
-    expect(reload).toHaveBeenCalledWith({ only: ['plan', 'selection'], data: { producto: '7', cantidad: 2 } });
+    expect(reload).toHaveBeenCalledWith({ only: ['plan', 'selection', 'payment'], data: { producto: '7', cantidad: 2 } });
 });
 
 it('elige un plazo propio o sin vencimiento para la inicial', () => {

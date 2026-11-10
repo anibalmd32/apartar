@@ -17,7 +17,7 @@ enum RateSource: string
         return match ($this) {
             self::Bcv => 'BCV',
             self::Parallel => 'Paralelo',
-            self::Manual => 'Manual',
+            self::Manual => 'Tasa propia',
         };
     }
 

@@ -8,6 +8,7 @@ use App\Domain\Catalog\FinancingPlan;
 use App\Domain\Catalog\ImageSet;
 use App\Domain\Catalog\ProductDescription;
 use App\Domain\Catalog\UnavailableReason;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Http\Resources\Concerns\DescribesProductOffer;
 use App\Http\Resources\Concerns\ProjectsMoney;
 use App\Models\Catalog;
@@ -41,6 +42,7 @@ final class ProductDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         $product = $this->resource;
+        $source = RateSourceResolver::override($product, $this->catalog);
         $plan = FinancingPlan::tryFrom(
             $product->price_cents,
             $product->down_payment_cents,
@@ -52,12 +54,12 @@ final class ProductDetailResource extends JsonResource
         return [
             'slug' => $product->slug,
             'name' => $product->name,
-            'price' => $this->money($product->price_cents),
-            'compareAtPrice' => $product->compare_at_price_cents === null ? null : $this->money($product->compare_at_price_cents),
+            'price' => $this->money($product->price_cents, $source),
+            'compareAtPrice' => $product->compare_at_price_cents === null ? null : $this->money($product->compare_at_price_cents, $source),
             'isCashSale' => $product->isCashSale(),
-            'downPayment' => $this->money($product->down_payment_cents),
-            'installmentAmount' => $plan === null ? null : $this->money($plan->installmentAmount()),
-            'lastInstallmentAmount' => $plan !== null && $plan->hasUnevenLastInstallment() ? $this->money($plan->lastInstallmentAmount()) : null,
+            'downPayment' => $this->money($product->down_payment_cents, $source),
+            'installmentAmount' => $plan === null ? null : $this->money($plan->installmentAmount(), $source),
+            'lastInstallmentAmount' => $plan !== null && $plan->hasUnevenLastInstallment() ? $this->money($plan->lastInstallmentAmount(), $source) : null,
             'installmentsCount' => $product->installments_count,
             'frequencyDays' => $product->frequency_days,
             'categoryName' => (string) $product->category?->name,

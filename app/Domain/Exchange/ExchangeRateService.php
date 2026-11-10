@@ -30,13 +30,13 @@ final class ExchangeRateService
         private readonly ManualRateProvider $manual,
     ) {}
 
-    public function current(?Organization $organization = null): ?RateSnapshot
+    public function current(?Organization $organization = null, ?RateSource $source = null): ?RateSnapshot
     {
         if ($organization === null) {
-            return $this->forSource($this->platformSource());
+            return $this->forSource($source === null || $source === RateSource::Manual ? $this->platformSource() : $source);
         }
 
-        $source = $this->sourceFor($organization);
+        $source ??= $this->sourceFor($organization);
 
         if ($source === RateSource::Manual) {
             return $this->manualFor($organization);
@@ -45,16 +45,16 @@ final class ExchangeRateService
         return $this->forSource($source);
     }
 
-    public function on(Organization $organization, CarbonInterface $day): ?RateSnapshot
+    public function on(Organization $organization, CarbonInterface $day, ?RateSource $source = null): ?RateSnapshot
     {
         $timezone = $organization->timezone;
         $date = CarbonImmutable::parse($day->format('Y-m-d'), $timezone);
 
         if ($date->greaterThanOrEqualTo(CarbonImmutable::now($timezone)->startOfDay())) {
-            return $this->current($organization);
+            return $this->current($organization, $source);
         }
 
-        $source = $this->sourceFor($organization);
+        $source ??= $this->sourceFor($organization);
         $source = $source === RateSource::Manual ? $this->platformSource() : $source;
 
         $storage = date_default_timezone_get();

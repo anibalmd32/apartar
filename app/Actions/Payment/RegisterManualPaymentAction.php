@@ -8,6 +8,7 @@ use App\Domain\Auditing\AuditEvent;
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\MissingExchangeRateException;
 use App\Domain\Exchange\RateDeviation;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Exchange\StaleRate;
 use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
@@ -53,6 +54,7 @@ final class RegisterManualPaymentAction
     public function __construct(
         private readonly PaymentApplier $applier,
         private readonly ExchangeRateService $rates,
+        private readonly RateSourceResolver $sources,
         private readonly TenantContext $context,
         private readonly UsageCalculator $usage,
     ) {}
@@ -132,7 +134,7 @@ final class RegisterManualPaymentAction
             throw DuplicateReceiptException::recordedByBusiness($criterion);
         }
 
-        $rateOfTheDay = $this->rates->on($this->context->organization(), $data->paidAt);
+        $rateOfTheDay = $this->rates->on($this->context->organization(), $data->paidAt, $this->sources->forLayaway($layaway));
         $rate = $data->manualRate() ?? $rateOfTheDay;
         StaleRate::in($rate, $data->currency, $data->paidAt)?->assertConfirmedBy($data->confirmedStaleRate);
         RateDeviation::in($rate, $rateOfTheDay, $data->currency)?->assertConfirmedBy($data->confirmedRateDeviation);

@@ -17,6 +17,7 @@ export interface ProductFormData {
     down_payment: string;
     installments_count: number | null;
     frequency_days: number | null;
+    rate_source: string;
     stock: number | null;
     category_id: string;
     category_name: string;
@@ -39,6 +40,7 @@ function initialData(defaults: ProductDefaults, product?: ProductFormValues | nu
         down_payment: amountInput(product?.downPayment ?? '0.00'),
         installments_count: product?.installmentsCount ?? defaults.installmentsCount,
         frequency_days: product?.frequencyDays ?? defaults.frequencyDays,
+        rate_source: product?.rateSource ?? '',
         stock: product?.stock ?? 1,
         category_id: product?.categoryId === null || product?.categoryId === undefined ? '' : String(product.categoryId),
         category_name: '',

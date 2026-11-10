@@ -5,10 +5,12 @@ import { SectionCard } from '@/components/ui/section-card';
 import { TextField } from '@/components/ui/text-field';
 import { CatalogProductSorter } from '@/features/catalogs/components/CatalogProductSorter';
 import { CatalogPublishPanel } from '@/features/catalogs/components/CatalogPublishPanel';
+import { CatalogRateSection } from '@/features/catalogs/components/CatalogRateSection';
 import { CatalogVisibilityBadge } from '@/features/catalogs/components/CatalogVisibilityBadge';
 import BackofficeLayout from '@/layouts/backoffice-layout';
 import { bo } from '@/lib/surfaces';
 import { type CatalogFormValues, type CatalogProductOption, type CatalogPublishBlockers } from '@/types/catalog';
+import { type RateSourceChoices } from '@/types/exchange';
 import { cilCheckAlt, cilExternalLink } from '@coreui/icons';
 import { useForm } from '@inertiajs/react';
 import { type FormEventHandler } from 'react';
@@ -19,17 +21,19 @@ interface CatalogFormPageProps {
     availableProducts: CatalogProductOption[];
     suggestedProductIds?: number[];
     blockers: CatalogPublishBlockers;
+    rateSources: RateSourceChoices;
     [key: string]: unknown;
 }
 
 const FORM_ID = 'catalog-form';
 
-export default function CatalogForm({ catalog, products, availableProducts, suggestedProductIds = [], blockers }: CatalogFormPageProps) {
+export default function CatalogForm({ catalog, products, availableProducts, suggestedProductIds = [], blockers, rateSources }: CatalogFormPageProps) {
     const form = useForm({
         name: catalog?.name ?? '',
         slug: catalog?.slug ?? '',
         description: catalog?.description ?? '',
         cover: null as File | null,
+        rate_source: catalog?.rateSource ?? '',
     });
 
     const onSubmit: FormEventHandler = (event) => {
@@ -128,6 +132,13 @@ export default function CatalogForm({ catalog, products, availableProducts, sugg
                             />
                         </form>
                     </SectionCard>
+
+                    <CatalogRateSection
+                        choices={rateSources}
+                        rateSource={form.data.rate_source}
+                        onRateSourceChange={(value) => form.setData('rate_source', value)}
+                        error={form.errors.rate_source}
+                    />
 
                     {catalog === null ? null : (
                         <SectionCard title="Productos">

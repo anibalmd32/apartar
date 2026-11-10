@@ -26,6 +26,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Support\CatalogShareLink;
 use App\Support\HumanDate;
+use App\Support\RateSourceChoices;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -196,6 +197,7 @@ final class CatalogController extends Controller
             'availableProducts' => $this->inventory(),
             'suggestedProductIds' => $catalog instanceof Catalog ? $this->suggestionsFor($catalog) : [],
             'blockers' => $blockers,
+            'rateSources' => app(RateSourceChoices::class)->for('La del negocio (%s)'),
         ];
     }
 
@@ -209,6 +211,7 @@ final class CatalogController extends Controller
         return $this->catalogRow($catalog) + [
             'description' => $catalog->description,
             'coverUrl' => $this->coverUrl($catalog),
+            'rateSource' => $catalog->rate_source?->value,
         ];
     }
 

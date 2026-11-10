@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Backoffice;
 
 use App\Domain\Exchange\ExchangeRateService;
 use App\Domain\Exchange\RateSnapshot;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Support\PaymentDay;
@@ -18,7 +19,7 @@ final class RateOfDayController extends Controller
     {
         $organization = $context->organization();
         $day = PaymentDay::fromQuery($request, $organization->timezone);
-        $rate = $rates->on($organization, $day);
+        $rate = $rates->on($organization, $day, RateSource::tryFrom($request->string('fuente')->toString()));
 
         return response()->json(['rate' => $rate instanceof RateSnapshot ? [
             'rate' => $rate->rate,

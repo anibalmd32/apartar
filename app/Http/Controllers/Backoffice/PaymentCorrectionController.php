@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Backoffice;
 use App\Actions\Payment\CorrectPaymentAction;
 use App\Actions\Payment\VoidPaymentAction;
 use App\Domain\Exchange\MissingExchangeRateException;
+use App\Domain\Exchange\RateSourceResolver;
 use App\Domain\Exchange\UnconfirmedRateDeviationException;
 use App\Domain\Exchange\UnconfirmedStaleRateException;
 use App\Domain\Money\MoneyFormatter;
@@ -115,7 +116,7 @@ final class PaymentCorrectionController extends Controller
             'options' => [
                 'storeUrl' => route('payments.correct', ['payment' => $payment, 'destino' => $layaway->code]),
                 'previewUrl' => route('layaways.payments.preview', $layaway),
-                ...$fields->for($min, $max),
+                ...$fields->for($min, $max, app(RateSourceResolver::class)->forLayaway($layaway)),
             ],
         ]);
     }

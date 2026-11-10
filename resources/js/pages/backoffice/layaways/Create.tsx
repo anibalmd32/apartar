@@ -69,7 +69,7 @@ export default function LayawayCreate({ products, selection, plan, customer, win
         }
 
         const timer = window.setTimeout(() => {
-            router.reload({ only: ['plan', 'selection'], data: { producto: data.product, cantidad: data.quantity } });
+            router.reload({ only: ['plan', 'selection', 'payment'], data: { producto: data.product, cantidad: data.quantity } });
         }, PLAN_DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);

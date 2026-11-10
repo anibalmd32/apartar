@@ -1,13 +1,30 @@
 import { ProductPricingFields } from '@/features/products/components/ProductPricingFields';
 import { type ProductFormData } from '@/features/products/hooks/useProductForm';
 import { centsUsd } from '@/lib/money';
+import { type RateSourceChoices } from '@/types/exchange';
 import { type FinancingPlanView } from '@/types/product';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { type ReactNode } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const { usePage } = vi.hoisted(() => ({ usePage: vi.fn() }));
 
-vi.mock('@inertiajs/react', () => ({ usePage, router: { reload: vi.fn() } }));
+vi.mock('@inertiajs/react', () => ({
+    usePage,
+    router: { reload: vi.fn() },
+    Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+}));
+
+const RATES: RateSourceChoices = {
+    options: [
+        { value: '', label: 'La del catálogo o, si no tiene, la del negocio (BCV)' },
+        { value: 'bcv', label: 'BCV' },
+        { value: 'parallel', label: 'Paralelo' },
+        { value: 'manual', label: 'Tasa propia' },
+    ],
+    businessSource: 'bcv',
+    hasManualRate: false,
+};
 
 const DATA = {
     name: 'Nevera',
@@ -46,7 +63,7 @@ function plan(downPayment: number): FinancingPlanView {
 }
 
 function renderFields(view: FinancingPlanView | null) {
-    return render(<ProductPricingFields data={DATA} setData={vi.fn() as never} errors={{}} plan={view} />);
+    return render(<ProductPricingFields data={DATA} setData={vi.fn() as never} errors={{}} rateSources={RATES} plan={view} />);
 }
 
 beforeEach(() => {
@@ -97,7 +114,7 @@ it('con la inicial igual al precio sugiere en naranja marcarlo al contado y la c
 
 it('al marcar «Venta al contado» la inicial pasa a ser el precio; al desmarcarla vuelve a cero', () => {
     const setData = vi.fn();
-    render(<ProductPricingFields data={DATA} setData={setData as never} errors={{}} plan={plan(3_000)} />);
+    render(<ProductPricingFields data={DATA} setData={setData as never} errors={{}} rateSources={RATES} plan={plan(3_000)} />);
 
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('checkbox', { name: /Venta al contado/ }).closest('label')).not.toHaveClass('animate-pulse');
@@ -110,7 +127,13 @@ it('al marcar «Venta al contado» la inicial pasa a ser el precio; al desmarcar
 
     const unset = vi.fn();
     render(
-        <ProductPricingFields data={{ ...DATA, cash_sale: true, down_payment: '150.00' }} setData={unset as never} errors={{}} plan={cashPlan()} />,
+        <ProductPricingFields
+            data={{ ...DATA, cash_sale: true, down_payment: '150.00' }}
+            setData={unset as never}
+            errors={{}}
+            rateSources={RATES}
+            plan={cashPlan()}
+        />,
     );
     screen.getAllByRole('checkbox', { name: /Venta al contado/ })[1]!.click();
 
@@ -120,10 +143,36 @@ it('al marcar «Venta al contado» la inicial pasa a ser el precio; al desmarcar
 
 it('una venta al contado esconde la inicial, las cuotas y la frecuencia, y no sugiere nada', () => {
     render(
-        <ProductPricingFields data={{ ...DATA, cash_sale: true, down_payment: '150.00' }} setData={vi.fn() as never} errors={{}} plan={cashPlan()} />,
+        <ProductPricingFields
+            data={{ ...DATA, cash_sale: true, down_payment: '150.00' }}
+            setData={vi.fn() as never}
+            errors={{}}
+            rateSources={RATES}
+            plan={cashPlan()}
+        />,
     );
 
     expect(screen.getByRole('checkbox', { name: /Venta al contado/ })).toBeChecked();
     expect(screen.getByLabelText('Cuota inicial').closest('.hidden')).not.toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
+});
+
+it('la tasa hereda la del catálogo o el negocio y avisa si eligen tasa propia sin haberla escrito', () => {
+    const setData = vi.fn();
+    const { rerender } = render(
+        <ProductPricingFields data={{ ...DATA, rate_source: '' }} setData={setData as never} errors={{}} rateSources={RATES} plan={plan(0)} />,
+    );
+
+    const select = screen.getByLabelText('Tasa para los bolívares');
+    expect(select).toHaveValue('');
+    expect(screen.getByRole('option', { name: 'La del catálogo o, si no tiene, la del negocio (BCV)' })).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: 'parallel' } });
+    expect(setData).toHaveBeenCalledWith('rate_source', 'parallel');
+
+    rerender(
+        <ProductPricingFields data={{ ...DATA, rate_source: 'manual' }} setData={setData as never} errors={{}} rateSources={RATES} plan={plan(0)} />,
+    );
+    expect(screen.getByText(/Todavía no escribiste tu tasa propia/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Escríbela en Ajustes' })).toBeInTheDocument();
 });

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Catalog\CatalogVisibility;
 use App\Domain\Catalog\PublicCatalogAccess;
+use App\Domain\Exchange\RateSource;
 use App\Domain\Tenancy\BelongsToOrganization;
 use App\Models\Concerns\RecordsLastEditor;
 use Database\Factories\CatalogFactory;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $description
  * @property string|null $cover_path
  * @property bool $is_listed
+ * @property RateSource|null $rate_source
  * @property \Illuminate\Support\Carbon|null $published_at
  * @property \Illuminate\Support\Carbon|null $expires_at
  * @property \Illuminate\Support\Carbon|null $withdrawn_at
@@ -42,6 +44,7 @@ class Catalog extends Model
         'description',
         'cover_path',
         'is_listed',
+        'rate_source',
         'published_at',
         'expires_at',
     ];
@@ -53,6 +56,7 @@ class Catalog extends Model
     {
         return [
             'is_listed' => 'boolean',
+            'rate_source' => RateSource::class,
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
             'withdrawn_at' => 'datetime',
