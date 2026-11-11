@@ -88,6 +88,22 @@ final class CatalogSummaryPeriodTest extends TestCase
             ->where('products.0.parallel', null));
     }
 
+    public function test_lo_cobrado_en_el_periodo_dice_cuanto_viene_de_apartados_cerrados_y_de_sobrantes(): void
+    {
+        DB::table('payments')->where('paid_on', '2026-11-02')->update(['unallocated_cents' => 500]);
+
+        $this->actingAs($this->owner)->get(route('catalogs.summary', $this->catalog))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('periodTotals.fromClosed', null)
+            ->where('periodTotals.unallocated.cents', 500));
+
+        DB::table('layaways')->where('id', $this->layaway->getKey())->update(['status' => 'cancelled']);
+
+        $this->actingAs($this->owner)->get(route('catalogs.summary', $this->catalog))->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('periodTotals.collected.cents', 15_000)
+            ->where('periodTotals.fromClosed.cents', 15_000)
+            ->where('periodTotals.unallocated', null));
+    }
+
     public function test_un_rango_corto_se_agrupa_por_dia_y_se_puede_pedir_desde_el_primer_pago(): void
     {
         $this->actingAs($this->owner)->get(route('catalogs.summary', ['catalog' => $this->catalog, 'desde' => '2026-11-01', 'hasta' => '2026-11-03']))

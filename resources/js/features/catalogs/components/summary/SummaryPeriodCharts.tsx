@@ -4,12 +4,32 @@ import { StatCard } from '@/components/ui/stat-card';
 import { MoneyLabel } from '@/features/currency/components/MoneyLabel';
 import { type SummaryPeriod, type SummaryPeriodTotals, type SummarySeriesPoint } from '@/types/catalog-summary';
 import { cilBasket, cilCash, cilChartLine, cilWallet } from '@coreui/icons';
+import { type ReactNode } from 'react';
 
 interface SummaryPeriodChartsProps {
     period: SummaryPeriod;
     totals: SummaryPeriodTotals;
     series: readonly SummarySeriesPoint[];
     withParallel: boolean;
+}
+
+function includes(totals: SummaryPeriodTotals): ReactNode {
+    const parts = [
+        totals.fromClosed !== null ? (
+            <span key="closed">
+                <MoneyLabel money={totals.fromClosed} compact /> de cancelados o vencidos
+            </span>
+        ) : null,
+        totals.unallocated !== null ? (
+            <span key="excess">
+                <MoneyLabel money={totals.unallocated} compact /> de sobrantes
+            </span>
+        ) : null,
+    ].filter((part) => part !== null);
+
+    return parts.length === 0 ? null : (
+        <>Incluye {parts.reduce<ReactNode[]>((all, part, index) => (index === 0 ? [part] : [...all, ' y ', part]), [])}</>
+    );
 }
 
 function best(series: readonly SummarySeriesPoint[]): SummarySeriesPoint | null {
@@ -24,7 +44,9 @@ export function SummaryPeriodCharts({ period, totals, series, withParallel }: Su
     return (
         <div className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatCard label="Cobrado en el periodo" icon={cilCash} tone="success" value={<MoneyLabel money={totals.collected} compact />} />
+                <StatCard label="Cobrado en el periodo" icon={cilCash} tone="success" value={<MoneyLabel money={totals.collected} compact />}>
+                    {includes(totals)}
+                </StatCard>
                 <StatCard label="Pagos recibidos" icon={cilWallet} tone="primary" value={totals.payments}>
                     {totals.average !== null ? (
                         <>

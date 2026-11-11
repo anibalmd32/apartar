@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries;
 
+use App\Domain\Layaway\LayawayStatus;
 use App\Domain\Safeguard\ParallelEquivalent;
 use App\Domain\Safeguard\ParallelEquivalents;
 use App\Domain\Safeguard\SafeguardDestination;
@@ -44,7 +45,7 @@ final class CatalogPeriodSummary
     }
 
     /**
-     * @return array{collected: int, payments: int, layaways: int, parallel: int|null, gap: int|null, withoutRate: int, recorded: int}
+     * @return array{collected: int, payments: int, layaways: int, fromClosed: int, unallocated: int, parallel: int|null, gap: int|null, withoutRate: int, recorded: int}
      */
     public function totals(): array
     {
@@ -73,8 +74,22 @@ final class CatalogPeriodSummary
             }
         }
 
+        $closed = [LayawayStatus::Cancelled->value, LayawayStatus::Expired->value];
+        $fromClosed = 0;
+        $unallocated = 0;
+
+        foreach ($rows as $row) {
+            if (in_array($row['payment']->getAttribute('layaway_status'), $closed, true)) {
+                $fromClosed += $row['payment']->amount_cents_usd->cents;
+            } else {
+                $unallocated += $row['payment']->unallocated_cents->cents;
+            }
+        }
+
         return [
             'collected' => array_sum(array_map(fn (array $row): int => $row['payment']->amount_cents_usd->cents, $rows)),
+            'fromClosed' => $fromClosed,
+            'unallocated' => $unallocated,
             'payments' => count($rows),
             'layaways' => (clone $this->layaways)->whereBetween(DB::raw('date(layaways.created_at)'), [$this->from->toDateString(), $this->to->toDateString()])->count(),
             'parallel' => $parallel,
@@ -192,7 +207,7 @@ final class CatalogPeriodSummary
             ->whereBetween(DB::raw(self::PAID_DAY), [$this->from->toDateString(), $this->to->toDateString()])
             ->join('layaways', 'layaways.id', '=', 'payments.layaway_id')
             ->leftJoin('customers', 'customers.id', '=', 'layaways.customer_id')
-            ->select('payments.*', 'layaways.code as layaway_code', 'layaways.product_id', 'layaways.product_name_snapshot as product_name', 'customers.full_name as customer_name')
+            ->select('payments.*', 'layaways.code as layaway_code', 'layaways.status as layaway_status', 'layaways.product_id', 'layaways.product_name_snapshot as product_name', 'customers.full_name as customer_name')
             ->with('safeguard')
             ->orderBy(DB::raw(self::PAID_DAY))
             ->orderBy('payments.id')

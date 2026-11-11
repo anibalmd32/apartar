@@ -31,8 +31,6 @@ const PROPS: CatalogSummaryProps = {
         overdue: money('$20,00', 2_000),
         overdueLayaways: 1,
         upcoming: money('$30,00', 3_000),
-        delivered: 1,
-        awaitingDelivery: 1,
     },
     statuses: { active: 1, completed: 1, cancelled: 1 },
     products: [
@@ -62,7 +60,14 @@ const PROPS: CatalogSummaryProps = {
             { key: '6m', label: 'Últimos 6 meses', from: '2026-06-01', to: '2026-11-03' },
         ],
     },
-    periodTotals: { collected: money('$580,00', 58_000), payments: 3, average: money('$193,33', 19_333), layaways: 2 },
+    periodTotals: {
+        collected: money('$580,00', 58_000),
+        payments: 3,
+        average: money('$193,33', 19_333),
+        layaways: 2,
+        fromClosed: money('$10,00', 1_000),
+        unallocated: money('$4,96', 496),
+    },
     series: [
         { key: '2026-10', label: 'oct 26', collected: money('$500,00', 50_000), payments: 2, layaways: 1, parallel: null },
         { key: '2026-11', label: 'nov 26', collected: money('$80,00', 8_000), payments: 1, layaways: 1, parallel: null },
@@ -147,4 +152,19 @@ it('con el resguardo activo muestra cuánto vale en paralelo, dónde está y qu�
     const payments = screen.getByRole('list', { name: 'Pagos del periodo' });
     expect(within(payments).getByText('$67,43 en paralelo')).toBeInTheDocument();
     expect(within(payments).getByText('Sin registrar')).toBeInTheDocument();
+});
+
+it('arriba deja solo lo vendido, lo que falta y lo vencido o por vencer, sin tarjetas; y explica qué incluye lo cobrado en el periodo', () => {
+    render(<CatalogSummary {...PROPS} />);
+
+    const top = screen.getByRole('region', { name: 'Resumen de ventas' });
+    expect(within(top).getByText('Vencido sin pagar')).toBeInTheDocument();
+    expect(within(top).getByText('1 apartado atrasado')).toBeInTheDocument();
+    expect(within(top).getByText('Vence en 7 días')).toBeInTheDocument();
+    expect(within(top).queryByText('Cobrado')).toBeNull();
+    expect(within(top).queryByText('Entregados')).toBeNull();
+
+    expect(screen.getByText(/de cancelados o vencidos/).closest('.stat-card-note')).toHaveTextContent(
+        'Incluye $10,00 de cancelados o vencidos y $4,96 de sobrantes',
+    );
 });

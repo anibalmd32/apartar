@@ -66,8 +66,6 @@ final class CatalogSummaryController extends Controller
                 'overdue' => $cents($totals['overdue']),
                 'overdueLayaways' => $totals['overdue_layaways'],
                 'upcoming' => $cents($totals['upcoming']),
-                'delivered' => $totals['delivered'],
-                'awaitingDelivery' => $totals['awaiting_delivery'],
             ],
             'statuses' => $summary->byStatus(),
             'products' => array_map(fn (array $row): array => [
@@ -97,6 +95,8 @@ final class CatalogSummaryController extends Controller
                 'payments' => $periodTotals['payments'],
                 'average' => $periodTotals['payments'] > 0 ? $cents(intdiv($periodTotals['collected'], $periodTotals['payments'])) : null,
                 'layaways' => $periodTotals['layaways'],
+                'fromClosed' => $periodTotals['fromClosed'] > 0 ? $cents($periodTotals['fromClosed']) : null,
+                'unallocated' => $periodTotals['unallocated'] > 0 ? $cents($periodTotals['unallocated']) : null,
             ],
             'series' => array_map(fn (array $point): array => [
                 'key' => $point['key'],

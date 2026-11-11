@@ -75,7 +75,6 @@ final class CatalogSummaryPageTest extends TestCase
             ->where('totals.overdue.cents', 2_000)
             ->where('totals.overdueLayaways', 1)
             ->where('totals.upcoming.cents', 3_000)
-            ->where('totals.awaitingDelivery', 1)
             ->where('statuses.active', 1)
             ->where('statuses.completed', 1)
             ->where('statuses.cancelled', 1)

@@ -36,6 +36,8 @@ export interface SummaryPeriodTotals {
     readonly payments: number;
     readonly average: MoneyView | null;
     readonly layaways: number;
+    readonly fromClosed: MoneyView | null;
+    readonly unallocated: MoneyView | null;
 }
 
 export interface SummarySeriesPoint {
@@ -81,8 +83,6 @@ export interface CatalogSummaryProps {
         readonly overdue: MoneyView;
         readonly overdueLayaways: number;
         readonly upcoming: MoneyView;
-        readonly delivered: number;
-        readonly awaitingDelivery: number;
     };
     readonly statuses: Readonly<Record<string, number>>;
     readonly products: readonly CatalogSummaryProduct[];
