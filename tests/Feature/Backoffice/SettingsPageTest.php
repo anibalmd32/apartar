@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia;
 use Tests\Concerns\ReusesMigratedDatabase;
+use Tests\Support\ImageUploads;
 use Tests\TestCase;
 
 final class SettingsPageTest extends TestCase
@@ -142,6 +143,45 @@ final class SettingsPageTest extends TestCase
         $this->assertSame('Ferretería renombrada', $this->organization->name);
         $this->assertSame('0414-1234567', $this->organization->phone);
         $this->assertNotNull($this->organization->logo_path);
+    }
+
+    public function test_an_svg_logo_is_rejected_even_with_a_script_inside(): void
+    {
+        $svg = ImageUploads::real(
+            'logo.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><script>alert(document.cookie)</script><rect width="10" height="10"/></svg>',
+        );
+
+        $this->actingAs($this->owner())
+            ->putJson('/backoffice/ajustes/identidad', $this->identityPayload(['logo' => $svg]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['logo' => 'El archivo no es una imagen JPG, PNG ni WebP.']);
+
+        $this->assertNull($this->organization->refresh()->logo_path);
+    }
+
+    public function test_a_logo_whose_name_does_not_match_its_content_is_rejected(): void
+    {
+        $this->actingAs($this->owner())
+            ->putJson('/backoffice/ajustes/identidad', $this->identityPayload([
+                'logo' => ImageUploads::real('logo.jpg', ImageUploads::png()),
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['logo' => 'termina en «.jpg»']);
+
+        $this->assertNull($this->organization->refresh()->logo_path);
+    }
+
+    public function test_png_jpg_and_webp_logos_are_accepted(): void
+    {
+        foreach (['logo.png', 'logo.jpg', 'logo.webp'] as $name) {
+            $this->actingAs($this->owner())
+                ->put('/backoffice/ajustes/identidad', $this->identityPayload(['logo' => UploadedFile::fake()->image($name)]))
+                ->assertSessionHasNoErrors()
+                ->assertRedirect('/backoffice/ajustes');
+
+            $this->assertStringEndsWith(pathinfo($name, PATHINFO_EXTENSION), (string) $this->organization->refresh()->logo_path);
+        }
     }
 
     public function test_the_storefront_profile_is_saved_and_kept_when_absent(): void

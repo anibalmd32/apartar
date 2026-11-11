@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Backoffice;
 
 use App\Actions\Organization\UpdateOrganizationData;
+use App\Rules\RealMimeType;
 use App\Rules\ValidDocumentNumber;
 use App\Rules\ValidVenezuelanPhone;
 use App\Support\DocumentNumber;
@@ -33,7 +34,7 @@ final class UpdateOrganizationRequest extends FormRequest
             'tagline' => ['sometimes', 'nullable', 'string', 'max:80'],
             'description' => ['sometimes', 'nullable', 'string', 'max:300'],
             'address' => ['sometimes', 'nullable', 'string', 'max:160'],
-            'logo' => ['sometimes', 'nullable', 'image', 'mimes:png,jpg,jpeg,webp,svg', 'max:'.self::MAX_LOGO_KILOBYTES],
+            'logo' => ['sometimes', 'nullable', 'file', 'max:'.self::MAX_LOGO_KILOBYTES, new RealMimeType],
         ];
     }
 

@@ -151,10 +151,10 @@ export function OrganizationIdentityForm({ identity, brand, formId, onStateChang
 
             <FileField
                 label="Logo"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={(event) => setData('logo', event.target.files?.[0] ?? null)}
                 error={errors.logo}
-                hint="PNG, JPG, WebP o SVG, hasta 2 MB."
+                hint="PNG, JPG o WebP, hasta 2 MB."
                 preview={
                     brand.logoUrl === null ? null : (
                         <img src={brand.logoUrl} alt={`Logo de ${brand.name}`} className="h-12 w-12 rounded object-contain" />
