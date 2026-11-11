@@ -15,6 +15,7 @@ use App\Domain\Tenancy\LastOwnerException;
 use App\Exceptions\ExpiredInertiaSession;
 use App\Http\Middleware\AllowedDuringSuspension;
 use App\Http\Middleware\AssignVisitorId;
+use App\Http\Middleware\ConcealMonitorHost;
 use App\Http\Middleware\EnforcePlanLimit;
 use App\Http\Middleware\EnsureAccountSession;
 use App\Http\Middleware\EnsureAdminIsActive;
@@ -35,6 +36,7 @@ use App\Http\Middleware\ResolvePortalTenant;
 use App\Http\Middleware\ResolveStorefrontTenant;
 use App\Http\Middleware\ResolveTenant;
 use App\Support\CatalogShareLink;
+use App\Support\MonitorAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -46,6 +48,7 @@ use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -59,7 +62,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
 
-        $middleware->web(append: [
+        $middleware->web(prepend: [ConcealMonitorHost::class], append: [
             HandleInertiaRequests::class,
             RedirectAcrossSurfaces::class,
             AddLinkHeadersForPreloadedAssets::class,
@@ -95,6 +98,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request): ?SymfonyResponse {
+            return MonitorAccess::onHost($request) ? MonitorAccess::nothing($exception->getStatusCode()) : null;
+        });
+
         $exceptions->render(function (CatalogExpiredException $exception, Request $request): SymfonyResponse {
             return Inertia::render('catalog/CatalogExpired', $exception->toArray())
                 ->toResponse($request)

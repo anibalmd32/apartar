@@ -16,18 +16,6 @@ final class EnsureMonitorAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (MonitorAccess::granted($request)) {
-            return $next($request);
-        }
-
-        if (! MonitorAccess::configured()) {
-            abort(404);
-        }
-
-        if ($request->expectsJson() || ! $request->isMethod('GET')) {
-            abort(403);
-        }
-
-        return redirect()->guest(route('monitor.access'));
+        return MonitorAccess::granted($request) ? $next($request) : MonitorAccess::nothing();
     }
 }

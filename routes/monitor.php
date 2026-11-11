@@ -3,20 +3,23 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Monitor\AccessController;
+use App\Http\Middleware\AssignVisitorId;
+use App\Http\Middleware\HandleInertiaRequests;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Support\Facades\Route;
 
 $domain = config('monitor.domain');
+$onDomain = is_string($domain) && $domain !== '';
 
-$routes = function () use ($domain): void {
-    Route::middleware('outside-tenancy')->prefix('monitor')->name('monitor.')->group(function (): void {
-        Route::get('acceso', [AccessController::class, 'create'])->name('access');
-        Route::post('acceso', [AccessController::class, 'store'])->middleware('throttle:20,1')->name('access.store');
+$routes = function () use ($onDomain): void {
+    $silent = [ValidateCsrfToken::class, HandleInertiaRequests::class, AddLinkHeadersForPreloadedAssets::class, AssignVisitorId::class];
+
+    Route::middleware('outside-tenancy')->prefix($onDomain ? '' : 'monitor')->name('monitor.')->group(function () use ($silent): void {
+        Route::get('/', [AccessController::class, 'create'])->withoutMiddleware($silent)->name('access');
+        Route::post('/', [AccessController::class, 'store'])->withoutMiddleware($silent)->middleware('throttle:20,1')->name('access.store');
         Route::post('salir', [AccessController::class, 'destroy'])->name('logout');
     });
-
-    if (is_string($domain) && $domain !== '') {
-        Route::middleware('outside-tenancy')->get('/', fn () => redirect()->to('/'.config('pulse.path', 'pulse')))->name('monitor.home');
-    }
 };
 
-is_string($domain) && $domain !== '' ? Route::domain($domain)->group($routes) : $routes();
+$onDomain ? Route::domain((string) $domain)->group($routes) : $routes();

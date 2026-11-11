@@ -8,10 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Support\MonitorAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 final class AccessController extends Controller
 {
@@ -19,43 +18,46 @@ final class AccessController extends Controller
 
     public const DECAY_SECONDS = 900;
 
-    public function create(Request $request): View|RedirectResponse
-    {
-        abort_unless(MonitorAccess::configured(), 404);
+    private const MAX_LENGTH = 512;
 
-        if (MonitorAccess::granted($request)) {
-            return redirect()->to('/'.config('pulse.path', 'pulse'));
+    public function create(Request $request): Response|RedirectResponse
+    {
+        if (! MonitorAccess::configured()) {
+            return MonitorAccess::nothing();
         }
 
-        return view('monitor.access');
+        if (MonitorAccess::granted($request)) {
+            return $this->panels();
+        }
+
+        return response()->view('monitor.access', ['retry' => $request->session()->get(MonitorAccess::RETRY_KEY) === true]);
     }
 
-    /**
-     * @throws ValidationException
-     */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): Response|RedirectResponse
     {
-        abort_unless(MonitorAccess::configured(), 404);
-
-        $request->validate(['token' => ['required', 'string', 'max:512']]);
+        if (! MonitorAccess::configured()) {
+            return MonitorAccess::nothing();
+        }
 
         $key = 'monitor-access:'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
-            throw ValidationException::withMessages(['token' => sprintf('Demasiados intentos. Prueba en %d minutos.', (int) ceil(RateLimiter::availableIn($key) / 60))]);
+            return $this->retry();
         }
 
-        if (! MonitorAccess::matches((string) $request->string('token'))) {
+        $candidate = $request->input(MonitorAccess::FIELD);
+
+        if (! is_string($candidate) || strlen($candidate) > self::MAX_LENGTH || ! MonitorAccess::matches($candidate)) {
             RateLimiter::hit($key, self::DECAY_SECONDS);
             Log::warning('monitor.access.failed', ['ip' => $request->ip()]);
 
-            throw ValidationException::withMessages(['token' => 'El token no es válido.']);
+            return $this->retry();
         }
 
         RateLimiter::clear($key);
         MonitorAccess::grant($request);
 
-        return redirect()->intended('/'.config('pulse.path', 'pulse'));
+        return $this->panels();
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -63,5 +65,15 @@ final class AccessController extends Controller
         MonitorAccess::revoke($request);
 
         return redirect()->route('monitor.access');
+    }
+
+    private function retry(): RedirectResponse
+    {
+        return redirect()->route('monitor.access')->with(MonitorAccess::RETRY_KEY, true);
+    }
+
+    private function panels(): RedirectResponse
+    {
+        return redirect()->to('/'.config('pulse.path', 'pulse'));
     }
 }

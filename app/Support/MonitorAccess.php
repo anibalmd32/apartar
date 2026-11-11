@@ -5,10 +5,17 @@ declare(strict_types=1);
 namespace App\Support;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 final class MonitorAccess
 {
     public const SESSION_KEY = 'monitor.granted';
+
+    public const RETRY_KEY = 'monitor.retry';
+
+    public const FIELD = 'k';
+
+    public const SESSION_COOKIE = 'sid';
 
     public static function configured(): bool
     {
@@ -43,6 +50,18 @@ final class MonitorAccess
         $stored = $request->session()->get(self::SESSION_KEY);
 
         return is_string($stored) && hash_equals(self::fingerprint(), $stored);
+    }
+
+    public static function onHost(Request $request): bool
+    {
+        $domain = config('monitor.domain');
+
+        return is_string($domain) && $domain !== '' && strcasecmp($request->getHost(), $domain) === 0;
+    }
+
+    public static function nothing(int $status = 404): Response
+    {
+        return new Response('', $status);
     }
 
     private static function fingerprint(): string

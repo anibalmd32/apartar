@@ -77,8 +77,7 @@ final class PlatformAlerts
     private static function monitorUrl(): string
     {
         $domain = config('monitor.domain');
-        $path = '/'.config('pulse.path', 'pulse');
 
-        return is_string($domain) && $domain !== '' ? 'https://'.$domain.$path : $path;
+        return is_string($domain) && $domain !== '' ? 'https://'.$domain.'/' : '/monitor';
     }
 }
