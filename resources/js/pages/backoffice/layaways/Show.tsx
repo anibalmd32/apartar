@@ -2,12 +2,10 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { PageActions } from '@/components/ui/page-actions';
 import { SectionCard } from '@/components/ui/section-card';
-import { ToolDisclosure } from '@/components/ui/tool-disclosure';
 import { CancelLayawayDialog } from '@/features/layaway/components/CancelLayawayDialog';
 import { LayawayActivity } from '@/features/layaway/components/LayawayActivity';
 import { LayawayCustomerCard } from '@/features/layaway/components/LayawayCustomerCard';
 import { InstallmentPlan, LayawaySummary } from '@/features/layaway/components/LayawayOverview';
-import { AllocationEditor } from '@/features/receipts/components/AllocationEditor';
 import { ManualPaymentForm } from '@/features/receipts/components/ManualPaymentForm';
 import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import { paymentSuggestions } from '@/features/receipts/lib/payment-suggestions';
@@ -25,7 +23,6 @@ export default function LayawayShow({
     installments,
     payments,
     manualPayment,
-    reallocation,
     activity,
     correctionFields = null,
     safeguardOptions = null,
@@ -96,12 +93,6 @@ export default function LayawayShow({
                             safeguardOptions={safeguardOptions}
                         />
                     </SectionCard>
-
-                    {reallocation !== null ? (
-                        <ToolDisclosure title="Reasignar un pago" hint="Para mover lo que entró a otra cuota cuando se aplicó mal.">
-                            <AllocationEditor options={reallocation} />
-                        </ToolDisclosure>
-                    ) : null}
                 </div>
 
                 <div className="flex flex-col gap-4">

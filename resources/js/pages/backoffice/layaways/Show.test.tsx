@@ -192,11 +192,7 @@ it('reprograma solo cuotas sin pagar, dentro de su ventana', () => {
     expect(patch).toHaveBeenCalledWith('/backoffice/cuotas/12/reprogramar', expect.anything());
 });
 
-it('ofrece reasignar un pago solo cuando hay reparto que editar', () => {
-    const { unmount } = render(<LayawayShow {...props()} />);
-    expect(screen.queryByRole('form', { name: 'Reasignar un pago' })).not.toBeInTheDocument();
-    unmount();
-
+it('no ofrece reasignar un pago aunque haya reparto que editar', () => {
     render(
         <LayawayShow
             {...props()}
@@ -213,9 +209,8 @@ it('ofrece reasignar un pago solo cuando hay reparto que editar', () => {
             }}
         />,
     );
-    expect(screen.getByRole('form', { name: 'Reasignar un pago' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Importe para la cuota 1')).toHaveValue('30,00');
-    expect(screen.getByRole('form', { name: 'Reasignar un pago' }).closest('details')).not.toHaveAttribute('open');
+    expect(screen.queryByRole('form', { name: 'Reasignar un pago' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Reasignar un pago')).not.toBeInTheDocument();
 });
 
 it('en el celular deja a la vista solo la acción principal y lleva cancelar al menú de más acciones', () => {
