@@ -10,6 +10,7 @@ use App\Domain\Subscription\UsageCalculator;
 use App\Domain\Subscription\UsageMetric;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Product;
+use App\Support\Media\ImageMetadata;
 use App\Support\Media\TenantPathGenerator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,8 @@ final class AttachProductImagesAction
         try {
             foreach ($files as $file) {
                 $position++;
+
+                ImageMetadata::stripFile((string) $file->getRealPath());
 
                 DB::transaction(function () use ($product, $file, $position): void {
                     $this->usage->recountLocked(UsageMetric::StorageMb);

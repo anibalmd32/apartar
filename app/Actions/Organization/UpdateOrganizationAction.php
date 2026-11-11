@@ -15,6 +15,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Models\Organization;
 use App\Models\User;
 use App\Support\Auditing\LogsSensitiveActivity;
+use App\Support\Media\ImageMetadata;
 use App\Support\ReservedSlugs;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -28,7 +29,7 @@ final class UpdateOrganizationAction
 {
     use LogsSensitiveActivity;
 
-    private const LOGO_DIRECTORY = 'logos';
+    public const LOGO_DIRECTORY = 'logos';
 
     /**
      * @var list<string>
@@ -150,6 +151,8 @@ final class UpdateOrganizationAction
     private function storeLogo(Organization $organization, UploadedFile $logo): string
     {
         $disk = Storage::disk(OrganizationBrand::LOGO_DISK);
+
+        ImageMetadata::stripFile((string) $logo->getRealPath());
 
         $path = $logo->store(self::LOGO_DIRECTORY.'/'.$organization->getKey(), OrganizationBrand::LOGO_DISK);
 

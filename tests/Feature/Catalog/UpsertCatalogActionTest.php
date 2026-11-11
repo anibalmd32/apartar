@@ -14,6 +14,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\ReusesMigratedDatabase;
+use Tests\Support\ImageUploads;
 use Tests\TestCase;
 
 final class UpsertCatalogActionTest extends TestCase
@@ -105,6 +106,21 @@ final class UpsertCatalogActionTest extends TestCase
 
         $this->assertNotSame($first, $catalog->refresh()->cover_path);
         Storage::disk(UpsertCatalogAction::COVER_DISK)->assertMissing($first);
+    }
+
+    public function test_the_cover_is_stored_without_the_photos_metadata(): void
+    {
+        $catalog = $this->upsert(null, new CatalogData(
+            name: 'Campaña',
+            slug: null,
+            description: null,
+            cover: ImageUploads::real('portada.jpg', ImageUploads::jpegWithMetadata()),
+        ));
+
+        $stored = (string) Storage::disk(UpsertCatalogAction::COVER_DISK)->get((string) $catalog->cover_path);
+
+        $this->assertSame([], ImageUploads::personalTraces($stored));
+        $this->assertNotFalse(imagecreatefromstring($stored));
     }
 
     public function test_saving_without_a_new_cover_keeps_the_current_one(): void

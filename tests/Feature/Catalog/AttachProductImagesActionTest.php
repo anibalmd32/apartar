@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Concerns\ReusesMigratedDatabase;
+use Tests\Support\ImageUploads;
 use Tests\TestCase;
 
 final class AttachProductImagesActionTest extends TestCase
@@ -68,6 +69,26 @@ final class AttachProductImagesActionTest extends TestCase
             ->where('organization_id', $this->organization->getKey())
             ->where('metric', 'storage_mb')
             ->value('value'));
+    }
+
+    public function test_the_stored_original_loses_the_photos_metadata_but_keeps_its_orientation(): void
+    {
+        $product = Product::factory()->create();
+
+        app(AttachProductImagesAction::class)->handle($product, [ImageUploads::real('foto.jpg', ImageUploads::jpegWithMetadata(6))]);
+
+        $media = ($product->fresh() ?? $product)->getFirstMedia(Product::IMAGES);
+        $this->assertInstanceOf(Media::class, $media);
+
+        $stored = (string) Storage::disk('public')->get($media->getPathRelativeToRoot());
+        $path = (string) tempnam(sys_get_temp_dir(), 'apartar-exif-');
+        file_put_contents($path, $stored);
+        $exif = @exif_read_data($path);
+        unlink($path);
+
+        $this->assertSame([], ImageUploads::personalTraces($stored));
+        $this->assertSame(6, is_array($exif) ? ($exif['Orientation'] ?? null) : null);
+        $this->assertSame(strlen($stored), (int) $media->size);
     }
 
     private function image(string $name): UploadedFile

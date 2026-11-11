@@ -18,6 +18,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\ReusesMigratedDatabase;
+use Tests\Support\ImageUploads;
 use Tests\TestCase;
 
 final class UpdateOrganizationActionTest extends TestCase
@@ -115,6 +116,18 @@ final class UpdateOrganizationActionTest extends TestCase
         Storage::disk(OrganizationBrand::LOGO_DISK)->assertExists($this->organization->logo_path);
 
         $this->assertNotNull($this->action()->brandOf($this->organization)->logoUrl);
+    }
+
+    public function test_the_logo_is_stored_without_the_photos_metadata(): void
+    {
+        $owner = $this->subscribedOwner();
+
+        $this->action()->handle($this->data(logo: ImageUploads::real('logo.jpg', ImageUploads::jpegWithMetadata())), $owner);
+
+        $stored = (string) Storage::disk(OrganizationBrand::LOGO_DISK)->get((string) $this->organization->refresh()->logo_path);
+
+        $this->assertSame([], ImageUploads::personalTraces($stored));
+        $this->assertNotFalse(imagecreatefromstring($stored));
     }
 
     public function test_replacing_the_logo_removes_the_previous_one(): void

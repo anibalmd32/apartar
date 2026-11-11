@@ -9,6 +9,7 @@ use App\Domain\Tenancy\SlugLockedException;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\Catalog;
 use App\Models\User;
+use App\Support\Media\ImageMetadata;
 use App\Support\UniqueCatalogSlug;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 final class UpsertCatalogAction
 {
-    private const COVER_DIRECTORY = 'catalogos';
+    public const COVER_DIRECTORY = 'catalogos';
 
     public const COVER_DISK = 'public';
 
@@ -109,6 +110,8 @@ final class UpsertCatalogAction
     private function storeCover(UploadedFile $cover, ?string $previous = null): string
     {
         $organizationId = $this->context->organizationId();
+
+        ImageMetadata::stripFile((string) $cover->getRealPath());
 
         $path = (string) $cover->store(self::COVER_DIRECTORY.'/'.$organizationId, self::COVER_DISK);
 
