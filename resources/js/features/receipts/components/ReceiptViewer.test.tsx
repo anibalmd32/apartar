@@ -29,12 +29,12 @@ it('acerca, aleja y gira la captura', () => {
     expect(screen.getByRole('button', { name: 'Alejar' })).toBeDisabled();
 });
 
-it('descarga y abre el original', () => {
+it('descarga el original sin abrir otra pestaña', () => {
     viewer('image');
 
     expect(screen.getByRole('link', { name: 'Descargar' })).toHaveAttribute('href', URL);
     expect(screen.getByRole('link', { name: 'Descargar' })).toHaveAttribute('download');
-    expect(screen.getByRole('link', { name: 'Abrir el archivo completo' })).toHaveAttribute('target', '_blank');
+    expect(document.querySelector('a[target="_blank"]')).toBeNull();
 });
 
 it('con el PDF deja el zoom y el giro al visor del navegador', () => {
@@ -51,7 +51,5 @@ it('en el celular cada botón de la barra del visor mide 44px', () => {
         expect(screen.getByRole('button', { name })).toHaveClass('max-lg:size-11');
     }
 
-    for (const name of ['Descargar', 'Abrir el archivo completo']) {
-        expect(screen.getByRole('link', { name })).toHaveClass('max-lg:size-11');
-    }
+    expect(screen.getByRole('link', { name: 'Descargar' })).toHaveClass('max-lg:size-11');
 });

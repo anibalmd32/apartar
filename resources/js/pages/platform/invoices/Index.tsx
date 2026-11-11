@@ -1,11 +1,12 @@
 import { Badge } from '@/components/ui/badge';
+import { FileLink } from '@/components/ui/file-link';
 import { Icon } from '@/components/ui/icon';
 import { ReceiptImage } from '@/features/platform/components/ReceiptImage';
 import { ReceiptReview } from '@/features/platform/components/ReceiptReview';
 import PlatformLayout from '@/layouts/platform-layout';
 import { cn } from '@/lib/utils';
 import { type PendingSubscriptionReceipt } from '@/types/platform';
-import { cilExternalLink, cilImage } from '@coreui/icons';
+import { cilImage, cilZoomIn } from '@coreui/icons';
 import { useState } from 'react';
 
 export default function InvoicesIndex({ receipts }: { receipts: readonly PendingSubscriptionReceipt[] }) {
@@ -67,10 +68,10 @@ export default function InvoicesIndex({ receipts }: { receipts: readonly Pending
                                 onError={() => setFailed((current) => new Set(current).add(selected.id))}
                             />
                         )}
-                        <a href={selected.fileUrl} target="_blank" rel="noreferrer" className="btn btn-sm">
-                            <Icon icon={cilExternalLink} size={14} />
+                        <FileLink url={selected.fileUrl} title={`Comprobante de ${selected.organization.name}`} className="btn btn-sm">
+                            <Icon icon={cilZoomIn} size={14} />
                             Ver comprobante
-                        </a>
+                        </FileLink>
                     </div>
 
                     <div className="border-line bg-base-100 shadow-card rounded-2xl border p-5">

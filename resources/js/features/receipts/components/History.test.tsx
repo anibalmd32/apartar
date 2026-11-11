@@ -2,7 +2,7 @@ import { PaymentHistory } from '@/features/receipts/components/PaymentHistory';
 import { ReceiptHistory } from '@/features/receipts/components/ReceiptHistory';
 import { centsUsd } from '@/lib/money';
 import { type PaymentRow, type ReceiptRow } from '@/types/receipt';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
 const PAYMENT: PaymentRow = {
@@ -91,7 +91,11 @@ it('enlaza el comprobante que adjuntó el negocio, con su banco y referencia', (
     );
 
     expect(screen.getByText('Banesco · ref. 0123456789')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Ver comprobante' })).toHaveAttribute('href', '/backoffice/pagos/7/archivo?signature=x');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver comprobante' }));
+    expect(within(screen.getByRole('dialog')).getByRole('img', { name: 'Comprobante del pago' })).toHaveAttribute(
+        'src',
+        '/backoffice/pagos/7/archivo?signature=x',
+    );
 });
 
 it('dice qué parte fue a la inicial y qué sobró', () => {
@@ -147,6 +151,10 @@ it('dice el motivo del rechazo, encadena el reintento y enlaza el archivo', () =
     const [first, second] = screen.getAllByRole('listitem');
     expect(within(first!).getByText('Reintento del comprobante del 5 sept 2026')).toBeInTheDocument();
     expect(within(first!).getByText('Pagado a Pago móvil · Banesco · 0414-1234567')).toBeInTheDocument();
-    expect(within(first!).getByRole('link', { name: 'Ver el comprobante' })).toHaveAttribute('href', '/mi-cuenta/comprobantes/9/archivo?signature=x');
+    fireEvent.click(within(first!).getByRole('button', { name: 'Ver el comprobante' }));
+    expect(within(screen.getByRole('dialog')).getByRole('img', { name: 'Comprobante' })).toHaveAttribute(
+        'src',
+        '/mi-cuenta/comprobantes/9/archivo?signature=x',
+    );
     expect(within(second!).getByText('Motivo: La referencia no coincide con el banco.')).toBeInTheDocument();
 });

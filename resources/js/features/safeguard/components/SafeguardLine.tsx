@@ -1,3 +1,4 @@
+import { FileLink } from '@/components/ui/file-link';
 import { Icon } from '@/components/ui/icon';
 import { type SafeguardView } from '@/types/safeguard';
 import { cilShieldAlt } from '@coreui/icons';
@@ -39,9 +40,9 @@ export function SafeguardLine({ safeguard, onEdit }: SafeguardLineProps) {
                     <span>Resguardado en {record.destinationLabel}</span>
                     {record.reference !== null ? <span>ref. {record.reference}</span> : null}
                     {record.proofUrl !== null ? (
-                        <a href={record.proofUrl} target="_blank" rel="noopener noreferrer" className="link link-primary">
+                        <FileLink url={record.proofUrl} title="Comprobante del resguardo" className="link link-primary">
                             Ver comprobante del resguardo
-                        </a>
+                        </FileLink>
                     ) : null}
                     {record.note !== null ? <span className="text-ink-3">{record.note}</span> : null}
                 </p>

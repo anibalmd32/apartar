@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { FileField } from '@/components/ui/file-field';
+import { FileLink } from '@/components/ui/file-link';
 import { Modal } from '@/components/ui/modal';
 import { SelectField } from '@/components/ui/select-field';
 import { TextField } from '@/components/ui/text-field';
@@ -84,9 +85,9 @@ export function SafeguardSheet({ safeguard, options, amount, onClose }: Safeguar
                     error={form.errors.proof}
                     hint={
                         record?.proofUrl ? (
-                            <a href={record.proofUrl} target="_blank" rel="noopener noreferrer" className="link link-primary">
+                            <FileLink url={record.proofUrl} title="Comprobante del resguardo" className="link link-primary">
                                 Ver el comprobante guardado
-                            </a>
+                            </FileLink>
                         ) : (
                             `Captura o PDF de hasta ${options.file.maxMb} MB.`
                         )

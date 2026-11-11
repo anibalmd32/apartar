@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { FileLink } from '@/components/ui/file-link';
 import { Icon } from '@/components/ui/icon';
 import { PhotoReviewDecision } from '@/features/platform/components/PhotoReviewDecision';
 import PlatformLayout from '@/layouts/platform-layout';
@@ -62,9 +63,9 @@ export default function PhotoReviewsIndex({ reviews }: { reviews: readonly Pendi
                             <p className="text-ink-2 col-span-2 my-auto text-center text-sm">El producto ya no tiene fotos.</p>
                         ) : (
                             selected.photos.map((photo) => (
-                                <a key={photo.zoom} href={photo.zoom} target="_blank" rel="noreferrer" className="block">
+                                <FileLink key={photo.zoom} url={photo.zoom} kind="image" title={photo.alt || 'Foto del producto'} className="block">
                                     <img src={photo.card} alt={photo.alt} className="aspect-square w-full rounded-xl object-cover" />
-                                </a>
+                                </FileLink>
                             ))
                         )}
                     </div>

@@ -82,8 +82,9 @@ it('un resguardo registrado muestra dónde quedó, su referencia y su comprobant
     const line = screen.getByLabelText('Resguardo del pago');
     expect(line).toHaveTextContent('Resguardado en Binance (USDT)');
     expect(line).toHaveTextContent('ref. ORD-77');
-    expect(within(line).getByRole('link', { name: 'Ver comprobante del resguardo' })).toHaveAttribute(
-        'href',
+    fireEvent.click(within(line).getByRole('button', { name: 'Ver comprobante del resguardo' }));
+    expect(screen.getByRole('img', { name: 'Comprobante del resguardo' })).toHaveAttribute(
+        'src',
         '/backoffice/pagos/4/resguardo/archivo?signature=x',
     );
     expect(within(line).getByRole('button', { name: 'Editar resguardo' })).toBeInTheDocument();

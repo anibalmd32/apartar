@@ -87,7 +87,8 @@ it('enseña la miniatura de una imagen y un icono para un PDF, sin renderizarlo'
     const images = container.querySelector('table')!.querySelectorAll('img');
     expect(images).toHaveLength(1);
     expect(images[0]).toHaveAttribute('src', '/backoffice/comprobantes/1/archivo?signature=abc');
-    expect(table.getByText('PDF').closest('a')).toHaveAttribute('href', '/backoffice/comprobantes/2/archivo?signature=def');
+    fireEvent.click(table.getByText('PDF').closest('button')!);
+    expect(document.querySelector('object[data="/backoffice/comprobantes/2/archivo?signature=def"]')).not.toBeNull();
 });
 
 it('marca el comprobante de un apartado cancelado', () => {

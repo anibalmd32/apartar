@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { FileLink } from '@/components/ui/file-link';
 import { formatAge, formatDeclaredAmount } from '@/features/receipts/lib/inbox-format';
 import { formatDate } from '@/lib/dates';
 import { formatAccountIdentifier, formatDocumentNumber } from '@/lib/identity-format';
@@ -98,24 +99,24 @@ function FileCell({ row }: { row: ReceiptInboxRow }) {
 
     if (row.file.kind === 'pdf') {
         return (
-            <a
-                href={row.file.url}
-                target="_blank"
-                rel="noopener noreferrer"
+            <FileLink
+                url={row.file.url}
+                kind="pdf"
+                title="Comprobante"
+                ariaLabel={label}
                 className="bg-base-300 text-ink-2 hover:text-base-content flex h-11 w-9 shrink-0 items-center justify-center rounded-[7px]"
-                aria-label={label}
             >
                 <span aria-hidden="true" className="text-[10px] font-bold">
                     PDF
                 </span>
-            </a>
+            </FileLink>
         );
     }
 
     return (
-        <a href={row.file.url} target="_blank" rel="noopener noreferrer" aria-label={label} className="touch:min-w-11 flex shrink-0 justify-center">
+        <FileLink url={row.file.url} kind="image" title="Comprobante" ariaLabel={label} className="touch:min-w-11 flex shrink-0 justify-center">
             <img src={row.file.url} alt="" loading="lazy" className="bg-base-300 h-11 w-9 rounded-[7px] object-cover" />
-        </a>
+        </FileLink>
     );
 }
 

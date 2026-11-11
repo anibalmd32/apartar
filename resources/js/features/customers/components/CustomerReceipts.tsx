@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { FileLink } from '@/components/ui/file-link';
 import { formatDate } from '@/lib/dates';
 import { RECEIPT_TONES } from '@/lib/status-tones';
 import { type CustomerReceiptRow } from '@/types/customers';
@@ -29,9 +30,13 @@ export function CustomerReceipts({ receipts }: { receipts: readonly CustomerRece
                             Rechazado{receipt.reviewedBy !== null ? ` por ${receipt.reviewedBy}` : ''}: {receipt.rejectionReason}
                         </span>
                     ) : null}
-                    <a href={receipt.fileUrl} target="_blank" rel="noreferrer" className="text-primary-ink text-xs font-semibold hover:underline">
+                    <FileLink
+                        url={receipt.fileUrl}
+                        title="Comprobante del cliente"
+                        className="text-primary-ink self-start text-xs font-semibold hover:underline"
+                    >
                         Ver el archivo
-                    </a>
+                    </FileLink>
                 </li>
             ))}
         </ul>

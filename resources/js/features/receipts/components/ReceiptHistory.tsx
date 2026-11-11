@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { FileLink } from '@/components/ui/file-link';
 import { IconChip } from '@/components/ui/icon-chip';
 import { formatDate } from '@/lib/dates';
 import { RECEIPT_TONES as TONES } from '@/lib/status-tones';
@@ -44,14 +45,13 @@ export function ReceiptHistory({ receipts }: ReceiptHistoryProps) {
                                 <p className="text-ink-3 text-xs">Reintento del comprobante del {formatDate(replaced)}</p>
                             ) : null}
                             {receipt.rejectionReason !== null ? <p className="text-error text-xs">Motivo: {receipt.rejectionReason}</p> : null}
-                            <a
-                                href={receipt.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <FileLink
+                                url={receipt.fileUrl}
+                                title="Comprobante"
                                 className="hit-area text-primary-ink self-start text-xs font-semibold hover:underline"
                             >
                                 Ver el comprobante
-                            </a>
+                            </FileLink>
                         </div>
                     </li>
                 );

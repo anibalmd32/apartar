@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { BankMark } from '@/components/ui/bank-mark';
+import { FileLink } from '@/components/ui/file-link';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CorrectPaymentSheet } from '@/features/receipts/components/CorrectPaymentSheet';
 import { MovePaymentSheet } from '@/features/receipts/components/MovePaymentSheet';
@@ -76,9 +77,9 @@ function PaymentItem({
                         </span>
                     ) : null}
                     {payment.attachmentUrl !== null ? (
-                        <a href={payment.attachmentUrl} target="_blank" rel="noopener noreferrer" className="link link-primary">
+                        <FileLink url={payment.attachmentUrl} title="Comprobante del pago" className="link link-primary">
                             Ver comprobante
-                        </a>
+                        </FileLink>
                     ) : null}
                     {payment.registeredByBusiness ? (
                         <Badge tone="info" outline>
