@@ -41,7 +41,7 @@ it('sin hitos no hay tarjeta', () => {
     expect(container).toBeEmptyDOMElement();
 });
 
-it('es una línea de tiempo vertical y una transferencia enlaza al otro apartado', () => {
+it('es una línea de tiempo vertical, sin columna vacía a la izquierda, y una transferencia enlaza al otro apartado', () => {
     render(
         <LayawayActivity
             events={[
@@ -65,11 +65,14 @@ it('es una línea de tiempo vertical y una transferencia enlaza al otro apartado
     );
 
     const timeline = screen.getByRole('list', { name: 'Actividad del apartado' });
-    expect(timeline).toHaveClass('timeline', 'timeline-vertical');
+    expect(timeline.tagName).toBe('OL');
 
     const [transfer, safeguard] = within(timeline).getAllByRole('listitem');
     expect(transfer).toHaveTextContent('Pago transferido al apartado AP-9X2 · $30,00');
     expect(within(transfer!).getByRole('link', { name: 'Ver el apartado AP-9X2' })).toHaveAttribute('href', '/backoffice/apartados/AP-9X2');
     expect(safeguard).toHaveTextContent('Resguardo registrado · Binance (USDT)');
     expect(safeguard).toHaveTextContent('Anibal');
+    expect(transfer!.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+    expect(safeguard!.querySelectorAll(':scope > span[aria-hidden="true"]')).toHaveLength(1);
+    expect(transfer!.lastElementChild).toHaveClass('flex-1');
 });

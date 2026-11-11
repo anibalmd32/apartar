@@ -52,17 +52,17 @@ export function LayawayActivity({ events, timezone }: { events: readonly Layaway
 
     return (
         <SectionCard title="Actividad">
-            <ul className="timeline timeline-vertical timeline-compact timeline-snap-icon" aria-label="Actividad del apartado">
+            <ol className="flex flex-col" aria-label="Actividad del apartado">
                 {events.map((event, index) => {
                     const look = LOOK[event.kind] ?? FALLBACK;
 
                     return (
-                        <li key={`${event.kind}-${event.at}-${index}`} data-kind={event.kind}>
-                            {index > 0 ? <hr className="bg-line" /> : null}
-                            <div className="timeline-middle">
-                                <IconChip icon={look.icon} tone={look.tone} />
-                            </div>
-                            <div className={cn('timeline-end flex min-w-0 flex-col gap-0.5 pl-1', index < events.length - 1 && 'mb-4')}>
+                        <li key={`${event.kind}-${event.at}-${index}`} data-kind={event.kind} className="relative flex gap-3">
+                            {index < events.length - 1 ? (
+                                <span aria-hidden="true" className="bg-line absolute top-9 bottom-1 left-[15.5px] w-px" />
+                            ) : null}
+                            <IconChip icon={look.icon} tone={look.tone} className="relative" />
+                            <div className={cn('flex min-w-0 flex-1 flex-col gap-0.5 pt-1', index < events.length - 1 && 'pb-5')}>
                                 <span className="text-[13px] font-semibold">{event.title}</span>
                                 {event.detail ? <span className="text-ink-2 text-xs break-words">{event.detail}</span> : null}
                                 {event.link ? (
@@ -75,11 +75,10 @@ export function LayawayActivity({ events, timezone }: { events: readonly Layaway
                                     {event.actor ? ` · ${event.actor}` : ''}
                                 </span>
                             </div>
-                            {index < events.length - 1 ? <hr className="bg-line" /> : null}
                         </li>
                     );
                 })}
-            </ul>
+            </ol>
         </SectionCard>
     );
 }
