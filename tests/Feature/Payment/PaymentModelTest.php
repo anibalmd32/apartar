@@ -67,6 +67,7 @@ final class PaymentModelTest extends TestCase
 
         $changes = [
             'layaway_id' => $otherLayaway->getKey(),
+            'replaces_payment_id' => $this->within(fn (): Payment => Payment::factory()->createOne())->getKey(),
             'receipt_id' => $receipt->getKey(),
             'payment_method' => PaymentMethod::EfectivoUsd,
             'payment_account_id' => $this->within(fn (): PaymentAccount => PaymentAccount::factory()->create())->getKey(),

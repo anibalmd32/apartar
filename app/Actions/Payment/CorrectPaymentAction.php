@@ -20,6 +20,7 @@ use App\Models\Payment;
 use App\Models\PaymentSafeguard;
 use App\Models\Receipt;
 use App\Models\User;
+use App\Support\ModelState;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -59,13 +60,16 @@ final class CorrectPaymentAction
         return DB::transaction(function () use ($payment, $target, $data, $actor, $moving, $reason): Payment {
             $this->void->handle($payment, $actor, mb_substr($reason, 0, 500));
 
-            return $this->keepingSafeguard($payment, $this->reapply($payment, $target, $data, $actor, $moving));
+            return $this->linkReplacement($payment, $this->reapply($payment, $target, $data, $actor, $moving));
         });
     }
 
-    private function keepingSafeguard(Payment $voided, Payment $replacement): Payment
+    private function linkReplacement(Payment $voided, Payment $replacement): Payment
     {
+        Payment::query()->whereKey($replacement->getKey())->update(['replaces_payment_id' => $voided->getKey()]);
         PaymentSafeguard::query()->where('payment_id', $voided->getKey())->update(['payment_id' => $replacement->getKey()]);
+
+        ModelState::adopt($replacement, ['replaces_payment_id' => $voided->getKey()] + $replacement->getAttributes());
 
         return $replacement;
     }

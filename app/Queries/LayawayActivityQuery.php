@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Layaway\InstallmentStatus;
 use App\Domain\Money\Money;
 use App\Domain\Money\MoneyFormatter;
@@ -11,15 +12,18 @@ use App\Domain\Payment\ReceiptStatus;
 use App\Models\Catalog;
 use App\Models\Installment;
 use App\Models\Layaway;
+use App\Models\Payment;
 use App\Models\User;
-use Carbon\CarbonInterface;
+use App\Queries\Activity\ActivityEvent;
+use App\Queries\Activity\AuditActivity;
+use App\Queries\Activity\PaymentActivity;
 
 final class LayawayActivityQuery
 {
-    public const LIMIT = 12;
+    public const LIMIT = 30;
 
     /**
-     * @return list<array{kind: string, title: string, detail: string|null, actor: string|null, at: string}>
+     * @return list<array{kind: string, title: string, detail: string|null, actor: string|null, at: string, link: array{url: string, label: string}|null}>
      */
     public function for(Layaway $layaway, int $limit = self::LIMIT): array
     {
@@ -27,16 +31,26 @@ final class LayawayActivityQuery
             'catalog:id,organization_id,name',
             'createdBy:id,name',
             'receipts.reviewer:id,name',
-            'payments.registeredBy:id,name',
             'installments',
         ]);
 
-        $events = [];
-        $catalog = $layaway->catalog;
-        $events[] = $this->event('created', 'Apartado creado', $this->originOf($catalog, $layaway->createdBy), null, $layaway->created_at);
+        $payments = Payment::query()
+            ->withVoided()
+            ->where('layaway_id', $layaway->getKey())
+            ->with(['registeredBy:id,name', 'voidedBy:id,name', 'replaces.layaway:id,code', 'replaces.voidedBy:id,name', 'safeguard.recordedBy:id,name'])
+            ->get();
+        $audit = new AuditActivity($layaway, $payments);
+
+        $events = [
+            ActivityEvent::make('created', 'Apartado creado', $this->originOf($layaway->catalog, $layaway->createdBy), null, $layaway->created_at),
+            ...$this->receipts($layaway),
+            ...(new PaymentActivity)->for($layaway, $payments),
+            ...$this->safeguardsBeforeAudit($payments, $audit),
+            ...$audit->events(),
+        ];
 
         if ($layaway->activated_at !== null) {
-            $events[] = $this->event(
+            $events[] = ActivityEvent::make(
                 'activated',
                 $layaway->terms()->requiresDownPayment() ? 'Inicial pagada · apartado activo' : 'Apartado activo · sin inicial',
                 null,
@@ -45,55 +59,76 @@ final class LayawayActivityQuery
             );
         }
 
-        foreach ($layaway->receipts as $receipt) {
-            $declared = MoneyFormatter::format(Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency));
-            $events[] = $this->event('receipt_submitted', 'Comprobante recibido · '.$declared, $receipt->payment_method->label(), null, $receipt->created_at);
-
-            if ($receipt->status !== ReceiptStatus::PendingReview && $receipt->reviewed_at !== null) {
-                $approved = $receipt->status === ReceiptStatus::Approved;
-                $reviewer = $receipt->reviewer;
-                $events[] = $this->event(
-                    $approved ? 'receipt_approved' : 'receipt_rejected',
-                    $approved ? 'Comprobante aprobado' : 'Comprobante rechazado',
-                    $approved ? null : $receipt->rejection_reason,
-                    $reviewer instanceof User ? $reviewer->name : null,
-                    $receipt->reviewed_at,
-                );
-            }
-        }
-
-        foreach ($layaway->payments as $payment) {
-            if ($payment->receipt_id !== null) {
-                continue;
-            }
-
-            $registrar = $payment->registeredBy;
-            $events[] = $this->event(
-                'payment_recorded',
-                'Pago registrado por el negocio · '.MoneyFormatter::format($payment->amount_cents_usd),
-                $payment->note,
-                $registrar instanceof User ? $registrar->name : null,
-                $payment->settled_at,
-            );
-        }
-
         foreach ($layaway->installments as $installment) {
             if ($this->wentOverdue($installment)) {
-                $events[] = $this->event('installment_overdue', 'Cuota '.$installment->number.' quedó atrasada', null, null, $installment->due_date->addDay());
+                $events[] = ActivityEvent::make('installment_overdue', 'Cuota '.$installment->number.' quedó atrasada', null, null, $installment->due_date->addDay());
             }
         }
 
         if ($layaway->delivered_at !== null) {
-            $events[] = $this->event('delivered', 'Entregado al cliente', null, null, $layaway->delivered_at);
+            $events[] = ActivityEvent::make('delivered', 'Entregado al cliente', null, $audit->actorOf(AuditEvent::LayawayDelivered), $layaway->delivered_at);
         }
 
         if ($layaway->cancelled_at !== null) {
-            $events[] = $this->event('cancelled', 'Apartado cancelado', $layaway->cancellation_reason, null, $layaway->cancelled_at);
+            $events[] = ActivityEvent::make('cancelled', 'Apartado cancelado', $layaway->cancellation_reason, $audit->actorOf(AuditEvent::LayawayCancelled), $layaway->cancelled_at);
         }
 
         usort($events, fn (array $a, array $b): int => strcmp($b['at'], $a['at']));
 
         return array_slice($events, 0, $limit);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function receipts(Layaway $layaway): array
+    {
+        $events = [];
+
+        foreach ($layaway->receipts as $receipt) {
+            $declared = MoneyFormatter::format(Money::fromDecimalString((string) $receipt->declared_amount, $receipt->declared_currency));
+            $events[] = ActivityEvent::make('receipt_submitted', 'Comprobante recibido · '.$declared, $receipt->payment_method->label(), null, $receipt->created_at);
+
+            if ($receipt->status !== ReceiptStatus::PendingReview && $receipt->reviewed_at !== null) {
+                $approved = $receipt->status === ReceiptStatus::Approved;
+                $events[] = ActivityEvent::make(
+                    $approved ? 'receipt_approved' : 'receipt_rejected',
+                    $approved ? 'Comprobante aprobado' : 'Comprobante rechazado',
+                    $approved ? null : $receipt->rejection_reason,
+                    $receipt->reviewer instanceof User ? $receipt->reviewer->name : null,
+                    $receipt->reviewed_at,
+                );
+            }
+        }
+
+        return $events;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Payment>  $payments
+     * @return list<array<string, mixed>>
+     */
+    private function safeguardsBeforeAudit(\Illuminate\Database\Eloquent\Collection $payments, AuditActivity $audit): array
+    {
+        $events = [];
+
+        foreach ($payments as $payment) {
+            $safeguard = $payment->safeguard;
+
+            if ($safeguard === null || $audit->recordedSafeguard((int) $payment->getKey())) {
+                continue;
+            }
+
+            $events[] = ActivityEvent::make(
+                'safeguard_recorded',
+                'Resguardo registrado · '.$safeguard->destination->label(),
+                'Pago de '.MoneyFormatter::format($payment->amount_cents_usd).($safeguard->reference === null ? '' : '. ref. '.$safeguard->reference),
+                $safeguard->recordedBy?->name,
+                $safeguard->updated_at,
+            );
+        }
+
+        return $events;
     }
 
     private function originOf(?Catalog $catalog, ?User $creator): ?string
@@ -112,13 +147,5 @@ final class LayawayActivityQuery
         }
 
         return $installment->status !== InstallmentStatus::Paid && $installment->due_date->isPast();
-    }
-
-    /**
-     * @return array{kind: string, title: string, detail: string|null, actor: string|null, at: string}
-     */
-    private function event(string $kind, string $title, ?string $detail, ?string $actor, ?CarbonInterface $at): array
-    {
-        return ['kind' => $kind, 'title' => $title, 'detail' => $detail, 'actor' => $actor, 'at' => (string) $at?->toIso8601String()];
     }
 }

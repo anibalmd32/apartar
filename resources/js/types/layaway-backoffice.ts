@@ -84,6 +84,7 @@ export interface LayawayActivityEvent {
     readonly detail: string | null;
     readonly actor: string | null;
     readonly at: string;
+    readonly link?: { readonly url: string; readonly label: string } | null;
 }
 
 export interface BackofficeLayawayShowProps {

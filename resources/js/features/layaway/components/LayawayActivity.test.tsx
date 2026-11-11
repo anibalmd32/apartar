@@ -1,6 +1,15 @@
 import { LayawayActivity } from '@/features/layaway/components/LayawayActivity';
-import { render, screen } from '@testing-library/react';
-import { expect, it } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import { type ReactNode } from 'react';
+import { expect, it, vi } from 'vitest';
+
+vi.mock('@inertiajs/react', () => ({
+    Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
+        <a href={href} className={className}>
+            {children}
+        </a>
+    ),
+}));
 
 it('pinta los hitos en el orden del servidor, con su detalle y su autor', () => {
     render(
@@ -30,4 +39,37 @@ it('sin hitos no hay tarjeta', () => {
     const { container } = render(<LayawayActivity events={[]} />);
 
     expect(container).toBeEmptyDOMElement();
+});
+
+it('es una línea de tiempo vertical y una transferencia enlaza al otro apartado', () => {
+    render(
+        <LayawayActivity
+            events={[
+                {
+                    kind: 'payment_transferred_out',
+                    title: 'Pago transferido al apartado AP-9X2 · $30,00',
+                    detail: 'Motivo: era de la otra clienta',
+                    actor: 'Anibal',
+                    at: '2026-11-10T10:00:00-04:00',
+                    link: { url: '/backoffice/apartados/AP-9X2', label: 'AP-9X2' },
+                },
+                {
+                    kind: 'safeguard_recorded',
+                    title: 'Resguardo registrado · Binance (USDT)',
+                    detail: 'Pago de $30,00',
+                    actor: 'Anibal',
+                    at: '2026-11-09T10:00:00-04:00',
+                },
+            ]}
+        />,
+    );
+
+    const timeline = screen.getByRole('list', { name: 'Actividad del apartado' });
+    expect(timeline).toHaveClass('timeline', 'timeline-vertical');
+
+    const [transfer, safeguard] = within(timeline).getAllByRole('listitem');
+    expect(transfer).toHaveTextContent('Pago transferido al apartado AP-9X2 · $30,00');
+    expect(within(transfer!).getByRole('link', { name: 'Ver el apartado AP-9X2' })).toHaveAttribute('href', '/backoffice/apartados/AP-9X2');
+    expect(safeguard).toHaveTextContent('Resguardo registrado · Binance (USDT)');
+    expect(safeguard).toHaveTextContent('Anibal');
 });

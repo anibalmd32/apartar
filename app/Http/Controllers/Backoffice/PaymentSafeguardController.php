@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backoffice;
 
 use App\Actions\Payment\RecordSafeguardAction;
+use App\Actions\Payment\RemoveSafeguardAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backoffice\RecordSafeguardRequest;
 use App\Models\Layaway;
@@ -39,20 +40,11 @@ final class PaymentSafeguardController extends Controller
         return back()->with('status', self::SAVED);
     }
 
-    public function destroy(Request $request, Payment $payment): RedirectResponse
+    public function destroy(Request $request, Payment $payment, RemoveSafeguardAction $remove): RedirectResponse
     {
-        $this->authorizeFor($request, $payment);
-
-        $safeguard = PaymentSafeguard::query()->where('payment_id', $payment->getKey())->first();
-
-        if ($safeguard instanceof PaymentSafeguard) {
-            $path = $safeguard->proof_path;
-            $safeguard->delete();
-
-            if ($path !== null) {
-                Storage::disk(Receipt::DISK)->delete($path);
-            }
-        }
+        /** @var User $actor */
+        $actor = $request->user();
+        $remove->handle($payment, $actor);
 
         return back()->with('status', self::REMOVED);
     }

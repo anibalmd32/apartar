@@ -24,6 +24,7 @@ use LogicException;
  * @property int $id
  * @property int $organization_id
  * @property int $layaway_id
+ * @property int|null $replaces_payment_id
  * @property int|null $receipt_id
  * @property PaymentMethod|null $payment_method
  * @property int|null $payment_account_id
@@ -66,6 +67,7 @@ class Payment extends Model
      */
     public const IMMUTABLE_COLUMNS = [
         'layaway_id',
+        'replaces_payment_id',
         'receipt_id',
         'payment_method',
         'payment_account_id',
@@ -147,6 +149,14 @@ class Payment extends Model
     public function safeguard(): HasOne
     {
         return $this->hasOne(PaymentSafeguard::class);
+    }
+
+    /**
+     * @return BelongsTo<self, $this>
+     */
+    public function replaces(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'replaces_payment_id')->withoutGlobalScope(self::NOT_VOIDED);
     }
 
     /**

@@ -48,13 +48,13 @@ it('exige que toda Action ya escrita audite el evento que declara', function (Au
     ));
 })->with(AuditEvent::cases());
 
-it('cubre los cuarenta y cuatro eventos: todos tienen ya su Action', function (): void {
+it('cubre los cuarenta y seis eventos: todos tienen ya su Action', function (): void {
     $covered = array_values(array_filter(
         AuditEvent::cases(),
         fn (AuditEvent $event): bool => class_exists($event->emitter()),
     ));
 
-    expect($covered)->toHaveCount(44);
+    expect($covered)->toHaveCount(46);
 
     $areas = array_values(array_unique(
         array_map(fn (AuditEvent $event): string => $event->area()->value, $covered),
@@ -70,8 +70,8 @@ it('cubre los cuarenta y cuatro eventos: todos tienen ya su Action', function ()
     ]);
 });
 
-it('declara los cuarenta y cuatro eventos de la lista cerrada', function (): void {
-    expect(AuditEvent::cases())->toHaveCount(44);
+it('declara los cuarenta y seis eventos de la lista cerrada', function (): void {
+    expect(AuditEvent::cases())->toHaveCount(46);
     expect(AuditEvent::CustomerContactUpdated->value)->toBe('customer.contact_updated');
 });
 

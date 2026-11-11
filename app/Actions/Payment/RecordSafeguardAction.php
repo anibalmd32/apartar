@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Payment;
 
+use App\Domain\Auditing\AuditEvent;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Safeguard\SafeguardScope;
 use App\Models\Layaway;
@@ -11,6 +12,7 @@ use App\Models\Payment;
 use App\Models\PaymentSafeguard;
 use App\Models\Receipt;
 use App\Models\User;
+use App\Support\Auditing\LogsSensitiveActivity;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +24,8 @@ use Throwable;
 
 final class RecordSafeguardAction
 {
+    use LogsSensitiveActivity;
+
     public const DIRECTORY = 'resguardos';
 
     /**
@@ -50,6 +54,7 @@ final class RecordSafeguardAction
                     ?? (new PaymentSafeguard)->forceFill(['payment_id' => $payment->getKey()]);
                 $previous = $safeguard->proof_path;
                 $replaced = $stored !== null || $data->removeProof;
+                $before = $safeguard->exists ? self::audited($safeguard) : [];
 
                 $safeguard->forceFill([
                     'destination' => $data->destination,
@@ -58,6 +63,8 @@ final class RecordSafeguardAction
                     'recorded_by' => $actor->getKey(),
                     ...($replaced ? ['proof_path' => $stored['path'] ?? null, 'proof_mime' => $stored['mime'] ?? null] : []),
                 ])->save();
+
+                $this->audit(AuditEvent::SafeguardRecorded, subject: $payment, actor: $actor, before: $before, after: self::audited($safeguard));
 
                 return [$safeguard, $replaced ? $previous : null];
             });
@@ -70,6 +77,19 @@ final class RecordSafeguardAction
         $this->discard($previous);
 
         return $safeguard;
+    }
+
+    /**
+     * @return array{destination: string, reference: string|null, note: string|null, proof: bool}
+     */
+    public static function audited(PaymentSafeguard $safeguard): array
+    {
+        return [
+            'destination' => $safeguard->destination->value,
+            'reference' => $safeguard->reference,
+            'note' => $safeguard->note,
+            'proof' => $safeguard->proof_path !== null,
+        ];
     }
 
     /**

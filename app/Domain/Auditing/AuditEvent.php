@@ -11,6 +11,8 @@ enum AuditEvent: string
     case PaymentRecorded = 'payment.recorded';
     case PaymentReallocated = 'payment.reallocated';
     case PaymentVoided = 'payment.voided';
+    case SafeguardRecorded = 'payment.safeguard_recorded';
+    case SafeguardRemoved = 'payment.safeguard_removed';
     case LayawayCreated = 'layaway.created';
     case LayawayCancelled = 'layaway.cancelled';
     case InstallmentRescheduled = 'installment.rescheduled';
@@ -62,7 +64,7 @@ enum AuditEvent: string
             self::ReceiptApproved, self::ReceiptRejected, self::PaymentRecorded,
             self::PaymentReallocated, self::PaymentVoided, self::LayawayCreated, self::LayawayCancelled,
             self::InstallmentRescheduled, self::LayawayDelivered,
-            self::ReconciliationCorrected => AuditArea::Collections,
+            self::ReconciliationCorrected, self::SafeguardRecorded, self::SafeguardRemoved => AuditArea::Collections,
 
             self::ProductPricingChanged, self::ProductStatusChanged, self::ProductPhotoReviewRequested, self::ProductPhotoReviewed, self::CatalogPublished,
             self::CatalogUnpublished, self::CatalogExpirationScheduled => AuditArea::Catalog,
@@ -92,6 +94,8 @@ enum AuditEvent: string
             self::PaymentRecorded => 'App\Actions\Payment\RegisterManualPaymentAction',
             self::PaymentReallocated => 'App\Actions\Payment\ReallocatePaymentAction',
             self::PaymentVoided => 'App\Actions\Payment\VoidPaymentAction',
+            self::SafeguardRecorded => 'App\Actions\Payment\RecordSafeguardAction',
+            self::SafeguardRemoved => 'App\Actions\Payment\RemoveSafeguardAction',
             self::LayawayCreated => 'App\Actions\Layaway\CreateBackofficeLayawayAction',
             self::LayawayCancelled => 'App\Actions\Layaway\CancelLayawayAction',
             self::InstallmentRescheduled => 'App\Actions\Layaway\RescheduleInstallmentAction',
@@ -146,6 +150,8 @@ enum AuditEvent: string
             self::PaymentRecorded => 'Pago registrado a mano',
             self::PaymentReallocated => 'Pago reasignado entre cuotas',
             self::PaymentVoided => 'Pago anulado',
+            self::SafeguardRecorded => 'Resguardo del pago registrado',
+            self::SafeguardRemoved => 'Resguardo del pago borrado',
             self::LayawayCreated => 'Apartado creado desde el backoffice',
             self::LayawayCancelled => 'Apartado cancelado',
             self::InstallmentRescheduled => 'Cuota reprogramada',
