@@ -89,6 +89,18 @@ it('un resguardo registrado muestra dónde quedó, su referencia y su comprobant
     expect(within(line).getByRole('button', { name: 'Editar resguardo' })).toBeInTheDocument();
 });
 
+it('la tasa paralela se muestra con dos decimales', () => {
+    render(
+        <PaymentHistory
+            payments={[{ ...PAYMENT, safeguard: { ...PAYMENT.safeguard!, parallelRate: '1077.96531000' } }]}
+            empty="—"
+            safeguardOptions={OPTIONS}
+        />,
+    );
+
+    expect(screen.getByLabelText('Resguardo del pago')).toHaveTextContent('(paralelo 1.077,97)');
+});
+
 it('sin resguardo activo, o en el portal, no aparece', () => {
     render(<PaymentHistory payments={[PAYMENT]} empty="—" />);
 

@@ -1,5 +1,4 @@
 import { Icon } from '@/components/ui/icon';
-import { formatRate } from '@/features/receipts/lib/inbox-format';
 import { type SafeguardView } from '@/types/safeguard';
 import { cilShieldAlt } from '@coreui/icons';
 
@@ -8,12 +7,14 @@ interface SafeguardLineProps {
     onEdit: () => void;
 }
 
+const RATE = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 function worth(safeguard: SafeguardView): string {
     if (safeguard.equivalent === null) {
         return 'Sin tasa paralela de ese día: no se puede calcular cuánto vale en paralelo.';
     }
 
-    const rate = safeguard.parallelRate !== null ? ` (paralelo ${formatRate(safeguard.parallelRate)})` : '';
+    const rate = safeguard.parallelRate !== null ? ` (paralelo ${RATE.format(Number(safeguard.parallelRate))})` : '';
     const gap = safeguard.gap !== null ? ` · diferencia ${safeguard.gap}` : '';
 
     return `Vale ${safeguard.equivalent} en paralelo${rate}${gap}`;
