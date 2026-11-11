@@ -7,10 +7,10 @@ namespace App\Http\Requests\Backoffice;
 use App\Actions\Payment\SafeguardData;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Safeguard\SafeguardDestination;
-use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Models\Layaway;
 use App\Models\Payment;
 use App\Rules\RealMimeType;
+use App\Rules\WithinPixelLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
@@ -38,7 +38,7 @@ final class RecordSafeguardRequest extends FormRequest
                 'file',
                 'max:'.(ReceiptFile::maxSizeMb() * 1024),
                 RealMimeType::receipts(),
-                StoreReceiptRequest::withinPixelLimit(),
+                WithinPixelLimit::receipts(),
             ],
             'note' => ['nullable', 'string', 'max:'.SafeguardData::NOTE_MAX],
             'remove_proof' => ['nullable', 'boolean'],

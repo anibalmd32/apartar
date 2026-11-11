@@ -6,6 +6,7 @@ namespace App\Http\Requests\Backoffice;
 
 use App\Models\Product;
 use App\Rules\RealMimeType;
+use App\Rules\WithinPixelLimit;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 
@@ -28,6 +29,7 @@ final class StoreProductImagesRequest extends FormRequest
                 'file',
                 'max:'.self::MAX_KILOBYTES,
                 new RealMimeType,
+                WithinPixelLimit::photos(),
             ],
         ];
     }

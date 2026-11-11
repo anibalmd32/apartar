@@ -13,12 +13,12 @@ use App\Domain\Payment\PaymentMethod;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Requests\Backoffice\ApproveReceiptRequest;
-use App\Http\Requests\Portal\StoreReceiptRequest;
 use App\Models\Bank;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Rules\RealMimeType;
 use App\Rules\UniqueReceiptFingerprint;
+use App\Rules\WithinPixelLimit;
 use App\Support\ManualPaymentDates;
 use Carbon\CarbonImmutable;
 use DateTimeZone;
@@ -59,7 +59,7 @@ trait ValidatesManualPayment
                 'file',
                 'max:'.(ReceiptFile::maxSizeMb() * 1024),
                 RealMimeType::receipts(),
-                StoreReceiptRequest::withinPixelLimit(),
+                WithinPixelLimit::receipts(),
                 new UniqueReceiptFingerprint(null, null, recordedByBusiness: true, exceptIdempotencyKey: $this->paymentIdempotencyKey(), exceptPayment: $this->correctedPayment()),
             ],
             'paid_at' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$earliest, 'before_or_equal:'.$latest],

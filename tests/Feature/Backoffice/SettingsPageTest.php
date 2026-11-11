@@ -172,6 +172,18 @@ final class SettingsPageTest extends TestCase
         $this->assertNull($this->organization->refresh()->logo_path);
     }
 
+    public function test_a_giant_logo_is_rejected_before_saving(): void
+    {
+        $this->actingAs($this->owner())
+            ->putJson('/backoffice/ajustes/identidad', $this->identityPayload([
+                'logo' => ImageUploads::real('logo.png', ImageUploads::pngHeader(8000, 8000)),
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['logo' => 'La imagen pasa de 60 megapíxeles.']);
+
+        $this->assertNull($this->organization->refresh()->logo_path);
+    }
+
     public function test_png_jpg_and_webp_logos_are_accepted(): void
     {
         foreach (['logo.png', 'logo.jpg', 'logo.webp'] as $name) {

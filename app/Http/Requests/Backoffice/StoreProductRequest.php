@@ -12,6 +12,7 @@ use App\Http\Requests\Backoffice\Concerns\ValidatesSpecifications;
 use App\Rules\CoherentFinancingTerms;
 use App\Rules\RealMimeType;
 use App\Rules\UsableRateSource;
+use App\Rules\WithinPixelLimit;
 use App\Support\DecimalInput;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -143,7 +144,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'images' => ['nullable', 'array', 'max:'.StoreProductImagesRequest::MAX_IMAGES],
-            'images.*' => ['required', 'file', 'max:'.StoreProductImagesRequest::MAX_KILOBYTES, new RealMimeType],
+            'images.*' => ['required', 'file', 'max:'.StoreProductImagesRequest::MAX_KILOBYTES, new RealMimeType, WithinPixelLimit::photos()],
         ];
     }
 

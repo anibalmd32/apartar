@@ -17,6 +17,7 @@ use App\Models\Layaway;
 use App\Models\PaymentAccount;
 use App\Rules\RealMimeType;
 use App\Rules\UniqueReceiptFingerprint;
+use App\Rules\WithinPixelLimit;
 use App\Support\DecimalInput;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -70,7 +71,7 @@ final class StoreReceiptRequest extends FormRequest
                 'file',
                 'max:'.(ReceiptFile::maxSizeMb() * 1024),
                 RealMimeType::receipts(),
-                self::withinPixelLimit(),
+                WithinPixelLimit::receipts(),
                 new UniqueReceiptFingerprint(null, null),
             ],
         ];
@@ -202,21 +203,6 @@ final class StoreReceiptRequest extends FormRequest
                 PaymentAmounts::assertPositive((string) $value, $currency, 'declarado');
             } catch (InvalidArgumentException) {
                 $fail('El monto tiene que ser mayor que cero, con dos decimales como mucho (por ejemplo, 850.00).');
-            }
-        };
-    }
-
-    public static function withinPixelLimit(): Closure
-    {
-        return function (string $attribute, mixed $value, Closure $fail): void {
-            if (! $value instanceof UploadedFile) {
-                return;
-            }
-
-            $size = @getimagesize($value->getRealPath() ?: '');
-
-            if ($size !== false && $size[0] * $size[1] > ReceiptFile::MAX_PIXELS) {
-                $fail('La imagen es demasiado grande en píxeles. Sube una captura de pantalla normal.');
             }
         };
     }

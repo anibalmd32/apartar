@@ -8,6 +8,7 @@ use App\Domain\Catalog\CopywritingMode;
 use App\Domain\Catalog\ProductDescription;
 use App\Models\Product;
 use App\Rules\RealMimeType;
+use App\Rules\WithinPixelLimit;
 use App\Support\Ai\CopywriterImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -35,7 +36,7 @@ final class SuggestProductCopyRequest extends FormRequest
             ],
             'product_id' => ['nullable', 'integer'],
             'images' => ['nullable', 'array', 'max:'.CopywriterImages::MAX_IMAGES],
-            'images.*' => ['required', 'file', 'max:'.StoreProductImagesRequest::MAX_KILOBYTES, new RealMimeType],
+            'images.*' => ['required', 'file', 'max:'.StoreProductImagesRequest::MAX_KILOBYTES, new RealMimeType, WithinPixelLimit::photos()],
         ];
     }
 
