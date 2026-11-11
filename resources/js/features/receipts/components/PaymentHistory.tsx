@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { BankMark } from '@/components/ui/bank-mark';
 import { IconChip } from '@/components/ui/icon-chip';
 import { CorrectPaymentSheet } from '@/features/receipts/components/CorrectPaymentSheet';
 import { MovePaymentSheet } from '@/features/receipts/components/MovePaymentSheet';
@@ -68,7 +69,12 @@ function PaymentItem({
                 {detail(payment) !== '' ? <p className={cn('text-ink-2', voided !== null && 'line-through')}>{detail(payment)}</p> : null}
                 <div className="text-ink-3 flex flex-wrap items-center gap-2 text-xs">
                     <span>{payment.method}</span>
-                    {payment.bankReference !== null ? <span>{payment.bankReference}</span> : null}
+                    {payment.bankReference !== null ? (
+                        <span className="inline-flex items-center gap-1.5">
+                            <BankMark bank={payment.bank} logoUrl={payment.bankLogoUrl} />
+                            {payment.bankReference}
+                        </span>
+                    ) : null}
                     {payment.attachmentUrl !== null ? (
                         <a href={payment.attachmentUrl} target="_blank" rel="noopener noreferrer" className="link link-primary">
                             Ver comprobante

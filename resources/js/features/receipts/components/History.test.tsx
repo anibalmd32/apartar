@@ -47,6 +47,18 @@ it('dice cada pago con su tasa del día y las cuotas que amortizó', () => {
     expect(screen.queryByText('Registrado por el negocio')).not.toBeInTheDocument();
 });
 
+it('el banco del pago lleva su logo junto a la referencia', () => {
+    render(
+        <PaymentHistory
+            payments={[{ ...PAYMENT, bank: 'Banesco', bankLogoUrl: '/images/banks/0134.png', bankReference: 'Banesco · ref. 0123456789' }]}
+            empty="—"
+        />,
+    );
+
+    expect(screen.getByRole('img', { name: 'Banesco' })).toHaveAttribute('src', '/images/banks/0134.png');
+    expect(screen.getByText('Banesco · ref. 0123456789')).toBeInTheDocument();
+});
+
 it('marca el pago registrado por el negocio, con su nota', () => {
     render(
         <PaymentHistory

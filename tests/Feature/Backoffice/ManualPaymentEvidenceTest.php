@@ -11,6 +11,7 @@ use App\Domain\Payment\DuplicateReceipts;
 use App\Domain\Payment\ReceiptFile;
 use App\Domain\Tenancy\OrganizationRole;
 use App\Exports\PaymentsExport;
+use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\ExchangeRate;
 use App\Models\Organization;
@@ -163,6 +164,8 @@ final class ManualPaymentEvidenceTest extends TestCase
         $this->get(route('layaways.show', $layaway))->assertInertia(function (AssertableInertia $page) use (&$url): void {
             $page->where('payments.0.registeredByBusiness', true)
                 ->where('payments.0.bankReference', 'Banesco · ref. 0123456789')
+                ->where('payments.0.bank', 'Banesco')
+                ->where('payments.0.bankLogoUrl', Bank::query()->where('code', '0134')->firstOrFail()->logoUrl())
                 ->where('payments.0.attachmentUrl', function (string $value) use (&$url): bool {
                     $url = $value;
 

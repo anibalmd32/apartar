@@ -25,5 +25,7 @@ export interface PaymentAccountView {
 
 export interface PaymentEvidence {
     readonly bankReference: string | null;
+    readonly bank?: string | null;
+    readonly bankLogoUrl?: string | null;
     readonly attachmentUrl: string | null;
 }

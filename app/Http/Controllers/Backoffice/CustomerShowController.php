@@ -87,7 +87,7 @@ final class CustomerShowController extends Controller
             ],
             'payments' => Payment::query()
                 ->whereIn('layaway_id', $layaways->modelKeys())
-                ->with(['allocations.installment', 'receipt'])
+                ->with(['allocations.installment', 'receipt', 'catalogBank'])
                 ->latest('settled_at')
                 ->latest('id')
                 ->limit($limit)

@@ -60,6 +60,8 @@ final class PaymentRowResource extends JsonResource
             'fromReceipt' => ! $manual,
             'note' => $manual ? $payment->note : null,
             'bankReference' => $manual && $payment->reference !== null ? sprintf('%s · ref. %s', $payment->bank, $payment->reference) : null,
+            'bank' => $manual && $payment->reference !== null ? $payment->bank : null,
+            'bankLogoUrl' => $manual && $payment->reference !== null ? $payment->catalogBank?->logoUrl() : null,
             'attachmentUrl' => $manual && $payment->hasAttachment()
                 ? ($request->routeIs('portal.*') ? SignedFileUrl::forCustomerPayment($payment) : SignedFileUrl::forBackofficePayment($payment))
                 : null,

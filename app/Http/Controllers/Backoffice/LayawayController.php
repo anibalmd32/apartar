@@ -67,7 +67,7 @@ final class LayawayController extends Controller
         $payments = Payment::query()
             ->withVoided()
             ->where('layaway_id', $layaway->getKey())
-            ->with(['allocations.installment', 'receipt', 'voidedBy:id,name', 'safeguard'])
+            ->with(['allocations.installment', 'receipt', 'voidedBy:id,name', 'safeguard', 'catalogBank'])
             ->latest('settled_at')
             ->latest('id')
             ->get();

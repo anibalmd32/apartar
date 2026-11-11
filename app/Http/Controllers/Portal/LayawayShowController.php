@@ -90,7 +90,7 @@ final class LayawayShowController extends Controller
                 : null,
             'payments' => Payment::query()
                 ->where('layaway_id', $layaway->getKey())
-                ->with(['allocations.installment', 'receipt'])
+                ->with(['allocations.installment', 'receipt', 'catalogBank'])
                 ->latest('settled_at')
                 ->latest('id')
                 ->get()

@@ -422,7 +422,7 @@ final class ReceiptReviewController extends Controller
     {
         return Payment::query()
             ->where('layaway_id', $layaway->getKey())
-            ->with(['allocations.installment', 'receipt'])
+            ->with(['allocations.installment', 'receipt', 'catalogBank'])
             ->latest('settled_at')
             ->latest('id')
             ->get()
